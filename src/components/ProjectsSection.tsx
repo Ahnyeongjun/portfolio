@@ -45,7 +45,7 @@ const categoryOptions = [
 export function ProjectsSection() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("company");
 
   const filteredProjects = useMemo(() => {
     const filtered = projects.filter((project) => {
@@ -94,10 +94,11 @@ export function ProjectsSection() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           {/* Type Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">소속:</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">소속:</span>
             <div className="flex gap-1">
               {typeOptions.map((option) => (
                 <button
@@ -121,7 +122,7 @@ export function ProjectsSection() {
 
           {/* Category Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">분야:</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
             <div className="flex flex-wrap gap-1">
               {categoryOptions.map((option) => (
                 <button
@@ -162,10 +163,11 @@ export function ProjectsSection() {
               ))}
             </div>
           </div>
+          </div>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {filteredProjects.map((project, index) => (
             <div
               key={project.id}
