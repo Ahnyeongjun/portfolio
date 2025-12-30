@@ -24,6 +24,11 @@ function getStartDate(period: string): number {
   return 0;
 }
 
+// 진행중인 프로젝트인지 확인
+function isOngoing(period: string): boolean {
+  return period.includes("진행중");
+}
+
 const typeOptions = [
   { value: "all", label: "전체", icon: null },
   { value: "company", label: "회사", icon: Building2 },
@@ -55,6 +60,13 @@ export function ProjectsSection() {
 
     // 정렬
     return filtered.sort((a, b) => {
+      // 진행중인 프로젝트 우선
+      const aOngoing = isOngoing(a.period);
+      const bOngoing = isOngoing(b.period);
+      if (aOngoing !== bOngoing) {
+        return aOngoing ? -1 : 1;
+      }
+
       if (sortBy === "company") {
         // 회사 프로젝트 우선, 그 다음 최신순
         if (a.type !== b.type) {

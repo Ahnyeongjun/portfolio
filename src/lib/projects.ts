@@ -26,10 +26,78 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    id: "booksight",
+    title: "Booksight",
+    description: "오늘 출간된 책들을 생일처럼 축하하는 서비스",
+    tags: ["Kotlin", "Spring Boot", "Spring Batch", "QueryDSL", "Redis"],
+    imageUrl: "/booksight_thum.png",
+    status: "live",
+    type: "personal",
+    category: "backend",
+    period: "2025.04 ~ 2025.07",
+    role: "서브 백엔드 개발",
+    longDescription: "매일 수많은 책들이 세상에 태어나고, 그중엔 잊혀지기엔 너무나 특별한 이야기들이 담겨 있습니다. 오늘 처음 세상에 나온 책들을 생일처럼 축하하고, 그 특별한 순간을 함께 나누는 서비스입니다. 6명(프론트엔드 2, 백엔드 2, 디자이너, PM)이 함께 진행했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "백엔드",
+        items: [
+          "Kotlin + Spring Boot 3.4.4 프로젝트 기본 셋업",
+          "Book, Author, Publisher, Contents, Event 도메인 설계",
+          "QueryDSL 기반 동적 검색 쿼리 구현",
+          "Spring Batch 일배치 (국립중앙도서관 오픈 API)",
+          "Redis 캐싱 적용",
+          "MySQL + Oracle 듀얼 DB 연동",
+        ],
+      },
+    ],
+    achievements: [
+      "국립중앙도서관 API 배치 처리로 신간 데이터 자동화",
+      "Kotlin + Spring Boot + QueryDSL 조합 경험",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/HBD-BookSight", type: "link" },
+    ],
+  },
+  {
+    id: "momentier",
+    title: "모먼티어",
+    description: "MCP 알고리즘 기반 개인 맞춤형 여행지 추천 및 여행 계획 서비스",
+    tags: ["Next.js", "TypeScript", "Zustand", "TailwindCSS", "Storybook"],
+    imageUrl: "/momentier_thum.png",
+    status: "live",
+    type: "personal",
+    category: "frontend",
+    period: "2025.04 ~ 2025.05",
+    role: "리드 개발자 (프론트엔드)",
+    longDescription: "스위프(SWYP) 9기에서 진행한 사이드 프로젝트입니다. MCP 알고리즘을 활용하여 개인 맞춤형 여행지를 실시간으로 추천하고, 다른 사용자들의 여행지 리뷰 및 후기를 공유할 수 있는 플랫폼입니다. 7명(프론트엔드 2, 백엔드 3, 디자이너, PM)이 함께 진행했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "프론트엔드",
+        items: [
+          "카카오 OAuth2 인증 연동 및 Zustand 전역 상태 관리",
+          "Kakao Maps SDK 지도 표시, 마커, 검색, 경로 안내 기능",
+          "useLogin, useAuthGuard 인증 Hook 구현",
+          "UI 컴포넌트 Storybook 문서화 (50%)",
+          "로그인, 메인, 일정 추천, 상세 페이지 구현 (50%)",
+        ],
+      },
+    ],
+    achievements: [
+      "리드 개발자로서 프론트엔드 아키텍처 설계",
+      "Storybook 기반 컴포넌트 문서화 체계 구축",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/SWYP-TRAVEL", type: "link" },
+      { label: "Storybook", url: "https://momentier.github.io/SWYP_FRONT/?path=/docs/configure-your-project--docs", type: "link" },
+    ],
+  },
+  {
     id: "chukjibeob",
     title: "축지법",
     description: "전국 축제 정보를 지도와 달력으로 한눈에 보여주는 서비스",
-    tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL"],
+    tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL", "OpenFeign"],
     imageUrl: "/chukjibeob.webp",
     status: "live",
     type: "personal",
@@ -56,6 +124,10 @@ export const projects: Project[] = [
       "공공데이터 API 배치 처리로 축제 데이터 자동화",
       "QueryDSL 동적 쿼리로 복잡한 필터링 조건 처리",
     ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/swyp10-9", type: "link" },
+      { label: "회고", url: "/chukjibeob_retrospective.html", type: "html" },
+    ],
   },
   {
     id: "with-ing",
@@ -67,7 +139,7 @@ export const projects: Project[] = [
     status: "live",
     type: "personal",
     category: "fullstack",
-    period: "2024.10 ~ 2024.11",
+    period: "2025.10 ~ 2025.11",
     role: "PM, 프론트엔드, 백엔드 피드백, AI 추천 기능, 서버 관리",
     longDescription: "스위프(SWYP) 11기에서 진행한 사이드 프로젝트입니다. 예비부부들이 웨딩 준비 과정에서 겪는 정보 탐색의 어려움을 해결하고자 기획했습니다. 웨딩홀, 스튜디오, 드레스샵, 메이크업샵 정보를 한 곳에서 검색하고 비교할 수 있으며, AI가 사용자의 체형을 분석하여 어울리는 드레스를 추천해주는 기능을 제공합니다.",
     details: [],
@@ -113,6 +185,7 @@ export const projects: Project[] = [
       "AI 도구 활용으로 프론트엔드 개발 생산성 향상",
     ],
     resources: [
+      { label: "GitHub", url: "https://github.com/swyp11", type: "link" },
       { label: "IA 설계", url: "/with_ing_ia.html", type: "html" },
       { label: "디자인 & 와이어프레임", url: "/with_ing_design.png", type: "image" },
     ],
