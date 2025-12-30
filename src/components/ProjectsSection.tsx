@@ -145,12 +145,25 @@ export function ProjectsSection() {
           {/* Row 2: Category Filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
-            <div className="flex gap-1">
+            {/* Mobile: Dropdown */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+              className="sm:hidden px-3 py-1.5 text-sm rounded-full border border-border bg-secondary/50 text-foreground"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {/* Desktop: Buttons */}
+            <div className="hidden sm:flex gap-1">
               {categoryOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => setCategoryFilter(option.value)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm whitespace-nowrap rounded-full border transition-all ${
                     categoryFilter === option.value
                       ? "bg-primary text-white border-primary"
                       : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
