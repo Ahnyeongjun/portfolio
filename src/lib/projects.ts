@@ -26,6 +26,38 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    id: "chukjibeob",
+    title: "축지법",
+    description: "전국 축제 정보를 지도와 달력으로 한눈에 보여주는 서비스",
+    tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL"],
+    imageUrl: "/chukjibeob.webp",
+    status: "live",
+    type: "personal",
+    category: "backend",
+    period: "2025.07 ~ 2025.08",
+    role: "백엔드",
+    longDescription: "스위프(SWYP) 10기에서 진행한 사이드 프로젝트입니다. 주말마다 어디서 무슨 축제가 열리는지 한눈에 알기 어려웠던 문제를 해결하고자 기획했습니다. 전국의 축제 정보를 지도와 달력 위에 펼쳐, 내 주변의 작은 마을 축제부터 대규모 행사까지 관심 있는 테마와 일정에 맞춰 필터링하고 발견할 수 있습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "백엔드",
+        items: [
+          "Spring Boot 3 + JPA + QueryDSL 기반 REST API 설계 및 구현",
+          "Spring Batch로 공공데이터(Tour API) 축제 정보 자동 수집",
+          "지역/테마/일정별 축제 검색 및 필터링 API",
+          "달력 뷰 일별 축제 수 통계 API",
+          "지도 뷰 좌표 기반 축제 조회 API",
+          "Spring Security + JWT + OAuth(카카오) 인증",
+          "북마크 및 사용자 활동 로그 기능",
+        ],
+      },
+    ],
+    achievements: [
+      "공공데이터 API 배치 처리로 축제 데이터 자동화",
+      "QueryDSL 동적 쿼리로 복잡한 필터링 조건 처리",
+    ],
+  },
+  {
     id: "with-ing",
     title: "위딩 (With-ing)",
     description: "예비부부를 위한 웨딩 플래너 플랫폼. 웨딩홀, 스튜디오, 드레스, 메이크업 업체 검색 및 AI 기반 체형 분석 드레스 추천 서비스를 제공합니다.",
