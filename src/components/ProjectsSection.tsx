@@ -95,35 +95,57 @@ export function ProjectsSection() {
 
         {/* Filters */}
         <div className="flex flex-col items-center gap-3 mb-8">
+          {/* Row 1: Type + Sort */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
-          {/* Type Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">소속:</span>
-            <div className="flex gap-1">
-              {typeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setTypeFilter(option.value)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border transition-all ${
-                    typeFilter === option.value
-                      ? "bg-primary text-white border-primary"
-                      : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
-                  }`}
-                >
-                  {option.icon && <option.icon className="w-3.5 h-3.5" />}
-                  {option.label}
-                </button>
-              ))}
+            {/* Type Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">소속:</span>
+              <div className="flex gap-1">
+                {typeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setTypeFilter(option.value)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border transition-all ${
+                      typeFilter === option.value
+                        ? "bg-primary text-white border-primary"
+                        : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {option.icon && <option.icon className="w-3.5 h-3.5" />}
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="hidden sm:block w-px h-6 bg-border" />
+
+            {/* Sort */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+              <div className="flex gap-1">
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSortBy(option.value)}
+                    className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                      sortBy === option.value
+                        ? "bg-primary text-white border-primary"
+                        : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Divider */}
-          <div className="hidden sm:block w-px h-6 bg-border" />
-
-          {/* Category Filter */}
+          {/* Row 2: Category Filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex gap-1">
               {categoryOptions.map((option) => (
                 <button
                   key={option.value}
@@ -139,30 +161,6 @@ export function ProjectsSection() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden sm:block w-px h-6 bg-border" />
-
-          {/* Sort */}
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-            <div className="flex gap-1">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setSortBy(option.value)}
-                  className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                    sortBy === option.value
-                      ? "bg-primary text-white border-primary"
-                      : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
           </div>
         </div>
 
@@ -189,7 +187,7 @@ export function ProjectsSection() {
               onClick={() => {
                 setTypeFilter("all");
                 setCategoryFilter("all");
-                setSortBy("newest");
+                setSortBy("company");
               }}
               className="mt-4 text-primary hover:underline"
             >
