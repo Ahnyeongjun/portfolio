@@ -3,10 +3,26 @@
 import { useState, useMemo } from "react";
 import { ProjectCard } from "./ProjectCard";
 import { projects } from "@/lib/projects";
-import { Building2, User, Server, Layout, Brain } from "lucide-react";
+import { Building2, User, Server, Layout, Brain, ArrowUpDown } from "lucide-react";
 
 type TypeFilter = "all" | "company" | "personal";
 type CategoryFilter = "all" | "backend" | "frontend" | "ai";
+type SortOption = "newest" | "oldest" | "company";
+
+const sortOptions = [
+  { value: "newest", label: "최신순" },
+  { value: "oldest", label: "오래된순" },
+  { value: "company", label: "회사순" },
+] as const;
+
+// period에서 시작 날짜 추출 (예: "2024.10 ~ 2024.11" -> 2024.10)
+function getStartDate(period: string): number {
+  const match = period.match(/^(\d{4})\.(\d{1,2})/);
+  if (match) {
+    return parseInt(match[1]) * 100 + parseInt(match[2]);
+  }
+  return 0;
+}
 
 const typeOptions = [
   { value: "all", label: "전체", icon: null },
@@ -24,9 +40,10 @@ const categoryOptions = [
 export function ProjectsSection() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    const filtered = projects.filter((project) => {
       const typeMatch = typeFilter === "all" || project.type === typeFilter;
       // fullstack은 프론트엔드, 백엔드 필터 모두에서 표시
       const categoryMatch =
@@ -35,7 +52,21 @@ export function ProjectsSection() {
         (project.category === "fullstack" && (categoryFilter === "frontend" || categoryFilter === "backend"));
       return typeMatch && categoryMatch;
     });
-  }, [typeFilter, categoryFilter]);
+
+    // 정렬
+    return filtered.sort((a, b) => {
+      if (sortBy === "company") {
+        // 회사 프로젝트 우선, 그 다음 최신순
+        if (a.type !== b.type) {
+          return a.type === "company" ? -1 : 1;
+        }
+        return getStartDate(b.period) - getStartDate(a.period);
+      }
+      const dateA = getStartDate(a.period);
+      const dateB = getStartDate(b.period);
+      return sortBy === "newest" ? dateB - dateA : dateA - dateB;
+    });
+  }, [typeFilter, categoryFilter, sortBy]);
 
   return (
     <section id="projects" className="py-24">
@@ -96,6 +127,29 @@ export function ProjectsSection() {
               ))}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block w-px h-6 bg-border" />
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="flex gap-1">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setSortBy(option.value)}
+                  className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                    sortBy === option.value
+                      ? "bg-primary text-white border-primary"
+                      : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Projects Grid */}
@@ -121,6 +175,7 @@ export function ProjectsSection() {
               onClick={() => {
                 setTypeFilter("all");
                 setCategoryFilter("all");
+                setSortBy("newest");
               }}
               className="mt-4 text-primary hover:underline"
             >

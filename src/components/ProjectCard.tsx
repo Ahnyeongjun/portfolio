@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Building2, User } from "lucide-react";
+import { ArrowRight, Building2, User, Calendar } from "lucide-react";
 
 interface ProjectCardProps {
   id: string;
@@ -41,6 +41,7 @@ export function ProjectCard({
   status,
   type,
   company,
+  period,
 }: ProjectCardProps) {
   return (
     <Link href={`/projects/${id}`} className="block group">
@@ -97,6 +98,12 @@ export function ProjectCard({
             <h3 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-2">
               {title}
             </h3>
+            {period && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <Calendar className="w-3 h-3" />
+                {period}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground line-clamp-2">
               {description}
             </p>
