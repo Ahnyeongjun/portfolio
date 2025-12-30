@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, User, CheckCircle } from "lucide-react";
+import { ArrowLeft, Calendar, User, CheckCircle, Building2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
 
 export function generateStaticParams() {
@@ -42,6 +42,25 @@ export default async function ProjectPage({
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
+            {/* Type Badge */}
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full mb-4 ${
+              project.type === "company"
+                ? "bg-blue-500/20 text-blue-600"
+                : "bg-green-500/20 text-green-600"
+            }`}>
+              {project.type === "company" ? (
+                <>
+                  <Building2 className="w-4 h-4" />
+                  {project.company || "회사 프로젝트"}
+                </>
+              ) : (
+                <>
+                  <User className="w-4 h-4" />
+                  개인 프로젝트
+                </>
+              )}
+            </div>
+
             {/* Title */}
             <h1 className="text-4xl font-bold text-foreground mb-4">
               {project.title}

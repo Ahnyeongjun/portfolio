@@ -4,6 +4,9 @@ export interface Project {
   description: string;
   tags: string[];
   status: "live" | "beta" | "development";
+  type: "company" | "personal";
+  category: "fullstack" | "backend" | "frontend" | "ai";
+  company?: string;
   period: string;
   role: string;
   details: string[];
@@ -17,6 +20,9 @@ export const projects: Project[] = [
     description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인 구축",
     tags: ["Kubernetes", "Next.js", "FastAPI", "RabbitMQ"],
     status: "live",
+    type: "company",
+    category: "fullstack",
+    company: "한컴인스페이스",
     period: "2024.12 ~ 진행중",
     role: "아키텍처 재설계 및 마이그레이션",
     details: [
@@ -36,9 +42,12 @@ export const projects: Project[] = [
   {
     id: "image-api",
     title: "위성 영상 타일링 API",
-    description: "Go 기반 지리공간 영상 타일링 서버",
+    description: "Go 기반 지리공간 영상 처리 API (동시 렌더링 33배 향상)",
     tags: ["Go", "GDAL", "Redis", "GeoTIFF"],
     status: "live",
+    type: "company",
+    category: "backend",
+    company: "한컴인스페이스",
     period: "2023.12 ~ 2024.12",
     role: "영상 타일링 API 설계 및 개발",
     details: [
@@ -56,9 +65,12 @@ export const projects: Project[] = [
   {
     id: "gis-platform",
     title: "GIS 레거시 플랫폼",
-    description: "3D 지도 뷰어 개발",
+    description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 개발",
     tags: ["Spring Boot", "Redis", "Cesium.js", "PostgreSQL"],
     status: "live",
+    type: "company",
+    category: "fullstack",
+    company: "한컴인스페이스",
     period: "2022.12 ~ 2024.12",
     role: "GIS 웹 플랫폼 풀스택 개발",
     details: [
@@ -79,6 +91,9 @@ export const projects: Project[] = [
     description: "ROS 기반 YOLOv5 객체 탐지 스트리밍 시스템",
     tags: ["ROS", "YOLOv5", "Python", "PyTorch"],
     status: "live",
+    type: "company",
+    category: "ai",
+    company: "한컴인스페이스",
     period: "2021.12 ~ 2023.12",
     role: "객체 탐지 모델 학습 및 스트리밍 시스템 개발",
     details: [
