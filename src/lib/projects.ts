@@ -1,19 +1,90 @@
+export interface ProjectResource {
+  label: string;
+  url: string;
+  type: "image" | "pdf" | "html" | "link";
+}
+
 export interface Project {
   id: string;
   title: string;
   description: string;
   tags: string[];
+  imageUrl?: string;
+  link?: string;
   status: "live" | "beta" | "development";
   type: "company" | "personal";
   category: "fullstack" | "backend" | "frontend" | "ai";
   company?: string;
   period: string;
   role: string;
+  longDescription?: string;
   details: string[];
+  roleDetails?: { role: string; items: string[] }[];
   achievements: string[];
+  resources?: ProjectResource[];
 }
 
 export const projects: Project[] = [
+  {
+    id: "with-ing",
+    title: "위딩 (With-ing)",
+    description: "예비부부를 위한 웨딩 플래너 플랫폼. 웨딩홀, 스튜디오, 드레스, 메이크업 업체 검색 및 AI 기반 체형 분석 드레스 추천 서비스를 제공합니다.",
+    tags: ["Next.js", "Spring Boot", "FastAPI", "OpenAI"],
+    imageUrl: "/with_ing.webp",
+    link: "https://with-ing.vercel.app/main",
+    status: "live",
+    type: "personal",
+    category: "fullstack",
+    period: "2024.10 ~ 2024.11",
+    role: "PM, 프론트엔드, 백엔드 피드백, AI 추천 기능, 서버 관리",
+    longDescription: "스위프(SWYP) 11기에서 진행한 사이드 프로젝트입니다. 예비부부들이 웨딩 준비 과정에서 겪는 정보 탐색의 어려움을 해결하고자 기획했습니다. 웨딩홀, 스튜디오, 드레스샵, 메이크업샵 정보를 한 곳에서 검색하고 비교할 수 있으며, AI가 사용자의 체형을 분석하여 어울리는 드레스를 추천해주는 기능을 제공합니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "PM",
+        items: [
+          "WBS 일정 관리 및 프로젝트 진행 총괄",
+          "IA(정보 구조) 설계",
+          "와이어프레임 및 디자인 작업",
+        ],
+      },
+      {
+        role: "프론트엔드",
+        items: [
+          "Claude Code + Figma MCP 활용 퍼블리싱",
+          "31개 컴포넌트 구현",
+        ],
+      },
+      {
+        role: "백엔드 피드백",
+        items: [
+          "Spring Boot 3 + JPA 기반 REST API 설계 리뷰",
+        ],
+      },
+      {
+        role: "AI 추천 기능",
+        items: [
+          "FastAPI + OpenAI API 기반 드레스 추천 서버 개발",
+          "체형 조합별 프롬프트 설계 및 응답 캐싱 (540가지 조합)",
+        ],
+      },
+      {
+        role: "서버 관리",
+        items: [
+          "Docker Compose + GitHub Actions CI/CD 구축",
+          "현재 K8s + Jenkins 기반 MSA 구조로 전환 (도메인별 서비스 분리)",
+        ],
+      },
+    ],
+    achievements: [
+      "6주 내 MVP 출시 (기획 → 배포)",
+      "AI 도구 활용으로 프론트엔드 개발 생산성 향상",
+    ],
+    resources: [
+      { label: "IA 설계", url: "/with_ing_ia.html", type: "html" },
+      { label: "디자인 & 와이어프레임", url: "/with_ing_design.png", type: "image" },
+    ],
+  },
   {
     id: "satellite-platform",
     title: "초소형군집위성 플랫폼 (GIS 웹 플랫폼 현대화)",
@@ -41,8 +112,8 @@ export const projects: Project[] = [
   },
   {
     id: "image-api",
-    title: "위성 영상 타일링 API",
-    description: "Go 기반 지리공간 영상 처리 API (동시 렌더링 33배 향상)",
+    title: "위성 영상 타일링 서버",
+    description: "Go 기반 지리공간 영상 처리 서버 (동시 렌더링 33배 향상)",
     tags: ["Go", "GDAL", "Redis", "GeoTIFF"],
     status: "live",
     type: "company",

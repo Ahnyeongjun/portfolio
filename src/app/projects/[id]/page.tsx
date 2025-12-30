@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, User, CheckCircle, Building2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Calendar, User, CheckCircle, Building2, ExternalLink, FileText, ImageIcon, Link2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
 
 export function generateStaticParams() {
@@ -42,6 +43,19 @@ export default async function ProjectPage({
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
+            {/* Project Image */}
+            {project.imageUrl && (
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8 bg-muted">
+                <Image
+                  src={project.imageUrl}
+                  alt={project.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
+
             {/* Type Badge */}
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full mb-4 ${
               project.type === "company"
@@ -91,27 +105,65 @@ export default async function ProjectPage({
             </div>
 
             {/* Description */}
-            <p className="text-lg text-muted-foreground mb-12">
-              {project.description}
+            <p className="text-lg text-muted-foreground mb-8">
+              {project.longDescription || project.description}
             </p>
 
-            {/* Details */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-foreground mb-6">
-                주요 구현 내용
-              </h2>
-              <ul className="space-y-3">
-                {project.details.map((detail, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
-                    <span className="text-muted-foreground">{detail}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            {/* External Link */}
+            {project.link && (
+              <a
+                href={project.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors mb-12"
+              >
+                <ExternalLink className="w-4 h-4" />
+                프로젝트 방문하기
+              </a>
+            )}
+
+            {/* Role Details or Details */}
+            {project.roleDetails && project.roleDetails.length > 0 ? (
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  역할별 수행 내용
+                </h2>
+                <div className="space-y-6">
+                  {project.roleDetails.map((roleDetail, index) => (
+                    <div key={index}>
+                      <h3 className="text-lg font-semibold text-foreground mb-3">
+                        {roleDetail.role}
+                      </h3>
+                      <ul className="space-y-2 pl-4">
+                        {roleDetail.items.map((item, itemIndex) => (
+                          <li key={itemIndex} className="flex items-start gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
+                            <span className="text-muted-foreground">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : project.details.length > 0 ? (
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  주요 구현 내용
+                </h2>
+                <ul className="space-y-3">
+                  {project.details.map((detail, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
+                      <span className="text-muted-foreground">{detail}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
 
             {/* Achievements */}
-            <section>
+            <section className="mb-12">
               <h2 className="text-2xl font-bold text-foreground mb-6">
                 주요 성과
               </h2>
@@ -124,6 +176,36 @@ export default async function ProjectPage({
                 ))}
               </ul>
             </section>
+
+            {/* Resources */}
+            {project.resources && project.resources.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  관련 자료
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {project.resources.map((resource, index) => {
+                    const IconComponent =
+                      resource.type === "image" ? ImageIcon :
+                      resource.type === "pdf" || resource.type === "html" ? FileText :
+                      Link2;
+
+                    return (
+                      <a
+                        key={index}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors"
+                      >
+                        <IconComponent className="w-4 h-4" />
+                        {resource.label}
+                      </a>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </main>
