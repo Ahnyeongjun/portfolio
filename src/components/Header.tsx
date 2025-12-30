@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Github } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 export function Header() {
   return (
@@ -34,16 +33,14 @@ export function Header() {
             >
               프로젝트
             </a>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-primary"
-              asChild
+            <a
+              href="https://github.com/Ahnyeongjun"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-muted-foreground hover:text-primary transition-colors"
             >
-              <a href="https://github.com/Ahnyeongjun" target="_blank" rel="noopener noreferrer">
-                <Github className="w-5 h-5" />
-              </a>
-            </Button>
+              <Github className="w-5 h-5" />
+            </a>
           </nav>
         </div>
       </div>
