@@ -74,9 +74,9 @@ export function ProjectCard({
 }: ProjectCardProps) {
   return (
     <Link href={`/projects/${id}`} className="block group">
-      <div className="glass rounded-xl overflow-hidden hover-lift aspect-[4/5] sm:aspect-[3/4] lg:aspect-square flex flex-col">
+      <div className="glass rounded-xl overflow-hidden hover-lift flex flex-col h-[420px] sm:h-[440px] lg:h-[460px]">
         {/* Image Preview */}
-        <div className="relative h-2/5 sm:h-[45%] lg:h-1/2 bg-secondary overflow-hidden">
+        <div className="relative h-48 sm:h-52 lg:h-56 bg-secondary overflow-hidden shrink-0">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -127,25 +127,25 @@ export function ProjectCard({
         </div>
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col justify-between">
+        <div className="p-5 flex-1 flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-semibold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className="text-base font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
               {title}
             </h3>
             {period && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                 <Calendar className="w-3 h-3" />
                 {period}
               </div>
             )}
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="text-sm text-muted-foreground line-clamp-3">
               {description}
             </p>
           </div>
 
-          <div>
+          <div className="mt-4">
             {/* Role + Tech Tags */}
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-4">
               {role && getRoleTags(role, category).map((tag) => (
                 <span
                   key={tag}

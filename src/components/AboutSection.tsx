@@ -7,30 +7,11 @@ import {
   Mail,
   Calendar,
   Sparkles,
-  GraduationCap,
-  Award,
   Building2,
-  Github,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useGitHubStats } from "@/hooks/useGitHubStats";
-
-const GITHUB_USERNAME = "Ahnyeongjun";
-
-const education = [
-  { year: "2022", title: "융합기술학과", school: "한밭대학교 (졸업예정)" },
-  { year: "2020", title: "소프트웨어개발과", school: "대덕소프트웨어마이스터고" },
-];
-
-const certifications = [
-  { year: "2025", title: "SQL개발자(SQLD)" },
-  { year: "2025", title: "정보처리기사" },
-  { year: "2021", title: "정보기기운용기능사" },
-  { year: "2020", title: "정보처리기능사" },
-];
 
 export function AboutSection() {
-  const { totalContributions, publicRepos, loading } = useGitHubStats(GITHUB_USERNAME);
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -39,115 +20,59 @@ export function AboutSection() {
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-[280px_1fr] gap-12 items-start">
             {/* Profile Card */}
-            <div className="space-y-6">
-              <div className="glass rounded-2xl p-6 text-center animate-fade-in">
-                {/* Avatar */}
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/20 to-accent/20">
-                  {imgError ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-4xl font-bold text-gradient">AYJ</span>
-                    </div>
-                  ) : (
-                    <Image
-                      src="/profile.jpg"
-                      alt="안영준"
-                      width={128}
-                      height={128}
-                      className="object-cover w-full h-full"
-                      priority
-                      onError={() => setImgError(true)}
-                    />
-                  )}
-                </div>
-
-                <h3 className="text-xl font-bold text-foreground mb-1">
-                  안영준
-                </h3>
-                <p className="text-sm text-primary font-medium mb-4">
-                  Full-Stack Developer
-                </p>
-
-                {/* Info */}
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>서울, Korea</span>
+            <div className="glass rounded-2xl p-6 text-center animate-fade-in">
+              {/* Avatar */}
+              <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/20 to-accent/20">
+                {imgError ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-4xl font-bold text-gradient">AYJ</span>
                   </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <Building2 className="w-4 h-4" />
-                    <span>한컴인스페이스</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>4+ years experience</span>
-                  </div>
-                </div>
-
-                {/* Contact Button */}
-                <Button
-                  className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() =>
-                    (window.location.href = "mailto:ahn479512@gmail.com")
-                  }
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  연락하기
-                </Button>
+                ) : (
+                  <Image
+                    src="/profile.jpg"
+                    alt="안영준"
+                    width={128}
+                    height={128}
+                    className="object-cover w-full h-full"
+                    priority
+                    onError={() => setImgError(true)}
+                  />
+                )}
               </div>
 
-              {/* Education & Certifications */}
-              <div
-                className="glass rounded-xl p-5 animate-fade-in"
-                style={{ animationDelay: "0.2s" }}
+              <h3 className="text-xl font-bold text-foreground mb-1">
+                안영준
+              </h3>
+              <p className="text-sm text-primary font-medium mb-4">
+                Full-Stack Developer
+              </p>
+
+              {/* Info */}
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>서울, Korea</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  <span>한컴인스페이스</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>5년차 (2021.07~)</span>
+                </div>
+              </div>
+
+              {/* Contact Button */}
+              <Button
+                className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() =>
+                  (window.location.href = "mailto:ahn479512@gmail.com")
+                }
               >
-                {/* Education */}
-                <div className="mb-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <GraduationCap className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">
-                      학력
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {education.map((edu) => (
-                      <div key={edu.title} className="flex items-start gap-3">
-                        <span className="text-xs font-mono text-muted-foreground w-10">
-                          {edu.year}
-                        </span>
-                        <div>
-                          <p className="text-sm text-foreground">{edu.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {edu.school}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Certifications */}
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Award className="w-4 h-4 text-accent" />
-                    <span className="text-sm font-semibold text-foreground">
-                      자격증
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {certifications.map((cert) => (
-                      <div
-                        key={cert.title}
-                        className="flex items-center gap-3"
-                      >
-                        <span className="text-xs font-mono text-muted-foreground w-10">
-                          {cert.year}
-                        </span>
-                        <p className="text-sm text-foreground">{cert.title}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                <Mail className="w-4 h-4 mr-2" />
+                연락하기
+              </Button>
             </div>
 
             {/* About Content */}
@@ -181,27 +106,6 @@ export function AboutSection() {
                   구현에서 끝내지 않고, 서비스 구조와 개발 생산성까지
                   함께 고민하는 개발자입니다.
                 </p>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-border">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">4+</div>
-                  <div className="text-sm text-muted-foreground">Years</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">9+</div>
-                  <div className="text-sm text-muted-foreground">Projects</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">
-                    {loading ? "..." : `${totalContributions.toLocaleString()}+`}
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                    <Github className="w-3 h-3" />
-                    Commits
-                  </div>
-                </div>
               </div>
             </div>
           </div>

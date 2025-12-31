@@ -3,6 +3,7 @@ import { HeroSection } from "@/components/HeroSection";
 import { ProjectsSection } from "@/components/ProjectsSection";
 import { TechStackSection } from "@/components/TechStackSection";
 import { AboutSection } from "@/components/AboutSection";
+import { ExperienceSection } from "@/components/ExperienceSection";
 import { Footer } from "@/components/Footer";
 import { ScrollButtons } from "@/components/ScrollButtons";
 
@@ -13,6 +14,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <AboutSection />
+        <ExperienceSection />
         <TechStackSection />
         <ProjectsSection />
       </main>

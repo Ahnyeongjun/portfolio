@@ -22,6 +22,12 @@ export function Header() {
               About
             </a>
             <a
+              href="#experience"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              경력
+            </a>
+            <a
               href="#tech"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
