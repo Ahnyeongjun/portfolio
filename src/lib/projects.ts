@@ -11,8 +11,8 @@ export interface Project {
   tags: string[];
   imageUrl?: string;
   link?: string;
-  status: "live" | "beta" | "development";
-  type: "company" | "personal";
+  status: "live" | "beta" | "development" | "deployed";
+  type: "company" | "team" | "personal";
   category: "fullstack" | "backend" | "frontend" | "ai";
   company?: string;
   period: string;
@@ -32,7 +32,7 @@ export const projects: Project[] = [
     tags: ["Kotlin", "Spring Boot", "Spring Batch", "QueryDSL", "Redis"],
     imageUrl: "/booksight_thum.png",
     status: "live",
-    type: "personal",
+    type: "team",
     category: "backend",
     period: "2025.04 ~ 2025.07",
     role: "서브 백엔드 개발",
@@ -66,7 +66,7 @@ export const projects: Project[] = [
     tags: ["Next.js", "TypeScript", "Zustand", "TailwindCSS", "Storybook"],
     imageUrl: "/momentier_thum.png",
     status: "live",
-    type: "personal",
+    type: "team",
     category: "frontend",
     period: "2025.04 ~ 2025.05",
     role: "리드 개발자 (프론트엔드)",
@@ -100,7 +100,7 @@ export const projects: Project[] = [
     tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL", "OpenFeign"],
     imageUrl: "/chukjibeob.webp",
     status: "live",
-    type: "personal",
+    type: "team",
     category: "backend",
     period: "2025.07 ~ 2025.08",
     role: "백엔드",
@@ -132,12 +132,12 @@ export const projects: Project[] = [
   {
     id: "with-ing",
     title: "위딩 (With-ing)",
-    description: "예비부부를 위한 웨딩 플래너 플랫폼. 웨딩홀, 스튜디오, 드레스, 메이크업 업체 검색 및 AI 기반 체형 분석 드레스 추천 서비스를 제공합니다.",
+    description: "예비부부를 위한 웨딩 플래너 및 AI 드레스 추천 서비스",
     tags: ["Next.js", "Spring Boot", "FastAPI", "OpenAI"],
     imageUrl: "/with_ing.webp",
     link: "https://with-ing.vercel.app/main",
     status: "live",
-    type: "personal",
+    type: "team",
     category: "fullstack",
     period: "2025.10 ~ 2025.11",
     role: "PM, 프론트엔드, 백엔드 피드백, AI 추천 기능, 서버 관리",
@@ -191,11 +191,52 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "msa-platform",
+    title: "MSA 통합 플랫폼",
+    description: "사이드 프로젝트들을 K8s 기반 마이크로서비스로 통합한 인프라",
+    tags: ["Kubernetes", "Jenkins", "Kafka", "Tailscale", "Docker"],
+    status: "development",
+    type: "personal",
+    category: "backend",
+    period: "2024.12 ~ 진행중",
+    role: "인프라 설계 및 구축",
+    longDescription: "여러 사이드 프로젝트(위딩, 축지법, Booksight 등)를 하나의 K8s 클러스터에서 운영하기 위한 MSA 인프라입니다. 10개의 마이크로서비스를 통합하고, CI/CD 파이프라인과 VPN 기반 보안 접근을 구축했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "인프라",
+        items: [
+          "K8s 클러스터 구축 및 namespace/RBAC 설정",
+          "Jenkins CI/CD 파이프라인 (K8s 위 배포)",
+          "Nexus 프라이빗 Docker registry 운영",
+          "Kafka 이벤트 기반 서비스 통신",
+          "Tailscale VPN 기반 보안 접근",
+          "Docker buildx 멀티아키텍처 빌드 (amd64/arm64)",
+        ],
+      },
+      {
+        role: "공통 모듈",
+        items: [
+          "common-lib 공유 라이브러리 설계",
+          "Gradle 로컬 배포 자동화",
+        ],
+      },
+    ],
+    achievements: [
+      "10개 마이크로서비스 단일 클러스터 통합 운영",
+      "멀티아키텍처 빌드로 ARM/x86 환경 모두 지원",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/Ahnyeongjun?tab=repositories", type: "link" },
+    ],
+  },
+  {
     id: "satellite-platform",
     title: "초소형군집위성 플랫폼 (GIS 웹 플랫폼 현대화)",
-    description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인 구축",
+    description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인",
     tags: ["Kubernetes", "Next.js", "FastAPI", "RabbitMQ"],
-    status: "live",
+    imageUrl: "/apiss.webp",
+    status: "deployed",
     type: "company",
     category: "fullstack",
     company: "한컴인스페이스",
@@ -220,7 +261,7 @@ export const projects: Project[] = [
     title: "위성 영상 타일링 서버",
     description: "Go 기반 지리공간 영상 처리 서버 (동시 렌더링 33배 향상)",
     tags: ["Go", "GDAL", "Redis", "GeoTIFF"],
-    status: "live",
+    status: "deployed",
     type: "company",
     category: "backend",
     company: "한컴인스페이스",
@@ -241,9 +282,10 @@ export const projects: Project[] = [
   {
     id: "gis-platform",
     title: "GIS 레거시 플랫폼",
-    description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 개발",
+    description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 서비스",
     tags: ["Spring Boot", "Redis", "Cesium.js", "PostgreSQL"],
-    status: "live",
+    imageUrl: "/inStation.png",
+    status: "deployed",
     type: "company",
     category: "fullstack",
     company: "한컴인스페이스",
@@ -260,13 +302,17 @@ export const projects: Project[] = [
       "폐쇄망 환경에서 파일 기반 DB 동기화 구현",
       "멀티 모듈 환경 세션 공유 문제 해결",
     ],
+    resources: [
+      { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
+    ],
   },
   {
     id: "drone-detection",
     title: "드론 실시간 객체 탐지",
-    description: "ROS 기반 YOLOv5 객체 탐지 스트리밍 시스템",
+    description: "ROS 기반 YOLOv5 객체 탐지 스트리밍 서비스",
     tags: ["ROS", "YOLOv5", "Python", "PyTorch"],
-    status: "live",
+    imageUrl: "/dronsat.png",
+    status: "deployed",
     type: "company",
     category: "ai",
     company: "한컴인스페이스",
@@ -281,6 +327,9 @@ export const projects: Project[] = [
     achievements: [
       "드론 탑재 환경에서 실시간 객체 탐지 스트리밍 구현",
       "메모리 최적화 및 안정성 확보",
+    ],
+    resources: [
+      { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },
     ],
   },
 ];

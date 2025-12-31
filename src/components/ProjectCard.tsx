@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Building2, User, Calendar } from "lucide-react";
+import { ArrowRight, Building2, User, Users, Calendar } from "lucide-react";
 
 interface ProjectCardProps {
   id: string;
@@ -10,8 +10,8 @@ interface ProjectCardProps {
   description: string;
   tags: string[];
   imageUrl?: string;
-  status: "live" | "beta" | "development";
-  type: "company" | "personal";
+  status: "live" | "beta" | "development" | "deployed";
+  type: "company" | "team" | "personal";
   category: "fullstack" | "backend" | "frontend" | "ai";
   company?: string;
   period?: string;
@@ -24,12 +24,14 @@ const statusStyles = {
   live: "bg-primary/20 text-primary border-primary/30",
   beta: "bg-accent/20 text-accent border-accent/30",
   development: "bg-muted text-muted-foreground border-muted",
+  deployed: "bg-blue-500/20 text-blue-600 border-blue-500/30",
 };
 
 const statusLabels = {
   live: "Live",
   beta: "Beta",
   development: "개발중",
+  deployed: "운영중",
 };
 
 // 역할에서 태그 추출
@@ -72,9 +74,9 @@ export function ProjectCard({
 }: ProjectCardProps) {
   return (
     <Link href={`/projects/${id}`} className="block group">
-      <div className="glass rounded-xl overflow-hidden hover-lift aspect-[4/5] sm:aspect-square flex flex-col">
+      <div className="glass rounded-xl overflow-hidden hover-lift aspect-[4/5] sm:aspect-[3/4] lg:aspect-square flex flex-col">
         {/* Image Preview */}
-        <div className="relative h-2/5 sm:h-1/2 bg-secondary overflow-hidden">
+        <div className="relative h-2/5 sm:h-[45%] lg:h-1/2 bg-secondary overflow-hidden">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -93,14 +95,19 @@ export function ProjectCard({
           {/* Badges */}
           <div className="absolute top-3 left-3 flex gap-2">
             <div className={`px-2.5 py-1 text-xs font-medium rounded-full border flex items-center gap-1 ${
-              type === "company" 
-                ? "bg-blue-500/20 text-blue-600 border-blue-500/30" 
-                : "bg-green-500/20 text-green-600 border-green-500/30"
+              type === "company"
+                ? "bg-blue-500/20 text-blue-600 border-blue-500/30"
+                : "bg-secondary/80 text-muted-foreground border-border"
             }`}>
               {type === "company" ? (
                 <>
                   <Building2 className="w-3 h-3" />
                   {company || "회사"}
+                </>
+              ) : type === "team" ? (
+                <>
+                  <Users className="w-3 h-3" />
+                  팀
                 </>
               ) : (
                 <>

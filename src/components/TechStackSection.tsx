@@ -9,7 +9,7 @@ const techCategories = [
   {
     icon: Code2,
     title: "Frontend",
-    skills: ["TypeScript", "Next.js", "React", "Tailwind CSS"],
+    skills: ["TypeScript", "Next.js", "Tailwind CSS"],
   },
   {
     icon: Database,

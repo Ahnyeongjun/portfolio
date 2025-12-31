@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Calendar, User, CheckCircle, Building2, ExternalLink, FileText, ImageIcon, Link2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Users, CheckCircle, Building2, ExternalLink, FileText, ImageIcon, Link2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
 
 export function generateStaticParams() {
@@ -60,12 +60,17 @@ export default async function ProjectPage({
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full mb-4 ${
               project.type === "company"
                 ? "bg-blue-500/20 text-blue-600"
-                : "bg-green-500/20 text-green-600"
+                : "bg-secondary text-muted-foreground"
             }`}>
               {project.type === "company" ? (
                 <>
                   <Building2 className="w-4 h-4" />
                   {project.company || "회사 프로젝트"}
+                </>
+              ) : project.type === "team" ? (
+                <>
+                  <Users className="w-4 h-4" />
+                  팀 프로젝트
                 </>
               ) : (
                 <>

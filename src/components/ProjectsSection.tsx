@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react";
 import { ProjectCard } from "./ProjectCard";
 import { projects } from "@/lib/projects";
-import { Building2, User, Server, Layout, Brain, ArrowUpDown } from "lucide-react";
+import { Building2, User, Users, Server, Layout, Brain, ArrowUpDown } from "lucide-react";
 
-type TypeFilter = "all" | "company" | "personal";
+type TypeFilter = "all" | "company" | "team" | "personal";
 type CategoryFilter = "all" | "backend" | "frontend" | "ai";
 type SortOption = "newest" | "oldest" | "company";
 
@@ -32,6 +32,7 @@ function isOngoing(period: string): boolean {
 const typeOptions = [
   { value: "all", label: "전체", icon: null },
   { value: "company", label: "회사", icon: Building2 },
+  { value: "team", label: "팀", icon: Users },
   { value: "personal", label: "개인", icon: User },
 ] as const;
 
@@ -60,19 +61,24 @@ export function ProjectsSection() {
 
     // 정렬
     return filtered.sort((a, b) => {
-      // 진행중인 프로젝트 우선
       const aOngoing = isOngoing(a.period);
       const bOngoing = isOngoing(b.period);
-      if (aOngoing !== bOngoing) {
-        return aOngoing ? -1 : 1;
-      }
 
       if (sortBy === "company") {
-        // 회사 프로젝트 우선, 그 다음 최신순
+        // 회사 프로젝트 우선
         if (a.type !== b.type) {
           return a.type === "company" ? -1 : 1;
         }
+        // 같은 타입 내에서 진행중 우선
+        if (aOngoing !== bOngoing) {
+          return aOngoing ? -1 : 1;
+        }
         return getStartDate(b.period) - getStartDate(a.period);
+      }
+
+      // 최신순/오래된순에서는 진행중 우선
+      if (aOngoing !== bOngoing) {
+        return aOngoing ? -1 : 1;
       }
       const dateA = getStartDate(a.period);
       const dateB = getStartDate(b.period);
@@ -95,12 +101,45 @@ export function ProjectsSection() {
 
         {/* Filters */}
         <div className="flex flex-col items-center gap-3 mb-8">
-          {/* Row 1: Type + Sort */}
+          {/* Row 1: Sort */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="flex gap-1">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setSortBy(option.value)}
+                  className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                    sortBy === option.value
+                      ? "bg-primary text-white border-primary"
+                      : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Row 2: Type + Category */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
             {/* Type Filter */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">소속:</span>
-              <div className="flex gap-1">
+              {/* Mobile: Dropdown */}
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+                className="sm:hidden px-3 py-1.5 text-sm rounded-full border border-border bg-secondary/50 text-foreground"
+              >
+                {typeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {/* Desktop: Buttons */}
+              <div className="hidden sm:flex gap-1">
                 {typeOptions.map((option) => (
                   <button
                     key={option.value}
@@ -121,64 +160,44 @@ export function ProjectsSection() {
             {/* Divider */}
             <div className="hidden sm:block w-px h-6 bg-border" />
 
-            {/* Sort */}
+            {/* Category Filter */}
             <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-              <div className="flex gap-1">
-                {sortOptions.map((option) => (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
+              {/* Mobile: Dropdown */}
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+                className="sm:hidden px-3 py-1.5 text-sm rounded-full border border-border bg-secondary/50 text-foreground"
+              >
+                {categoryOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {/* Desktop: Buttons */}
+              <div className="hidden sm:flex gap-1">
+                {categoryOptions.map((option) => (
                   <button
                     key={option.value}
-                    onClick={() => setSortBy(option.value)}
-                    className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
-                      sortBy === option.value
+                    onClick={() => setCategoryFilter(option.value)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm whitespace-nowrap rounded-full border transition-all ${
+                      categoryFilter === option.value
                         ? "bg-primary text-white border-primary"
                         : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
                     }`}
                   >
+                    {option.icon && <option.icon className="w-3.5 h-3.5" />}
                     {option.label}
                   </button>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Row 2: Category Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
-            {/* Mobile: Dropdown */}
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-              className="sm:hidden px-3 py-1.5 text-sm rounded-full border border-border bg-secondary/50 text-foreground"
-            >
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {/* Desktop: Buttons */}
-            <div className="hidden sm:flex gap-1">
-              {categoryOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setCategoryFilter(option.value)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm whitespace-nowrap rounded-full border transition-all ${
-                    categoryFilter === option.value
-                      ? "bg-primary text-white border-primary"
-                      : "bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary"
-                  }`}
-                >
-                  {option.icon && <option.icon className="w-3.5 h-3.5" />}
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Projects Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project, index) => (
             <div
               key={project.id}

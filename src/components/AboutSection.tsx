@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import {
   MapPin,
   Mail,
@@ -8,8 +10,12 @@ import {
   GraduationCap,
   Award,
   Building2,
+  Github,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGitHubStats } from "@/hooks/useGitHubStats";
+
+const GITHUB_USERNAME = "Ahnyeongjun";
 
 const education = [
   { year: "2022", title: "융합기술학과", school: "한밭대학교 (졸업예정)" },
@@ -24,6 +30,9 @@ const certifications = [
 ];
 
 export function AboutSection() {
+  const { totalContributions, publicRepos, loading } = useGitHubStats(GITHUB_USERNAME);
+  const [imgError, setImgError] = useState(false);
+
   return (
     <section id="about" className="py-24 border-t border-border">
       <div className="container mx-auto px-6">
@@ -33,8 +42,22 @@ export function AboutSection() {
             <div className="space-y-6">
               <div className="glass rounded-2xl p-6 text-center animate-fade-in">
                 {/* Avatar */}
-                <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border-2 border-primary/30 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-gradient">AYJ</span>
+                <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/20 to-accent/20">
+                  {imgError ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-4xl font-bold text-gradient">AYJ</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src="/profile.jpg"
+                      alt="안영준"
+                      width={128}
+                      height={128}
+                      className="object-cover w-full h-full"
+                      priority
+                      onError={() => setImgError(true)}
+                    />
+                  )}
                 </div>
 
                 <h3 className="text-xl font-bold text-foreground mb-1">
@@ -167,12 +190,17 @@ export function AboutSection() {
                   <div className="text-sm text-muted-foreground">Years</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">4</div>
+                  <div className="text-2xl font-bold text-foreground">9+</div>
                   <div className="text-sm text-muted-foreground">Projects</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-foreground">∞</div>
-                  <div className="text-sm text-muted-foreground">Passion</div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {loading ? "..." : `${totalContributions.toLocaleString()}+`}
+                  </div>
+                  <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                    <Github className="w-3 h-3" />
+                    Commits
+                  </div>
                 </div>
               </div>
             </div>
