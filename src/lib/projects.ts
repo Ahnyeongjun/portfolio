@@ -235,7 +235,6 @@ export const projects: Project[] = [
     title: "초소형군집위성 플랫폼 (GIS 웹 플랫폼 현대화)",
     description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인",
     tags: ["Kubernetes", "Next.js", "FastAPI", "RabbitMQ"],
-    imageUrl: "/apiss.webp",
     status: "deployed",
     type: "company",
     category: "fullstack",
