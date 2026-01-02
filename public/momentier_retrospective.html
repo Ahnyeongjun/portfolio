@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>축지법 프로젝트 회고</title>
+  <title>모먼티어 프로젝트 회고</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
       line-height: 1.8;
@@ -13,14 +19,16 @@
       background: #f8f9fa;
       padding: 40px 20px;
     }
+
     .container {
       max-width: 800px;
       margin: 0 auto;
       background: white;
       padding: 40px;
       border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
+
     h1 {
       font-size: 2rem;
       margin-bottom: 32px;
@@ -28,26 +36,33 @@
       border-bottom: 3px solid #6366f1;
       padding-bottom: 16px;
     }
+
     h2 {
       font-size: 1.25rem;
       margin: 32px 0 16px;
       color: #6366f1;
     }
+
     h3 {
       font-size: 1.1rem;
       margin: 24px 0 12px;
       color: #374151;
     }
-    p, li {
+
+    p,
+    li {
       color: #4b5563;
       margin-bottom: 12px;
     }
+
     ul {
       padding-left: 24px;
     }
+
     li {
       margin-bottom: 8px;
     }
+
     code {
       background: #f3f4f6;
       padding: 2px 6px;
@@ -55,6 +70,7 @@
       font-size: 0.9em;
       color: #e11d48;
     }
+
     pre {
       background: #1f2937;
       color: #e5e7eb;
@@ -65,9 +81,11 @@
       font-size: 0.85rem;
       line-height: 1.6;
     }
+
     .section {
       margin-bottom: 32px;
     }
+
     .highlight {
       background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
       padding: 2px 4px;
@@ -75,13 +93,15 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>축지법 프로젝트 회고</h1>
+    <h1>모먼티어 프로젝트 회고</h1>
 
     <div class="section">
       <h2>1. 환경 구성에서의 시행착오</h2>
-      <p>Next.js에서는 클라이언트 환경 변수(<code>NEXT_PUBLIC_</code>)와 서버 환경 변수가 분리되어 있다는 것을 처음 알게 되었고, 배포 시 클라이언트 환경변수를 별도로 주입해야 한다는 점을 뒤늦게 인지.</p>
+      <p>Next.js에서는 클라이언트 환경 변수(<code>NEXT_PUBLIC_</code>)와 서버 환경 변수가 분리되어 있다는 것을 처음 알게 되었고, 배포 시 클라이언트 환경변수를 별도로 주입해야
+        한다는 점을 뒤늦게 인지.</p>
       <p><strong>해결:</strong> Dockerfile과 GitHub Actions에서 각각 환경변수를 주입하여 해결.</p>
     </div>
 
@@ -105,7 +125,8 @@
     <div class="section">
       <h2>5. 스켈레톤 및 상태 처리 방식</h2>
       <p>변화가 큰 페이지에서 스켈레톤을 컴포넌트 분리할지, 삼항 연산자 등 조건부 렌더링으로 한 페이지에 처리할지, 혹은 상태별로 각각 다른 컴포넌트를 만들지에 대한 많은 고민이 있었음.</p>
-      <p>이는 정답이 있는 문제라기보다는, 나만의 규칙을 정하거나, 룰을 이해하는 것이 중요할 거 같아 <strong>유지보수성, 재사용성, 협업 난이도</strong>를 기준으로 테스트해보고 개인 프로젝트에서 경험한 후 팀 프로젝트에 적용하고 싶음.</p>
+      <p>이는 정답이 있는 문제라기보다는, 나만의 규칙을 정하거나, 룰을 이해하는 것이 중요할 거 같아 <strong>유지보수성, 재사용성, 협업 난이도</strong>를 기준으로 테스트해보고 개인
+        프로젝트에서 경험한 후 팀 프로젝트에 적용하고 싶음.</p>
     </div>
 
     <div class="section">
@@ -138,4 +159,5 @@
     </div>
   </div>
 </body>
+
 </html>

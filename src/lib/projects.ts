@@ -91,6 +91,7 @@ export const projects: Project[] = [
     resources: [
       { label: "GitHub", url: "https://github.com/SWYP-TRAVEL", type: "link" },
       { label: "Storybook", url: "https://momentier.github.io/SWYP_FRONT/?path=/docs/configure-your-project--docs", type: "link" },
+      { label: "회고", url: "/momentier_retrospective.html", type: "html" },
     ],
   },
   {
@@ -126,7 +127,6 @@ export const projects: Project[] = [
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp10-9", type: "link" },
-      { label: "회고", url: "/chukjibeob_retrospective.html", type: "html" },
     ],
   },
   {
