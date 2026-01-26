@@ -65,6 +65,7 @@ export const projects: Project[] = [
     description: "MCP 알고리즘 기반 개인 맞춤형 여행지 추천 및 여행 계획 서비스",
     tags: ["Next.js", "TypeScript", "Zustand", "TailwindCSS", "Storybook"],
     imageUrl: "/momentier_thum.png",
+    link: "https://momentier.vercel.app",
     status: "live",
     type: "team",
     category: "frontend",
