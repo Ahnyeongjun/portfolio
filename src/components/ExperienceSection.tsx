@@ -1,7 +1,8 @@
 "use client";
 
-import { Building2, GraduationCap, Users, Award, Github } from "lucide-react";
+import { Building2, GraduationCap, Users, Award, Github, Code2 } from "lucide-react";
 import { useGitHubStats } from "@/hooks/useGitHubStats";
+import { useBOJStats, getTierName, getTierColor } from "@/hooks/useBOJStats";
 
 const GITHUB_USERNAME = "Ahnyeongjun";
 
@@ -57,7 +58,8 @@ const certifications = [
 ];
 
 export function ExperienceSection() {
-  const { totalContributions, loading } = useGitHubStats(GITHUB_USERNAME);
+  const github = useGitHubStats(GITHUB_USERNAME);
+  const boj = useBOJStats("toinin");
 
   return (
     <section id="experience" className="py-24 border-t border-border">
@@ -134,21 +136,6 @@ export function ExperienceSection() {
                 </div>
               </div>
 
-              {/* GitHub */}
-              <div className="glass rounded-xl p-5 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Github className="w-5 h-5 text-primary" />
-                    <h3 className="font-semibold text-foreground">GitHub Contributions</h3>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-bold text-foreground">
-                      {loading ? "..." : `${totalContributions.toLocaleString()}+`}
-                    </span>
-                    <span className="text-sm text-muted-foreground ml-1">commits</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right Column: Activities */}
@@ -181,6 +168,60 @@ export function ExperienceSection() {
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* GitHub & BOJ - Full Width */}
+          <div className="grid grid-cols-2 gap-6 mt-6">
+            {/* GitHub */}
+            <a
+              href="https://github.com/Ahnyeongjun"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass rounded-xl p-6 animate-fade-in hover:border-primary/50 transition-colors"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Github className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">GitHub</h3>
+              </div>
+              <div className="text-center">
+                <span className="text-3xl font-bold text-foreground">
+                  {github.loading ? "..." : github.totalContributions.toLocaleString()}
+                </span>
+                <p className="text-sm text-muted-foreground mt-1">contributions</p>
+              </div>
+            </a>
+
+            {/* BOJ */}
+            <a
+              href="https://solved.ac/profile/toinin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="glass rounded-xl p-6 animate-fade-in hover:border-primary/50 transition-colors"
+              style={{ animationDelay: "0.55s" }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Code2 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">BOJ</h3>
+              </div>
+              {boj.loading ? (
+                <div className="text-center text-muted-foreground">...</div>
+              ) : boj.error ? (
+                <div className="text-center text-muted-foreground">불러오기 실패</div>
+              ) : (
+                <div className="text-center">
+                  <span
+                    className="text-2xl font-bold"
+                    style={{ color: getTierColor(boj.tier) }}
+                  >
+                    {getTierName(boj.tier)}
+                  </span>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {boj.solvedCount}문제 solved
+                  </p>
+                </div>
+              )}
+            </a>
           </div>
         </div>
       </div>
