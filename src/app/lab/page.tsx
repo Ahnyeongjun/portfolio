@@ -12,7 +12,7 @@ const labProjects: LabProject[] = [
   {
     title: "Three.js 실험",
     description: "3D 그래픽 테스트",
-    url: "https://test-three-js-f68t.vercel.app/",
+    url: "https://test-three-js-seven.vercel.app/",
     tags: ["Three.js", "WebGL"],
   },
 ];
