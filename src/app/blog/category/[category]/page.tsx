@@ -8,7 +8,7 @@ import { FileText } from "lucide-react";
 export function generateStaticParams() {
   const categories = getCategories();
   return categories.map((category) => ({
-    category: encodeURIComponent(category),
+    category,
   }));
 }
 
