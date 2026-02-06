@@ -74,15 +74,24 @@ export const mdxComponents: MDXComponents = {
   ),
   table: ({ children }) => (
     <div className="overflow-x-auto mb-4">
-      <table className="w-full border-collapse">{children}</table>
+      <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
+  thead: ({ children }) => (
+    <thead className="bg-secondary">{children}</thead>
+  ),
+  tbody: ({ children }) => (
+    <tbody>{children}</tbody>
+  ),
+  tr: ({ children }) => (
+    <tr className="border-b border-border">{children}</tr>
+  ),
   th: ({ children }) => (
-    <th className="border border-border px-4 py-2 bg-secondary text-left font-semibold">
+    <th className="border border-border px-4 py-2 bg-secondary text-left font-semibold text-foreground">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-border px-4 py-2">{children}</td>
+    <td className="border border-border px-4 py-2 text-muted-foreground">{children}</td>
   ),
 };
