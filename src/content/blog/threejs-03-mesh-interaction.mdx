@@ -1,0 +1,273 @@
+---
+title: "React Three Fiber 기술 분석 - 메쉬 선택/이동"
+description: "3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능을 구현합니다."
+date: "2025-02-05"
+category: "Three.js"
+tags: ["React Three Fiber", "Three.js", "Raycasting", "3D"]
+---
+
+## 개요
+
+3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능입니다.
+
+---
+
+## Raycasting 이해
+
+Three.js에서 "3D 객체를 클릭한다"는 것은 **Raycasting**입니다.
+
+```
+카메라 ─────────────────────→ 광선(Ray)
+         │
+         ▼
+      ┌──────┐
+      │ 메쉬 │  ← 광선이 이 메쉬와 교차하면 "클릭됨"
+      └──────┘
+```
+
+순수 Three.js에서는 직접 구현해야 합니다:
+
+```javascript
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function onMouseClick(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+
+  if (intersects.length > 0) {
+    console.log('Clicked:', intersects[0].object);
+  }
+}
+```
+
+R3F는 이를 추상화하여 DOM 이벤트처럼 사용합니다:
+
+```jsx
+<mesh onClick={(e) => console.log('Clicked:', e.object)}>
+  {/* ... */}
+</mesh>
+```
+
+---
+
+## 선택 시스템 구현
+
+### 기본 클릭 핸들링
+
+```typescript
+const SelectableMesh = ({ part }: Props) => {
+  const { selectedMeshId, setSelectedMeshId, isEditMode } = useModelStore();
+  const isSelected = selectedMeshId === part.id;
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+    if (isEditMode) {
+      setSelectedMeshId(isSelected ? null : part.id);
+    }
+  };
+
+  return (
+    <mesh onClick={handleClick}>
+      <meshStandardMaterial
+        color={part.color}
+        emissive={isSelected ? "#fbbf24" : "#000000"}
+        emissiveIntensity={isSelected ? 0.3 : 0}
+      />
+    </mesh>
+  );
+};
+```
+
+### 이벤트 버블링 문제
+
+겹쳐진 메쉬들이 있을 때, 클릭 이벤트가 뒤에 있는 메쉬까지 전파됩니다.
+
+```jsx
+// 문제: 앞 메쉬 클릭 → 뒤 메쉬도 반응
+<mesh onClick={handleA}>
+  <mesh onClick={handleB} />
+</mesh>
+```
+
+해결: `e.stopPropagation()`으로 전파 중단
+
+```javascript
+const handleClick = (e: ThreeEvent<MouseEvent>) => {
+  e.stopPropagation();
+  // ...
+};
+```
+
+---
+
+## TransformControls 연동
+
+Drei의 `TransformControls`를 사용합니다.
+
+```jsx
+import { TransformControls } from "@react-three/drei";
+
+const TestModel = () => {
+  const { selectedMeshId, isEditMode, setMeshPosition } = useModelStore();
+  const meshRefs = useRef(new Map<string, THREE.Mesh>());
+
+  const selectedMesh = selectedMeshId
+    ? meshRefs.current.get(selectedMeshId)
+    : null;
+
+  return (
+    <>
+      {parts.map((part) => (
+        <SelectableMesh
+          key={part.id}
+          part={part}
+          ref={(el) => el && meshRefs.current.set(part.id, el)}
+        />
+      ))}
+
+      {isEditMode && selectedMesh && (
+        <TransformControls
+          object={selectedMesh}
+          mode="translate"
+          onMouseUp={() => {
+            const pos = selectedMesh.position;
+            setMeshPosition(selectedMeshId, {
+              x: pos.x,
+              y: pos.y,
+              z: pos.z,
+            });
+          }}
+        />
+      )}
+    </>
+  );
+};
+```
+
+---
+
+## OrbitControls와의 충돌 해결
+
+TransformControls로 객체를 드래그하면 OrbitControls도 반응하여 카메라가 같이 움직입니다.
+
+### 해결 방법 1: 직접 제어
+
+```jsx
+const orbitRef = useRef();
+
+<TransformControls
+  onMouseDown={() => {
+    orbitRef.current.enabled = false;
+  }}
+  onMouseUp={() => {
+    orbitRef.current.enabled = true;
+  }}
+/>
+
+<OrbitControls ref={orbitRef} />
+```
+
+### 해결 방법 2: Zustand 상태 활용
+
+```typescript
+// Store
+interface ModelState {
+  isTransforming: boolean;
+  setIsTransforming: (v: boolean) => void;
+}
+
+// TransformControls
+<TransformControls
+  onMouseDown={() => setIsTransforming(true)}
+  onMouseUp={() => setIsTransforming(false)}
+/>
+
+// OrbitControls
+const { isTransforming } = useModelStore();
+<OrbitControls enabled={!isTransforming} />
+```
+
+---
+
+## 호버 효과
+
+마우스 오버 시 시각적 피드백을 제공합니다.
+
+```tsx
+const [hovered, setHovered] = useState(false);
+
+<mesh
+  onPointerOver={(e) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = 'pointer';
+  }}
+  onPointerOut={() => {
+    setHovered(false);
+    document.body.style.cursor = 'default';
+  }}
+>
+  <meshStandardMaterial
+    color={hovered ? '#aaa' : part.color}
+  />
+</mesh>
+```
+
+---
+
+## 위치 상태 관리
+
+이동한 위치를 Zustand에 저장하여 분해 효과와 결합합니다.
+
+```typescript
+// zustand/useModelStore.ts
+interface ModelState {
+  meshPositions: Record<string, { x: number; y: number; z: number }>;
+  setMeshPosition: (id: string, pos: { x: number; y: number; z: number }) => void;
+}
+
+// 사용
+useFrame(() => {
+  const { meshPositions, explodeLevel } = useModelStore.getState();
+
+  // 수동 이동 위치가 있으면 그걸 기준으로
+  const basePosition = meshPositions[part.id]
+    ? new THREE.Vector3(meshPositions[part.id].x, ...)
+    : originalPosition.current.clone();
+
+  // 분해 효과 적용
+  const targetPosition = basePosition.add(explodeOffset);
+  mesh.position.lerp(targetPosition, 0.1);
+});
+```
+
+---
+
+## 편집 모드 토글
+
+일반 뷰 모드와 편집 모드를 구분합니다.
+
+```typescript
+const toggleEditMode = () => {
+  if (isEditMode) {
+    setSelectedMeshId(null); // 편집 모드 종료 시 선택 해제
+  }
+  setIsEditMode(!isEditMode);
+};
+```
+
+UI에서 현재 모드를 표시:
+
+```tsx
+<EditModeButton onClick={toggleEditMode}>
+  {isEditMode ? '편집 모드 종료' : '편집 모드'}
+</EditModeButton>
+
+{isEditMode && (
+  <HelpText>메쉬를 클릭하여 선택하고 드래그하여 이동하세요</HelpText>
+)}
+```

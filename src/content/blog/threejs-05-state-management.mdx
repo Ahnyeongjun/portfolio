@@ -1,0 +1,325 @@
+---
+title: "React Three Fiber 기술 분석 - Zustand 상태 관리"
+description: "React Three Fiber 프로젝트에서 Zustand를 사용한 상태 관리 패턴을 정리합니다."
+date: "2025-02-05"
+category: "Three.js"
+tags: ["React Three Fiber", "Zustand", "상태관리", "3D"]
+---
+
+## 개요
+
+React Three Fiber 프로젝트에서 Zustand를 사용한 상태 관리 패턴을 정리합니다.
+
+---
+
+## Store 구조
+
+두 개의 스토어로 관심사를 분리했습니다.
+
+### useModelStore - 모델/뷰어 상태
+
+```typescript
+interface ModelState {
+  // 분해 상태
+  explodeLevel: number;
+  setExplodeLevel: (level: number) => void;
+
+  // 선택 상태
+  selectedMeshId: string | null;
+  setSelectedMeshId: (id: string | null) => void;
+
+  // 편집 모드
+  isEditMode: boolean;
+  setIsEditMode: (mode: boolean) => void;
+
+  // 변환 중 플래그 (OrbitControls 비활성화용)
+  isTransforming: boolean;
+  setIsTransforming: (v: boolean) => void;
+
+  // 각 메쉬의 수동 위치
+  meshPositions: Record<string, { x: number; y: number; z: number }>;
+  setMeshPosition: (id: string, pos: Position) => void;
+
+  // 업로드된 모델
+  modelUrl: string | null;
+  modelName: string | null;
+  setModelUrl: (url: string | null) => void;
+
+  // 초기화
+  reset: () => void;
+}
+```
+
+### useRenderStore - 렌더링 설정
+
+```typescript
+interface RenderState {
+  bloom: {
+    intensity: number;
+    threshold: number;
+    smoothing: number;
+  };
+  ao: {
+    radius: number;
+    intensity: number;
+  };
+  material: {
+    roughness: number;
+    metalness: number;
+    envMapIntensity: number;
+  };
+  lighting: {
+    main: number;
+    ambient: number;
+  };
+
+  setBloom: (v: RenderState['bloom']) => void;
+  setAo: (v: RenderState['ao']) => void;
+  // ...
+  reset: () => void;
+}
+```
+
+---
+
+## Zustand + R3F 연동 패턴
+
+### 패턴 1: 컴포넌트에서 직접 사용
+
+React 컴포넌트에서는 일반 훅처럼 사용합니다.
+
+```tsx
+const ExplodeSlider = () => {
+  const { explodeLevel, setExplodeLevel } = useModelStore();
+
+  return (
+    <Slider
+      value={explodeLevel}
+      onChange={(e) => setExplodeLevel(parseFloat(e.target.value))}
+    />
+  );
+};
+```
+
+### 패턴 2: useFrame에서 getState() 사용
+
+`useFrame`은 매 프레임 실행되므로, 훅 호출이 아닌 `getState()`를 사용합니다.
+
+```tsx
+useFrame(() => {
+  // 훅 사용 불가 - getState() 사용
+  const { explodeLevel } = useModelStore.getState();
+
+  mesh.position.lerp(
+    targetPosition.multiplyScalar(explodeLevel),
+    0.1
+  );
+});
+```
+
+**왜 getState()인가?**
+
+`useFrame` 콜백은 매 프레임 실행되지만, React 렌더 사이클과 별개입니다. 훅 호출 규칙을 위반하지 않으려면 `getState()`로 직접 접근합니다.
+
+### 패턴 3: 선택적 구독
+
+전체 스토어가 아닌 필요한 값만 구독합니다.
+
+```tsx
+// 안티패턴 - 모든 상태 변경에 리렌더
+const store = useModelStore();
+
+// 권장 - explodeLevel 변경 시에만 리렌더
+const explodeLevel = useModelStore((s) => s.explodeLevel);
+
+// 여러 값 선택
+const { explodeLevel, selectedMeshId } = useModelStore(
+  (s) => ({ explodeLevel: s.explodeLevel, selectedMeshId: s.selectedMeshId }),
+  shallow // shallow 비교로 불필요한 리렌더 방지
+);
+```
+
+---
+
+## 구현 예시
+
+### Store 정의
+
+```typescript
+// zustand/useModelStore.ts
+import { create } from "zustand";
+
+interface ModelState {
+  explodeLevel: number;
+  setExplodeLevel: (level: number) => void;
+
+  selectedMeshId: string | null;
+  setSelectedMeshId: (id: string | null) => void;
+
+  meshPositions: Record<string, { x: number; y: number; z: number }>;
+  setMeshPosition: (id: string, pos: { x: number; y: number; z: number }) => void;
+
+  isEditMode: boolean;
+  setIsEditMode: (mode: boolean) => void;
+  toggleEditMode: () => void;
+
+  reset: () => void;
+}
+
+const initialState = {
+  explodeLevel: 0,
+  selectedMeshId: null,
+  meshPositions: {},
+  isEditMode: false,
+};
+
+export const useModelStore = create<ModelState>((set) => ({
+  ...initialState,
+
+  setExplodeLevel: (level) => set({ explodeLevel: level }),
+
+  setSelectedMeshId: (id) => set({ selectedMeshId: id }),
+
+  setMeshPosition: (id, pos) =>
+    set((state) => ({
+      meshPositions: { ...state.meshPositions, [id]: pos },
+    })),
+
+  setIsEditMode: (mode) => set({ isEditMode: mode }),
+
+  toggleEditMode: () =>
+    set((state) => ({
+      isEditMode: !state.isEditMode,
+      selectedMeshId: state.isEditMode ? null : state.selectedMeshId,
+    })),
+
+  reset: () => set(initialState),
+}));
+```
+
+### 3D 컴포넌트에서 사용
+
+```tsx
+// components/TestModel.tsx
+const SelectableMesh = ({ part }: Props) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  // 선택적 구독
+  const selectedMeshId = useModelStore((s) => s.selectedMeshId);
+  const isEditMode = useModelStore((s) => s.isEditMode);
+  const isSelected = selectedMeshId === part.id;
+
+  useFrame(() => {
+    if (!meshRef.current) return;
+
+    // getState()로 최신 상태 접근
+    const { explodeLevel, meshPositions } = useModelStore.getState();
+
+    // 위치 계산 및 적용...
+  });
+
+  return (
+    <mesh
+      ref={meshRef}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (isEditMode) {
+          useModelStore.getState().setSelectedMeshId(
+            isSelected ? null : part.id
+          );
+        }
+      }}
+    >
+      {/* ... */}
+    </mesh>
+  );
+};
+```
+
+---
+
+## 외부에서 상태 접근
+
+Zustand는 React 외부에서도 상태에 접근할 수 있습니다.
+
+```typescript
+// 이벤트 리스너에서
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    useModelStore.getState().setSelectedMeshId(null);
+  }
+});
+
+// 상태 구독 (React 외부)
+const unsubscribe = useModelStore.subscribe(
+  (state) => state.explodeLevel,
+  (level) => {
+    console.log('Explode level changed:', level);
+  }
+);
+```
+
+---
+
+## 미들웨어 활용
+
+### devtools - 디버깅
+
+```typescript
+import { devtools } from "zustand/middleware";
+
+const useModelStore = create(
+  devtools(
+    (set) => ({
+      // ...
+    }),
+    { name: "ModelStore" }
+  )
+);
+```
+
+Redux DevTools에서 상태 변화를 확인할 수 있습니다.
+
+### persist - 로컬 저장
+
+```typescript
+import { persist } from "zustand/middleware";
+
+const useRenderStore = create(
+  persist(
+    (set) => ({
+      // 렌더링 설정 - 새로고침 후에도 유지
+    }),
+    { name: "render-settings" }
+  )
+);
+```
+
+---
+
+## 데이터 흐름
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Zustand 상태 스토어                          │
+├─────────────────────────┬───────────────────────────────────────┤
+│   useModelStore         │      useRenderStore                   │
+├─────────────────────────┼───────────────────────────────────────┤
+│ - explodeLevel          │ - bloom (강도, 임계값, 부드러움)      │
+│ - selectedMeshId        │ - ao (반경, 강도)                     │
+│ - meshPositions         │ - material (거칠기, 금속성)           │
+│ - isEditMode            │ - lighting (조명 강도)                │
+└─────────────────────────┴───────────────────────────────────────┘
+         │                              │
+         ▼                              ▼
+┌─────────────────┐           ┌─────────────────┐
+│   3D 컴포넌트    │           │ EffectComposer  │
+│  (useFrame)      │           │  (포스트 효과)   │
+└─────────────────┘           └─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│   UI 컴포넌트    │
+│ (슬라이더, 패널) │
+└─────────────────┘
+```

@@ -1,0 +1,242 @@
+---
+title: "React Three Fiber 기술 분석 - 포스트 프로세싱"
+description: "Bloom, AO, ToneMapping 등 포스트 프로세싱 효과로 3D 렌더링 품질을 높이는 방법을 알아봅니다."
+date: "2025-02-05"
+category: "Three.js"
+tags: ["React Three Fiber", "Three.js", "Post Processing", "3D"]
+---
+
+## 개요
+
+3D 렌더링 결과물을 후처리하여 시각적 품질을 높입니다. 2D 이미지 보정과 유사하게, 렌더링된 프레임에 효과를 적용합니다.
+
+---
+
+## 적용한 효과
+
+| 효과 | 역할 |
+|------|------|
+| Bloom | 밝은 영역 발광 효과 |
+| N8AO | 틈새/모서리 그림자 |
+| ToneMapping | HDR → LDR 색상 변환 |
+
+---
+
+## Bloom 효과
+
+밝은 영역이 빛나는 것처럼 보이게 합니다. 금속 하이라이트, 발광 재질에 효과적입니다.
+
+```jsx
+import { Bloom } from "@react-three/postprocessing";
+
+<Bloom
+  intensity={0.5}           // 발광 강도
+  luminanceThreshold={0.8}  // 이 밝기 이상만 발광
+  luminanceSmoothing={0.9}  // 발광 경계 부드러움
+  mipmapBlur                // 성능 최적화된 블러
+/>
+```
+
+### luminanceThreshold의 중요성
+
+| 값 | 결과 |
+|----|------|
+| 0 | 전체 화면 뿌옇게 (과도함) |
+| 0.7~0.9 | 하이라이트만 발광 (적절) |
+| 1.0 | 거의 발광 안함 |
+
+---
+
+## N8AO (Ambient Occlusion)
+
+틈새와 모서리에 자연스러운 그림자를 추가합니다. "접촉 그림자"라고도 합니다.
+
+```jsx
+import { N8AO } from "@react-three/postprocessing";
+
+<N8AO
+  aoRadius={0.5}        // 그림자 반경
+  intensity={1.5}       // 그림자 강도
+  distanceFalloff={0.5} // 거리에 따른 감쇠
+/>
+```
+
+### SSAO vs N8AO
+
+| 항목 | SSAO | N8AO |
+|------|------|------|
+| 품질 | 보통 | 높음 |
+| 성능 | 빠름 | 중간 |
+| 노이즈 | 있음 | 적음 |
+
+N8AO는 SSAO의 개선 버전으로, 품질과 성능의 균형이 좋습니다.
+
+---
+
+## ToneMapping
+
+HDR 렌더링 결과를 모니터가 표시할 수 있는 LDR 범위로 변환합니다.
+
+```jsx
+import { ToneMapping } from "@react-three/postprocessing";
+import { ToneMappingMode } from "postprocessing";
+
+<ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+```
+
+### 모드 비교
+
+| 모드 | 특징 |
+|------|------|
+| LINEAR | 변환 없음 |
+| REINHARD | 부드러운 하이라이트 |
+| ACES_FILMIC | 영화 산업 표준, 자연스러운 색감 |
+
+ACES Filmic은 하이라이트가 자연스럽게 롤오프되고 색감이 좋습니다.
+
+---
+
+## EffectComposer 구성
+
+여러 효과를 조합할 때 `EffectComposer`를 사용합니다.
+
+```jsx
+import { EffectComposer, Bloom, N8AO, ToneMapping } from "@react-three/postprocessing";
+
+const Effects = () => {
+  const { bloom, ao } = useRenderStore();
+
+  return (
+    <EffectComposer>
+      <Bloom
+        intensity={bloom.intensity}
+        luminanceThreshold={bloom.threshold}
+        luminanceSmoothing={bloom.smoothing}
+        mipmapBlur
+      />
+      <N8AO
+        aoRadius={ao.radius}
+        intensity={ao.intensity}
+        distanceFalloff={0.5}
+      />
+      <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+    </EffectComposer>
+  );
+};
+```
+
+---
+
+## 조명 설정
+
+포스트 프로세싱과 함께 조명 설정도 중요합니다. 단일 조명으로는 입체감이 부족합니다.
+
+### 7-Light Setup
+
+```
+                    [Spot Light]
+                         │
+                         ▼
+    [Fill Light] ←── [Object] ──→ [Main Light]
+         │               │              │
+         └────── [Point Lights] ────────┘
+                         │
+                  [Hemisphere]
+```
+
+| 광원 | 역할 | 강도 |
+|-----|------|-----|
+| Main (Directional) | 주 광원, 그림자 | 2.0 |
+| Fill (Directional) | 그림자 부분 채우기 | 0.6 |
+| Ambient | 전체 기본 밝기 | 0.2 |
+| Spot | 위에서 강조 | 1.5 |
+| Point ×3 | 디테일 강조 | 0.2~0.5 |
+| Hemisphere | 하늘-땅 그라데이션 | 0.3 |
+
+### 그림자 설정
+
+```jsx
+<directionalLight
+  castShadow
+  shadow-mapSize={[2048, 2048]}  // 해상도
+  shadow-bias={-0.0001}          // 그림자 여드름 방지
+/>
+```
+
+`shadow-mapSize`를 높이면 선명해지지만 VRAM을 더 사용합니다. 2048은 품질과 성능의 균형점입니다.
+
+---
+
+## 실시간 파라미터 조절
+
+Zustand로 파라미터를 관리하고 UI로 조절합니다.
+
+```typescript
+// zustand/useRenderStore.ts
+interface RenderState {
+  bloom: {
+    intensity: number;
+    threshold: number;
+    smoothing: number;
+  };
+  ao: {
+    radius: number;
+    intensity: number;
+  };
+  setBloom: (bloom: RenderState['bloom']) => void;
+  setAo: (ao: RenderState['ao']) => void;
+}
+```
+
+```jsx
+// UI
+<SliderControl
+  label="Bloom 강도"
+  value={bloom.intensity}
+  min={0}
+  max={2}
+  step={0.01}
+  onChange={(v) => setBloom({ ...bloom, intensity: v })}
+/>
+```
+
+---
+
+## 성능 최적화
+
+포스트 프로세싱은 GPU를 많이 사용합니다.
+
+### 모바일 대응
+
+```jsx
+const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+
+<EffectComposer enabled={!isMobile}>
+  {/* 모바일에서는 비활성화 */}
+</EffectComposer>
+```
+
+### 품질 프리셋
+
+```typescript
+const qualityPresets = {
+  high: {
+    shadows: true,
+    bloom: true,
+    ao: true,
+    shadowMapSize: 2048,
+  },
+  medium: {
+    shadows: true,
+    bloom: true,
+    ao: false,
+    shadowMapSize: 1024,
+  },
+  low: {
+    shadows: false,
+    bloom: false,
+    ao: false,
+    shadowMapSize: 512,
+  },
+};
+```
