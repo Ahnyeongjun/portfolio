@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
-import { getCategories, getPostsByCategory } from "@/lib/blog";
+import {
+  getCategories,
+  getPostsByCategory,
+  getBlogListItemsByCategory,
+} from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
+import { SeriesCard } from "@/components/blog/SeriesCard";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { Header } from "@/components/Header";
 import { FileText } from "lucide-react";
@@ -40,6 +45,7 @@ export default async function CategoryPage({
   }
 
   const posts = getPostsByCategory(decodedCategory);
+  const items = getBlogListItemsByCategory(decodedCategory);
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,11 +72,18 @@ export default async function CategoryPage({
           </div>
 
           {/* Posts Grid */}
-          {posts.length > 0 ? (
+          {items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {posts.map((post) => (
-                <BlogCard key={post.slug} {...post} />
-              ))}
+              {items.map((item) =>
+                item.type === "series" ? (
+                  <SeriesCard
+                    key={`series-${item.series.name}`}
+                    series={item.series}
+                  />
+                ) : (
+                  <BlogCard key={item.post.slug} {...item.post} />
+                )
+              )}
             </div>
           ) : (
             <div className="text-center py-16">

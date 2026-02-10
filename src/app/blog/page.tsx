@@ -1,5 +1,6 @@
-import { getAllPosts, getCategories } from "@/lib/blog";
+import { getBlogListItems, getCategories } from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
+import { SeriesCard } from "@/components/blog/SeriesCard";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
 import { Header } from "@/components/Header";
 import { FileText } from "lucide-react";
@@ -10,7 +11,7 @@ export const metadata = {
 };
 
 export default function BlogPage() {
-  const posts = getAllPosts();
+  const items = getBlogListItems();
   const categories = getCategories();
 
   return (
@@ -33,11 +34,18 @@ export default function BlogPage() {
           </div>
 
           {/* Posts Grid */}
-          {posts.length > 0 ? (
+          {items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {posts.map((post) => (
-                <BlogCard key={post.slug} {...post} />
-              ))}
+              {items.map((item) =>
+                item.type === "series" ? (
+                  <SeriesCard
+                    key={`series-${item.series.name}`}
+                    series={item.series}
+                  />
+                ) : (
+                  <BlogCard key={item.post.slug} {...item.post} />
+                )
+              )}
             </div>
           ) : (
             <div className="text-center py-16">
