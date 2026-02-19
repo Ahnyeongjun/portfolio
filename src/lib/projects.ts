@@ -26,6 +26,52 @@ export interface Project {
 
 export const projects: Project[] = [
   {
+    id: "simvex",
+    title: "SIMVEX",
+    description:
+      "3D 물리 시뮬레이션 기반 기계공학 학습 웹 서비스",
+    tags: ["Next.js", "TypeScript", "Three.js", "TailwindCSS", "Claude API"],
+    imageUrl: "/simvex_thum.png",
+    link: "https://runtime-simvex.vercel.app/",
+    status: "live",
+    type: "team",
+    category: "frontend",
+    period: "2026.01",
+    role: "프론트엔드 개발",
+    longDescription:
+      "제4회 블레이버스 MVP 개발 해커톤에서 진행한 프로젝트입니다. 기계공학 교육에서 2D 교재만으로는 이해하기 어려운 기계 구조를 3D 인터랙티브 탐색과 RAG 기반 AI 어시스턴트를 결합하여 직관적으로 학습할 수 있는 웹 서비스입니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "프론트엔드",
+        items: [
+          "Three.js 기반 3D 뷰어 구현 (위치, 줌, 회전 상태 관리)",
+          "렌더링 품질 제어 (조명, 셰이더, 텍스처)",
+          "기계 부품 분해/조립 인터랙션 구현",
+          "RAG 기반 AI 어시스턴트 연동 (Claude API)",
+          "퀴즈 시스템 및 학습 노트 관리 기능",
+          "PDF 내보내기 및 워크플로우 기반 복습 시스템",
+        ],
+      },
+    ],
+    achievements: [
+      "6가지 기계 장치(판스프링, 만력기, 로봇 그리퍼, 드론, V4 엔진, 로봇팔) 3D 학습 콘텐츠 구현",
+      "3D 인터랙션과 AI 어시스턴트를 결합한 학습 경험 설계",
+    ],
+    resources: [
+      {
+        label: "GitHub",
+        url: "https://github.com/team-blaybus-runtime/team-blaybus-runtime_front",
+        type: "link",
+      },
+      {
+        label: "프로젝트 설명",
+        url: "https://github.com/team-blaybus-runtime/team-blaybus-runtime_front/blob/main/README.md",
+        type: "link",
+      },
+    ],
+  },
+  {
     id: "booksight",
     title: "Booksight",
     description: "오늘 출간된 책들을 생일처럼 축하하는 서비스",
@@ -100,7 +146,7 @@ export const projects: Project[] = [
     title: "축지법",
     description: "전국 축제 정보를 지도와 달력으로 한눈에 보여주는 서비스",
     tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL", "OpenFeign"],
-    imageUrl: "/chukjibeob.webp",
+    imageUrl: "/chukjibeob_thum.webp",
     link: "https://chukjibeob-dev.netlify.app/",
     status: "live",
     type: "team",
@@ -136,7 +182,7 @@ export const projects: Project[] = [
     title: "위딩 (With-ing)",
     description: "예비부부를 위한 웨딩 플래너 및 AI 드레스 추천 서비스",
     tags: ["Next.js", "Spring Boot", "FastAPI", "OpenAI"],
-    imageUrl: "/with_ing.webp",
+    imageUrl: "/with-ing_thum.webp",
     link: "https://with-ing.vercel.app/main",
     status: "live",
     type: "team",
@@ -188,8 +234,8 @@ export const projects: Project[] = [
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp11", type: "link" },
-      { label: "IA 설계", url: "/with_ing_ia.html", type: "html" },
-      { label: "디자인 & 와이어프레임", url: "/with_ing_design.png", type: "image" },
+      { label: "IA 설계", url: "/with-ing_ia.html", type: "html" },
+      { label: "디자인 & 와이어프레임", url: "/with-ing_design.png", type: "image" },
     ],
   },
   {
@@ -285,7 +331,7 @@ export const projects: Project[] = [
     title: "GIS 레거시 플랫폼",
     description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 서비스",
     tags: ["Spring Boot", "Redis", "Cesium.js", "PostgreSQL"],
-    imageUrl: "/inStation.png",
+    imageUrl: "/gis-platform_thum.png",
     status: "deployed",
     type: "company",
     category: "fullstack",
@@ -312,7 +358,7 @@ export const projects: Project[] = [
     title: "드론 실시간 객체 탐지",
     description: "ROS 기반 YOLOv5 객체 탐지 스트리밍 서비스",
     tags: ["ROS", "YOLOv5", "Python", "PyTorch"],
-    imageUrl: "/dronsat.png",
+    imageUrl: "/drone-detection_thum.png",
     status: "deployed",
     type: "company",
     category: "ai",
