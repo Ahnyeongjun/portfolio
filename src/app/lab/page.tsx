@@ -1,5 +1,5 @@
-import Link from "next/link";
-import { ArrowLeft, FlaskConical, ExternalLink } from "lucide-react";
+import { FlaskConical, ExternalLink } from "lucide-react";
+import { Header } from "@/components/Header";
 
 interface LabProject {
   title: string;
@@ -24,26 +24,17 @@ export const metadata = {
 
 export default function LabPage() {
   return (
-    <main className="min-h-screen py-20">
-      <div className="container mx-auto px-6 max-w-4xl">
-        {/* Header */}
-        <div className="mb-12">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            돌아가기
-          </Link>
-
-          <div className="flex items-center gap-3 mb-4">
-            <FlaskConical className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold">Lab</h1>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="pt-24 pb-16">
+        <div className="container mx-auto px-6 max-w-4xl">
+          {/* Header */}
+          <div className="max-w-2xl mx-auto text-center mb-12">
+            <h1 className="text-4xl font-bold text-foreground mb-4">Lab</h1>
+            <p className="text-muted-foreground">
+              실험적인 프로젝트들과 테스트 페이지 모음
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            실험적인 프로젝트들과 테스트 페이지 모음
-          </p>
-        </div>
 
         {/* Projects */}
         <div className="space-y-4">
@@ -79,7 +70,8 @@ export default function LabPage() {
             </a>
           ))}
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }

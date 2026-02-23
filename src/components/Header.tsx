@@ -27,6 +27,12 @@ export function Header() {
             >
               블로그
             </Link>
+            <Link
+              href="/lab"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Lab
+            </Link>
             <a
               href="https://github.com/Ahnyeongjun"
               target="_blank"
