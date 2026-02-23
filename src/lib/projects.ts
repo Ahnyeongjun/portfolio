@@ -147,7 +147,7 @@ export const projects: Project[] = [
     description: "전국 축제 정보를 지도와 달력으로 한눈에 보여주는 서비스",
     tags: ["Spring Boot", "Spring Batch", "QueryDSL", "MySQL", "OpenFeign"],
     imageUrl: "/chukjibeob_thum.webp",
-    link: "https://chukjibeob-dev.netlify.app/",
+    link: "https://chukjibub-msw.vercel.app/",
     status: "live",
     type: "team",
     category: "backend",
