@@ -22,6 +22,7 @@ export interface Project {
   roleDetails?: { role: string; items: string[] }[];
   achievements: string[];
   resources?: ProjectResource[];
+  hidden?: boolean;
 }
 
 export const projects: Project[] = [
@@ -240,6 +241,7 @@ export const projects: Project[] = [
   },
   {
     id: "msa-platform",
+    hidden: true,
     title: "MSA 통합 플랫폼",
     description: "사이드 프로젝트들을 K8s 기반 마이크로서비스로 통합한 인프라",
     tags: ["Kubernetes", "Jenkins", "Kafka", "Tailscale", "Docker"],
@@ -280,57 +282,113 @@ export const projects: Project[] = [
   },
   {
     id: "satellite-platform",
-    title: "초소형군집위성 플랫폼 (GIS 웹 플랫폼 현대화)",
+    title: "초소형 군집위성 분석산출물 서비스 시스템",
     description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인",
-    tags: ["Kubernetes", "Next.js", "FastAPI", "RabbitMQ"],
+    tags: ["Kubernetes", "FastAPI", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
     status: "deployed",
     type: "company",
     category: "fullstack",
     company: "한컴인스페이스",
     period: "2024.12 ~ 진행중",
     role: "아키텍처 재설계 및 마이그레이션",
-    details: [
-      "RabbitMQ 메시지 기반 워커 통신",
-      "Saga 패턴으로 장애 시 보상 트랜잭션",
-      "Kubernetes 클러스터링 및 레플리카 관리",
-      "Nginx Ingress 라우팅 설정",
-      "Next.js FSD 구조 재배치 및 Storybook 통합",
-      "Spring Boot → FastAPI 마이그레이션",
+    details: [],
+    roleDetails: [
+      {
+        role: "주요 역할",
+        items: [
+          "Spring Boot → FastAPI 기반 MSA 전환 및 K8s 배포 환경 구축",
+          "일 1,000건 위성영상 처리 파이프라인 설계",
+          "PyTorch 기반 AI 모델 서빙 시스템 구축 및 고도화",
+        ],
+      },
+      {
+        role: "백엔드 개선",
+        items: [
+          "9개 MSA 서비스 분리 및 서비스별 레플리카 10개 이상 운영",
+          "Gateway를 통한 서비스 조합 (인증, 로거, 도메인별)",
+        ],
+      },
+      {
+        role: "위성 영상 처리 파이프라인 구축",
+        items: [
+          "RabbitMQ 메시지 기반 워커 통신",
+          "DLQ(Dead Letter Queue) 기반 실패 메시지 재처리",
+        ],
+      },
+      {
+        role: "Kubernetes 기반 컨테이너 환경 구축",
+        items: [
+          "클러스터링 및 레플리카 관리",
+          "Nginx Ingress 라우팅 설정",
+        ],
+      },
+      {
+        role: "AI 모델 서빙 시스템 구축",
+        items: [
+          "PyTorch 기반 모델 서빙 (SwinTransformer, ConvNeXt)",
+          "객체탐지(RINO, YOLO26), 영역분할(UPerNet), 변화탐지(ChangeStar) 고도화",
+        ],
+      },
+      {
+        role: "프론트엔드 개선",
+        items: [
+          "Next.js FSD 구조 재배치",
+          "Storybook 통합 테스트 및 문서화",
+        ],
+      },
     ],
     achievements: [
-      "DB 폴링 → 이벤트 기반 전환으로 락 대기 시간 제거",
-      "팀 내 기술 스택 통일로 협업 효율 증가",
-      "FSD 모듈화로 코드 재사용성 증가",
+      "영상 처리 장애율 감소 및 운영 안정성 확보 — DB 폴링 → 이벤트 기반 전환으로 락 대기 시간 제거 및 서비스 중단 해결",
+      "배포 및 개발 생산성 향상 — 팀 내 기술 스택 통일 (Python, FastAPI)로 협업 효율 증가",
+      "인증/로깅/위성/표적 등 공통 모듈을 Gateway에서 조립식으로 적용 가능하도록 구조화",
     ],
   },
   {
     id: "image-api",
-    title: "위성 영상 타일링 서버",
+    title: "위성 영상 도시 서버 개발 (Image-API)",
     description: "Go 기반 지리공간 영상 처리 서버 (동시 렌더링 33배 향상)",
-    tags: ["Go", "GDAL", "Redis", "GeoTIFF"],
+    tags: ["Go", "GDAL", "Redis", "GeoTIFF", "MBTiles"],
     status: "deployed",
     type: "company",
     category: "backend",
     company: "한컴인스페이스",
     period: "2023.12 ~ 2024.12",
     role: "영상 타일링 API 설계 및 개발",
-    details: [
-      "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환",
-      "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 렌더링",
-      "고루틴 병렬 처리 + Redis 캐싱",
-      "CPU 코어 × 3 동적 스케일링 (최대 100개 동시 처리)",
-      "WMS → WMTS 전환으로 타일 기반 생성 + 캐싱",
+    details: [],
+    roleDetails: [
+      {
+        role: "주요 역할",
+        items: [
+          "Go 기반 고성능 영상 타일링 API 서버 개발 (WMS → WMTS 전환)",
+          "고루틴 병렬 처리 및 Redis 캐싱으로 응답 성능 최적화",
+        ],
+      },
+      {
+        role: "Go 기반 지리공간 영상 처리 API 서버 개발",
+        items: [
+          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인",
+          "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 폴리곤 선별 렌더링",
+          "고루틴 병렬 처리 + Redis 캐싱",
+        ],
+      },
+      {
+        role: "WMS → WMTS 전환",
+        items: [
+          "화면 좌표 기반 동적 생성 → 타일 기반 생성 + 캐싱",
+          "영상당 API 요청 500회 → 1회로 감소",
+        ],
+      },
     ],
     achievements: [
-      "동시 렌더링 영상 수 33배 향상 (30개 → 1,000개+)",
-      "영상당 API 요청 500회 → 1회로 감소",
+      "WMTS 도입과 이미징 캐싱을 통하여 동시 렌더링 영상 수 33배 향상 (30개 → 1,000개+)",
+      "평균 응답 시간 4초 → 0.4초 달성 (90% 이상 감소)",
     ],
   },
   {
     id: "gis-platform",
-    title: "GIS 레거시 플랫폼",
+    title: "레거시 웹 플랫폼(GIS) 개발",
     description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 서비스",
-    tags: ["Spring Boot", "Redis", "Cesium.js", "PostgreSQL"],
+    tags: ["Spring Boot", "Redis", "Debezium", "Cesium.js", "JPA", "JWT"],
     imageUrl: "/gis-platform_thum.png",
     status: "deployed",
     type: "company",
@@ -338,16 +396,43 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2022.12 ~ 2024.12",
     role: "GIS 웹 플랫폼 풀스택 개발",
-    details: [
-      "Debezium CDC로 변경 데이터 캡처",
-      "HTTP 통신 불가 환경에서 JSON 파일 기반 전송 설계",
-      "Spring Session + Redis 기반 중앙 집중식 세션 저장소",
-      "JWT 기반 인증 및 동시 접속 제어",
-      "Cesium.js 기반 3D 지도 뷰어 (CustomProvider 확장)",
+    details: [],
+    roleDetails: [
+      {
+        role: "주요 역할",
+        items: [
+          "Spring Boot 기반 GIS 웹 플랫폼 백엔드 개발",
+          "폐쇄망 환경 DB 양방향 동기화 시스템 설계",
+        ],
+      },
+      {
+        role: "폐쇄망 DB 양방향 동기화 시스템",
+        items: [
+          "Debezium CDC로 변경 데이터 캡처",
+          "보안 정책상 HTTP 통신 불가 → JSON 파일 기반 전송 방식 설계",
+          "파일 중계 서버에서 배치 단위로 적재하여 양방향 동기화",
+        ],
+      },
+      {
+        role: "세션 관리 및 인증 시스템",
+        items: [
+          "Spring Session + Redis 기반 중앙 집중식 세션 저장소",
+          "1인 1세션 제한으로 동시 접속 제어 구현",
+          "어드민 계정에서 유저 권한 실시간 변경 적용 및 유저 승인/반려/차단 기능 구현",
+          "JWT 기반 인증",
+        ],
+      },
+      {
+        role: "GIS 웹 서비스",
+        items: [
+          "Spring Boot + JPA + Thymeleaf + jQuery",
+          "Cesium.js 기반 3D 지도 뷰어 (CustomProvider 확장)",
+        ],
+      },
     ],
     achievements: [
-      "폐쇄망 환경에서 파일 기반 DB 동기화 구현",
-      "멀티 모듈 환경 세션 공유 문제 해결",
+      "폐쇄망 환경에서 파일기반 DB 동기화 구현 (파일 중계서버만 이용하여 동기화 해야하는 환경)",
+      "멀티 모듈 환경 세션 공유 문제 해결 및 동시 접속 제어",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -355,9 +440,9 @@ export const projects: Project[] = [
   },
   {
     id: "drone-detection",
-    title: "드론 실시간 객체 탐지",
-    description: "ROS 기반 YOLOv5 객체 탐지 스트리밍 서비스",
-    tags: ["ROS", "YOLOv5", "Python", "PyTorch"],
+    title: "드론 탑재 ROS 기반 실시간 객체 탐지 송출 시스템",
+    description: "ROS 기반 Faster R-CNN / YOLOv5 객체 탐지 스트리밍 서비스",
+    tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "C++", "OpenCV"],
     imageUrl: "/drone-detection_thum.png",
     status: "deployed",
     type: "company",
@@ -365,15 +450,35 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2021.12 ~ 2023.12",
     role: "객체 탐지 모델 학습 및 스트리밍 시스템 개발",
-    details: [
-      "ResNet-FPN 기반 Faster R-CNN 6종 객체 분류",
-      "RGB-Depth 동기화로 실시간 스트리밍 안정화",
-      "YOLOv5 커스텀 데이터셋 모델 학습",
-      "UDP/TCP 소켓 기반 영상 스트리밍",
+    details: [],
+    roleDetails: [
+      {
+        role: "주요 역할",
+        items: [
+          "PyTorch 기반 객체 탐지 모델 학습 및 서빙",
+          "소켓 기반 실시간 추론 스트리밍 시스템 개발",
+        ],
+      },
+      {
+        role: "Faster R-CNN 기반 객체 탐지 (ROS 연동)",
+        items: [
+          "ResNet-FPN 기반 6종 객체 분류 추론",
+          "RGB-Depth 동기화로 실시간 스트리밍 안정화",
+          "UDP 소켓 기반 영상 스트리밍",
+        ],
+      },
+      {
+        role: "YOLOv5 기반 객체 탐지 (RTMP 송출)",
+        items: [
+          "커스텀 데이터셋 모델 학습 및 가중치 추출",
+          "PyTorch 모델 → C++ 직접 적용으로 메모리 이슈 해결",
+          "TCP 소켓 + OpenCV 기반 실시간 추론 및 스트리밍",
+        ],
+      },
     ],
     achievements: [
       "드론 탑재 환경에서 실시간 객체 탐지 스트리밍 구현",
-      "메모리 최적화 및 안정성 확보",
+      "C++ 네이티브 적용으로 메모리 최적화 및 안정성 확보",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },
