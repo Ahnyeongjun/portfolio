@@ -47,6 +47,8 @@ export default async function ProjectPage({
     notFound();
   }
 
+  const backHref = project.type === "company" ? "/#career" : "/#side-projects";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -54,7 +56,7 @@ export default async function ProjectPage({
         <div className="container mx-auto px-6">
           <div className="flex items-center h-16">
             <Link
-              href="/#projects"
+              href={backHref}
               className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -141,15 +143,22 @@ export default async function ProjectPage({
 
             {/* External Link */}
             {project.link && (
-              <a
-                href={project.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors mb-12"
-              >
-                <ExternalLink className="w-4 h-4" />
-                프로젝트 방문하기
-              </a>
+              <div className="mb-12">
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  프로젝트 방문하기
+                </a>
+                {project.type !== "company" && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    * 현재 백엔드 서버가 중단되어 MSW(Mock)로 동작 중입니다.
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Role Details or Details */}

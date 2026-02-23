@@ -1,12 +1,14 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
-import { ProjectsSection } from "@/components/ProjectsSection";
 import { TechStackSection } from "@/components/TechStackSection";
 import { AboutSection } from "@/components/AboutSection";
 import { ExperienceSection } from "@/components/ExperienceSection";
+import { CareerSection } from "@/components/CareerSection";
+import { SideProjectsSection } from "@/components/SideProjectsSection";
 
 import { ScrollButtons } from "@/components/ScrollButtons";
+import { SectionNav } from "@/components/SectionNav";
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -41,9 +43,11 @@ export default function Home() {
         <AboutSection />
         <ExperienceSection />
         <TechStackSection />
-        <ProjectsSection />
+        <CareerSection />
+        <SideProjectsSection />
       </main>
       <Footer />
+      <SectionNav />
       <ScrollButtons />
     </div>
   );
