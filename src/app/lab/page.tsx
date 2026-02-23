@@ -17,6 +17,11 @@ const labProjects: LabProject[] = [
   },
 ];
 
+export const metadata = {
+  title: "Lab",
+  description: "실험적인 프로젝트들과 테스트 페이지 모음",
+};
+
 export default function LabPage() {
   return (
     <main className="min-h-screen py-20">

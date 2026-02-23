@@ -26,8 +26,12 @@ export async function generateMetadata({
   const decodedCategory = decodeURIComponent(category);
 
   return {
-    title: `${decodedCategory} | 블로그 | 안영준`,
-    description: `${decodedCategory} 카테고리의 글 목록`,
+    title: `${decodedCategory} - 블로그`,
+    description: `${decodedCategory} 카테고리의 블로그 글 목록입니다.`,
+    openGraph: {
+      title: `${decodedCategory} | 블로그 | 안영준`,
+      description: `${decodedCategory} 카테고리의 블로그 글 목록입니다.`,
+    },
   };
 }
 

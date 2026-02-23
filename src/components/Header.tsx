@@ -15,30 +15,12 @@ export function Header() {
 
           {/* Nav - Right aligned */}
           <nav className="flex items-center gap-6">
-            <a
-              href="#about"
+            <Link
+              href="/"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              About
-            </a>
-            <a
-              href="#experience"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              경력
-            </a>
-            <a
-              href="#tech"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              기술스택
-            </a>
-            <a
-              href="#projects"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              프로젝트
-            </a>
+              포트폴리오
+            </Link>
             <Link
               href="/blog"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
