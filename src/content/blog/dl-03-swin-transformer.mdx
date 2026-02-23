@@ -1,0 +1,178 @@
+---
+title: "Backbone: SwinTransformer"
+description: "Window Attention과 Shifted Window로 효율적인 비전 Transformer를 구현한 SwinTransformer의 구조와 핵심 메커니즘을 정리한다."
+date: "2025-02-10"
+category: "딥러닝"
+tags: ["SwinTransformer", "Backbone", "Transformer", "Attention"]
+series: "딥러닝과 모델 아키텍처"
+seriesOrder: 3
+---
+
+## 기본 정보
+
+| 항목 | 내용 |
+|------|------|
+| 명칭 | Swin Transformer (Shifted Window Transformer) |
+| 발표 | 2021년, Microsoft Research Asia |
+| 계열 | Vision Transformer |
+| 핵심 | 윈도우 기반 로컬 Attention + 이동 윈도우로 전역 정보 교환 |
+
+---
+
+## 탄생 배경
+
+ViT(Vision Transformer)는 이미지에 Transformer를 적용한 최초의 성공적 모델이었지만, 모든 픽셀이 모든 픽셀과 비교하는 Self-Attention은 연산량이 `O(N⁴)`으로 폭발한다. 1024x1024 같은 큰 이미지는 처리 불가능했다.
+
+Swin의 해법:
+
+```
+"전체를 한 번에 보지 말고, 작은 윈도우 안에서만 보자.
+ 대신 윈도우를 이동시켜서 경계 정보도 교환하자."
+
+연산량: O(N⁴) → O(N²)
+```
+
+---
+
+## 전체 구조
+
+```
+입력 이미지 (H × W × 3)
+     ↓
+[Patch Embedding] 4x4 패치로 분할 → 토큰화
+     ↓
+Stage 1: Swin Block × 2,  6 heads   → H/4 × W/4 × 192
+     ↓ Patch Merging (해상도 ↓, 채널 ↑)
+Stage 2: Swin Block × 2,  12 heads  → H/8 × W/8 × 384
+     ↓
+Stage 3: Swin Block × 18, 24 heads  → H/16 × W/16 × 768
+     ↓
+Stage 4: Swin Block × 2,  48 heads  → H/32 × W/32 × 1536
+```
+
+Stage 3의 depth가 18로 가장 깊다. 대부분의 연산이 여기에 집중된다.
+
+---
+
+## 핵심 메커니즘: Window Attention
+
+### 일반 Attention vs Window Attention
+
+```
+일반 Self-Attention:
+┌─────────────────┐
+│ ● ● ● ● ● ● ● │  모든 위치가 모든 위치와 비교
+│ ● ● ● ● ● ● ● │  → 이미지 커지면 불가능
+└─────────────────┘
+
+Window Attention:
+┌────┬────┬────┐
+│● ●│● ●│● ●│  7x7 윈도우 안에서만 비교
+│● ●│● ●│● ●│  → 이미지 크기와 무관하게 효율적
+├────┼────┼────┤
+│● ●│● ●│● ●│
+└────┴────┴────┘
+```
+
+---
+
+### Shifted Window
+
+Window Attention만 쓰면 윈도우 경계를 넘는 정보 교환이 불가능하다. 이 문제를 해결하기 위해 윈도우 위치를 번갈아 이동시킨다.
+
+```
+Layer 1 (Regular):       Layer 2 (Shifted):
+┌───┬───┬───┬───┐       ┌───┬───┬───┬───┐
+│ A │ A │ B │ B │       │   │   │   │   │
+│ A │ A │ B │ B │       ─ ─┼─ ─┼─ ─┼─ ─┤
+├───┼───┼───┼───┤       │   │ E │ E │   │
+│ C │ C │ D │ D │       │   │ E │ E │   │
+└───┴───┴───┴───┘       └───┴───┴───┴───┘
+
+Layer 1: 각 윈도우(A,B,C,D) 안에서 Attention
+Layer 2: 윈도우를 반 칸 이동 → 경계 영역(E)이 같은 윈도우에 포함
+→ 2 Layer를 거치면 모든 영역의 정보가 교환됨
+```
+
+---
+
+## Swin Block
+
+하나의 Swin Block은 2개의 연속된 Layer로 구성된다.
+
+```
+입력
+ ↓
+[LayerNorm] → [W-MSA]  → + (Residual)     ← 일반 윈도우 Attention
+ ↓
+[LayerNorm] → [MLP]    → + (Residual)     ← 2층 FC, GELU
+ ↓
+[LayerNorm] → [SW-MSA] → + (Residual)     ← Shifted 윈도우 Attention
+ ↓
+[LayerNorm] → [MLP]    → + (Residual)
+ ↓
+출력
+```
+
+- **W-MSA**: 일반 윈도우 Attention
+- **SW-MSA**: 이동된 윈도우 Attention
+- **MLP**: 채널을 4배 확장했다가 원래로 축소
+
+---
+
+## 버전별 스펙
+
+| 버전 | embed_dims | depths | num_heads | 파라미터 |
+|------|-----------|--------|-----------|---------|
+| Swin-Tiny | 96 | [2,2,6,2] | [3,6,12,24] | 29M |
+| Swin-Small | 96 | [2,2,18,2] | [3,6,12,24] | 50M |
+| Swin-Base | 128 | [2,2,18,2] | [4,8,16,32] | 88M |
+| **Swin-Large** | 192 | [2,2,18,2] | [6,12,24,48] | 197M |
+
+---
+
+## 주요 하이퍼파라미터
+
+```python
+backbone=dict(
+    type='SwinTransformer',
+    embed_dims=192,            # 기본 채널 수
+    depths=[2, 2, 18, 2],      # 각 Stage 블록 수
+    num_heads=[6, 12, 24, 48], # Attention Head 수
+    window_size=7,             # 윈도우 크기
+    mlp_ratio=4,               # MLP 확장 비율
+    drop_path_rate=0.2,        # Stochastic Depth
+    out_indices=(0, 1, 2, 3),  # 출력할 Stage
+)
+```
+
+---
+
+## 장단점
+
+| 장점 | 단점 |
+|------|------|
+| 전역 관계 파악 (Attention) | 메모리 사용량 큼 |
+| 다양한 크기 물체 처리 (계층 구조) | CNN 대비 학습 느림 |
+| 큰 이미지 처리 가능 (Window) | 추론 속도 느림 |
+| 탐지 분야 SOTA 성능 | GPU 의존적 |
+
+---
+
+## 어떤 작업에 적합한가?
+
+- **객체 탐지**: 전역 맥락 이해가 중요
+- **회전 객체 탐지**: 방향 불변 특징 학습에 강함
+- **대형 이미지 분석**: Window Attention으로 효율적 처리
+
+---
+
+## 시리즈: 딥러닝과 모델 아키텍처
+
+1. [딥러닝 기초](/blog/dl-01-basics)
+2. [모델 구조: Backbone - Neck - Head](/blog/dl-02-architecture)
+3. **Backbone: SwinTransformer** ← 현재 글
+4. [Backbone: ConvNeXt](/blog/dl-04-convnext)
+5. [Neck: FPN, ChannelMapper, FarSegNeck](/blog/dl-05-neck)
+6. [모델: RINO](/blog/dl-06-rino)
+7. [모델: UPerNet](/blog/dl-07-upernet)

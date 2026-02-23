@@ -1,0 +1,194 @@
+---
+title: "Backbone: ConvNeXt"
+description: "Transformer의 성공적인 설계 요소를 CNN에 체계적으로 적용한 ConvNeXt의 구조와 설계 철학을 정리한다."
+date: "2025-02-10"
+category: "딥러닝"
+tags: ["ConvNeXt", "Backbone", "CNN"]
+series: "딥러닝과 모델 아키텍처"
+seriesOrder: 4
+---
+
+## 기본 정보
+
+| 항목 | 내용 |
+|------|------|
+| 명칭 | ConvNeXt (A ConvNet for the 2020s) |
+| 발표 | 2022년, Meta AI Research |
+| 계열 | CNN |
+| 핵심 | Transformer의 좋은 설계를 CNN에 체계적으로 적용 |
+
+---
+
+## 탄생 배경
+
+2020~2021년 Vision Transformer가 거의 모든 벤치마크를 지배하면서 "CNN의 시대는 끝났다"는 분위기가 퍼졌다.
+
+Meta 연구진의 질문:
+
+> "Transformer가 강한 건, Attention 때문일까?
+> 아니면 함께 도입된 학습 기법과 설계 패턴 때문일까?"
+
+ResNet에서 출발해 Transformer의 설계 요소를 하나씩 적용해본 결과:
+
+```
+ResNet-50
+  + 학습 레시피 변경 (300 epoch, AdamW)  → 성능 ↑
+  + Depthwise Conv                       → 성능 ↑
+  + 커널 크기 7x7으로 확대                → 성능 ↑
+  + GELU + LayerNorm                     → 성능 ↑
+  = ConvNeXt (SwinTransformer와 동등!)
+```
+
+**결론: CNN도 제대로 설계하면 Transformer만큼 강하다.**
+
+---
+
+## 전체 구조
+
+```
+입력 이미지 (H × W × 3)
+     ↓
+[Stem] 4x4 Conv, stride 4 + LayerNorm
+     ↓
+Stage 1: ConvNeXt Block × N → H/4 × W/4 × C
+     ↓ Downsampling (2x2 Conv, stride 2 + LN)
+Stage 2: ConvNeXt Block × N → H/8 × W/8 × 2C
+     ↓
+Stage 3: ConvNeXt Block × N → H/16 × W/16 × 4C
+     ↓
+Stage 4: ConvNeXt Block × N → H/32 × W/32 × 8C
+```
+
+ConvNeXt-Base(C=128) 기준 출력: **[128, 256, 512, 1024]**
+
+---
+
+## ConvNeXt Block
+
+핵심 빌딩 블록이다. Transformer의 FFN 구조를 CNN으로 재해석했다.
+
+```
+입력 (C 채널)
+  ↓
+[7x7 Depthwise Conv]     ← Swin의 7x7 윈도우 모방
+  ↓
+[LayerNorm]               ← BatchNorm 대신
+  ↓
+[1x1 Conv] → 4C 채널 확장  ← Transformer FFN 구조
+  ↓
+[GELU]                    ← ReLU 대신
+  ↓
+[1x1 Conv] → C 채널 축소
+  ↓
+× Layer Scale              ← 학습 안정화
+  ↓
++ 입력 (Residual)
+  ↓
+출력 (C 채널)
+```
+
+---
+
+## 핵심 설계 요소
+
+### 1. 7x7 Depthwise Convolution
+
+```
+일반 Conv: 모든 채널을 한꺼번에 연산 → 파라미터 많음
+Depthwise: 각 채널을 독립 연산 → 파라미터 적음
+
+효과: 7x7의 넓은 시야 + 적은 파라미터
+     Swin의 7x7 윈도우와 비슷한 수용 범위
+```
+
+### 2. LayerNorm
+
+BatchNorm은 배치 크기에 민감하고 추론 시 별도 통계가 필요하다. LayerNorm은 각 샘플 내에서 정규화하므로 배치 크기와 무관하고 더 안정적이다.
+
+### 3. GELU
+
+```
+ReLU:  f(x) = max(0, x)      ← 0에서 hard cutoff
+GELU:  f(x) = x × Φ(x)      ← 부드러운 곡선
+
+GELU가 gradient 전달이 더 원활
+```
+
+### 4. Inverted Bottleneck
+
+```
+ResNet:    넓은 채널 → 1x1(축소) → 3x3 → 1x1(확장) → 넓은 채널
+ConvNeXt:  좁은 채널 → DW Conv → 1x1(확장) → 1x1(축소) → 좁은 채널
+
+= Transformer FFN 구조와 동일 (좁게→넓게→좁게)
+```
+
+---
+
+## 버전별 스펙
+
+| 버전 | 채널 | depths | 파라미터 | FLOPs |
+|------|------|--------|---------|-------|
+| Tiny | 96 | [3,3,9,3] | 29M | 4.5G |
+| Small | 96 | [3,3,27,3] | 50M | 8.7G |
+| **Base** | 128 | [3,3,27,3] | 89M | 15.4G |
+| Large | 192 | [3,3,27,3] | 198M | 34.4G |
+
+---
+
+## 주요 하이퍼파라미터
+
+```python
+backbone=dict(
+    type='ConvNeXt',
+    arch='base',
+    out_indices=[0, 1, 2, 3],
+    drop_path_rate=0.4,
+    layer_scale_init_value=1.0,
+    gap_before_final_norm=False,
+)
+```
+
+---
+
+## SwinTransformer와 비교
+
+| 항목 | SwinTransformer | ConvNeXt |
+|------|-----------------|----------|
+| 계열 | Transformer | CNN |
+| 핵심 연산 | Window Attention | Depthwise Conv |
+| 시야 범위 | 전역 (Shifted Window) | 지역 (7x7 커널) |
+| 출력 채널 | [192, 384, 768, 1536] | [128, 256, 512, 1024] |
+| 추론 속도 | 느림 | **빠름** |
+| 메모리 | 많음 | **적음** |
+| 학습 안정성 | 보통 | **좋음** |
+
+### 선택 기준
+
+**SwinTransformer**: 전역 관계 파악이 중요한 작업 (객체 탐지), 최고 성능 필요
+
+**ConvNeXt**: 효율적 추론이 필요한 작업 (세그멘테이션), 메모리 제한 환경
+
+---
+
+## 장단점
+
+| 장점 | 단점 |
+|------|------|
+| 빠른 추론 속도 | 전역 관계 파악이 약함 |
+| 메모리 효율적 | 먼 영역 간 관계 학습 어려움 |
+| 학습 안정적 | - |
+| Transformer급 성능 | - |
+| FP16과 호환 좋음 | - |
+
+---
+
+## 시리즈: 딥러닝과 모델 아키텍처
+
+1. [딥러닝 기초](/blog/dl-01-basics)
+2. [모델 구조: Backbone - Neck - Head](/blog/dl-02-architecture)
+3. [Backbone: SwinTransformer](/blog/dl-03-swin-transformer)
+4. **Backbone: ConvNeXt** ← 현재 글
+5. [Neck: FPN, ChannelMapper, FarSegNeck](/blog/dl-05-neck)
+6. [모델: RINO](/blog/dl-06-rino)
+7. [모델: UPerNet](/blog/dl-07-upernet)

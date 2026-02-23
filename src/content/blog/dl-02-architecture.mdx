@@ -1,0 +1,159 @@
+---
+title: "딥러닝 모델 구조 - Backbone, Neck, Head"
+description: "컴퓨터 비전 모델의 3단 구조 패턴을 정리한다. 각 구성 요소의 역할과 조합 방식을 설명한다."
+date: "2025-02-10"
+category: "딥러닝"
+tags: ["Backbone", "Neck", "Head", "모델 구조"]
+series: "딥러닝과 모델 아키텍처"
+seriesOrder: 2
+---
+
+## 왜 구조를 나눌까?
+
+컴퓨터 비전 모델은 하나의 거대한 덩어리가 아니다. 대부분 **3단계 구조**로 나뉘어 있어서 레고 블록처럼 필요에 따라 교체할 수 있다.
+
+---
+
+## 3단 구조
+
+```
+┌──────────────┐     ┌──────────┐     ┌──────────┐
+│   Backbone   │ ──→ │   Neck   │ ──→ │   Head   │
+│   (눈)       │     │   (목)   │     │   (뇌)   │
+│ 특징 추출     │     │ 정리/융합  │     │ 최종 예측  │
+└──────────────┘     └──────────┘     └──────────┘
+```
+
+- **Backbone**: 이미지에서 특징(Feature)을 추출
+- **Neck**: 여러 스케일의 특징을 정리하고 융합
+- **Head**: 정리된 특징으로 최종 판단
+
+---
+
+## Backbone: 특징 추출기
+
+이미지가 Backbone을 통과하면 여러 Stage를 거치며 **해상도는 줄고 채널(정보 깊이)은 늘어난다**.
+
+```
+입력 (H × W × 3)
+  ↓
+Stage 1: H/4 × W/4    ← 선, 모서리
+Stage 2: H/8 × W/8    ← 텍스처, 패턴
+Stage 3: H/16 × W/16  ← 물체 부분
+Stage 4: H/32 × W/32  ← "건물이다", "도로다"
+```
+
+대표적인 Backbone들:
+
+| 이름 | 계열 | 출력 채널 예시 |
+|------|------|---------------|
+| ResNet | CNN | [256, 512, 1024, 2048] |
+| ConvNeXt | CNN | [128, 256, 512, 1024] |
+| SwinTransformer | Transformer | [192, 384, 768, 1536] |
+| ViT | Transformer | 단일 출력 |
+
+---
+
+## Neck: 특징 융합기
+
+Backbone의 각 Stage는 서로 다른 장단점이 있다.
+
+```
+Stage 1 (고해상도): 위치는 정확한데, "이게 뭔지" 잘 모름
+Stage 4 (저해상도): "이게 뭔지"는 아는데, 정확한 위치를 모름
+
+Neck이 이 둘을 합침:
+→ "이게 뭔지도 알고, 어디 있는지도 아는" 특징
+```
+
+대표적인 Neck들:
+
+| 이름 | 방식 | 복잡도 |
+|------|------|--------|
+| FPN | Top-Down 융합 | 중간 |
+| ChannelMapper | 채널 변환만 | 낮음 |
+| FarSegNeck | 장면 이해 + 융합 | 높음 |
+| PAN | Top-Down + Bottom-Up | 중간 |
+
+---
+
+## Head: 최종 예측기
+
+작업(Task)에 따라 Head 구조가 완전히 달라진다.
+
+**탐지용 Head**:
+
+| 이름 | 방식 |
+|------|------|
+| RPN + RCNN | Anchor 기반 2-Stage |
+| DETR Decoder | Query 기반 End-to-End |
+| RINO Head | Query + Denoising |
+
+**세그멘테이션용 Head**:
+
+| 이름 | 방식 |
+|------|------|
+| FCNHead | 단순 Conv |
+| UPerHead | PPM + FPN |
+| ChangeMixinHead | 양방향 비교 |
+
+---
+
+## 조합의 자유
+
+같은 Backbone에 다른 Head를 붙이면 다른 작업을 수행한다.
+
+```
+SwinTransformer + ChannelMapper + RINO Head       → 객체 탐지
+SwinTransformer + FPN + RoI Head                  → 변화 탐지
+
+ConvNeXt + 내장FPN + UPerHead                     → 세그멘테이션
+ConvNeXt + FarSegNeck + ChangeMixinHead           → 변화 탐지
+```
+
+---
+
+## 전체 데이터 흐름 예시
+
+```
+1. 입력: 이미지 (1024 × 1024 × 3)
+
+2. Backbone:
+   Stage 1: 256 × 256 × 192
+   Stage 2: 128 × 128 × 384
+   Stage 3:  64 ×  64 × 768
+   Stage 4:  32 ×  32 × 1536
+
+3. Neck (FPN):
+   P2: 256 × 256 × 256  "작은 물체용"
+   P3: 128 × 128 × 256  "중간 물체용"
+   P4:  64 ×  64 × 256  "큰 물체용"
+   P5:  32 ×  32 × 256  "아주 큰 물체용"
+
+4. Head:
+   후보 제안 → 분류 + 박스 조정 → NMS
+
+5. 출력: [x, y, w, h, angle] + 클래스
+```
+
+---
+
+## 정리
+
+| 구성 요소 | 역할 | 교체 가능 |
+|-----------|------|----------|
+| Backbone | 특징 추출 | O (ResNet ↔ SwinTransformer ↔ ConvNeXt) |
+| Neck | 특징 융합 | O (FPN ↔ PAN ↔ FarSegNeck) |
+| Head | 최종 예측 | O (작업에 따라 다른 Head) |
+
+---
+
+## 시리즈: 딥러닝과 모델 아키텍처
+
+1. [딥러닝 기초](/blog/dl-01-basics)
+2. **모델 구조: Backbone - Neck - Head** ← 현재 글
+3. [Backbone: SwinTransformer](/blog/dl-03-swin-transformer)
+4. [Backbone: ConvNeXt](/blog/dl-04-convnext)
+5. [Neck: FPN, ChannelMapper, FarSegNeck](/blog/dl-05-neck)
+6. [모델: RINO](/blog/dl-06-rino)
+7. [모델: UPerNet](/blog/dl-07-upernet)

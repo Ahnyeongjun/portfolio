@@ -1,0 +1,173 @@
+---
+title: "모델: RINO - Query 기반 회전 객체 탐지"
+description: "DETR 계열의 End-to-End 탐지 모델 RINO의 구조, Denoising 학습, Hungarian Matching을 정리한다."
+date: "2025-02-10"
+category: "딥러닝"
+tags: ["RINO", "DETR", "객체 탐지", "Transformer"]
+series: "딥러닝과 모델 아키텍처"
+seriesOrder: 6
+---
+
+## 기본 정보
+
+| 항목 | 내용 |
+|------|------|
+| 명칭 | RINO (Rotated DINO) |
+| 기반 | DINO (DETR with Improved deNoising anchOr boxes) |
+| 계열 | DETR 계열 (End-to-End Transformer 탐지) |
+| 작업 | 회전 객체 탐지 |
+| 출력 | (x, y, w, h, angle) + 클래스 |
+
+---
+
+## 기존 탐지 vs DETR 계열
+
+```
+기존 (Faster RCNN):
+  수천 개 앵커 배치 → 각 앵커 판단 → NMS 중복 제거
+  → 앵커 설계, NMS 등 수작업 필요
+
+DETR 계열 (RINO):
+  학습 가능한 Query가 이미지 탐색 → Hungarian Matching
+  → 앵커도 NMS도 불필요 (End-to-End)
+```
+
+비유하면: 기존은 도시 전체에 검문소를 깔고 확인하는 방식, DETR은 형사들이 자유롭게 수사하는 방식이다.
+
+---
+
+## 전체 구조
+
+```
+입력 이미지
+  ↓
+[Backbone] SwinTransformer → 3레벨 특징맵
+  ↓
+[Neck] ChannelMapper → 4레벨 (256ch)
+  ↓
+[Transformer Encoder] 6 layers → 특징맵 강화
+  ↓
+[Transformer Decoder] 6 layers → 900 Query가 탐색
+  ↓
+[Prediction Head] → 회전 바운딩 박스 + 클래스
+```
+
+---
+
+## 핵심 구성 요소
+
+### Transformer Encoder
+
+특징맵 자체를 강화한다. **Deformable Attention**으로 모든 위치가 아닌 핵심 위치만 참조한다.
+
+```
+일반 Attention:      모든 위치 참조 → O(N²)
+Deformable Attention: K개 핵심 위치만 참조 → O(NK)
+```
+
+---
+
+### Transformer Decoder
+
+900개 Query가 특징맵을 탐색해 물체를 찾는다.
+
+```
+Decoder Layer (× 6):
+
+  900개 Query
+    ↓
+  [Self-Attention]    Query끼리 소통 → 중복 탐지 방지
+    ↓
+  [Cross-Attention]   Query가 특징맵 참조 → 물체 정보 수집
+    ↓
+  [FFN]               예측 갱신
+```
+
+6개 Layer를 반복하면서 점점 정확해진다 (**Iterative Refinement**).
+
+```
+Layer 1: "대충 이 근처에 뭔가 있는 것 같다"
+Layer 3: "건물이 맞다, 이 정도 크기"
+Layer 6: "가로 23m, 세로 15m, 각도 37°, 신뢰도 95%"
+```
+
+---
+
+### Denoising Training
+
+정답 박스에 노이즈를 추가해서 모델에게 "이것도 맞춰봐"라는 추가 과제를 준다.
+
+```
+정답: (100, 200, 30, 20, 45°)
+노이즈: (103, 198, 31, 19, 43°)
+모델 과제: 노이즈 버전에서 원래 정답 복원
+
+→ 학습 초기 안정성 대폭 향상
+```
+
+---
+
+### Hungarian Matching
+
+예측과 정답을 최적으로 매칭하는 알고리즘이다.
+
+```
+예측: Query1=건물A, Query2=건물B, Query3=차량C
+정답: 건물X, 건물Y, 차량Z
+
+Hungarian Algorithm:
+  모든 매칭 조합의 비용을 계산 → 전체 최소 비용 매칭
+  Query1 ↔ 건물X, Query2 ↔ 건물Y, Query3 ↔ 차량Z
+```
+
+---
+
+## 회전 박스
+
+RINO가 일반 DINO와 다른 핵심이다.
+
+```
+일반 박스: (x, y, w, h)        회전 박스: (x, y, w, h, θ)
+
+┌──────┐                          ╱╲
+│      │                         ╱  ╲
+│ 건물 │                        ╱건물╲
+└──────┘                        ╲    ╱
+                                 ╲╱
+수평/수직만                     임의 방향
+```
+
+회전 박스용 손실 함수로 **GDLoss**(Gaussian Distribution Loss)를 사용한다. 박스를 2D 가우시안 분포로 변환해서 각도의 주기성 문제를 해결한다.
+
+---
+
+## 손실 함수
+
+| 손실 | 역할 | 가중치 |
+|------|------|--------|
+| FocalLoss | 클래스 분류 (어려운 샘플 집중) | 1.0 |
+| L1Loss | 박스 좌표 회귀 | 5.0 |
+| GDLoss | 회전 박스 IoU | 5.0 |
+
+---
+
+## 장단점
+
+| 장점 | 단점 |
+|------|------|
+| End-to-End (앵커, NMS 불필요) | 구조 복잡 |
+| Query 기반으로 유연한 탐지 | 학습 오래 걸림 |
+| Denoising으로 안정적 학습 | 메모리 사용량 큼 |
+| 반복 정밀화로 높은 정확도 | - |
+
+---
+
+## 시리즈: 딥러닝과 모델 아키텍처
+
+1. [딥러닝 기초](/blog/dl-01-basics)
+2. [모델 구조: Backbone - Neck - Head](/blog/dl-02-architecture)
+3. [Backbone: SwinTransformer](/blog/dl-03-swin-transformer)
+4. [Backbone: ConvNeXt](/blog/dl-04-convnext)
+5. [Neck: FPN, ChannelMapper, FarSegNeck](/blog/dl-05-neck)
+6. **모델: RINO** ← 현재 글
+7. [모델: UPerNet](/blog/dl-07-upernet)

@@ -1,0 +1,199 @@
+---
+title: "Neck: FPN, ChannelMapper, FarSegNeck"
+description: "Backbone의 다중 스케일 특징을 정리하고 융합하는 세 가지 Neck 구조를 비교한다."
+date: "2025-02-10"
+category: "딥러닝"
+tags: ["FPN", "ChannelMapper", "FarSegNeck", "Neck"]
+series: "딥러닝과 모델 아키텍처"
+seriesOrder: 5
+---
+
+## Neck이 필요한 이유
+
+Backbone의 각 Stage는 서로 다른 장단점을 가진다.
+
+```
+작은 물체 → 고해상도 특징맵 필요 (Stage 1~2)
+큰 물체  → 저해상도 특징맵 필요 (Stage 3~4)
+
+Stage 1~2: 위치 정확, 의미 부족
+Stage 3~4: 의미 정확, 위치 부족
+
+Neck이 합쳐서 "위치도, 의미도 아는" 특징을 만듦
+```
+
+---
+
+## 1. FPN (Feature Pyramid Network)
+
+| 항목 | 내용 |
+|------|------|
+| 발표 | 2017년, Facebook AI Research |
+| 핵심 | Top-Down 방식으로 고수준 정보를 저수준으로 전달 |
+
+### 구조
+
+```
+Backbone 출력:          FPN 처리:
+
+C4 (H/32) ──[1x1]──→ P4
+                       ↓ 업샘플
+C3 (H/16) ──[1x1]──→ (+) = P3
+                            ↓ 업샘플
+C2 (H/8)  ──[1x1]──→ (+) = P2
+                            ↓ 업샘플
+C1 (H/4)  ──[1x1]──→ (+) = P1
+
+출력: P1~P4 (모두 256 채널)
+```
+
+**1x1 Conv**: 채널 수를 256으로 통일 (Lateral Connection)
+
+**업샘플 + 덧셈**: 깊은 층의 "의미 정보"를 얕은 층으로 전달
+
+### 직관
+
+```
+P1 = Stage 1의 위치 정보 + Stage 4의 의미 정보
+   = "정확한 좌표에 건물이 있다"
+```
+
+### 설정값
+
+```python
+neck=dict(
+    type='FPN',
+    in_channels=[192, 384, 768, 1536],
+    out_channels=256,
+    num_outs=5,
+)
+```
+
+---
+
+## 2. ChannelMapper
+
+| 항목 | 내용 |
+|------|------|
+| 용도 | DETR 계열 모델의 단순 Neck |
+| 핵심 | 채널 수만 통일하는 최소한의 변환 |
+
+### 구조
+
+```
+C2 (384ch)  ──→ [1x1 Conv] ──→ 256ch
+C3 (768ch)  ──→ [1x1 Conv] ──→ 256ch
+C4 (1536ch) ──→ [1x1 Conv] ──→ 256ch
+
+끝. Top-Down 경로 없음.
+```
+
+### 왜 이렇게 단순한가?
+
+DETR 계열(RINO, DINO 등)은 **Transformer Encoder가 특징 융합을 대신**한다. Neck에서 복잡한 융합을 할 필요가 없다.
+
+```
+일반 모델: Backbone → [복잡한 Neck] → Head
+DETR 계열: Backbone → [단순 Neck] → [Encoder가 융합] → [Decoder가 탐색]
+```
+
+### 설정값
+
+```python
+neck=dict(
+    type='ChannelMapper',
+    in_channels=[384, 768, 1536],
+    out_channels=256,
+    num_outs=4,
+)
+```
+
+---
+
+## 3. FarSegNeck
+
+| 항목 | 내용 |
+|------|------|
+| 발표 | 2020년 |
+| 핵심 | FPN + 장면 수준 이해 + 크기별 차등 처리 |
+
+### 구조
+
+```
+Backbone 출력
+     ↓
+[FPN] 다중 스케일 융합 → 각 레벨 256ch
+     ↓
+[FS Relation Module]
+  ├─ Scene Embedding
+  │   가장 깊은 특징맵 → Global Average Pool
+  │   → "이 이미지는 전체적으로 어떤 장면인가?"
+  │
+  └─ Scale-Aware Projection
+      각 스케일마다 다른 변환 적용
+      P1: 작은 물체 전용
+      P4: 큰 물체 전용
+     ↓
+장면 벡터 × 스케일별 특징 = 맥락이 반영된 특징
+     ↓
+[FPN Decoder] 고해상도 맵으로 합침 (stride 4)
+```
+
+### 일반 FPN과의 차이
+
+```
+FPN:       "이 픽셀 주변에 건물 패턴이 있다"
+FarSegNeck: "이 지역은 전체적으로 도시인데,
+            그 중에서 이 픽셀은 건물의 일부다"
+```
+
+Scene Embedding이 전체 맥락을 파악하므로, 같은 사각형 패턴이라도 도시에서는 "건물", 농촌에서는 "비닐하우스"로 다르게 판단할 수 있다.
+
+### 설정값
+
+```python
+neck=dict(
+    type='FarSegNeck',
+    fpn_config=dict(
+        in_channels_list=[128, 256, 512, 1024],
+        out_channels=256,
+    ),
+    fs_relation_config=dict(
+        scene_embedding_channels=1024,
+        scale_aware_proj=True,
+    ),
+    fpn_decoder_config=dict(
+        out_feat_output_stride=4,
+    ),
+)
+```
+
+---
+
+## 비교
+
+| 항목 | FPN | ChannelMapper | FarSegNeck |
+|------|-----|---------------|------------|
+| 복잡도 | 중간 | 낮음 | 높음 |
+| Top-Down | O | X | O |
+| 장면 이해 | X | X | **O** |
+| 크기별 차등 | X | X | **O** |
+| 주 용도 | 일반 탐지 | DETR 계열 | 원격탐사/변화탐지 |
+
+### 선택 기준
+
+- **FPN**: 범용적 다중 스케일 처리. 대부분의 기본 선택
+- **ChannelMapper**: DETR 계열에서 Encoder가 융합을 담당할 때
+- **FarSegNeck**: 전체 장면 맥락이 중요한 작업 (위성사진, 변화탐지)
+
+---
+
+## 시리즈: 딥러닝과 모델 아키텍처
+
+1. [딥러닝 기초](/blog/dl-01-basics)
+2. [모델 구조: Backbone - Neck - Head](/blog/dl-02-architecture)
+3. [Backbone: SwinTransformer](/blog/dl-03-swin-transformer)
+4. [Backbone: ConvNeXt](/blog/dl-04-convnext)
+5. **Neck: FPN, ChannelMapper, FarSegNeck** ← 현재 글
+6. [모델: RINO](/blog/dl-06-rino)
+7. [모델: UPerNet](/blog/dl-07-upernet)
