@@ -78,6 +78,7 @@ export const projects: Project[] = [
     description: "오늘 출간된 책들을 생일처럼 축하하는 서비스",
     tags: ["Kotlin", "Spring Boot", "Spring Batch", "QueryDSL", "Redis"],
     imageUrl: "/booksight_thum.png",
+    link: "https://book-web-frontend-one.vercel.app/",
     status: "deployed",
     type: "team",
     category: "backend",
