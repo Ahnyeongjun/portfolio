@@ -11,14 +11,20 @@ const career = {
   position: "연구원",
   period: "2021.07 ~ 현재",
   duration: "5년차",
-  description: "위성 영상 처리 플랫폼 및 GIS 웹 서비스 개발",
+  description: "위성 영상 분석 플랫폼 MSA 전환 주도, AI 모델 서빙, 인증 시스템 고도화",
 };
 
 const activities = [
   {
-    title: "스위프 (SWYP) 9기 ~ 11기",
+    title: "FESI 13기 백엔드 멘토링",
+    type: "멘토링",
+    period: "2026.03 ~ 2026.04",
+    description: "프론트엔드 부트캠프에서 백엔드 엔지니어로 참여, 백엔드와의 협업 경험 공유",
+  },
+  {
+    title: "스위프 (SWYP) 웹 9기 ~ 11기, 앱 4기",
     type: "동아리",
-    period: "2025.01 ~ 2025.11",
+    period: "2025.01 ~ 2026.04",
     description: "웹사이트 사이드 프로젝트 참여 (프론트엔드, 백엔드, PM)",
   },
   {
@@ -39,8 +45,8 @@ const education = [
   {
     school: "한밭대학교",
     major: "융합기술학과",
-    period: "2022.03 ~ 졸업예정",
-    info: "학점 3.9/4.5 · 야간",
+    period: "2022.03 ~ 2026.03",
+    info: "졸업 · 야간",
   },
   {
     school: "대덕소프트웨어마이스터고",

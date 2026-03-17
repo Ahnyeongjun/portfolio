@@ -27,7 +27,7 @@ export function HeroSection() {
         <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full mb-8 animate-fade-in">
           <Sparkles className="w-4 h-4 text-primary" />
           <span className="text-sm text-muted-foreground">
-            Full-Stack Developer
+            Backend Developer
           </span>
         </div>
 
@@ -45,9 +45,9 @@ export function HeroSection() {
           className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in"
           style={{ animationDelay: "0.2s" }}
         >
-          서비스의 지속적인 발전을 고민하는 풀스택 개발자입니다.
+          위성 영상 기반 지도 플랫폼을 처음부터 설계·구현하고, 모놀리식에서 MSA로 전환하며
           <br />
-          구현에서 끝내지 않고, 서비스 구조와 개발 생산성까지 함께 고민합니다.
+          구조적 문제를 주도적으로 개선해온 백엔드 개발자입니다.
         </p>
 
         <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>

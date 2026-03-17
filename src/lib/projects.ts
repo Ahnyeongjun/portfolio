@@ -110,37 +110,49 @@ export const projects: Project[] = [
   {
     id: "momentier",
     title: "모먼티어",
-    description: "MCP 알고리즘 기반 개인 맞춤형 여행지 추천 및 여행 계획 서비스",
-    tags: ["Next.js", "TypeScript", "Zustand", "TailwindCSS", "Storybook"],
+    description: "감정 기반 AI 여행 큐레이팅 서비스 (MCP + Tour API + OpenAI)",
+    tags: ["Next.js", "Zustand", "Storybook", "FastAPI", "MCP", "OpenAI"],
     imageUrl: "/momentier_thum.png",
     link: "https://momentier.vercel.app",
     status: "live",
     type: "team",
-    category: "frontend",
+    category: "fullstack",
     period: "2025.04 ~ 2025.05",
-    role: "리드 개발자 (프론트엔드)",
-    longDescription: "스위프(SWYP) 9기에서 진행한 사이드 프로젝트입니다. MCP 알고리즘을 활용하여 개인 맞춤형 여행지를 실시간으로 추천하고, 다른 사용자들의 여행지 리뷰 및 후기를 공유할 수 있는 플랫폼입니다. 7명(프론트엔드 2, 백엔드 3, 디자이너, PM)이 함께 진행했습니다.",
+    role: "리드 개발자 (프론트엔드 + AI 백엔드)",
+    longDescription: "스위프(SWYP) 9기에서 진행한 사이드 프로젝트입니다. '순간(Moment) + Engineer'라는 뜻으로, 사용자의 감정·분위기·활동 취향을 기반으로 AI가 여행지를 추천하고 일정을 자동 생성해주는 큐레이팅 서비스입니다. 처음으로 Next.js, Zustand, Storybook을 학습하며 프론트엔드를 설계했고, MCP(Model Context Protocol)를 통해 Tour API와 OpenAI를 연동하는 AI 백엔드를 직접 구축했습니다. 7명(프론트엔드 2, 백엔드 3, 디자이너, PM)이 함께 진행했습니다.",
     details: [],
     roleDetails: [
       {
-        role: "프론트엔드",
+        role: "프론트엔드 (Next.js 15 + Zustand + Storybook 학습)",
         items: [
-          "카카오 OAuth2 인증 연동 및 Zustand 전역 상태 관리",
-          "Kakao Maps SDK 지도 표시, 마커, 검색, 경로 안내 기능",
-          "useLogin, useAuthGuard 인증 Hook 구현",
-          "UI 컴포넌트 Storybook 문서화 (50%)",
-          "로그인, 메인, 일정 추천, 상세 페이지 구현 (50%)",
+          "Next.js App Router 기반 페이지 설계 (메인, 감정 입력, 추천, 일정 상세, 마이페이지)",
+          "Zustand persist 패턴으로 인증·입력·추천·일정 전역 상태 관리 (7개 Store)",
+          "카카오 OAuth2 인증 연동 및 useLogin, useAuthGuard Hook 구현",
+          "Leaflet 기반 지도 표시·마커·경로 안내 및 PDF 일정 저장 기능",
+          "Storybook 8 기반 컴포넌트 문서화 (Button, Card, Chip, Modal 등) 및 페이지별 시나리오 스토리 작성",
+          "커스텀 뷰포트(XS~XL) 설정으로 반응형 디자인 검증 체계 구축",
+        ],
+      },
+      {
+        role: "AI 백엔드 (MCP + Tour API + OpenAI)",
+        items: [
+          "MCP(Model Context Protocol) 아키텍처 설계 — OpenAI Agent가 Tour API를 도구로 호출하는 구조",
+          "FastAPI + MCP Server 2대 구축 (일정 생성용 8070, 여행지 추천용 8071, SSE 통신)",
+          "공공데이터포털 Tour API 연동 (지역별 관광지 조회, 좌표 기반 주변 검색, 키워드 검색)",
+          "OpenAI Agent 기반 여행지 3곳 추천(gpt-4.1-mini), 다일정 자동 생성(gpt-4.1), 입력 제안(gpt-4.1-nano)",
+          "Pydantic 구조화 출력으로 Agent 응답을 프론트엔드 스키마에 맞게 변환",
         ],
       },
     ],
     achievements: [
-      "리드 개발자로서 프론트엔드 아키텍처 설계",
-      "Storybook 기반 컴포넌트 문서화 체계 구축",
+      "Next.js·Zustand·Storybook 첫 학습 프로젝트로 프론트엔드 아키텍처 독립 설계",
+      "MCP 기반 AI 백엔드 구축 — Tour API + OpenAI를 Agent 도구로 연동하는 구조 설계 및 구현",
+      "Storybook 기반 컴포넌트 문서화 체계 구축 (컴포넌트 + 페이지 스토리)",
     ],
     resources: [
-      { label: "GitHub", url: "https://github.com/SWYP-TRAVEL", type: "link" },
+      { label: "GitHub (Frontend)", url: "https://github.com/SWYP-TRAVEL", type: "link" },
+      { label: "GitHub (MCP Backend)", url: "https://github.com/SWYP-TRAVEL/MCP", type: "link" },
       { label: "Storybook", url: "https://momentier.github.io/SWYP_FRONT/?path=/docs/configure-your-project--docs", type: "link" },
-      { label: "회고", url: "/momentier_retrospective.html", type: "html" },
     ],
   },
   {
@@ -283,48 +295,31 @@ export const projects: Project[] = [
   },
   {
     id: "satellite-platform",
-    title: "초소형 군집위성 분석산출물 서비스 시스템",
-    description: "K8s 기반 MSA 전환 및 위성 영상 처리 파이프라인",
-    tags: ["Kubernetes", "FastAPI", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
+    title: "위성 영상 분석 플랫폼 고도화",
+    description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
+    tags: ["Spring Boot", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
+    imageUrl: "/gis-platform_thum.png",
     status: "deployed",
     type: "company",
     category: "fullstack",
     company: "한컴인스페이스",
-    period: "2024.12 ~ 진행중",
-    role: "아키텍처 재설계 및 마이그레이션",
+    period: "2022.12 ~ 진행중",
+    role: "아키텍처 재설계 및 풀스택 개발",
+    longDescription: "자사 위성 영상 분석 플랫폼의 기능 개발 및 고도화 프로젝트입니다. 노후화된 기술 스택과 관리 미비 상태에서 고객 요구사항을 반영할수록 새로운 이슈가 발생하여 개발 속도가 지연되는 문제를 해결하기 위해, 기능별 플로우 정리와 테스트 코드 작성, MSA 및 이벤트 드리븐 아키텍처 도입을 주도했습니다.",
     details: [],
     roleDetails: [
       {
-        role: "주요 역할",
+        role: "MSA & 이벤트 드리븐 아키텍처 전환",
         items: [
-          "Spring Boot → FastAPI 기반 MSA 전환 및 K8s 배포 환경 구축",
-          "일 1,000건 위성영상 처리 파이프라인 설계",
-          "PyTorch 기반 AI 모델 서빙 시스템 구축 및 고도화",
-        ],
-      },
-      {
-        role: "백엔드 개선",
-        items: [
+          "서비스 간 영향을 최소화하고 에러 지점을 명확히 파악하기 위해 MSA & 이벤트 드리븐 아키텍처 도입",
+          "기능별 플로우 차트 정리 및 테스트 로직 추가, 커밋 시 자동 테스트되도록 CI/CD 작성",
+          "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 동시 요청 시 ID 중복 방지 및 발생 서버 추적",
           "9개 MSA 서비스 분리 및 서비스별 레플리카 10개 이상 운영",
-          "Gateway를 통한 서비스 조합 (인증, 로거, 도메인별)",
+          "Gateway를 통한 인증·로깅·도메인별 서비스 조합 구조화",
         ],
       },
       {
-        role: "위성 영상 처리 파이프라인 구축",
-        items: [
-          "RabbitMQ 메시지 기반 워커 통신",
-          "DLQ(Dead Letter Queue) 기반 실패 메시지 재처리",
-        ],
-      },
-      {
-        role: "Kubernetes 기반 컨테이너 환경 구축",
-        items: [
-          "클러스터링 및 레플리카 관리",
-          "Nginx Ingress 라우팅 설정",
-        ],
-      },
-      {
-        role: "AI 모델 서빙 시스템 구축",
+        role: "AI 모델 서빙 시스템",
         items: [
           "PyTorch 기반 모델 서빙 (SwinTransformer, ConvNeXt)",
           "객체탐지(RINO, YOLO26), 영역분할(UPerNet), 변화탐지(ChangeStar) 고도화",
@@ -333,116 +328,160 @@ export const projects: Project[] = [
       {
         role: "프론트엔드 개선",
         items: [
-          "Next.js FSD 구조 재배치",
-          "Storybook 통합 테스트 및 문서화",
+          "Next.js FSD 아키텍처 리팩토링",
+          "Storybook 통합 테스트 및 사내 프론트엔드 공통 라이브러리 운영",
         ],
       },
     ],
     achievements: [
-      "영상 처리 장애율 감소 및 운영 안정성 확보 — DB 폴링 → 이벤트 기반 전환으로 락 대기 시간 제거 및 서비스 중단 해결",
-      "배포 및 개발 생산성 향상 — 팀 내 기술 스택 통일 (Python, FastAPI)로 협업 효율 증가",
-      "인증/로깅/위성/표적 등 공통 모듈을 Gateway에서 조립식으로 적용 가능하도록 구조화",
-    ],
-  },
-  {
-    id: "image-api",
-    title: "위성 영상 도시 서버 개발 (Image-API)",
-    description: "Go 기반 지리공간 영상 처리 서버 (동시 렌더링 33배 향상)",
-    tags: ["Go", "GDAL", "Redis", "GeoTIFF", "MBTiles"],
-    status: "deployed",
-    type: "company",
-    category: "backend",
-    company: "한컴인스페이스",
-    period: "2023.12 ~ 2024.12",
-    role: "영상 타일링 API 설계 및 개발",
-    details: [],
-    roleDetails: [
-      {
-        role: "주요 역할",
-        items: [
-          "Go 기반 고성능 영상 타일링 API 서버 개발 (WMS → WMTS 전환)",
-          "고루틴 병렬 처리 및 Redis 캐싱으로 응답 성능 최적화",
-        ],
-      },
-      {
-        role: "Go 기반 지리공간 영상 처리 API 서버 개발",
-        items: [
-          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인",
-          "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 폴리곤 선별 렌더링",
-          "고루틴 병렬 처리 + Redis 캐싱",
-        ],
-      },
-      {
-        role: "WMS → WMTS 전환",
-        items: [
-          "화면 좌표 기반 동적 생성 → 타일 기반 생성 + 캐싱",
-          "영상당 API 요청 500회 → 1회로 감소",
-        ],
-      },
-    ],
-    achievements: [
-      "WMTS 도입과 이미징 캐싱을 통하여 동시 렌더링 영상 수 33배 향상 (30개 → 1,000개+)",
-      "평균 응답 시간 4초 → 0.4초 달성 (90% 이상 감소)",
-    ],
-  },
-  {
-    id: "gis-platform",
-    title: "레거시 웹 플랫폼(GIS) 개발",
-    description: "폐쇄망 DB 동기화 및 3D 지도 뷰어 서비스",
-    tags: ["Spring Boot", "Redis", "Debezium", "Cesium.js", "JPA", "JWT"],
-    imageUrl: "/gis-platform_thum.png",
-    status: "deployed",
-    type: "company",
-    category: "fullstack",
-    company: "한컴인스페이스",
-    period: "2022.12 ~ 2024.12",
-    role: "GIS 웹 플랫폼 풀스택 개발",
-    details: [],
-    roleDetails: [
-      {
-        role: "주요 역할",
-        items: [
-          "Spring Boot 기반 GIS 웹 플랫폼 백엔드 개발",
-          "폐쇄망 환경 DB 양방향 동기화 시스템 설계",
-        ],
-      },
-      {
-        role: "폐쇄망 DB 양방향 동기화 시스템",
-        items: [
-          "Debezium CDC로 변경 데이터 캡처",
-          "보안 정책상 HTTP 통신 불가 → JSON 파일 기반 전송 방식 설계",
-          "파일 중계 서버에서 배치 단위로 적재하여 양방향 동기화",
-        ],
-      },
-      {
-        role: "세션 관리 및 인증 시스템",
-        items: [
-          "Spring Session + Redis 기반 중앙 집중식 세션 저장소",
-          "1인 1세션 제한으로 동시 접속 제어 구현",
-          "어드민 계정에서 유저 권한 실시간 변경 적용 및 유저 승인/반려/차단 기능 구현",
-          "JWT 기반 인증",
-        ],
-      },
-      {
-        role: "GIS 웹 서비스",
-        items: [
-          "Spring Boot + JPA + Thymeleaf + jQuery",
-          "Cesium.js 기반 3D 지도 뷰어 (CustomProvider 확장)",
-        ],
-      },
-    ],
-    achievements: [
-      "폐쇄망 환경에서 파일기반 DB 동기화 구현 (파일 중계서버만 이용하여 동기화 해야하는 환경)",
-      "멀티 모듈 환경 세션 공유 문제 해결 및 동시 접속 제어",
+      "오류 관련 고객 문의 대응 속도 1주 → 하루 내로 감소",
+      "장애로 인한 재배포 건수 월 10건 → 1건 내외로 감소하여 운영 안정성 확보",
+      "공통 모듈 업데이트 시 배포 대상 12개 → 1개, 배포 속도 4분 → 30초로 감소",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
     ],
   },
   {
+    id: "admin-page",
+    title: "어드민 페이지 고도화",
+    description: "Redis 역인덱스 및 N+1 제거, Spring Cloud Gateway 도입으로 인증 시스템 일원화",
+    tags: ["Spring Boot", "Spring Cloud Gateway", "Redis", "PostgreSQL", "JWT"],
+    status: "deployed",
+    type: "company",
+    category: "backend",
+    company: "한컴인스페이스",
+    period: "2024.04 ~ 2024.12",
+    role: "인증·권한 시스템 설계 및 개발",
+    longDescription: "사용자 로그인 정보 조회 시 응답 속도 저하와, 특정 사용자의 권한 수정이 일부 서비스에 반영되지 않는 문제를 해결했습니다. Redis에 저장된 전체 세션을 풀스캔해야 하는 구조와, 재귀적 트리 구조 메뉴에서 N+1 쿼리가 원인이었습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "세션 관리 최적화",
+        items: [
+          "Redis 역인덱스 구축으로 풀스캔 제거 — userId → sessionId 목록 구조로 저장하여 권한 변경 시 해당 유저의 세션만 즉시 조회 및 갱신",
+          "Redis DB 3개로 용도 분리 (세션 / 방문자 통계 / 로그인 실패 추적)",
+          "IP + userId 단위 실패 횟수 카운트하여 4회 초과 시 10분간 인증 차단으로 브루트포스 방지",
+        ],
+      },
+      {
+        role: "권한 조회 N+1 제거",
+        items: [
+          "재귀적 트리 구조 메뉴에서 건별 조회 → WITH RECURSIVE CTE + 단일 쿼리 전환",
+          "인증 필터에서 전체 권한 정보를 한 번에 로드 후 메모리에서 매핑하는 방식으로 변경",
+        ],
+      },
+      {
+        role: "Gateway 도입",
+        items: [
+          "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화",
+          "각 서비스별 세션 유지 불필요해져 유지보수성 확보",
+        ],
+      },
+    ],
+    achievements: [
+      "역인덱스 기반 세션 조회 및 N+1 제거로 응답 속도 개선 및 권한 변경 실시간 반영 보장",
+      "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화, 각 서비스별 세션 유지 불필요",
+    ],
+  },
+  {
+    id: "image-api",
+    title: "영상 타일링 API 서버",
+    description: "WMS → WMTS 전환으로 API 응답 속도 4초 → 0.5초 미만 달성",
+    tags: ["Go", "GDAL", "Redis", "GeoTIFF", "MBTiles", "Nginx", "K8s"],
+    status: "deployed",
+    type: "company",
+    category: "backend",
+    company: "한컴인스페이스",
+    period: "2024.04 ~ 2025.03",
+    role: "영상 타일링 API 설계 및 개발",
+    longDescription: "자사 솔루션 내 영상 표출 API에서 영상 이미지가 증가함에 따라 응답 속도가 저하되는 문제를 해결했습니다. K8s Replica 설정이 Ingress를 타지 않고 매번 재연결되며 리소스가 누출되었고, WMS 특성상 바운더리 요청마다 영상을 겹쳐 쌓는 방식이라 캐싱이 비효율적이었습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "WMS → WMTS 전환",
+        items: [
+          "개별 영상 표출 시 WMS를 사용하여 사용성 유지",
+          "다량 영상 표출 시 WMTS 타입별로 특정 타일을 미리 캐싱하여 조합하는 방식으로 전환",
+          "Go 기반 고루틴 병렬 처리 및 Redis 캐싱",
+        ],
+      },
+      {
+        role: "인프라 최적화",
+        items: [
+          "Nginx Ingress 설정으로 로드밸런싱 및 세션 유지 적용",
+          "세션 연결이 유지된 채 애플리케이션 단에서 로드밸런싱 — Replica 수를 개발자가 신경 쓰지 않아도 되는 확장성 확보",
+          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인",
+          "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 폴리곤 선별 렌더링",
+        ],
+      },
+    ],
+    achievements: [
+      "WMTS 도입과 이미지 캐싱으로 API 응답 속도 4초 → 0.5초 미만으로 감소",
+      "서비스 간 세션 경쟁 제거로 안정성 확보 및 락 제거",
+      "캐시 미스 시 응답 지연 방지를 위한 사전 생성 범위 선정이 운영상 핵심 요소임을 파악",
+    ],
+  },
+  {
+    id: "pipeline",
+    title: "영상 전처리 파이프라인 자동화",
+    description: "폴더 감시 → 이벤트 드리븐 전환으로 장애 파악 시간 하루 → 2시간 이내로 감소",
+    tags: ["RabbitMQ", "Python", "Saga Pattern", "Docker"],
+    status: "deployed",
+    type: "company",
+    category: "backend",
+    company: "한컴인스페이스",
+    period: "2022.03 ~ 2022.12",
+    role: "전처리 파이프라인 설계 및 개발",
+    longDescription: "위성 영상 수집부터 보정까지의 전처리 과정을 자동화하는 파이프라인을 구축했습니다. 영상별로 전처리가 달라 수동 처리가 필요했고, Salt 기반 폴링 구조에서 격리성이 보장되지 않아 정상 데이터도 실패하는 문제가 있었으며, 실행 중 장애 발생 시 복구 시스템이 미비했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "이벤트 드리븐 파이프라인 구축",
+        items: [
+          "폴더 감시 방식을 이벤트 드리븐 파이프라인으로 전환 — 완료 즉시 다음 큐 실행, 대기 시간 제거",
+          "ack/nack 기반 메시지 유실 방지 (RabbitMQ)",
+          "Saga(Choreography) 패턴 적용 — 실패 시 자동 재처리 및 작업 상태 추적으로 장애 시점 명확화",
+        ],
+      },
+    ],
+    achievements: [
+      "장애 없는 데이터 실패율 0건 달성 — 실제 문제가 있는 데이터만 쌓이도록 개선",
+      "장애 파악 시간 하루 → 한두 시간 이내로 감소",
+      "메시지 큐 기반으로 처리량에 탄력적으로 확장 가능한 구조 설계",
+    ],
+  },
+  {
+    id: "test-cluster",
+    title: "팀 내 개발 안정화를 위한 테스트 클러스터 분리",
+    description: "K8s 기반 테스트 환경 구축으로 운영 서버 장애 대폭 감소, 서버 5대 → 2대",
+    tags: ["Kubernetes", "Docker", "On-premise"],
+    status: "deployed",
+    type: "company",
+    category: "backend",
+    company: "한컴인스페이스",
+    period: "2023.01 ~ 2023.06",
+    role: "테스트 인프라 구축",
+    longDescription: "테스트 서버가 없어 로컬 환경에서 테스트 후 운영 서버로 바로 배포하면서, 엔지니어마다 로컬 환경의 차이와 운영 서버와의 차이로 인해 운영 서버에서 이슈가 발생하는 문제를 해결했습니다. 하나의 서버에 하나의 서비스만 올리는 비효율도 함께 개선했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "테스트 환경 구축",
+        items: [
+          "쿠버네티스 클러스터를 활용하여 논리적으로 분리, 사내 온프레미스 서버에 운영과 동일한 테스트 환경 구축",
+          "동시에 여러 프로젝트를 운영할 수 있도록 구축하여 서버 자원을 필요한 곳에만 할당",
+        ],
+      },
+    ],
+    achievements: [
+      "모든 엔지니어가 같은 환경에서 테스트함으로써 운영 환경 배포 후 장애 발생 대폭 감소",
+      "서버 자원 효율화 — 서버 5대 → 2대로 감소",
+    ],
+  },
+  {
     id: "drone-detection",
-    title: "드론 탑재 ROS 기반 실시간 객체 탐지 송출 시스템",
-    description: "ROS 기반 Faster R-CNN / YOLOv5 객체 탐지 스트리밍 서비스",
+    title: "비전 AI 모델 서빙 시스템 개발",
+    description: "실시간 객체 탐지 및 위성 영상 세그멘테이션 스트리밍 서비스",
     tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "C++", "OpenCV"],
     imageUrl: "/drone-detection_thum.png",
     status: "deployed",
@@ -453,13 +492,6 @@ export const projects: Project[] = [
     role: "객체 탐지 모델 학습 및 스트리밍 시스템 개발",
     details: [],
     roleDetails: [
-      {
-        role: "주요 역할",
-        items: [
-          "PyTorch 기반 객체 탐지 모델 학습 및 서빙",
-          "소켓 기반 실시간 추론 스트리밍 시스템 개발",
-        ],
-      },
       {
         role: "Faster R-CNN 기반 객체 탐지 (ROS 연동)",
         items: [
