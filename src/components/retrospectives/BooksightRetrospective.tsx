@@ -84,7 +84,7 @@ jdbcTemplate.batchUpdate(sql, object : BatchPreparedStatementSetter {
             <Highlight>hibernate.jdbc.batch_size</Highlight>로 묶음 크기를 정하고
             <Highlight>flush() + clear()</Highlight>로 1차 캐시를 주기적으로 비워주면
             JdbcTemplate과 거의 차이가 없습니다.
-            당시에 이걸 몰랐던 거지, JPA가 안 되는 게 아니었습니다.
+            당시에 이 조합을 몰랐을 뿐, JPA가 불가능한 것은 아니었습니다.
           </p>
           <CodeBlock>{`// JPA로 배치 INSERT 하는 방법 (나중에 알게 된 것)
 // 1. SEQUENCE 전략 or rewriteBatchedStatements=true (JDBC URL)
@@ -194,7 +194,7 @@ val orderSpecifier = OrderSpecifier(
           <p>
             오랜만에 다시 쓴 Kotlin이었습니다. 코루틴·JPA 삽질을 겪으면서 오히려
             Spring 트랜잭션 컨텍스트가 어떻게 전파되는지, 어디서 끊기는지를
-            깊이 이해하게 됐습니다. 편의 기능 뒤에 어떤 원리가 있는지를 알게 된 경험이었습니다.
+            깊이 이해하게 되었습니다. 편의 기능 뒤에 어떤 원리가 있는지를 알게 된 경험이었습니다.
           </p>
           <div>
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>

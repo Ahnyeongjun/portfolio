@@ -199,15 +199,15 @@ export const projects: Project[] = [
     id: "with-ing",
     title: "위딩 (With-ing)",
     description: "예비부부를 위한 웨딩 플래너 및 AI 드레스 추천 서비스",
-    tags: ["Next.js", "Spring Boot", "FastAPI", "OpenAI"],
+    tags: ["Next.js", "React Query", "FastAPI", "OpenAI", "DALL-E", "Spring Boot", "MySQL", "Docker"],
     imageUrl: "/with-ing_thum.webp",
     link: "https://with-ing.vercel.app/main",
     status: "live",
     type: "team",
     category: "fullstack",
     period: "2025.10 ~ 2025.11",
-    role: "PM, 프론트엔드, 백엔드 피드백, AI 추천 기능, 서버 관리",
-    longDescription: "스위프(SWYP) 11기에서 진행한 사이드 프로젝트입니다. 예비부부들이 웨딩 준비 과정에서 겪는 정보 탐색의 어려움을 해결하고자 기획했습니다. 웨딩홀, 스튜디오, 드레스샵, 메이크업샵 정보를 한 곳에서 검색하고 비교할 수 있으며, AI가 사용자의 체형을 분석하여 어울리는 드레스를 추천해주는 기능을 제공합니다.",
+    role: "PM, 프론트엔드, AI 추천 기능, 서버 관리",
+    longDescription: "스위프(SWYP) 11기에서 진행한 사이드 프로젝트입니다. 예비부부들이 웨딩 준비 과정에서 겪는 정보 탐색의 어려움을 해결하고자 기획했습니다. 웨딩홀, 스튜디오, 드레스샵, 메이크업샵 정보를 한 곳에서 검색하고 비교할 수 있으며, AI가 체형을 분석하여 드레스를 추천하고 DALL-E로 착용 이미지를 생성해주는 기능을 제공합니다. GPT-4 기반 드레스 추천과 SQL 동적 쿼리 기반 웨딩홀 추천을 결합한 하이브리드 AI 구조가 이 프로젝트의 핵심입니다.",
     details: [],
     roleDetails: [
       {
@@ -221,34 +221,34 @@ export const projects: Project[] = [
       {
         role: "프론트엔드",
         items: [
-          "Claude Code + Figma MCP 활용 퍼블리싱",
-          "31개 컴포넌트 구현",
-        ],
-      },
-      {
-        role: "백엔드 피드백",
-        items: [
-          "Spring Boot 3 + JPA 기반 REST API 설계 리뷰",
+          "Claude Code + Figma MCP 활용 퍼블리싱 (31개 컴포넌트 구현)",
+          "Next.js App Router + React Query(TanStack Query) 기반 서버 상태 관리",
+          "Next.js API Route를 프록시로 활용 — CORS 우회 및 Authorization 헤더 중앙화",
+          "MSW(Mock Service Worker)로 백엔드 독립적인 개발 환경 구성",
         ],
       },
       {
         role: "AI 추천 기능",
         items: [
-          "FastAPI + OpenAI API 기반 드레스 추천 서버 개발",
-          "체형 조합별 프롬프트 설계 및 응답 캐싱 (540가지 조합)",
+          "FastAPI + GPT-4 기반 드레스 추천 서버 개발 (swyp-llm-main)",
+          "체형·스타일 조합 540가지를 SHA256 해시 키로 MySQL 캐싱 — API 비용 절감 및 응답 속도 개선",
+          "SQL 동적 쿼리 빌더로 웨딩홀 필터 조건 조합 → 조건 완화 폴백 전략으로 결과 0건 방지",
+          "DALL-E 2 기반 드레스 착용 이미지 생성 및 Paramiko SSH 업로드 파이프라인 구현 (swyp-createImg-main)",
         ],
       },
       {
         role: "서버 관리",
         items: [
           "Docker Compose + GitHub Actions CI/CD 구축",
-          "현재 K8s + Jenkins 기반 MSA 구조로 전환 (도메인별 서비스 분리)",
+          "K8s + Jenkins 기반 MSA 구조로 전환 (도메인별 서비스 분리)",
         ],
       },
     ],
     achievements: [
       "6주 내 MVP 출시 (기획 → 배포)",
-      "AI 도구 활용으로 프론트엔드 개발 생산성 향상",
+      "540가지 체형 조합 SHA256 해시 캐싱으로 GPT-4 API 반복 호출 비용 절감",
+      "Next.js API Route 프록시 패턴으로 CORS 문제 해결 및 인증 헤더 중앙화",
+      "조건 완화 폴백 전략으로 웨딩홀 추천 결과 0건 방지",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp11", type: "link" },

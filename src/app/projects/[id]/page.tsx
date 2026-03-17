@@ -5,6 +5,8 @@ import { ArrowLeft, Calendar, User, Users, CheckCircle, Building2, ExternalLink,
 import { projects, getProjectById } from "@/lib/projects";
 import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
 import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
+import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
+import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -221,6 +223,8 @@ export default async function ProjectPage({
             {/* Retrospective */}
             {project.id === "momentier" && <MomentierRetrospective />}
             {project.id === "booksight" && <BooksightRetrospective />}
+            {project.id === "chukjibeob" && <ChukjibeobRetrospective />}
+            {project.id === "with-ing" && <WithingRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.length > 0 && (
