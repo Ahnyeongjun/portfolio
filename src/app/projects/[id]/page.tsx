@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowLeft, Calendar, User, Users, CheckCircle, Building2, ExternalLink, FileText, ImageIcon, Link2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
 import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
+import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -219,6 +220,7 @@ export default async function ProjectPage({
 
             {/* Retrospective */}
             {project.id === "momentier" && <MomentierRetrospective />}
+            {project.id === "booksight" && <BooksightRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.length > 0 && (
