@@ -70,7 +70,7 @@ interface TourApiClient {
 }`}</CodeBlock>
           <p>
             Spring이 인터페이스를 보고 구현체를 자동으로 만들어줍니다.
-            Retry, Timeout, ErrorDecoder 같은 설정도 별도 Config 클래스에 선언하면 붙어서,
+            Retry, Timeout, ErrorDecoder 같은 설정도 별도 Config 클래스에 선언하면 자동으로 적용되어,
             RestTemplate으로 직접 구현하던 것들을 선언적으로 처리할 수 있었습니다.
             다음에 외부 API 연동이 필요하다면 Feign Client를 먼저 고려할 것입니다.
           </p>

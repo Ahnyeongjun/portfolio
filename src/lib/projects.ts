@@ -30,8 +30,8 @@ export const projects: Project[] = [
     id: "simvex",
     title: "SIMVEX",
     description:
-      "3D 물리 시뮬레이션 기반 기계공학 학습 웹 서비스",
-    tags: ["Next.js", "TypeScript", "Three.js", "TailwindCSS", "Claude API"],
+      "3D 분해/조립 시뮬레이션과 RAG AI 어시스턴트를 결합한 기계공학 학습 웹 서비스",
+    tags: ["Next.js", "Three.js", "React Three Fiber", "Zustand", "React Query", "Styled Components", "MSW"],
     imageUrl: "/simvex_thum.png",
     link: "https://runtime-simvex.vercel.app/",
     status: "live",
@@ -40,24 +40,29 @@ export const projects: Project[] = [
     period: "2026.01",
     role: "프론트엔드 개발",
     longDescription:
-      "제4회 블레이버스 MVP 개발 해커톤에서 진행한 프로젝트입니다. 기계공학 교육에서 2D 교재만으로는 이해하기 어려운 기계 구조를 3D 인터랙티브 탐색과 RAG 기반 AI 어시스턴트를 결합하여 직관적으로 학습할 수 있는 웹 서비스입니다.",
+      "제4회 블레이버스 MVP 개발 해커톤에서 진행한 프로젝트입니다. 기계공학 교육에서 2D 교재만으로는 이해하기 어려운 기계 구조를, 3D 인터랙티브 분해·조립 시뮬레이션과 SSE 스트리밍 기반 AI 어시스턴트로 직관적으로 학습할 수 있는 서비스입니다. 7가지 기계 장치(드론, V4 엔진, 로봇팔, 로봇 그리퍼, 판스프링, 만력기, 서스펜션)를 3D로 분해하고 학습할 수 있으며, 부품별 AI 설명·퀴즈·메모·워크플로우·PDF 내보내기까지 학습 흐름 전체를 한 곳에서 관리합니다.",
     details: [],
     roleDetails: [
       {
         role: "프론트엔드",
         items: [
-          "Three.js 기반 3D 뷰어 구현 (위치, 줌, 회전 상태 관리)",
-          "렌더링 품질 제어 (조명, 셰이더, 텍스처)",
-          "기계 부품 분해/조립 인터랙션 구현",
-          "RAG 기반 AI 어시스턴트 연동 (Claude API)",
-          "퀴즈 시스템 및 학습 노트 관리 기능",
-          "PDF 내보내기 및 워크플로우 기반 복습 시스템",
+          "@react-three/fiber + drei 기반 3D 뷰어 구현 — OrbitControls, Bounds 자동 프레이밍, EffectComposer(Bloom·N8AO·ToneMapping) 후처리",
+          "부품 변형(Transform) 충돌 방지를 위한 Outer/Inner 이중 그룹 구조 설계",
+          "4개 독립 Zustand 스토어 설계 — ModelStore(분해 레벨·숨김), RenderStore(조명·재질·카메라), EditStore(도구·히스토리), SimulatorStore(재생 타임라인)",
+          "Undo/Redo 히스토리 구현 (최대 50개) — Zustand subscribe로 3D 오브젝트 자동 동기화",
+          "시뮬레이터 타임라인과 분해 애니메이션 동기화 — useFrame에서 currentTime/duration 비율로 explodeLevel 제어",
+          "SSE(Server-Sent Events) 기반 스트리밍 AI 응답 파싱 — ReadableStream + 30ms 인터벌 타이핑 애니메이션 구현",
+          "퀴즈 시스템 — 사전 정의 질문 + 부품명 기반 자동 생성으로 문제 풀(Pool) 구성, 매회 5문제 랜덤 출제",
+          "jsPDF + html2canvas로 3D 캡처·메모·AI 대화를 하나의 PDF로 내보내기",
+          "@xyflow/react 기반 학습 워크플로우 노드 편집",
         ],
       },
     ],
     achievements: [
-      "6가지 기계 장치(판스프링, 만력기, 로봇 그리퍼, 드론, V4 엔진, 로봇팔) 3D 학습 콘텐츠 구현",
-      "3D 인터랙션과 AI 어시스턴트를 결합한 학습 경험 설계",
+      "7가지 기계 장치(드론, V4 엔진, 로봇팔, 로봇 그리퍼, 판스프링, 만력기, 서스펜션) 3D 분해·조립 학습 콘텐츠 구현",
+      "피보나치 스피어 알고리즘 기반 자연스러운 부품 분해 애니메이션 구현",
+      "SSE 스트리밍 AI 응답 + 타이핑 애니메이션으로 실시간 학습 보조 경험 제공",
+      "Undo/Redo·워크플로우·퀴즈·메모·PDF 내보내기를 통합한 완결된 학습 흐름 설계",
     ],
     resources: [
       {

@@ -7,6 +7,7 @@ import { MomentierRetrospective } from "@/components/retrospectives/MomentierRet
 import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
 import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
 import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
+import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -221,6 +222,7 @@ export default async function ProjectPage({
             </section>
 
             {/* Retrospective */}
+            {project.id === "simvex" && <SimvexRetrospective />}
             {project.id === "momentier" && <MomentierRetrospective />}
             {project.id === "booksight" && <BooksightRetrospective />}
             {project.id === "chukjibeob" && <ChukjibeobRetrospective />}

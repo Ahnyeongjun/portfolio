@@ -50,12 +50,12 @@ export function WithingRetrospective() {
           <p>
             프론트엔드에서 백엔드와 AI 서버를 직접 호출하면 두 가지 문제가 생깁니다.
             하나는 <Highlight>CORS</Highlight>이고, 다른 하나는 <Highlight>Authorization 헤더</Highlight> 관리입니다.
-            서버가 여러 개면 각 fetch마다 토큰을 붙여야 하고, 클라이언트 코드에 백엔드 URL이 직접 노출됩니다.
+            서버가 여러 개면 각 fetch마다 토큰을 직접 추가해야 하고, 클라이언트 코드에 백엔드 URL이 직접 노출됩니다.
           </p>
           <p>
             이 프로젝트에서는 Next.js <Highlight>API Route</Highlight>를 프록시 레이어로 두어 이 문제를 해결했습니다.
             브라우저는 항상 같은 도메인의 <code>/api/...</code>로 요청하고,
-            API Route가 실제 백엔드나 AI 서버로 포워딩하면서 Authorization 헤더를 붙입니다.
+            API Route가 실제 백엔드나 AI 서버로 요청을 전달하면서 Authorization 헤더를 추가합니다.
           </p>
           <CodeBlock>{`// pages/api/recommend/dress.ts (API Route)
 export default async function handler(req, res) {
