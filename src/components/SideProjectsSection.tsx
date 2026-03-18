@@ -39,8 +39,8 @@ export function SideProjectsSection() {
     const filtered = sideProjects.filter((project) => {
       if (categoryFilter === "all") return true;
       return (
-        project.category === categoryFilter ||
-        (project.category === "fullstack" &&
+        project.category.includes(categoryFilter) ||
+        (project.category.includes("fullstack") &&
           (categoryFilter === "frontend" || categoryFilter === "backend"))
       );
     });

@@ -12,7 +12,7 @@ interface ProjectCardProps {
   imageUrl?: string;
   status: "live" | "beta" | "development" | "deployed";
   type: "company" | "team" | "personal";
-  category: "fullstack" | "backend" | "frontend" | "ai";
+  category: ("fullstack" | "backend" | "frontend" | "ai")[];
   company?: string;
   period?: string;
   role?: string;
@@ -43,7 +43,7 @@ function getRoleTags(role: string, category?: string): string[] {
 
   const hasFront = lowerRole.includes("프론트") || lowerRole.includes("frontend");
   const hasBack = lowerRole.includes("백엔드") || lowerRole.includes("backend") || lowerRole.includes("api");
-  const isFullstack = lowerRole.includes("풀스택") || lowerRole.includes("fullstack") || category === "fullstack" || (hasFront && hasBack);
+  const isFullstack = lowerRole.includes("풀스택") || lowerRole.includes("fullstack") || category?.includes("fullstack") || (hasFront && hasBack);
 
   if (isFullstack) {
     tags.push("풀스택");
