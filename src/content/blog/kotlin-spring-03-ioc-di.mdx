@@ -1,0 +1,197 @@
+---
+title: "IoC, DI, 인터페이스 추상화 - Spring이 객체를 관리하는 방법"
+description: "Spring의 핵심 동작 원리인 IoC와 DI, 그리고 인터페이스 추상화가 왜 필요한지 이해한다."
+date: "2026-03-18"
+category: "Kotlin/Spring"
+tags: ["Spring Boot", "Kotlin", "IoC", "DI", "인터페이스", "추상화"]
+series: "Kotlin + Spring Boot 입문"
+seriesOrder: 4
+---
+
+## IoC (Inversion of Control, 제어의 역전)
+
+일반적인 코드에서는 **내가** 필요한 객체를 직접 만들고 관리한다.
+
+```kotlin
+// 일반적인 방식 - 개발자가 직접 제어
+class UserController {
+    val userService = UserService()       // 내가 직접 만들고
+    val userRepository = UserRepository() // 내가 직접 만들고
+    // 다 쓰면 내가 직접 정리
+}
+```
+
+문제가 있다. `UserController`가 `UserService`를 직접 만드니까, `UserService` 생성 방식이 바뀌면 `UserController`도 수정해야 한다. 클래스가 많아질수록 이런 의존 관계가 복잡하게 얽힌다.
+
+**IoC는 이 제어권을 개발자가 아닌 프레임워크(Spring)에게 넘기는 것이다.**
+
+```
+일반 방식:  개발자가 객체를 만들고 → 사용하고 → 정리한다
+IoC 방식:   Spring이 객체를 만들고 → 개발자에게 넘겨주고 → Spring이 정리한다
+```
+
+"제어가 역전됐다"는 뜻이 바로 이것이다. 내가 당기는 게 아니라 Spring이 밀어준다.
+
+---
+
+## 빈(Bean)과 IoC 컨테이너
+
+Spring이 만들고 관리하는 객체를 **빈(Bean)** 이라고 한다. 이 빈들을 모아두는 공간이 **IoC 컨테이너**다.
+
+`@Service`, `@Repository`, `@RestController` 등의 어노테이션을 붙이면 Spring이 서버 시작 시에 해당 클래스의 빈을 자동으로 생성해서 컨테이너에 보관한다.
+
+```kotlin
+@Service
+class UserService { ... }  // Spring이 이 클래스의 객체를 만들어서 컨테이너에 보관
+```
+
+```
+서버 시작
+    │
+    ▼
+Spring이 어노테이션 붙은 클래스들을 전부 스캔
+    │
+    ▼
+객체를 생성해서 IoC 컨테이너에 보관
+    │
+    ▼
+필요한 곳에 자동으로 꺼내서 주입
+```
+
+빈은 기본적으로 **딱 하나만** 만들어진다. 여러 Controller가 같은 Service를 쓰더라도 객체는 하나를 공유한다.
+
+---
+
+## DI (Dependency Injection, 의존성 주입)
+
+IoC의 구체적인 구현 방식이다. Spring이 IoC 컨테이너에 보관된 빈을 필요한 곳에 **주입**해준다.
+
+```kotlin
+@RestController
+class UserController(
+    private val userService: UserService  // Spring이 컨테이너에서 꺼내서 여기에 주입
+) {
+    fun getUser(id: Long) = userService.getUser(id)
+}
+```
+
+`UserController`는 `UserService`가 어떻게 만들어졌는지 전혀 모른다. 그냥 받아서 쓸 뿐이다.
+
+### 세 개념의 관계
+
+```
+IoC      : "객체 생성과 관리를 Spring에게 맡긴다"는 원칙
+Bean     : Spring이 IoC 컨테이너에서 관리하는 객체
+DI       : IoC를 실현하는 구체적인 방법 (빈을 필요한 곳에 주입)
+```
+
+---
+
+## 인터페이스 추상화
+
+DI와 인터페이스를 함께 쓰면 더 강력해진다.
+
+지금까지는 구체적인 클래스를 직접 주입받았다.
+
+```kotlin
+@RestController
+class UserController(
+    private val userService: UserService  // 구체 클래스
+)
+```
+
+이렇게 하면 `UserService`를 다른 구현으로 바꾸려면 Controller 코드를 수정해야 한다.
+
+인터페이스를 사용하면 달라진다.
+
+```kotlin
+// 인터페이스 - "무엇을 할 수 있는지"만 정의
+interface UserService {
+    fun getUser(id: Long): User
+    fun createUser(request: CreateUserRequest): User
+}
+
+// 실제 구현체
+@Service
+class UserServiceImpl(
+    private val userRepository: UserRepository
+) : UserService {
+    override fun getUser(id: Long) = userRepository.findById(id)
+        ?: throw IllegalArgumentException("유저 없음")
+
+    override fun createUser(request: CreateUserRequest) =
+        userRepository.save(request.name, request.email)
+}
+```
+
+Controller는 인터페이스 타입으로 주입받는다.
+
+```kotlin
+@RestController
+class UserController(
+    private val userService: UserService  // 인터페이스 타입
+) {
+    fun getUser(id: Long) = userService.getUser(id)
+}
+```
+
+Spring이 `UserService` 인터페이스를 구현한 빈(`UserServiceImpl`)을 자동으로 찾아서 주입해준다.
+
+### 왜 인터페이스를 쓰는가?
+
+**테스트할 때**
+
+```kotlin
+// 실제 DB를 쓰지 않는 테스트용 구현체
+class FakeUserService : UserService {
+    override fun getUser(id: Long) = User(id, "테스트유저", "test@test.com")
+    override fun createUser(request: CreateUserRequest) = User(1, request.name, request.email)
+}
+
+// 테스트에서는 FakeUserService를 주입
+val controller = UserController(FakeUserService())
+```
+
+Controller 코드를 전혀 수정하지 않고 가짜 Service를 꽂아서 테스트할 수 있다.
+
+**구현체를 교체할 때**
+
+```kotlin
+// 기존: 직접 만든 Repository 사용
+@Service
+class UserServiceImpl(private val userRepository: UserRepository) : UserService
+
+// 변경: 외부 API를 쓰는 구현체로 교체
+@Service
+class ExternalUserServiceImpl(private val apiClient: UserApiClient) : UserService
+```
+
+Controller는 `UserService` 인터페이스만 바라보고 있기 때문에, 구현체가 바뀌어도 Controller 코드는 수정할 필요가 없다.
+
+### 정리하면
+
+```
+인터페이스  : "무엇을 할 수 있는지" 약속 (계약)
+구현체      : 그 약속을 실제로 이행하는 클래스
+DI          : Spring이 적절한 구현체를 찾아서 주입
+
+→ 사용하는 쪽(Controller)은 인터페이스만 알면 된다
+→ 구현체가 바뀌어도 사용하는 쪽 코드는 그대로
+```
+
+---
+
+## 실무에서는
+
+간단한 프로젝트에서는 인터페이스 없이 구체 클래스를 바로 주입하는 경우도 많다. 규모가 커지거나 테스트가 중요한 프로젝트일수록 인터페이스 분리가 빛을 발한다.
+
+---
+
+## 시리즈: Kotlin + Spring Boot 입문
+
+1. [개발 환경 설치 - IntelliJ, JDK, 첫 Spring Boot 실행](/blog/kotlin-spring-00-setup)
+2. [Kotlin 기초 - 변수, 함수, 클래스, 인터페이스](/blog/kotlin-spring-01-kotlin-basics)
+3. [Spring Boot 구조 - MVC, 3계층 아키텍처](/blog/kotlin-spring-02-spring-boot-intro)
+4. **IoC, DI, 인터페이스 추상화** ← 현재 글
+5. [REST API 만들기 - Controller, Service, Repository](/blog/kotlin-spring-04-rest-api)
+6. [JPA와 데이터베이스 연동](/blog/kotlin-spring-05-database)

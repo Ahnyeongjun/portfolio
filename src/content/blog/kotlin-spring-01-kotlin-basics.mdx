@@ -1,0 +1,415 @@
+---
+title: "Kotlin 기초 - 프로그래밍 처음이어도 괜찮아"
+description: "Kotlin 문법을 처음 배우는 입장에서 이해하기 쉽게 정리한다. 변수, 함수, 클래스, null 처리."
+date: "2026-03-18"
+category: "Kotlin"
+tags: ["Kotlin", "문법", "입문", "기초"]
+---
+
+## Kotlin이란?
+
+코드를 작성해서 프로그램을 만드는 언어다. JetBrains(IntelliJ 만든 회사)가 2011년에 만들었고, 지금은 서버 개발과 Android 앱 개발에 많이 쓰인다.
+
+이 시리즈는 Kotlin으로 **Spring Boot 서버**를 만드는 과정을 다룬다. 서버란 앱이나 웹사이트가 데이터를 요청하면 응답해주는 프로그램이다.
+
+```
+[앱 / 웹] ──요청──▶ [서버 (Spring Boot)] ──▶ [데이터베이스]
+                  ◀──응답──
+```
+
+---
+
+## 변수 - 데이터를 담는 상자
+
+변수는 값을 저장해두는 공간이다.
+
+```kotlin
+val name = "김철수"
+var age = 25
+```
+
+- `val` : 한 번 넣으면 바꿀 수 없다
+- `var` : 나중에 값을 바꿀 수 있다
+
+```kotlin
+val name = "김철수"
+name = "이영희"  // 오류! val은 변경 불가
+
+var age = 25
+age = 26  // OK
+```
+
+**언제 val, 언제 var?**
+
+바뀔 일이 없는 값은 `val`, 바뀔 수 있는 값은 `var`. 기본적으로 `val`을 쓰고, 바꿔야 할 때만 `var`로 바꾸는 게 좋다.
+
+### 타입
+
+값의 종류를 타입이라고 한다.
+
+```kotlin
+val name: String = "김철수"   // 문자열
+val age: Int = 25             // 정수
+val height: Double = 175.5    // 소수
+val isStudent: Boolean = true // true / false
+```
+
+보통은 값만 넣어도 Kotlin이 알아서 타입을 파악한다.
+
+```kotlin
+val name = "김철수"  // String이라는 걸 자동으로 앎
+val age = 25        // Int라는 걸 자동으로 앎
+```
+
+---
+
+## Null - "값이 없음"을 표현하는 방법
+
+`null`은 "값이 없다"는 뜻이다.
+
+```kotlin
+var nickname: String? = "KS"
+nickname = null  // "값이 없음" 상태로 변경
+```
+
+타입 뒤에 `?`를 붙이면 null을 넣을 수 있고, 안 붙이면 null을 넣을 수 없다.
+
+```kotlin
+var a: String = "안녕"
+a = null  // 오류! ? 없으면 null 불가
+
+var b: String? = "안녕"
+b = null  // OK
+```
+
+왜 이게 중요하냐면, null인 변수에서 뭔가 꺼내려 하면 프로그램이 터진다.
+
+```kotlin
+val nickname: String? = null
+println(nickname.length)  // 오류! null에서 length를 꺼낼 수 없음
+```
+
+Kotlin은 이 상황을 컴파일 단계에서 막아준다. null일 수 있는 변수는 그냥 쓰지 못하고, 반드시 처리해야 한다.
+
+### null 처리 방법
+
+```kotlin
+val nickname: String? = null
+
+// 방법 1: if로 확인
+if (nickname != null) {
+    println(nickname.length)  // null이 아닐 때만 실행
+}
+
+// 방법 2: ?. (물음표 점) - null이면 그냥 건너뜀
+println(nickname?.length)  // null → 출력 안 함
+
+// 방법 3: ?: (엘비스 연산자) - null이면 기본값 사용
+val len = nickname?.length ?: 0  // null이면 0을 대신 사용
+```
+
+`?:` 이 기호가 엘비스 같이 생겨서 "엘비스 연산자"라고 부른다.
+
+---
+
+## 함수 - 코드 묶음에 이름 붙이기
+
+같은 코드를 반복해서 쓰는 대신, 함수로 만들어두고 이름으로 호출한다.
+
+```kotlin
+fun greet(name: String) {
+    println("안녕하세요, $name!")
+}
+
+greet("철수")  // 안녕하세요, 철수!
+greet("영희")  // 안녕하세요, 영희!
+```
+
+- `fun` : 함수를 만든다는 표시
+- `greet` : 함수 이름
+- `name: String` : 받을 값(파라미터). 이름과 타입을 씀
+- `{ ... }` : 실행할 코드
+
+### 결과를 돌려주는 함수
+
+```kotlin
+fun add(a: Int, b: Int): Int {
+    return a + b
+}
+
+val result = add(3, 4)
+println(result)  // 7
+```
+
+뒤에 `: Int`는 이 함수가 Int 타입 값을 돌려준다는 뜻이다.
+
+한 줄짜리는 `=`으로 줄일 수 있다.
+
+```kotlin
+fun add(a: Int, b: Int) = a + b
+```
+
+### 기본값
+
+```kotlin
+fun greet(name: String, message: String = "안녕하세요") {
+    println("$message, $name!")
+}
+
+greet("철수")              // 안녕하세요, 철수!
+greet("영희", "반갑습니다")  // 반갑습니다, 영희!
+```
+
+파라미터에 기본값을 넣어두면 생략할 수 있다.
+
+---
+
+## 문자열 템플릿
+
+문자열 안에 변수 값을 넣을 때 `$`를 쓴다.
+
+```kotlin
+val name = "철수"
+val age = 25
+
+println("이름: $name, 나이: $age")
+// 이름: 철수, 나이: 25
+
+// 계산이 필요하면 {} 사용
+println("내년 나이: ${age + 1}")
+// 내년 나이: 26
+```
+
+---
+
+## 조건문
+
+### if
+
+```kotlin
+val score = 85
+
+if (score >= 90) {
+    println("A")
+} else if (score >= 80) {
+    println("B")
+} else {
+    println("C")
+}
+```
+
+결과를 변수에 바로 담을 수 있다.
+
+```kotlin
+val grade = if (score >= 90) "A" else if (score >= 80) "B" else "C"
+```
+
+### when
+
+여러 경우를 비교할 때 쓴다.
+
+```kotlin
+val day = "토"
+
+when (day) {
+    "토", "일" -> println("주말")
+    "월"       -> println("월요일 힘내자")
+    else       -> println("평일")
+}
+```
+
+범위로도 쓸 수 있다.
+
+```kotlin
+val score = 85
+
+val grade = when {
+    score >= 90 -> "A"
+    score >= 80 -> "B"
+    score >= 70 -> "C"
+    else        -> "F"
+}
+```
+
+---
+
+## 반복문
+
+### for
+
+```kotlin
+// 1부터 5까지
+for (i in 1..5) {
+    println(i)  // 1, 2, 3, 4, 5
+}
+
+// 1부터 4까지 (5 제외)
+for (i in 1 until 5) {
+    println(i)  // 1, 2, 3, 4
+}
+
+// 목록을 순서대로
+val names = listOf("철수", "영희", "민수")
+for (name in names) {
+    println(name)
+}
+```
+
+### while
+
+조건이 참인 동안 반복한다.
+
+```kotlin
+var count = 0
+while (count < 3) {
+    println("카운트: $count")
+    count++
+}
+// 카운트: 0
+// 카운트: 1
+// 카운트: 2
+```
+
+---
+
+## 리스트 - 여러 값을 순서대로 담기
+
+```kotlin
+val fruits = listOf("사과", "바나나", "딸기")
+
+println(fruits[0])   // 사과 (0번부터 시작)
+println(fruits.size) // 3
+
+// 추가/삭제가 필요하면
+val mutableFruits = mutableListOf("사과", "바나나")
+mutableFruits.add("딸기")
+mutableFruits.remove("바나나")
+```
+
+자주 쓰는 함수들이 있다.
+
+```kotlin
+val numbers = listOf(3, 1, 4, 1, 5, 9, 2, 6)
+
+val sorted = numbers.sorted()              // [1, 1, 2, 3, 4, 5, 6, 9] 정렬
+val evens = numbers.filter { it % 2 == 0 } // [4, 2, 6] 짝수만
+val doubled = numbers.map { it * 2 }       // 각 값을 2배
+val sum = numbers.sum()                    // 31 합계
+```
+
+`it`은 현재 원소를 가리킨다.
+
+---
+
+## 클래스 - 관련된 데이터를 묶기
+
+여러 변수를 하나로 묶어서 관리할 때 클래스를 쓴다.
+
+```kotlin
+class Person(val name: String, var age: Int)
+
+val person = Person("철수", 25)
+println(person.name)  // 철수
+println(person.age)   // 25
+person.age = 26       // 변경 가능
+```
+
+### 함수도 넣을 수 있다
+
+```kotlin
+class Person(val name: String, var age: Int) {
+
+    fun introduce() {
+        println("안녕하세요, 저는 $name이고 ${age}살입니다.")
+    }
+
+    fun isAdult(): Boolean {
+        return age >= 18
+    }
+}
+
+val person = Person("철수", 25)
+person.introduce()   // 안녕하세요, 저는 철수이고 25살입니다.
+println(person.isAdult())  // true
+```
+
+### data class
+
+데이터를 담는 용도의 클래스다. Spring Boot에서 DB 데이터를 담거나 API 응답을 만들 때 많이 쓴다.
+
+```kotlin
+data class User(
+    val id: Long,
+    val name: String,
+    val email: String
+)
+
+val user = User(1, "철수", "chul@test.com")
+println(user)
+// User(id=1, name=철수, email=chul@test.com)
+
+// 일부만 바꾼 복사본 만들기
+val newUser = user.copy(name = "영희")
+// User(id=1, name=영희, email=chul@test.com)
+```
+
+일반 class와 달리 `toString()`, 내용 비교(`==`), `copy()`가 자동으로 된다.
+
+---
+
+## 인터페이스
+
+인터페이스는 클래스가 **반드시 구현해야 할 함수 목록**을 정의하는 것이다. 함수의 이름과 형태만 정하고, 실제 내용은 구현하는 클래스가 채운다.
+
+```kotlin
+interface Greetable {
+    fun greet(): String  // 어떻게 인사할지는 정하지 않음. 형태만 정의
+}
+
+class KoreanGreeter : Greetable {
+    override fun greet() = "안녕하세요!"  // 한국어로 구현
+}
+
+class EnglishGreeter : Greetable {
+    override fun greet() = "Hello!"  // 영어로 구현
+}
+```
+
+`:`는 "이 인터페이스를 구현한다"는 뜻이다. `override`는 "인터페이스에서 정의한 함수를 여기서 구현한다"는 표시다.
+
+```kotlin
+val greeter: Greetable = KoreanGreeter()
+println(greeter.greet())  // 안녕하세요!
+
+// 구현체를 바꿔도 사용하는 코드는 그대로
+val greeter2: Greetable = EnglishGreeter()
+println(greeter2.greet())  // Hello!
+```
+
+`greeter` 변수의 타입은 `Greetable`이다. 실제로 어떤 구현체가 들어있는지 몰라도 `greet()`를 호출할 수 있다. 이것이 **추상화**다.
+
+인터페이스가 Spring에서 왜 중요한지는 다음 편(IoC/DI)에서 다룬다.
+
+---
+
+## 정리
+
+| 개념 | 예시 | 용도 |
+|------|------|------|
+| `val` | `val name = "철수"` | 바꾸지 않을 값 |
+| `var` | `var age = 25` | 바꿀 수 있는 값 |
+| `String?` | `var n: String? = null` | null 허용 타입 |
+| `fun` | `fun add(a: Int, b: Int) = a + b` | 함수 정의 |
+| `if / when` | - | 조건 분기 |
+| `for / while` | - | 반복 |
+| `listOf` | `listOf(1, 2, 3)` | 읽기 전용 리스트 |
+| `class` | `class Person(val name: String)` | 데이터 + 함수 묶기 |
+| `data class` | - | 데이터 담는 클래스 |
+
+기본 문법은 이 정도면 충분하다. 이 내용을 바탕으로 Spring Boot 서버를 만들고 싶다면 아래 시리즈를 참고하자.
+
+---
+
+## Spring Boot 서버 만들기
+
+이 문법들이 실제로 어떻게 쓰이는지 보고 싶다면 → [Kotlin + Spring Boot 입문 시리즈](/blog/kotlin-spring-intro)

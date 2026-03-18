@@ -1,0 +1,60 @@
+---
+title: "Kotlin + Spring Boot 입문 시리즈 - 시작하기 전에"
+description: "이 시리즈에서 무엇을 만드는지, 어느 편부터 읽으면 좋은지 안내한다."
+date: "2026-03-18"
+category: "Kotlin/Spring"
+tags: ["Kotlin", "Spring Boot", "입문", "가이드"]
+series: "Kotlin + Spring Boot 입문"
+seriesOrder: 1
+---
+
+## 이 시리즈에서 만드는 것
+
+Kotlin과 Spring Boot로 **HTTP API 서버**를 처음부터 만든다.
+
+```
+[앱 / 웹브라우저]
+      │  GET /users       "유저 목록 줘"
+      │  POST /users      "새 유저 만들어줘"
+      │  DELETE /users/1  "1번 유저 지워줘"
+      ▼
+[Spring Boot 서버]  ← 이걸 만든다
+      │
+      ▼
+[데이터베이스]
+```
+
+시리즈를 마치면 유저 데이터를 조회·생성·삭제하는 API 서버를 직접 만들 수 있다.
+
+---
+
+## 어느 편부터 읽으면 될까?
+
+- Kotlin 자체도 처음이라면 → [Kotlin 기초](/blog/kotlin-spring-01-kotlin-basics) → [환경 설치](/blog/kotlin-spring-00-setup)
+- Kotlin 문법은 알아요 → [환경 설치](/blog/kotlin-spring-00-setup)
+- Spring Boot 구조(MVC, 계층)는 알아요 → [IoC, DI, 인터페이스 추상화](/blog/kotlin-spring-03-ioc-di)
+- 개념은 다 알고 코드만 보고 싶어요 → [REST API 만들기](/blog/kotlin-spring-04-rest-api)
+
+---
+
+## 목차
+
+| 편 | 제목 | 내용 |
+|----|------|------|
+| 사전 지식 | [Kotlin 기초 - 변수, 함수, 클래스, 인터페이스](/blog/kotlin-spring-01-kotlin-basics) | Spring Boot에 필요한 Kotlin 문법 |
+| 1 | [환경 설치 - IntelliJ, JDK, 첫 실행](/blog/kotlin-spring-00-setup) | 개발 환경 세팅, 서버 구조 개요 |
+| 2 | [Spring Boot 구조 - MVC, 3계층 아키텍처](/blog/kotlin-spring-02-spring-boot-intro) | 코드를 어떻게 나누는지, 어노테이션이란 |
+| 3 | [IoC, DI, 인터페이스 추상화](/blog/kotlin-spring-03-ioc-di) | Spring이 객체를 관리하는 방법 |
+| 4 | [REST API 만들기](/blog/kotlin-spring-04-rest-api) | HTTP 메서드, 상태 코드, JSON, 실제 유저 API 구현 |
+| 5 | [JPA와 데이터베이스 연동](/blog/kotlin-spring-05-database) | ORM, JPA, Entity, 실제 DB에 저장하기 |
+
+---
+
+## 시리즈: Kotlin + Spring Boot 입문
+
+1. **시작하기 전에** ← 현재 글
+2. [환경 설치 - IntelliJ, JDK, 첫 실행](/blog/kotlin-spring-00-setup)
+3. [Spring Boot 구조 - MVC, 3계층 아키텍처](/blog/kotlin-spring-02-spring-boot-intro)
+4. [IoC, DI, 인터페이스 추상화](/blog/kotlin-spring-03-ioc-di)
+5. [REST API 만들기](/blog/kotlin-spring-04-rest-api)
+6. [JPA와 데이터베이스 연동](/blog/kotlin-spring-05-database)

@@ -1,0 +1,276 @@
+---
+title: "개발 환경 설치 - IntelliJ, JDK, 첫 Spring Boot 실행"
+description: "Kotlin과 Spring Boot를 시작하기 전에 필요한 것들을 설치하고, 서버가 어떤 구조로 동작하는지 이해한다."
+date: "2026-03-18"
+category: "Kotlin/Spring"
+tags: ["IntelliJ", "JDK", "Spring Boot", "Kotlin", "환경설정"]
+series: "Kotlin + Spring Boot 입문"
+seriesOrder: 2
+---
+
+## 우리가 만들 것
+
+이 시리즈에서는 **HTTP API 서버**를 만든다. 앱이나 웹사이트가 데이터를 요청하면 응답하는 프로그램이다.
+
+```
+[앱 / 웹브라우저]
+      │
+      │  "유저 목록 줘"  (GET /users)
+      ▼
+[Spring Boot 서버]  ← 우리가 만드는 것
+      │
+      │  DB에서 데이터 조회
+      ▼
+[데이터베이스]
+      │
+      ▼
+[Spring Boot 서버]
+      │
+      │  "[{id:1, name:'철수'}, ...]"
+      ▼
+[앱 / 웹브라우저]
+```
+
+이걸 만들기 위해 필요한 것들:
+
+| 도구 | 역할 |
+|------|------|
+| **JDK** | Kotlin/Java 코드를 실행하는 엔진 |
+| **IntelliJ IDEA** | 코드를 작성하는 편집기 |
+| **Spring Boot** | 서버를 쉽게 만들어주는 프레임워크 |
+
+---
+
+## 서버 내부 구조
+
+코드를 짜기 전에 Spring Boot 서버가 어떤 구조로 되어있는지 먼저 이해하면 좋다.
+
+Spring Boot는 **MVC 패턴**을 기반으로, 내부를 **3계층(3-Layer Architecture)** 으로 나눠서 관리한다.
+
+### MVC 패턴
+
+MVC는 코드를 역할에 따라 3가지로 분리하는 설계 방식이다.
+
+- **Model** : 데이터와 비즈니스 로직
+- **View** : 사용자에게 보여주는 것. REST API에서는 JSON 응답이 View 역할을 한다
+- **Controller** : 요청을 받아서 Model을 호출하고, 결과를 View로 돌려주는 중간 역할
+
+```
+클라이언트 (앱/웹)
+      │
+      │  GET /users/1  요청
+      ▼
+  Controller  ← 요청을 받아서 어떤 처리가 필요한지 판단
+      │
+      ▼
+   Model      ← 데이터 조회 및 비즈니스 로직 처리
+      │
+      ▼
+  Controller  ← 결과를 받아서
+      │
+      ▼
+JSON 응답     ← View 역할 (화면 대신 데이터를 돌려줌)
+      │
+      ▼
+클라이언트 (앱/웹)
+```
+
+### 3계층 아키텍처
+
+MVC의 Model 부분을 더 세분화한 것이 **3계층 아키텍처**다. 역할을 명확히 나눌수록 코드를 찾기 쉽고 수정도 쉬워진다.
+
+```
+┌──────────────────────────────────────┐
+│  Presentation Layer (표현 계층)       │
+│  Controller                          │
+│  - HTTP 요청/응답 처리                │
+├──────────────────────────────────────┤
+│  Business Layer (비즈니스 계층)       │
+│  Service                             │
+│  - 실제 비즈니스 로직                 │
+│  - 유효성 검사, 규칙 적용 등          │
+├──────────────────────────────────────┤
+│  Data Access Layer (데이터 접근 계층) │
+│  Repository                          │
+│  - DB 조회 / 저장 / 수정 / 삭제      │
+└──────────────────────────────────────┘
+              │
+              ▼
+          Database
+```
+
+요청은 반드시 **Controller → Service → Repository** 순서로 흘러간다. 계층을 건너뛰거나 역방향으로 호출하지 않는다.
+
+이 구조가 익숙하지 않아도 지금은 "세 가지로 나눈다" 정도만 기억하면 된다. 3편에서 실제 코드와 함께 자세히 다룬다.
+
+---
+
+## 1. JDK 설치
+
+JDK(Java Development Kit)는 Kotlin 코드를 실행하는 엔진이다. 이게 없으면 코드가 돌아가지 않는다.
+
+### 설치 방법
+
+**Windows / Mac 공통**
+
+1. [https://adoptium.net](https://adoptium.net) 접속
+2. **Temurin 21 (LTS)** 다운로드
+3. 설치 파일 실행 → 기본 옵션으로 설치
+
+> LTS(Long Term Support)는 오래 지원하는 안정적인 버전이라는 뜻이다.
+
+### 설치 확인
+
+터미널(Windows: PowerShell / Mac: Terminal)을 열고 입력:
+
+```bash
+java -version
+```
+
+이런 결과가 나오면 성공:
+
+```
+openjdk version "21.0.x" ...
+```
+
+---
+
+## 2. IntelliJ IDEA 설치
+
+코드를 작성하는 편집기다. Kotlin을 만든 JetBrains에서 만들어서 Kotlin 지원이 가장 좋다.
+
+### 설치 방법
+
+1. [https://www.jetbrains.com/idea/download](https://www.jetbrains.com/idea/download) 접속
+2. **Community Edition** (무료) 다운로드
+3. 설치 파일 실행 → 기본 옵션으로 설치
+
+> Community Edition으로 Spring Boot 개발 가능하다. Ultimate(유료)는 없어도 된다.
+
+### 설치 후 초기 설정
+
+처음 실행하면 테마, 플러그인 등 설정이 나온다. 기본값으로 넘어가도 된다.
+
+---
+
+## 3. 프로젝트 만들기
+
+### start.spring.io 사용
+
+Spring Boot 프로젝트를 자동으로 만들어주는 사이트다.
+
+1. [https://start.spring.io](https://start.spring.io) 접속
+2. 아래처럼 설정:
+
+```
+Project  : Gradle - Kotlin
+Language : Kotlin
+Spring Boot : 3.x.x (최신 버전)
+Packaging: Jar
+Java     : 21
+```
+
+3. **ADD DEPENDENCIES** 클릭 후 추가:
+   - `Spring Web` - HTTP 요청/응답
+   - `Spring Data JPA` - 데이터베이스 연동
+   - `H2 Database` - 테스트용 DB (설치 불필요)
+
+4. **GENERATE** 클릭 → zip 파일 다운로드
+
+5. 압축 풀기 → IntelliJ에서 폴더 열기 (`File → Open`)
+
+### 프로젝트 구조
+
+IntelliJ로 열면 이런 구조가 보인다:
+
+```
+my-app/
+├── src/
+│   ├── main/
+│   │   ├── kotlin/
+│   │   │   └── com/example/myapp/
+│   │   │       └── MyAppApplication.kt   ← 서버 시작점
+│   │   └── resources/
+│   │       └── application.properties    ← 설정 파일
+│   └── test/
+│       └── kotlin/                       ← 테스트 코드
+└── build.gradle.kts                      ← 라이브러리 관리
+```
+
+처음엔 `MyAppApplication.kt` 하나만 있다. 기능을 추가하면서 파일이 늘어난다.
+
+---
+
+## 4. 첫 실행
+
+### 기본 파일 확인
+
+`MyAppApplication.kt`를 열면:
+
+```kotlin
+@SpringBootApplication
+fun main(args: Array<String>) {
+    runApplication<MyAppApplication>(*args)
+}
+```
+
+이게 서버의 시작점이다. `@SpringBootApplication`은 "이 파일에서 서버를 시작한다"는 표시다.
+
+### 서버 실행
+
+IntelliJ 오른쪽 위의 ▶ 버튼을 누른다.
+
+하단 콘솔에 이런 로그가 나오면 성공:
+
+```
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+...
+Started MyAppApplication in 2.3 seconds (JVM running for 2.8)
+```
+
+### 첫 API 만들어서 확인
+
+`MyAppApplication.kt`가 있는 폴더에 새 파일을 만든다.
+
+`HelloController.kt`:
+
+```kotlin
+package com.example.myapp
+
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+class HelloController {
+
+    @GetMapping("/hello")
+    fun hello(): String {
+        return "Spring Boot 작동 중!"
+    }
+}
+```
+
+서버를 재시작하고 브라우저에서 `http://localhost:8080/hello` 접속.
+
+```
+Spring Boot 작동 중!
+```
+
+이 텍스트가 보이면 서버가 정상적으로 동작하는 것이다.
+
+---
+
+## 환경 설정 완료
+
+이제 코드를 작성할 준비가 됐다. Kotlin 문법이 아직 익숙하지 않다면 [Kotlin 기초](/blog/kotlin-spring-01-kotlin-basics)를 먼저 읽고 오자.
+
+---
+
+## 시리즈: Kotlin + Spring Boot 입문
+
+1. **환경 설치** ← 현재 글
+2. [Spring Boot 구조 - MVC, 3계층 아키텍처](/blog/kotlin-spring-02-spring-boot-intro)
+3. [IoC, DI, 인터페이스 추상화](/blog/kotlin-spring-03-ioc-di)
+4. [REST API 만들기 - Controller, Service, Repository](/blog/kotlin-spring-04-rest-api)
+5. [JPA와 데이터베이스 연동](/blog/kotlin-spring-05-database)
