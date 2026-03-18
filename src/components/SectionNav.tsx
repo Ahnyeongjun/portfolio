@@ -45,7 +45,7 @@ export function SectionNav() {
   if (!visible) return null;
 
   return (
-    <nav className="fixed right-4 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3">
+    <nav className="fixed right-4 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col gap-3 print:hidden">
       {sections.map((section) => (
         <button
           key={section.id}

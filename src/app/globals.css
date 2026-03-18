@@ -162,3 +162,110 @@ code, pre {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* ===== Resume page print styles ===== */
+@media print {
+  /* Resume-specific: remove screen chrome, keep document */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  article {
+    width: 100% !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+}
+
+/* ===== Portfolio page print styles ===== */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  body {
+    background: white !important;
+    color: #1e293b !important;
+    font-size: 11pt;
+  }
+
+  main {
+    padding-top: 0 !important;
+  }
+
+  /* Remove web layout paddings — only for portfolio page */
+  #portfolio-page .container {
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Reduce section vertical padding — only for portfolio page */
+  #portfolio-page section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* Remove glass morphism */
+  .glass {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Fix gradient text */
+  .text-gradient {
+    -webkit-text-fill-color: #0891b2 !important;
+    background: none !important;
+  }
+
+  /* Remove glows */
+  .glow-primary,
+  .glow-accent {
+    box-shadow: none !important;
+  }
+
+  /* Stop animations — show content immediately */
+  .animate-fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .animate-float,
+  .animate-glow-pulse {
+    animation: none !important;
+  }
+
+  /* Muted text stays readable */
+  .text-muted-foreground {
+    color: #64748b !important;
+  }
+
+  /* Remove hover effects */
+  * {
+    transition: none !important;
+  }
+
+  /* Page-break hints */
+  section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Links — keep mailto href visible */
+  a[href^="mailto"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #64748b;
+  }
+}

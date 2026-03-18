@@ -65,7 +65,7 @@ export function AboutSection() {
 
               {/* Contact Button */}
               <Button
-                className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90 print:hidden"
                 onClick={() =>
                   (window.location.href = "mailto:ahn479512@gmail.com")
                 }
@@ -73,6 +73,9 @@ export function AboutSection() {
                 <Mail className="w-4 h-4 mr-2" />
                 연락하기
               </Button>
+              <p className="hidden print:block mt-4 text-sm text-muted-foreground">
+                ahn479512@gmail.com
+              </p>
             </div>
 
             {/* About Content */}

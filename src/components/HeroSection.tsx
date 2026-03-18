@@ -2,9 +2,9 @@ import { Sparkles, ArrowDown } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen print:min-h-0 print:py-16 flex items-center justify-center overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden print:hidden">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-glow-pulse" />
         <div
           className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-glow-pulse"
@@ -14,7 +14,7 @@ export function HeroSection() {
 
       {/* Grid Pattern */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.03] print:hidden"
         style={{
           backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px),
                            linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
@@ -50,7 +50,7 @@ export function HeroSection() {
           구조적 문제를 주도적으로 개선해온 백엔드 개발자입니다.
         </p>
 
-        <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
+        <div className="animate-fade-in print:hidden" style={{ animationDelay: "0.3s" }}>
           <a
             href="#about"
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"

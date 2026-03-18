@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Github } from "lucide-react";
+import { PrintButton } from "./PrintButton";
 
 export function Header() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass">
+    <header className="fixed top-0 left-0 right-0 z-50 glass print:hidden">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -33,6 +34,7 @@ export function Header() {
             >
               Lab
             </Link>
+            <PrintButton />
             <a
               href="https://github.com/Ahnyeongjun"
               target="_blank"
