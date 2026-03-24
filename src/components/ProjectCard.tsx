@@ -35,7 +35,7 @@ const statusLabels = {
 };
 
 // 역할에서 태그 추출
-function getRoleTags(role: string, category?: string): string[] {
+function getRoleTags(role: string, category?: string[]): string[] {
   const tags: string[] = [];
   const lowerRole = role.toLowerCase();
 
