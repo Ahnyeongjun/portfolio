@@ -1,0 +1,56 @@
+---
+title: "Python FastAPI 입문 시리즈 - 시작하기 전에"
+description: "이 시리즈에서 무엇을 만드는지, 어느 편부터 읽으면 좋은지 안내한다."
+date: "2026-03-25"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "입문", "가이드"]
+series: "Python FastAPI 입문"
+seriesOrder: 1
+---
+
+## 이 시리즈에서 만드는 것
+
+Python과 FastAPI로 **HTTP API 서버**를 처음부터 만든다.
+
+```
+[앱 / 웹브라우저]
+      │  GET /users       "유저 목록 줘"
+      │  POST /users      "새 유저 만들어줘"
+      │  DELETE /users/1  "1번 유저 지워줘"
+      ▼
+[FastAPI 서버]  ← 이걸 만든다
+      │
+      ▼
+[데이터베이스]
+```
+
+시리즈를 마치면 유저 데이터를 조회·생성·삭제하는 API 서버를 직접 만들 수 있다.
+
+---
+
+## 어느 편부터 읽으면 될까?
+
+- FastAPI 처음이라면 → [FastAPI 구조](/blog/fastapi-02-structure) 부터 순서대로
+- FastAPI 구조(라우터, 계층)는 알아요 → [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di)
+- 개념은 다 알고 코드만 보고 싶어요 → [REST API 만들기](/blog/fastapi-04-rest-api)
+
+---
+
+## 목차
+
+| 편 | 제목 | 내용 |
+|----|------|------|
+| 1 | [FastAPI 구조 - 라우터, 3계층 아키텍처](/blog/fastapi-02-structure) | 코드를 어떻게 나누는지, 데코레이터란 |
+| 2 | [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di) | 데이터 검증과 Depends()로 객체를 주입하는 방법 |
+| 3 | [REST API 만들기](/blog/fastapi-04-rest-api) | HTTP 메서드, 상태 코드, JSON, 실제 유저 API 구현 |
+| 4 | [SQLAlchemy와 데이터베이스 연동](/blog/fastapi-05-database) | ORM, SQLAlchemy, 실제 DB에 저장하기 |
+
+---
+
+## 시리즈: Python FastAPI 입문
+
+1. **시작하기 전에** ← 현재 글
+2. [FastAPI 구조 - 라우터, 3계층 아키텍처](/blog/fastapi-02-structure)
+3. [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di)
+4. [REST API 만들기](/blog/fastapi-04-rest-api)
+5. [SQLAlchemy와 데이터베이스 연동](/blog/fastapi-05-database)

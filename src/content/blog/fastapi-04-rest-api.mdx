@@ -1,0 +1,327 @@
+---
+title: "REST API 만들기 - Router, Service, Repository"
+description: "실제 유저 API를 만들면서 Router, Service, Repository 역할을 이해한다."
+date: "2026-03-25"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "REST API", "Router", "Service"]
+series: "Python FastAPI 입문"
+seriesOrder: 4
+---
+
+## REST API란?
+
+**REST(Representational State Transfer)** 는 서버와 클라이언트가 데이터를 주고받는 방식에 대한 규칙이다. REST 규칙을 따르는 API를 **REST API** 또는 **RESTful API**라고 부른다.
+
+핵심 아이디어는 단순하다. **URL은 자원(resource)을 나타내고, HTTP 메서드는 그 자원에 할 행동을 나타낸다.**
+
+```
+자원(무엇을)    +    메서드(어떻게)
+  /users/1      +       GET        → 1번 유저 조회
+  /users        +       POST       → 유저 생성
+  /users/1      +       PUT        → 1번 유저 수정
+  /users/1      +       DELETE     → 1번 유저 삭제
+```
+
+### HTTP 메서드
+
+| 메서드 | 의미 | 주로 쓰는 상황 |
+|--------|------|--------------|
+| **GET** | 조회 | 데이터를 가져올 때 |
+| **POST** | 생성 | 새 데이터를 만들 때 |
+| **PUT** | 전체 수정 | 데이터 전체를 교체할 때 |
+| **PATCH** | 부분 수정 | 일부 필드만 바꿀 때 |
+| **DELETE** | 삭제 | 데이터를 지울 때 |
+
+### HTTP 상태 코드
+
+숫자로 요청 결과를 나타낸다.
+
+| 코드 | 의미 | 상황 |
+|------|------|------|
+| **200** OK | 성공 | GET, PUT 성공 |
+| **201** Created | 생성 성공 | POST 성공 |
+| **204** No Content | 성공 (반환값 없음) | DELETE 성공 |
+| **400** Bad Request | 잘못된 요청 | 필수 파라미터 누락 |
+| **401** Unauthorized | 인증 필요 | 로그인 안 한 상태 |
+| **404** Not Found | 없는 리소스 | 없는 유저 조회 |
+| **500** Internal Server Error | 서버 오류 | 서버 코드 버그 |
+
+2xx는 성공, 4xx는 클라이언트 잘못, 5xx는 서버 잘못이라고 기억하면 된다.
+
+---
+
+## 유저 API 만들기
+
+이 글에서는 유저를 만들고 조회하는 API를 단계별로 만든다.
+
+```
+GET  /users      → 전체 유저 목록
+GET  /users/{id} → 특정 유저 조회
+POST /users      → 유저 생성
+```
+
+---
+
+## 1단계: 데이터 구조 정의
+
+`schemas.py`에 요청/응답 구조를 정의한다.
+
+```python
+# users/schemas.py
+from pydantic import BaseModel
+
+# 요청: 클라이언트 → 서버 (id 없음)
+class CreateUserRequest(BaseModel):
+    name: str
+    email: str
+
+# 응답: 서버 → 클라이언트 (id 포함)
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+```
+
+요청에는 `id`가 없다. 서버가 `id`를 생성하기 때문이다.
+
+---
+
+## 2단계: Repository - 데이터 저장소
+
+Repository는 데이터를 저장하고 꺼내는 역할이다. 지금은 데이터베이스 대신 메모리(딕셔너리)에 저장한다.
+
+```python
+# users/repository.py
+from users.schemas import UserResponse
+
+class UserRepository:
+
+    def __init__(self):
+        # 임시 저장소 (서버 재시작하면 사라짐)
+        self._users: dict[int, UserResponse] = {}
+        self._next_id = 1
+
+    def find_all(self) -> list[UserResponse]:
+        return list(self._users.values())
+
+    def find_by_id(self, user_id: int) -> UserResponse | None:
+        return self._users.get(user_id)
+
+    def save(self, name: str, email: str) -> UserResponse:
+        user = UserResponse(id=self._next_id, name=name, email=email)
+        self._users[self._next_id] = user
+        self._next_id += 1
+        return user
+```
+
+- `find_all()` : 전체 유저 반환
+- `find_by_id()` : id로 유저 찾기. 없으면 None
+- `save()` : 유저 저장하고 반환
+
+---
+
+## 3단계: Service - 비즈니스 로직
+
+Service는 실제 작업을 처리하는 곳이다. Repository를 불러서 데이터를 다루고, 필요하면 검증도 한다.
+
+```python
+# users/service.py
+from fastapi import HTTPException
+from users.repository import UserRepository
+from users.schemas import CreateUserRequest, UserResponse
+
+class UserService:
+
+    def __init__(self, repository: UserRepository):
+        self.repository = repository
+
+    def get_all_users(self) -> list[UserResponse]:
+        return self.repository.find_all()
+
+    def get_user(self, user_id: int) -> UserResponse:
+        user = self.repository.find_by_id(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail=f"유저를 찾을 수 없습니다. id: {user_id}")
+        return user
+
+    def create_user(self, request: CreateUserRequest) -> UserResponse:
+        # 이메일 형식 간단 검증
+        if "@" not in request.email:
+            raise HTTPException(status_code=400, detail="이메일 형식이 올바르지 않습니다.")
+        return self.repository.save(request.name, request.email)
+```
+
+`HTTPException`은 FastAPI에서 제공하는 예외 클래스다. `status_code`와 `detail`을 지정하면 FastAPI가 자동으로 해당 상태 코드의 JSON 오류 응답을 만들어준다.
+
+---
+
+## 4단계: 의존성 함수 정의
+
+Service와 Repository 객체를 만들어주는 의존성 함수를 정의한다.
+
+```python
+# users/dependencies.py
+from users.repository import UserRepository
+from users.service import UserService
+
+def get_user_service() -> UserService:
+    repository = UserRepository()
+    return UserService(repository)
+```
+
+---
+
+## 5단계: Router - 요청 받기
+
+Router는 HTTP 요청을 받아서 Service를 호출하고 응답을 돌려준다.
+
+```python
+# users/router.py
+from fastapi import APIRouter, Depends
+from users.dependencies import get_user_service
+from users.schemas import CreateUserRequest, UserResponse
+from users.service import UserService
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+# GET /users
+@router.get("", response_model=list[UserResponse])
+def get_all_users(service: UserService = Depends(get_user_service)):
+    return service.get_all_users()
+
+# GET /users/1
+@router.get("/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, service: UserService = Depends(get_user_service)):
+    return service.get_user(user_id)
+
+# POST /users
+@router.post("", response_model=UserResponse, status_code=201)
+def create_user(request: CreateUserRequest, service: UserService = Depends(get_user_service)):
+    return service.create_user(request)
+```
+
+- `prefix="/users"` : 이 라우터의 모든 경로 앞에 `/users`를 붙인다
+- `tags=["users"]` : Swagger 문서에서 그룹으로 묶어준다
+- `response_model` : 응답 구조 지정. 불필요한 필드는 자동으로 제거된다
+- `status_code=201` : POST 성공 시 201 반환
+
+---
+
+## 6단계: main.py에 라우터 등록
+
+```python
+# main.py
+from fastapi import FastAPI
+from users.router import router as users_router
+
+app = FastAPI()
+app.include_router(users_router)
+```
+
+---
+
+## 실행해서 테스트하기
+
+서버를 실행하고 `http://localhost:8000/docs` 에서 Swagger UI로 테스트한다.
+
+### 유저 생성
+
+```http
+POST http://localhost:8000/users
+Content-Type: application/json
+
+{
+  "name": "김철수",
+  "email": "chul@test.com"
+}
+```
+
+응답:
+```json
+// 201 Created
+{
+  "id": 1,
+  "name": "김철수",
+  "email": "chul@test.com"
+}
+```
+
+### 전체 유저 조회
+
+```http
+GET http://localhost:8000/users
+```
+
+응답:
+```json
+// 200 OK
+[
+  { "id": 1, "name": "김철수", "email": "chul@test.com" }
+]
+```
+
+### 특정 유저 조회
+
+```http
+GET http://localhost:8000/users/1
+```
+
+응답:
+```json
+// 200 OK
+{ "id": 1, "name": "김철수", "email": "chul@test.com" }
+```
+
+### 없는 유저 조회
+
+```http
+GET http://localhost:8000/users/999
+```
+
+응답:
+```json
+// 404 Not Found
+{
+  "detail": "유저를 찾을 수 없습니다. id: 999"
+}
+```
+
+`HTTPException`을 던지면 FastAPI가 자동으로 올바른 상태 코드와 JSON 응답을 만들어준다.
+
+---
+
+## 전체 흐름 정리
+
+```
+POST /users 요청
+    │
+    ▼
+Router.create_user()
+  - Pydantic이 요청 바디를 CreateUserRequest로 자동 파싱/검증
+  - Depends()로 UserService 주입
+    │
+    ▼
+UserService.create_user()
+  - 이메일 유효성 검사
+  - 문제 없으면 Repository 호출
+    │
+    ▼
+UserRepository.save()
+  - 딕셔너리에 저장하고 UserResponse 반환
+    │
+    ▼
+Router
+  - response_model=UserResponse 에 맞게 자동 JSON 변환해서 응답
+```
+
+JSON 변환은 FastAPI가 자동으로 해준다. Pydantic `BaseModel`을 쓰면 별도 설정 없이 바로 된다.
+
+---
+
+## 시리즈: Python FastAPI 입문
+
+1. [시작하기 전에](/blog/fastapi-intro)
+2. [FastAPI 구조 - 라우터, 3계층 아키텍처](/blog/fastapi-02-structure)
+3. [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di)
+4. **REST API 만들기** ← 현재 글
+5. [SQLAlchemy와 데이터베이스 연동](/blog/fastapi-05-database)

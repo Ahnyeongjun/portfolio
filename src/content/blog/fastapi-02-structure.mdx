@@ -1,0 +1,262 @@
+---
+title: "FastAPI 구조 - 라우터, 3계층 아키텍처"
+description: "FastAPI의 라우터 구조와 3계층 아키텍처가 무엇인지, 왜 이 구조로 나누는지 이해한다."
+date: "2026-03-25"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "라우터", "3계층", "아키텍처"]
+series: "Python FastAPI 입문"
+seriesOrder: 2
+---
+
+## FastAPI란?
+
+**FastAPI**는 Python으로 HTTP API 서버를 만드는 프레임워크다. 프레임워크란 "자주 필요한 기능을 미리 만들어둔 도구 모음"이다.
+
+```
+[FastAPI 서버]
+  ├── 요청 받기 (HTTP 서버 내장)
+  ├── 요청을 적절한 함수로 연결
+  ├── 데이터 검증 (자동)
+  └── 응답 만들어서 돌려주기
+```
+
+위 기능들을 직접 만들 필요 없이, FastAPI가 다 해준다. 우리는 "어떤 요청이 왔을 때 어떤 데이터를 돌려줄지"만 작성하면 된다.
+
+### 가장 짧은 FastAPI 서버
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/hello")
+def hello():
+    return {"message": "Hello, FastAPI!"}
+```
+
+- `FastAPI()` : 앱 객체 생성
+- `@app.get("/hello")` : GET /hello 요청이 오면 아래 함수를 실행해라
+- `return` 값이 그대로 JSON 응답이 된다
+
+터미널에서 `uvicorn main:app --reload`를 실행하면 서버가 뜬다.
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process
+```
+
+`http://localhost:8000/hello` 로 접속하면 `{"message": "Hello, FastAPI!"}` 가 보인다.
+
+---
+
+## 데코레이터(@)란?
+
+FastAPI에서 `@app.get(...)`, `@app.post(...)` 같은 `@` 기호를 **데코레이터**라고 한다.
+
+데코레이터는 함수 위에 붙이는 "메모" 같은 것이다. "이 함수는 GET /hello 요청을 처리한다"고 FastAPI에게 알려주는 역할이다.
+
+```python
+@app.get("/hello")   # "GET /hello 요청이 오면 이 함수를 실행해"
+def hello():
+    return "안녕하세요"
+
+@app.post("/users")  # "POST /users 요청이 오면 이 함수를 실행해"
+def create_user():
+    return "유저 생성됨"
+```
+
+Spring Boot의 `@GetMapping`, `@PostMapping`과 같은 역할이다.
+
+---
+
+## APIRouter - 코드 나누기
+
+앱이 커지면 모든 경로를 `main.py` 한 파일에 넣기 어려워진다. FastAPI는 **APIRouter**로 경로를 파일별로 분리할 수 있다.
+
+```python
+# users/router.py
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/users")
+def get_users():
+    return []
+
+@router.post("/users")
+def create_user():
+    return {}
+```
+
+```python
+# main.py
+from fastapi import FastAPI
+from users import router as users_router
+
+app = FastAPI()
+app.include_router(users_router)  # 라우터 등록
+```
+
+`include_router()`로 라우터를 앱에 연결한다. `users/router.py`가 `/users` 관련 경로를 담당한다.
+
+Spring Boot의 `@RestController`를 별도 파일로 분리하는 것과 같다.
+
+---
+
+## 3계층 아키텍처 (3-Layer Architecture)
+
+코드를 역할에 따라 3가지 계층으로 나누는 설계 방식이다.
+
+```
+┌──────────────────────────────────────────┐
+│  Presentation Layer (표현 계층)           │
+│  Router (라우터)                         │
+│  - HTTP 요청/응답 처리                    │
+│  - URL, 메서드 매핑                      │
+├──────────────────────────────────────────┤
+│  Business Layer (비즈니스 계층)           │
+│  Service                                 │
+│  - 실제 비즈니스 로직                    │
+│  - 여러 Repository 조합                  │
+├──────────────────────────────────────────┤
+│  Data Access Layer (데이터 접근 계층)     │
+│  Repository                              │
+│  - DB 조회/저장/수정/삭제                │
+└──────────────────────────────────────────┘
+            │
+            ▼
+        Database
+```
+
+| 계층 | 역할 | FastAPI에서 | Spring Boot에서 |
+|------|------|------------|----------------|
+| Presentation | HTTP 요청/응답 | `APIRouter` | `@RestController` |
+| Business | 비즈니스 로직 | `Service 클래스` | `@Service` |
+| Data Access | DB 접근 | `Repository 클래스` | `@Repository` |
+
+### 왜 3개로 나누는가?
+
+하나의 함수에 모든 코드를 넣으면 어떻게 될까?
+
+```python
+# 나쁜 예 - 하나의 함수에 다 몰아넣기
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    # 1. DB 연결
+    # 2. SQL 실행
+    # 3. 비즈니스 로직 (이메일 마스킹, 권한 체크 등)
+    # 4. 응답 변환
+    # 이 함수가 수백 줄이 된다
+    pass
+```
+
+문제가 많아진다:
+- "DB 관련 코드가 어디 있지?" 찾기 어려움
+- 로직 하나 수정하면 다른 기능에 영향을 줄 수 있음
+- 같은 로직이 여러 라우터에 중복됨
+
+3계층으로 나누면:
+
+```python
+# Presentation Layer - router.py
+@router.get("/users/{user_id}")
+def get_user(user_id: int, service: UserService = Depends(get_user_service)):
+    return service.get_user(user_id)
+    # 라우터는 짧고 단순하게 유지
+
+# Business Layer - service.py
+class UserService:
+    def get_user(self, user_id: int) -> User:
+        # 비즈니스 로직만 여기에
+        user = self.repository.find_by_id(user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="유저 없음")
+        return user
+
+# Data Access Layer - repository.py
+class UserRepository:
+    def find_by_id(self, user_id: int) -> User | None:
+        # DB 접근만 여기에
+        pass
+```
+
+각 계층이 **자신의 역할만** 담당한다. DB 쿼리를 바꾸려면 Repository만, 비즈니스 로직을 바꾸려면 Service만 수정하면 된다.
+
+### 계층 간 규칙
+
+계층은 반드시 **위에서 아래 방향**으로만 호출한다.
+
+```
+Router → Service → Repository  ✅ 올바른 방향
+
+Repository → Service           ❌ 하위가 상위를 호출하면 안 됨
+Router → Repository            ❌ 계층을 건너뛰면 안 됨
+```
+
+---
+
+## 프로젝트 구조
+
+3계층 아키텍처를 반영한 실제 프로젝트 구조다.
+
+```
+my_app/
+├── main.py              ← FastAPI 앱 생성, 라우터 등록
+│
+├── users/               ← 유저 도메인
+│   ├── router.py        ← Presentation Layer
+│   ├── service.py       ← Business Layer
+│   ├── repository.py    ← Data Access Layer
+│   ├── models.py        ← DB 테이블 대응 클래스
+│   └── schemas.py       ← 요청/응답 데이터 구조
+│
+└── database.py          ← DB 연결 설정
+```
+
+- `models.py` : DB 테이블과 1:1로 대응하는 클래스 (Spring의 `Entity`)
+- `schemas.py` : 요청/응답에 사용하는 Pydantic 모델 (Spring의 `DTO`)
+
+이 둘을 분리하는 이유는 DB 구조와 API 응답 구조가 달라질 수 있기 때문이다.
+
+---
+
+## 자동 문서 (Swagger UI)
+
+FastAPI의 큰 장점 중 하나는 **자동으로 API 문서를 만들어준다**는 것이다.
+
+서버를 실행한 뒤 `http://localhost:8000/docs` 에 접속하면 아래처럼 생긴 인터랙티브 문서가 나온다.
+
+```
+GET  /users        유저 목록 조회
+POST /users        유저 생성
+GET  /users/{id}   특정 유저 조회
+DELETE /users/{id} 유저 삭제
+```
+
+각 API를 직접 클릭해서 요청을 보내볼 수 있다. 별도 Postman 없이 브라우저에서 바로 테스트할 수 있다.
+
+---
+
+## 정리
+
+| 개념 | 설명 |
+|------|------|
+| FastAPI | Python HTTP API 프레임워크 |
+| 데코레이터(@) | 함수의 역할을 FastAPI에게 알려주는 표시 |
+| APIRouter | 경로를 파일별로 분리하는 도구 |
+| 3계층 아키텍처 | Presentation / Business / Data Access로 분리 |
+| Router | Presentation Layer. HTTP 요청/응답 담당 |
+| Service | Business Layer. 비즈니스 로직 담당 |
+| Repository | Data Access Layer. DB 접근 담당 |
+
+Pydantic으로 데이터를 검증하고 의존성 주입을 사용하는 방법은 [다음 편](/blog/fastapi-03-pydantic-di)에서 다룬다.
+
+---
+
+## 시리즈: Python FastAPI 입문
+
+1. [시작하기 전에](/blog/fastapi-intro)
+2. **FastAPI 구조 - 라우터, 3계층 아키텍처** ← 현재 글
+3. [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di)
+4. [REST API 만들기](/blog/fastapi-04-rest-api)
+5. [SQLAlchemy와 데이터베이스 연동](/blog/fastapi-05-database)
