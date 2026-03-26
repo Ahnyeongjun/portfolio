@@ -1,6 +1,6 @@
 ---
 title: "React Three Fiber 프로젝트 기술 분석 - 개요"
-description: "웹 기반 3D 뷰어 시스템을 구현하며 사용한 기술 스택과 선택 이유를 정리합니다."
+description: "웹 기반 3D 뷰어 시스템을 구현하며 사용한 기술 스택과 선택 이유를 정리한다."
 date: "2025-02-05"
 category: "Three.js"
 tags: ["React Three Fiber", "Three.js", "Zustand", "3D"]
@@ -10,7 +10,7 @@ seriesOrder: 1
 
 ## 프로젝트 개요
 
-웹 기반 3D 뷰어 시스템을 구현하며 사용한 기술들을 정리합니다.
+웹 기반 3D 뷰어 시스템을 구현하며 사용한 기술들을 정리한다.
 
 ---
 
@@ -57,11 +57,11 @@ material.dispose();
 // cleanup은 React가 자동 처리
 ```
 
-R3F는 Three.js 객체를 React 컴포넌트로 추상화합니다. 메모리 관리, 리렌더링 최적화를 React에 위임할 수 있어 코드가 간결해집니다.
+R3F는 Three.js 객체를 React 컴포넌트로 추상화한다. 메모리 관리, 리렌더링 최적화를 React에 위임할 수 있어 코드가 간결해진다.
 
 **2. 상태 관리 통합**
 
-React 상태 관리 라이브러리와 자연스럽게 연동됩니다.
+React 상태 관리 라이브러리와 자연스럽게 연동된다.
 
 ```jsx
 const { explodeLevel } = useModelStore();
@@ -70,7 +70,7 @@ const { explodeLevel } = useModelStore();
 
 **3. 생태계 활용**
 
-`@react-three/drei`가 제공하는 유틸리티로 보일러플레이트를 줄입니다:
+`@react-three/drei`가 제공하는 유틸리티로 보일러플레이트를 줄인다:
 - `OrbitControls` - 카메라 컨트롤
 - `TransformControls` - 객체 변환
 - `useGLTF` - 모델 로딩
@@ -93,11 +93,11 @@ const useModelStore = create((set) => ({
 const { explodeLevel } = useModelStore();
 ```
 
-Redux라면 action type, action creator, reducer, selector, provider 설정이 필요합니다.
+Redux라면 action type, action creator, reducer, selector, provider 설정이 필요하다.
 
 **2. React 외부에서 접근 가능**
 
-`useFrame` 같은 Three.js 렌더 루프에서는 React 훅을 직접 호출할 수 없습니다. Zustand는 `getState()`로 훅 없이 상태에 접근 가능합니다.
+`useFrame` 같은 Three.js 렌더 루프에서는 React 훅을 직접 호출할 수 없다. Zustand는 `getState()`로 훅 없이 상태에 접근 가능하다.
 
 ```javascript
 useFrame(() => {
@@ -109,7 +109,7 @@ useFrame(() => {
 
 **3. 선택적 구독**
 
-필요한 상태만 구독해 불필요한 리렌더를 방지합니다.
+필요한 상태만 구독해 불필요한 리렌더를 방지한다.
 
 ```javascript
 // explodeLevel만 구독 - 다른 상태 변경 시 리렌더 안됨

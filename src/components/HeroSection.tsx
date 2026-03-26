@@ -45,9 +45,7 @@ export function HeroSection() {
           className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in"
           style={{ animationDelay: "0.2s" }}
         >
-          위성 영상 기반 지도 플랫폼을 처음부터 설계·구현하고, 모놀리식에서 MSA로 전환하며
-          <br />
-          구조적 문제를 주도적으로 개선해온 백엔드 개발자입니다.
+          위성 영상 기반 지도 플랫폼을 처음부터 설계·구현하고, 모놀리식에서 MSA로 전환하며 구조적 문제를 주도적으로 개선해온 백엔드 개발자입니다.
         </p>
 
         <div className="animate-fade-in print:hidden" style={{ animationDelay: "0.3s" }}>

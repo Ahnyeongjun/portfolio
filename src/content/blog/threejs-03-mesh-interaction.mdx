@@ -1,6 +1,6 @@
 ---
 title: "React Three Fiber 기술 분석 - 메쉬 선택/이동"
-description: "3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능을 구현합니다."
+description: "3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능을 구현한다."
 date: "2025-02-05"
 category: "Three.js"
 tags: ["React Three Fiber", "Three.js", "Raycasting", "3D"]
@@ -10,13 +10,13 @@ seriesOrder: 3
 
 ## 개요
 
-3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능입니다.
+3D 공간의 객체를 클릭하여 선택하고, TransformControls로 이동하는 기능이다.
 
 ---
 
 ## Raycasting 이해
 
-Three.js에서 "3D 객체를 클릭한다"는 것은 **Raycasting**입니다.
+Three.js에서 "3D 객체를 클릭한다"는 것은 **Raycasting**이다.
 
 ```
 카메라 ─────────────────────→ 광선(Ray)
@@ -27,7 +27,7 @@ Three.js에서 "3D 객체를 클릭한다"는 것은 **Raycasting**입니다.
       └──────┘
 ```
 
-순수 Three.js에서는 직접 구현해야 합니다:
+순수 Three.js에서는 직접 구현해야 한다:
 
 ```javascript
 const raycaster = new THREE.Raycaster();
@@ -46,7 +46,7 @@ function onMouseClick(event) {
 }
 ```
 
-R3F는 이를 추상화하여 DOM 이벤트처럼 사용합니다:
+R3F는 이를 추상화하여 DOM 이벤트처럼 사용한다:
 
 ```jsx
 <mesh onClick={(e) => console.log('Clicked:', e.object)}>
@@ -86,7 +86,7 @@ const SelectableMesh = ({ part }: Props) => {
 
 ### 이벤트 버블링 문제
 
-겹쳐진 메쉬들이 있을 때, 클릭 이벤트가 뒤에 있는 메쉬까지 전파됩니다.
+겹쳐진 메쉬들이 있을 때, 클릭 이벤트가 뒤에 있는 메쉬까지 전파된다.
 
 ```jsx
 // 문제: 앞 메쉬 클릭 → 뒤 메쉬도 반응
@@ -108,7 +108,7 @@ const handleClick = (e: ThreeEvent<MouseEvent>) => {
 
 ## TransformControls 연동
 
-Drei의 `TransformControls`를 사용합니다.
+Drei의 `TransformControls`를 사용한다.
 
 ```jsx
 import { TransformControls } from "@react-three/drei";
@@ -154,7 +154,7 @@ const TestModel = () => {
 
 ## OrbitControls와의 충돌 해결
 
-TransformControls로 객체를 드래그하면 OrbitControls도 반응하여 카메라가 같이 움직입니다.
+TransformControls로 객체를 드래그하면 OrbitControls도 반응하여 카메라가 같이 움직인다.
 
 ### 해결 방법 1: 직접 제어
 
@@ -197,7 +197,7 @@ const { isTransforming } = useModelStore();
 
 ## 호버 효과
 
-마우스 오버 시 시각적 피드백을 제공합니다.
+마우스 오버 시 시각적 피드백을 제공한다.
 
 ```tsx
 const [hovered, setHovered] = useState(false);
@@ -223,7 +223,7 @@ const [hovered, setHovered] = useState(false);
 
 ## 위치 상태 관리
 
-이동한 위치를 Zustand에 저장하여 분해 효과와 결합합니다.
+이동한 위치를 Zustand에 저장하여 분해 효과와 결합한다.
 
 ```typescript
 // zustand/useModelStore.ts
@@ -251,7 +251,7 @@ useFrame(() => {
 
 ## 편집 모드 토글
 
-일반 뷰 모드와 편집 모드를 구분합니다.
+일반 뷰 모드와 편집 모드를 구분한다.
 
 ```typescript
 const toggleEditMode = () => {
