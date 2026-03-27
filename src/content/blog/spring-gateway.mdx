@@ -1,0 +1,403 @@
+---
+title: "Spring Cloud Gateway - API Gateway 원리와 구현"
+description: "API Gateway 패턴이 왜 필요한지, Spring Cloud Gateway가 내부에서 어떻게 동작하는지, Route/Predicate/Filter를 어떻게 구성하는지 정리한다."
+date: "2026-04-03"
+category: "Kotlin/Spring"
+tags: ["Spring Cloud Gateway", "API Gateway", "MSA", "Spring Boot", "WebFlux"]
+series: "Spring Boot 심화"
+seriesOrder: 2
+---
+
+## API Gateway가 왜 필요한가?
+
+MSA에서 서비스가 여러 개로 나뉘면 클라이언트는 어떻게 통신해야 할까?
+
+```
+[ 클라이언트 ]
+    │
+    ├─→ User Service    (192.168.1.10:8081)
+    ├─→ Order Service   (192.168.1.11:8082)
+    ├─→ Product Service (192.168.1.12:8083)
+    └─→ Payment Service (192.168.1.13:8084)
+```
+
+문제가 여럿 생긴다.
+
+**주소 노출**: 서버 내부 주소를 클라이언트가 직접 알아야 한다. 서비스가 이동하거나 IP가 바뀌면 클라이언트도 수정해야 한다.
+
+**인증 중복**: 모든 서비스마다 토큰 검증 로직을 구현해야 한다.
+
+**CORS, 로깅, 트래픽 제한**: 공통 관심사를 서비스마다 각각 처리해야 한다.
+
+API Gateway가 단일 진입점이 된다.
+
+```
+[ 클라이언트 ]
+    │
+    ▼
+[ API Gateway ]  ← 단일 진입점
+    │  인증, 라우팅, 로깅, 트래픽 제한
+    │
+    ├─→ User Service
+    ├─→ Order Service
+    ├─→ Product Service
+    └─→ Payment Service
+```
+
+클라이언트는 Gateway 주소만 알면 된다. 공통 처리는 Gateway에서 한 번만 한다.
+
+---
+
+## Spring Cloud Gateway 동작 원리
+
+### Reactive 기반 (WebFlux)
+
+Spring Cloud Gateway는 **Spring WebFlux** 위에서 동작한다. 기존 Spring MVC(서블릿, 블로킹)와 다르다.
+
+```
+Spring MVC (블로킹)
+  요청 → 스레드 점유 → DB/외부 API 응답 대기 → 처리 → 스레드 반환
+  동시 요청 100개 = 스레드 100개 필요
+
+Spring WebFlux (논블로킹)
+  요청 → 이벤트 루프 등록 → 스레드 반환
+  → I/O 완료 이벤트 → 콜백 처리
+  적은 스레드로 많은 요청 처리 가능
+```
+
+Gateway는 모든 트래픽이 지나가는 병목 지점이다. 처리량이 중요해서 논블로킹인 WebFlux를 선택했다. 그래서 Spring MVC 방식의 서블릿 필터가 아닌 WebFlux 전용 필터 체계를 쓴다.
+
+### 요청 처리 흐름
+
+```
+클라이언트 요청
+    │
+    ▼
+[ HttpWebHandlerAdapter ]  ← 요청을 ServerWebExchange로 변환
+    │
+    ▼
+[ DispatcherHandler ]
+    │  등록된 Route 중 Predicate가 일치하는 것 탐색
+    │
+    ▼
+[ Route 결정 ]  → Route = (Predicate 조건 + 목적지 URI + Filter 목록)
+    │
+    ▼
+[ Filter Chain 실행 ]
+    │
+    ├─ Global Filter (모든 요청에 적용)
+    │   └─ Pre 처리: 인증, 로깅, 헤더 추가
+    │
+    ├─ Gateway Filter (Route별 적용)
+    │   └─ Pre 처리: URL 재작성, 파라미터 변환
+    │
+    ▼
+[ Proxying ]  ← 실제 서비스로 요청 전달 (WebClient)
+    │
+    ▼
+[ Filter Chain 역방향 실행 ]
+    │
+    ├─ Gateway Filter Post: 응답 변환
+    └─ Global Filter Post: 응답 로깅, 헤더 추가
+    │
+    ▼
+클라이언트에 응답
+```
+
+---
+
+## 핵심 개념: Route, Predicate, Filter
+
+### Route
+
+라우팅 규칙 하나다. "어떤 요청을 어디로 보낼지"를 정의한다.
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service          # 식별자 (고유해야 함)
+          uri: http://localhost:8081 # 목적지
+          predicates:               # 조건 (어떤 요청에 적용할지)
+            - Path=/api/users/**
+          filters:                  # 변환 (요청/응답 가공)
+            - StripPrefix=1
+```
+
+### Predicate
+
+요청이 이 Route에 해당하는지 판단하는 조건이다.
+
+```yaml
+predicates:
+  # 경로 매칭
+  - Path=/api/users/**
+
+  # HTTP 메서드
+  - Method=GET,POST
+
+  # 헤더 존재 여부
+  - Header=X-Request-Id, \d+
+
+  # 쿼리 파라미터
+  - Query=version, v2
+
+  # 시간 범위 (서비스 점검 등)
+  - Between=2026-01-01T00:00:00+09:00, 2026-12-31T23:59:59+09:00
+
+  # 여러 조건 AND (모두 만족해야 매칭)
+  - Path=/api/orders/**
+  - Method=POST
+```
+
+### Filter
+
+요청/응답을 가공한다. Pre(요청 전)와 Post(응답 후) 두 시점에 동작한다.
+
+```yaml
+filters:
+  # 경로 앞 N개 세그먼트 제거
+  # /api/users/1 → /users/1
+  - StripPrefix=1
+
+  # 경로 앞에 추가
+  # /users/1 → /v2/users/1
+  - PrefixPath=/v2
+
+  # 요청 헤더 추가
+  - AddRequestHeader=X-Service-Name, user-service
+
+  # 응답 헤더 추가
+  - AddResponseHeader=X-Response-Time, 100ms
+
+  # 요청 헤더 제거 (내부 정보 노출 방지)
+  - RemoveRequestHeader=X-Internal-Token
+
+  # 재시도 설정
+  - name: Retry
+    args:
+      retries: 3
+      statuses: BAD_GATEWAY
+
+  # 요청 속도 제한
+  - name: RequestRateLimiter
+    args:
+      redis-rate-limiter.replenishRate: 10   # 초당 10개
+      redis-rate-limiter.burstCapacity: 20   # 최대 20개
+```
+
+---
+
+## 코드로 구성하기
+
+YAML 대신 코드로 Route를 정의할 수도 있다. 조건이 복잡할 때 더 명확하다.
+
+```kotlin
+@Configuration
+class GatewayConfig {
+
+    @Bean
+    fun routes(builder: RouteLocatorBuilder): RouteLocator =
+        builder.routes()
+            .route("user-service") { r ->
+                r.path("/api/users/**")
+                 .filters { f ->
+                     f.stripPrefix(1)
+                      .addRequestHeader("X-Service", "user")
+                 }
+                 .uri("http://localhost:8081")
+            }
+            .route("order-service") { r ->
+                r.path("/api/orders/**")
+                 .and()
+                 .method(HttpMethod.GET, HttpMethod.POST)
+                 .filters { f -> f.stripPrefix(1) }
+                 .uri("http://localhost:8082")
+            }
+            .build()
+}
+```
+
+---
+
+## 커스텀 Global Filter
+
+모든 요청에 공통으로 적용하는 필터다. 인증, 로깅이 여기 들어간다.
+
+```kotlin
+@Component
+class AuthenticationFilter : GlobalFilter, Ordered {
+
+    override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
+        val request = exchange.request
+        val path = request.uri.path
+
+        // 인증 불필요 경로 패스
+        if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")) {
+            return chain.filter(exchange)
+        }
+
+        val token = request.headers.getFirst(HttpHeaders.AUTHORIZATION)
+            ?.removePrefix("Bearer ")
+
+        if (token == null) {
+            return unauthorized(exchange, "토큰이 없습니다")
+        }
+
+        return try {
+            val claims = jwtProvider.validateToken(token)
+
+            // 검증된 유저 정보를 헤더에 추가해서 하위 서비스로 전달
+            val mutatedRequest = request.mutate()
+                .header("X-User-Id", claims.userId.toString())
+                .header("X-User-Role", claims.role)
+                .build()
+
+            chain.filter(exchange.mutate().request(mutatedRequest).build())
+        } catch (e: JwtException) {
+            unauthorized(exchange, "유효하지 않은 토큰입니다")
+        }
+    }
+
+    private fun unauthorized(exchange: ServerWebExchange, message: String): Mono<Void> {
+        val response = exchange.response
+        response.statusCode = HttpStatus.UNAUTHORIZED
+        response.headers.contentType = MediaType.APPLICATION_JSON
+
+        val body = """{"error": "$message"}""".toByteArray()
+        val buffer = response.bufferFactory().wrap(body)
+        return response.writeWith(Mono.just(buffer))
+    }
+
+    override fun getOrder() = -100  // 낮을수록 먼저 실행
+}
+```
+
+```kotlin
+@Component
+class LoggingFilter : GlobalFilter, Ordered {
+
+    private val log = LoggerFactory.getLogger(this::class.java)
+
+    override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
+        val request = exchange.request
+        val startTime = System.currentTimeMillis()
+
+        log.info("[REQ] {} {} - {}",
+            request.method, request.uri.path,
+            request.headers.getFirst("X-User-Id") ?: "anonymous"
+        )
+
+        return chain.filter(exchange).then(Mono.fromRunnable {
+            val elapsed = System.currentTimeMillis() - startTime
+            val statusCode = exchange.response.statusCode?.value()
+            log.info("[RES] {} {} - {}ms {}",
+                request.method, request.uri.path, elapsed, statusCode
+            )
+        })
+    }
+
+    override fun getOrder() = -99
+}
+```
+
+---
+
+## 서비스 디스커버리 연동 (Eureka)
+
+서비스 주소를 하드코딩하면 서비스가 늘어날수록 관리가 어렵다. Eureka 같은 서비스 디스커버리와 연동하면 이름으로 라우팅할 수 있다.
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true  # 서비스 이름으로 자동 라우팅
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE    # lb:// = 로드밸런서, USER-SERVICE = Eureka 등록 이름
+          predicates:
+            - Path=/api/users/**
+```
+
+`lb://USER-SERVICE`는 Eureka에서 `USER-SERVICE`라는 이름으로 등록된 인스턴스 목록을 가져와 로드밸런싱한다. 인스턴스가 여러 개라면 라운드로빈으로 분산한다.
+
+---
+
+## Circuit Breaker 연동
+
+하위 서비스가 느려지거나 오류가 계속 나면 Gateway까지 응답이 지연된다. Circuit Breaker를 붙이면 일정 수준 이상 실패 시 빠르게 실패 처리한다.
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+                fallbackUri: forward:/fallback/orders  # 실패 시 이 경로로 포워딩
+```
+
+```kotlin
+@RestController
+class FallbackController {
+    @GetMapping("/fallback/orders")
+    fun orderFallback(): ResponseEntity<Map<String, String>> =
+        ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(mapOf("message" to "주문 서비스가 일시적으로 사용 불가합니다."))
+}
+```
+
+---
+
+## CORS 설정
+
+Gateway에서 CORS를 한 번만 설정하면 모든 서비스에 적용된다.
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "https://myapp.com"
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+            allowedHeaders: "*"
+            allowCredentials: true
+```
+
+---
+
+## 정리
+
+| 개념 | 설명 |
+|------|------|
+| Route | 요청을 어디로 보낼지 정의하는 라우팅 규칙 |
+| Predicate | Route 적용 조건 (경로, 메서드, 헤더 등) |
+| Global Filter | 모든 요청에 공통 적용 (인증, 로깅) |
+| Gateway Filter | 특정 Route에만 적용 (URL 재작성, 헤더 변환) |
+| WebFlux 기반 | 논블로킹으로 높은 처리량 확보 |
+
+Gateway는 단순 라우터가 아니다. 인증, 로깅, 트래픽 제한, Circuit Breaker를 한 곳에서 처리하는 MSA의 입구 역할을 한다.
+
+---
+
+## 시리즈: Spring Boot 심화
+
+1. [RabbitMQ - 메시지 브로커](/blog/spring-rabbitmq)
+2. **Spring Cloud Gateway - API Gateway** ← 현재 글
