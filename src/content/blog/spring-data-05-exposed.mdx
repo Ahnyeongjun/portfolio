@@ -1,0 +1,401 @@
+---
+title: "Kotlin Exposed - Kotlin ORM"
+description: "JetBrains가 만든 Kotlin 전용 ORM, Kotlin Exposed의 원리와 사용법을 정리한다."
+date: "2026-03-31"
+category: "Kotlin/Spring"
+tags: ["Kotlin Exposed", "ORM", "Spring Boot", "Kotlin", "JetBrains"]
+series: "Spring Boot 데이터 접근 기술"
+seriesOrder: 5
+---
+
+## Kotlin Exposed란?
+
+JetBrains가 만든 Kotlin 전용 ORM 프레임워크다. JPA/Hibernate 없이 Kotlin에 최적화된 방식으로 DB를 다룬다.
+
+JPA가 애노테이션으로 스키마를 정의한다면, Exposed는 순수 Kotlin 코드로 스키마를 정의한다.
+
+```kotlin
+// JPA - 애노테이션 기반
+@Entity
+@Table(name = "users")
+class User(
+    @Id @GeneratedValue
+    val id: Long = 0,
+    @Column(nullable = false)
+    val name: String,
+)
+
+// Kotlin Exposed - Kotlin 코드 기반
+object Users : IntIdTable("users") {
+    val name = varchar("name", 255)
+    val email = varchar("email", 255)
+    val age = integer("age")
+}
+```
+
+---
+
+## 두 가지 API 스타일
+
+Exposed는 목적에 따라 두 가지 API를 제공한다.
+
+### DSL API - SQL에 가까운 방식
+
+SQL 구조를 그대로 Kotlin 코드로 표현한다. 쿼리 작성 방식이 SQL과 유사해서 직관적이다.
+
+```kotlin
+transaction {
+    Users.selectAll()
+        .where { Users.age greaterEq 20 }
+        .orderBy(Users.name)
+        .map { it[Users.name] }
+}
+```
+
+### DAO API - 객체 기반 방식
+
+JPA Entity와 비슷하게 객체로 데이터를 다룬다.
+
+```kotlin
+class User(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<User>(Users)
+    var name by Users.name
+    var email by Users.email
+}
+
+transaction {
+    val user = User.findById(1)
+    user?.name = "홍길동"  // save() 없이 변경 (JPA Dirty Checking과 유사)
+}
+```
+
+---
+
+## 동작 원리
+
+### 테이블 정의 → SQL 생성
+
+Exposed의 `Table` 클래스가 스키마 메타데이터를 보유한다. `SchemaUtils.create()`를 호출하면 이 메타데이터를 읽어 CREATE TABLE SQL을 생성한다.
+
+```kotlin
+object Users : IntIdTable("users") {
+    val name = varchar("name", 255)       // VARCHAR(255) NOT NULL
+    val email = varchar("email", 255).uniqueIndex()
+    val age = integer("age").nullable()    // INTEGER NULL
+    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+}
+
+// 실제로 생성되는 SQL (PostgreSQL 기준)
+// CREATE TABLE IF NOT EXISTS users (
+//     id SERIAL PRIMARY KEY,
+//     name VARCHAR(255) NOT NULL,
+//     email VARCHAR(255) NOT NULL,
+//     age INT NULL,
+//     created_at TIMESTAMP DEFAULT NOW(),
+//     CONSTRAINT users_email_unique UNIQUE (email)
+// );
+```
+
+### 트랜잭션 범위
+
+Exposed에서 모든 DB 작업은 `transaction {}` 블록 안에서 실행해야 한다. 이 블록이 트랜잭션 범위다.
+
+```kotlin
+transaction {
+    // 이 블록 전체가 하나의 트랜잭션
+    val user = Users.insertAndGetId { ... }
+    Orders.insert { it[userId] = user }
+}
+// 블록 종료 시 commit, 예외 발생 시 rollback
+```
+
+Spring Boot와 연동하면 `@Transactional`을 쓸 수 있다.
+
+---
+
+## DSL API 사용법
+
+### 테이블 정의
+
+```kotlin
+object Users : IntIdTable("users") {
+    val name = varchar("name", 255)
+    val email = varchar("email", 255).uniqueIndex()
+    val age = integer("age").nullable()
+    val status = enumerationByName<UserStatus>("status", 20)
+    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+}
+
+object Orders : IntIdTable("orders") {
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val amount = decimal("amount", 10, 2)
+    val status = enumerationByName<OrderStatus>("status", 20)
+    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+}
+```
+
+### INSERT
+
+```kotlin
+transaction {
+    // 단건 INSERT, id 반환
+    val userId = Users.insertAndGetId {
+        it[name] = "홍길동"
+        it[email] = "hong@example.com"
+        it[age] = 25
+        it[status] = UserStatus.ACTIVE
+    }
+
+    // 배치 INSERT
+    Users.batchInsert(userList) { user ->
+        this[Users.name] = user.name
+        this[Users.email] = user.email
+    }
+}
+```
+
+### SELECT
+
+```kotlin
+transaction {
+    // 전체 조회
+    val allUsers = Users.selectAll().toList()
+
+    // WHERE 조건
+    val activeUsers = Users.selectAll()
+        .where { Users.status eq UserStatus.ACTIVE }
+        .toList()
+
+    // 복합 조건
+    val filtered = Users.selectAll()
+        .where {
+            (Users.age greaterEq 20) and
+            (Users.name like "%길%") and
+            (Users.status eq UserStatus.ACTIVE)
+        }
+        .orderBy(Users.createdAt to SortOrder.DESC)
+        .limit(10)
+        .toList()
+
+    // 특정 컬럼만 조회
+    val names = Users.select(Users.name, Users.email)
+        .where { Users.age greaterEq 20 }
+        .map { it[Users.name] to it[Users.email] }
+}
+```
+
+### JOIN
+
+```kotlin
+transaction {
+    // INNER JOIN
+    (Users innerJoin Orders)
+        .selectAll()
+        .where { Users.status eq UserStatus.ACTIVE }
+        .map {
+            "${it[Users.name]}: ${it[Orders.amount]}"
+        }
+
+    // LEFT JOIN + 집계
+    Users.leftJoin(Orders)
+        .select(Users.id, Users.name, Orders.amount.sum())
+        .groupBy(Users.id, Users.name)
+        .map {
+            Triple(it[Users.id].value, it[Users.name], it[Orders.amount.sum()])
+        }
+}
+```
+
+### UPDATE / DELETE
+
+```kotlin
+transaction {
+    // UPDATE
+    Users.update({ Users.id eq userId }) {
+        it[name] = "홍길순"
+        it[status] = UserStatus.INACTIVE
+    }
+
+    // DELETE
+    Users.deleteWhere { Users.id eq userId }
+
+    // DELETE 여러 조건
+    Users.deleteWhere {
+        (Users.status eq UserStatus.INACTIVE) and
+        (Users.createdAt less DateTime.now().minusMonths(6))
+    }
+}
+```
+
+---
+
+## DAO API 사용법
+
+```kotlin
+// 테이블 + Entity 클래스 쌍으로 정의
+object Users : IntIdTable("users") {
+    val name = varchar("name", 255)
+    val email = varchar("email", 255)
+    val status = enumerationByName<UserStatus>("status", 20)
+}
+
+class User(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<User>(Users)
+
+    var name by Users.name
+    var email by Users.email
+    var status by Users.status
+    val orders by Order referrersOn Orders.userId  // 1:N 관계
+}
+
+object Orders : IntIdTable("orders") {
+    val userId = reference("user_id", Users)
+    val amount = decimal("amount", 10, 2)
+}
+
+class Order(id: EntityID<Int>) : IntEntity(id) {
+    companion object : IntEntityClass<Order>(Orders)
+
+    var user by User referencedOn Orders.userId
+    var amount by Orders.amount
+}
+```
+
+```kotlin
+transaction {
+    // CREATE
+    val user = User.new {
+        name = "홍길동"
+        email = "hong@example.com"
+        status = UserStatus.ACTIVE
+    }
+
+    // READ
+    val found = User.findById(1)
+    val active = User.find { Users.status eq UserStatus.ACTIVE }.toList()
+
+    // UPDATE (JPA Dirty Checking과 유사)
+    found?.name = "홍길순"
+    // transaction 종료 시 자동 UPDATE
+
+    // DELETE
+    found?.delete()
+
+    // 연관 데이터 접근
+    val orders = user.orders.toList()  // LAZY 로딩
+}
+```
+
+---
+
+## Spring Boot 연동
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("org.jetbrains.exposed:exposed-spring-boot-starter:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-core:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.49.0")
+    implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.49.0")
+}
+```
+
+```yaml
+# application.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mydb
+    username: postgres
+    password: password
+  exposed:
+    generate-ddl: true        # 시작 시 테이블 자동 생성 (개발용)
+    show-sql: true
+```
+
+```kotlin
+@Service
+class UserService {
+    @Transactional
+    fun createUser(name: String, email: String): Int {
+        return Users.insertAndGetId {
+            it[Users.name] = name
+            it[Users.email] = email
+        }.value
+    }
+
+    @Transactional(readOnly = true)
+    fun findAll(): List<UserDto> =
+        Users.selectAll()
+            .map { UserDto(it[Users.id].value, it[Users.name], it[Users.email]) }
+}
+```
+
+---
+
+## JPA와 차이점
+
+| 항목 | JPA + Hibernate | Kotlin Exposed |
+|------|-----------------|----------------|
+| 스키마 정의 | `@Entity` 애노테이션 | Kotlin `Table` 객체 |
+| 영속성 컨텍스트 | ✅ (Dirty Checking 등) | ❌ (없음) |
+| 코드 생성 | ❌ | ❌ |
+| N+1 문제 | 있음 | 있음 (DAO API) |
+| 설정 복잡도 | 높음 | 낮음 |
+| 생태계 | 매우 풍부 | 작음 |
+| 실무 채택 | 매우 높음 | 낮음 |
+
+Exposed는 JPA보다 가벼운 대신, 영속성 컨텍스트 같은 복잡한 기능이 없다. 단순하게 DB를 다루고 싶을 때 적합하다.
+
+---
+
+## 장단점
+
+### 장점
+
+- **Kotlin 친화적**: DSL이 Kotlin 문법과 자연스럽게 통합
+- **경량**: Hibernate 없이 동작, 설정이 단순
+- **두 가지 스타일**: DSL과 DAO 중 선택 가능
+- **타입 안전성**: 컬럼 타입 불일치를 컴파일 타임에 검출
+- **스키마 관리**: `SchemaUtils`로 간단히 테이블 생성/삭제
+
+### 단점
+
+- **생태계 작음**: JPA에 비해 레퍼런스와 커뮤니티가 적음
+- **실무 채택 낮음**: 국내 실무에서 드물게 사용됨
+- **기능 완성도**: JPA 수준의 캐싱, 고급 매핑 기능 부족
+- **Spring Data 통합 없음**: Spring Data JPA 같은 편의 기능 없음
+- **마이그레이션 도구**: Flyway/Liquibase 조합이 JPA보다 덜 자연스러움
+
+---
+
+## 언제 선택하는가?
+
+- Kotlin 전용 프로젝트에서 JPA의 복잡성을 피하고 싶은 경우
+- 사이드 프로젝트나 소규모 Kotlin 서버
+- JPA의 애노테이션 방식이 불편하고 코드 기반 스키마 정의를 선호하는 경우
+
+대규모 실무 프로젝트에서는 레퍼런스 부족과 낮은 채택률 때문에 선택하기 부담스럽다.
+
+---
+
+## 정리
+
+| 항목 | 내용 |
+|------|------|
+| 만든 곳 | JetBrains |
+| 방식 | Kotlin 코드로 스키마 정의 + DSL/DAO API |
+| 장점 | Kotlin 친화적, 경량, 타입 안전, 설정 단순 |
+| 단점 | 생태계 작음, 실무 채택 낮음, 고급 기능 부족 |
+| 적합한 경우 | Kotlin 전용 프로젝트, 소규모 서버 |
+
+---
+
+## 시리즈: Spring Boot 데이터 접근 기술
+
+1. [JPA 심화 - N+1, 지연 로딩, Dirty Checking](/blog/spring-data-01-jpa-advanced)
+2. [QueryDSL - 타입 세이프 동적 쿼리](/blog/spring-data-02-querydsl)
+3. [MyBatis - SQL Mapper](/blog/spring-data-03-mybatis)
+4. [JOOQ - 타입 세이프 SQL](/blog/spring-data-04-jooq)
+5. **Kotlin Exposed - Kotlin ORM** ← 현재 글
+6. [어떤 걸 선택해야 할까?](/blog/spring-data-06-comparison)

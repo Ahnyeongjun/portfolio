@@ -1,0 +1,206 @@
+---
+title: "어떤 걸 선택해야 할까? - 데이터 접근 기술 비교"
+description: "JPA, QueryDSL, MyBatis, JOOQ, Kotlin Exposed를 원리부터 비교하고 상황별 선택 기준을 정리한다."
+date: "2026-04-01"
+category: "Kotlin/Spring"
+tags: ["JPA", "QueryDSL", "MyBatis", "JOOQ", "Kotlin Exposed", "비교"]
+series: "Spring Boot 데이터 접근 기술"
+seriesOrder: 6
+---
+
+## 각 기술의 핵심 접근 방식
+
+데이터 접근 기술들은 근본적으로 다른 철학을 가진다.
+
+```
+[ ORM 방식 ]
+  객체 중심 → SQL은 프레임워크가 생성
+  JPA + Hibernate, Kotlin Exposed (DAO)
+
+[ SQL Mapper 방식 ]
+  SQL 중심 → 결과를 객체로 매핑
+  MyBatis, Kotlin Exposed (DSL)
+
+[ 타입 세이프 SQL 방식 ]
+  SQL을 코드로 표현 → 타입 안전 + SQL 제어권
+  QueryDSL, JOOQ, Kotlin Exposed (DSL)
+```
+
+---
+
+## 한눈에 비교
+
+| 항목 | JPA | QueryDSL | MyBatis | JOOQ | Exposed |
+|------|-----|----------|---------|------|---------|
+| SQL 생성 | 자동 | 코드→JPQL | 직접 작성 | 코드→SQL | 코드→SQL |
+| 타입 안전성 | ✅ | ✅ | ❌ | ✅ | ✅ |
+| 동적 쿼리 | 불편 | ✅ | ✅ | ✅ | ✅ |
+| 복잡한 SQL | 어려움 | 중간 | ✅ | ✅ | 중간 |
+| 영속성 컨텍스트 | ✅ | ✅ (JPA 위) | ❌ | ❌ | ❌ |
+| JPA 필요 | - | ✅ | ❌ | ❌ | ❌ |
+| 코드 생성 기반 | 엔티티→ | 엔티티→Q클래스 | 없음 | DB→테이블클래스 | 없음 |
+| 유지보수 | 안정 | 불확실 | 안정 | 안정 | 안정 |
+| 생태계/레퍼런스 | 최고 | 많음 | 많음 | 중간 | 적음 |
+
+---
+
+## 기술별 특성 정리
+
+### JPA + Hibernate
+
+ORM의 핵심은 **영속성 컨텍스트**다. 엔티티를 메모리에서 관리하고, 변경을 감지하고, 트랜잭션 커밋 시 DB에 반영한다.
+
+장점: 단순 CRUD를 코드 최소화, 객체 중심 설계 가능
+단점: 복잡한 쿼리는 JPQL이나 Fetch Join으로 처리해야 해서 번거롭고, 내부 동작을 모르면 N+1이나 예상치 못한 UPDATE 같은 문제에 빠지기 쉽다.
+
+### QueryDSL
+
+JPA 위에서 동작하는 **동적 쿼리 도구**다. JPQL을 코드로 표현해서 타입 안전성을 확보한다.
+
+JPA의 영속성 컨텍스트 위에서 동작하기 때문에 JPA의 장점(Dirty Checking 등)은 그대로 유지된다.
+
+장점: JPA의 단점인 동적 쿼리를 깔끔하게 해결
+단점: 빌드 설정 복잡, QueryDSL 라이브러리 자체의 유지보수 불확실성
+
+### MyBatis
+
+**SQL Mapper**다. SQL을 개발자가 직접 작성하고, 그 결과를 객체로 변환한다.
+
+JPA처럼 영속성 컨텍스트가 없다. 변경 감지도 없다. 조회한 결과는 그냥 일반 Kotlin 객체다.
+
+장점: SQL 완전한 제어권, 복잡한 쿼리 자유롭게 작성
+단점: 단순 CRUD도 SQL을 직접 써야 하는 반복 작업
+
+### JOOQ
+
+**타입 세이프 SQL 빌더**다. DB 스키마에서 코드를 생성하고, 그 코드로 SQL을 작성한다. JPA 없이 독립적으로 동작한다.
+
+QueryDSL이 JPA 엔티티 기반이라면, JOOQ는 실제 DB 테이블 기반이다. DB 스키마가 변경되면 코드를 재생성해야 한다.
+
+장점: 타입 안전 + SQL 표현력 + JPA 불필요 + 안정적 유지보수
+단점: Oracle 등 상용 DB는 유료, 코드 생성 의존
+
+### Kotlin Exposed
+
+JetBrains의 **Kotlin 전용 ORM**이다. JPA보다 훨씬 가볍고 설정이 단순하다. Kotlin 문법을 최대한 활용한 API가 특징이다.
+
+장점: Kotlin 친화적, 경량, DSL/DAO 두 스타일 제공
+단점: 생태계와 레퍼런스 부족, 실무 채택 낮음
+
+---
+
+## 상황별 추천
+
+### 일반적인 Spring Boot 백엔드 서비스
+
+**JPA + QueryDSL** (국내 실무 가장 일반적)
+
+```
+단순 CRUD → Spring Data JPA
+복잡한 동적 쿼리 → QueryDSL 추가
+```
+
+JPA로 시작하고, 검색 조건이 복잡해지는 시점에 QueryDSL을 도입한다.
+
+### 레거시 DB를 다루는 서비스
+
+**MyBatis**
+
+테이블 구조가 객체와 맞지 않거나, DBA가 SQL을 직접 관리하는 환경이면 MyBatis가 적합하다. ORM 매핑이 어려운 복잡한 쿼리도 SQL 그대로 작성한다.
+
+### SQL을 직접 제어하면서 타입 안전성도 원하는 경우
+
+**JOOQ**
+
+MyBatis의 SQL 제어권과 QueryDSL의 타입 안전성을 동시에 원한다면 JOOQ가 답이다. PostgreSQL/MySQL이면 무료다.
+
+### 통계/집계 쿼리 중심 어드민, 대시보드
+
+**MyBatis 또는 JOOQ**
+
+GROUP BY, 윈도우 함수, 복잡한 서브쿼리가 많은 서비스다. SQL을 직접 작성하는 게 JPA로 우회하는 것보다 훨씬 명확하다.
+
+### Kotlin 전용 소규모 프로젝트
+
+**Kotlin Exposed**
+
+JPA 없이 Kotlin 코드로 깔끔하게 DB를 다루고 싶다면 Exposed가 좋은 선택이다. 사이드 프로젝트나 소규모 서버에 적합하다.
+
+---
+
+## 조합 패턴
+
+실무에서는 목적에 맞게 조합하는 경우가 많다.
+
+### 패턴 1: JPA + QueryDSL (가장 일반적)
+
+```
+저장/수정/삭제 → Spring Data JPA
+단순 조회 → Spring Data JPA (findByXxx)
+복잡한 동적 조회 → QueryDSL
+```
+
+### 패턴 2: JPA + MyBatis
+
+```
+저장/수정/삭제 → Spring Data JPA
+단순 조회 → Spring Data JPA
+복잡한 집계/통계 쿼리 → MyBatis
+```
+
+JPA의 Dirty Checking, 연관관계 관리와 MyBatis의 SQL 표현력을 동시에 활용한다.
+
+### 패턴 3: JOOQ 단독
+
+```
+모든 DB 접근 → JOOQ
+```
+
+JPA의 복잡성을 피하고 싶을 때. SQL을 직접 제어하면서 타입 안전성도 원할 때.
+
+---
+
+## 선택할 때 고려할 것
+
+### 팀과 레퍼런스
+
+새 기술을 도입하면 팀원 전체가 배워야 한다. 문제가 생겼을 때 레퍼런스가 적으면 해결하기 어렵다.
+
+국내 실무 레퍼런스 많은 순서: **JPA > MyBatis > QueryDSL > JOOQ > Kotlin Exposed**
+
+### 쿼리 복잡도
+
+단순 CRUD 중심이면 JPA로 충분하다. 복잡한 조건 검색, 집계 쿼리가 많다면 SQL을 직접 제어할 수 있는 도구가 필요하다.
+
+### DB 선택
+
+Oracle을 쓴다면 JOOQ는 유료다. PostgreSQL/MySQL이라면 무료다.
+
+### 장기 유지보수
+
+QueryDSL은 유지보수 불확실성이 있다. 장기 프로젝트라면 고려해야 한다.
+
+---
+
+## 결론
+
+| 상황 | 추천 |
+|------|------|
+| 빠르게 시작, 레퍼런스 중요 | JPA |
+| JPA + 복잡한 동적 쿼리 | JPA + QueryDSL |
+| SQL 직접 제어, 레거시 DB | MyBatis |
+| SQL 제어 + 타입 안전 + 안정적 유지보수 | JOOQ |
+| Kotlin 전용, 소규모 | Kotlin Exposed |
+
+정답은 없다. 프로젝트 특성, 팀 경험, DB 환경에 맞게 선택하면 된다.
+
+---
+
+## 시리즈: Spring Boot 데이터 접근 기술
+
+1. [JPA 심화 - N+1, 지연 로딩, Dirty Checking](/blog/spring-data-01-jpa-advanced)
+2. [QueryDSL - 타입 세이프 동적 쿼리](/blog/spring-data-02-querydsl)
+3. [MyBatis - SQL Mapper](/blog/spring-data-03-mybatis)
+4. [JOOQ - 타입 세이프 SQL](/blog/spring-data-04-jooq)
+5. [Kotlin Exposed - Kotlin ORM](/blog/spring-data-05-exposed)
+6. **어떤 걸 선택해야 할까?** ← 현재 글

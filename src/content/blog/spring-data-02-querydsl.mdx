@@ -1,0 +1,322 @@
+---
+title: "QueryDSL - 타입 세이프 동적 쿼리"
+description: "QueryDSL이 무엇인지, 왜 쓰는지, 내부에서 어떻게 동작하는지, 그리고 왜 요즘은 대안을 고려해야 하는지 정리한다."
+date: "2026-03-28"
+category: "Kotlin/Spring"
+tags: ["QueryDSL", "JPA", "Spring Boot", "Kotlin", "동적 쿼리"]
+series: "Spring Boot 데이터 접근 기술"
+seriesOrder: 2
+---
+
+## QueryDSL이란?
+
+Java/Kotlin 코드로 JPQL을 작성하는 라이브러리다. 문자열 쿼리를 코드로 바꿔서 컴파일 타임 검증과 자동완성을 가능하게 한다.
+
+```kotlin
+// JPQL (문자열)
+@Query("SELECT u FROM User u WHERE u.naem = :name")  // 오타여도 컴파일 통과
+fun findByName(name: String): List<User>
+
+// QueryDSL (코드)
+queryFactory
+    .selectFrom(user)
+    .where(user.naem.eq(name))  // 컴파일 오류 - 즉시 발견
+    .fetch()
+```
+
+---
+
+## 동작 원리
+
+QueryDSL의 핵심은 **Q클래스**다. 빌드 시 애노테이션 프로세서가 JPA 엔티티를 읽어서 Q클래스를 자동 생성한다.
+
+```
+@Entity class User(val name: String, val age: Int)
+         │
+         │ 빌드 시 kapt/APT 실행
+         ▼
+QUser 클래스 자동 생성
+    ├── QUser.user (싱글톤 인스턴스)
+    ├── StringPath name  → user.name.eq("홍길동")
+    ├── NumberPath<Int> age  → user.age.gt(20)
+    └── ...
+```
+
+```kotlin
+// 자동 생성된 QUser (대략 이런 구조)
+class QUser(variable: String) : EntityPathBase<User>(User::class.java, variable) {
+    val name: StringPath = createString("name")
+    val age: NumberPath<Int> = createNumber("age", Int::class.java)
+    val email: StringPath = createString("email")
+
+    companion object {
+        val user = QUser("user")
+    }
+}
+```
+
+이 Q클래스를 통해 `user.name.eq("홍길동")` 같은 타입 세이프한 표현이 가능하다. 내부적으로는 JPQL 문자열로 변환된다.
+
+---
+
+## 왜 QueryDSL을 쓰는가?
+
+### 문제 1: 동적 쿼리
+
+이름, 나이, 이메일 중 입력된 조건만 필터링하는 검색을 JPA로 구현하면:
+
+```kotlin
+// Spring Data JPA의 방법
+@Query("""
+    SELECT u FROM User u
+    WHERE (:name IS NULL OR u.name = :name)
+    AND (:age IS NULL OR u.age = :age)
+    AND (:email IS NULL OR u.email = :email)
+""")
+fun searchUsers(name: String?, age: Int?, email: String?): List<User>
+```
+
+조건이 늘어날수록 null 체크 로직이 SQL에 섞여 지저분해진다.
+
+QueryDSL의 BooleanBuilder:
+
+```kotlin
+fun searchUsers(name: String?, age: Int?, email: String?): List<User> {
+    val user = QUser.user
+    val builder = BooleanBuilder()
+
+    name?.let { builder.and(user.name.eq(it)) }
+    age?.let { builder.and(user.age.eq(it)) }
+    email?.let { builder.and(user.email.eq(it)) }
+
+    return queryFactory
+        .selectFrom(user)
+        .where(builder)
+        .fetch()
+}
+```
+
+null이면 조건 자체가 추가되지 않는다.
+
+### 문제 2: 조건 재사용
+
+검색 조건을 메서드로 추출해서 재사용할 수 있다.
+
+```kotlin
+// 조건 메서드로 분리
+object UserConditions {
+    fun nameContains(name: String?) =
+        name?.let { QUser.user.name.containsIgnoreCase(it) }
+
+    fun ageRange(min: Int?, max: Int?): BooleanExpression? {
+        val user = QUser.user
+        return when {
+            min != null && max != null -> user.age.between(min, max)
+            min != null -> user.age.goe(min)
+            max != null -> user.age.loe(max)
+            else -> null
+        }
+    }
+
+    fun isActive() = QUser.user.status.eq(UserStatus.ACTIVE)
+}
+
+// 여러 곳에서 재사용
+queryFactory
+    .selectFrom(user)
+    .where(
+        UserConditions.nameContains(name),
+        UserConditions.ageRange(minAge, maxAge),
+        UserConditions.isActive()
+    )
+    .fetch()
+```
+
+null 조건은 QueryDSL이 자동으로 무시한다.
+
+---
+
+## 기본 사용법
+
+### 설정 (build.gradle.kts)
+
+```kotlin
+plugins {
+    kotlin("kapt") version "1.9.0"
+}
+
+dependencies {
+    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
+    kapt("jakarta.annotation:jakarta.annotation-api")
+    kapt("jakarta.persistence:jakarta.persistence-api")
+}
+```
+
+### JPAQueryFactory 설정
+
+```kotlin
+@Configuration
+class QueryDslConfig(
+    private val entityManager: EntityManager
+) {
+    @Bean
+    fun jpaQueryFactory() = JPAQueryFactory(entityManager)
+}
+```
+
+`JPAQueryFactory`는 영속성 컨텍스트와 연결된다. 내부적으로 EntityManager를 사용해서 쿼리를 실행한다.
+
+### Repository 패턴
+
+Spring Data JPA의 Repository와 QueryDSL을 함께 쓰는 일반적인 패턴이다.
+
+```kotlin
+// JPA Repository
+interface UserRepository : JpaRepository<User, Long>, UserRepositoryCustom
+
+// QueryDSL용 커스텀 인터페이스
+interface UserRepositoryCustom {
+    fun searchUsers(condition: UserSearchCondition): List<User>
+}
+
+// QueryDSL 구현체
+class UserRepositoryImpl(
+    private val queryFactory: JPAQueryFactory
+) : UserRepositoryCustom {
+
+    override fun searchUsers(condition: UserSearchCondition): List<User> {
+        val user = QUser.user
+        return queryFactory
+            .selectFrom(user)
+            .where(
+                nameContains(condition.name),
+                ageRange(condition.minAge, condition.maxAge),
+                statusEq(condition.status)
+            )
+            .orderBy(user.createdAt.desc())
+            .fetch()
+    }
+
+    private fun nameContains(name: String?) =
+        name?.let { QUser.user.name.containsIgnoreCase(it) }
+
+    private fun ageRange(min: Int?, max: Int?) = when {
+        min != null && max != null -> QUser.user.age.between(min, max)
+        min != null -> QUser.user.age.goe(min)
+        max != null -> QUser.user.age.loe(max)
+        else -> null
+    }
+
+    private fun statusEq(status: UserStatus?) =
+        status?.let { QUser.user.status.eq(it) }
+}
+```
+
+### 페이징
+
+```kotlin
+fun searchWithPaging(
+    condition: UserSearchCondition,
+    pageable: Pageable
+): Page<User> {
+    val user = QUser.user
+
+    val content = queryFactory
+        .selectFrom(user)
+        .where(nameContains(condition.name))
+        .orderBy(user.createdAt.desc())
+        .offset(pageable.offset)
+        .limit(pageable.pageSize.toLong())
+        .fetch()
+
+    val total = queryFactory
+        .select(user.count())
+        .from(user)
+        .where(nameContains(condition.name))
+        .fetchOne() ?: 0L
+
+    return PageImpl(content, pageable, total)
+}
+```
+
+### 동적 정렬
+
+```kotlin
+fun findWithDynamicSort(sort: Sort): List<User> {
+    val user = QUser.user
+
+    val orderSpecifiers = sort.map { order ->
+        val path: ComparableExpressionBase<*> = when (order.property) {
+            "name" -> user.name
+            "age" -> user.age
+            "createdAt" -> user.createdAt
+            else -> user.id
+        }
+        if (order.isAscending) path.asc() else path.desc()
+    }.toList().toTypedArray()
+
+    return queryFactory
+        .selectFrom(user)
+        .orderBy(*orderSpecifiers)
+        .fetch()
+}
+```
+
+### Projection (특정 컬럼만 조회)
+
+```kotlin
+data class UserSummary(val id: Long, val name: String)
+
+fun findSummaries(): List<UserSummary> {
+    val user = QUser.user
+    return queryFactory
+        .select(Projections.constructor(
+            UserSummary::class.java,
+            user.id,
+            user.name
+        ))
+        .from(user)
+        .fetch()
+}
+```
+
+---
+
+## kapt vs KSP
+
+Kotlin에서 QueryDSL Q클래스를 생성할 때 전통적으로 **kapt**(Kotlin Annotation Processing Tool)를 사용했다.
+
+그런데 kapt는 느리다. Kotlin 코드를 Java 스텁으로 변환한 후 애노테이션 프로세서를 실행하기 때문에 빌드 시간이 길다.
+
+**KSP**(Kotlin Symbol Processing)는 Kotlin 코드를 직접 처리해서 훨씬 빠르다. 그러나 QueryDSL 공식 지원은 kapt 기반이고, KSP 지원은 커뮤니티에서 별도로 관리한다.
+
+---
+
+## 유지보수 이슈
+
+QueryDSL 공식 저장소 관리가 오랫동안 소홀해졌다. Jakarta EE 9+ 지원이 늦어져서 커뮤니티 포크(`querydsl-jpa:5.0.0:jakarta`)를 써야 하는 상황이 됐다.
+
+현재는 동작하지만, 이 라이브러리를 장기적으로 믿고 쓸 수 있는지에 대한 논의가 있다. 새 프로젝트라면 JOOQ나 Spring Data JPA의 Specification을 고려할 만하다.
+
+---
+
+## 정리
+
+| 항목 | 내용 |
+|------|------|
+| 핵심 개념 | Q클래스로 JPQL을 코드화 |
+| 장점 | 동적 쿼리, 타입 안전성, 조건 재사용 |
+| 단점 | 빌드 설정 복잡, kapt 빌드 느림, 유지보수 불확실 |
+| 적합한 경우 | JPA 기반 + 복잡한 동적 쿼리 |
+
+---
+
+## 시리즈: Spring Boot 데이터 접근 기술
+
+1. [JPA 심화 - N+1, 지연 로딩, Dirty Checking](/blog/spring-data-01-jpa-advanced)
+2. **QueryDSL - 타입 세이프 동적 쿼리** ← 현재 글
+3. [MyBatis - SQL Mapper](/blog/spring-data-03-mybatis)
+4. [JOOQ - 타입 세이프 SQL](/blog/spring-data-04-jooq)
+5. [Kotlin Exposed - Kotlin ORM](/blog/spring-data-05-exposed)
+6. [어떤 걸 선택해야 할까?](/blog/spring-data-06-comparison)
