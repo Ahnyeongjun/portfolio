@@ -34,50 +34,121 @@ JPA가 "객체를 저장하면 SQL을 알아서 만들어준다"는 ORM이라면
 
 ### SqlSession
 
-MyBatis의 핵심은 `SqlSession`이다. DB 연결을 래핑하고 SQL 실행을 담당한다.
+JDBC를 직접 쓰면 DB와 통신하려면 이런 과정을 거쳐야 한다.
+
+```kotlin
+// JDBC 직접 사용
+val connection = dataSource.getConnection()        // 연결
+val stmt = connection.prepareStatement("SELECT * FROM users WHERE id = ?")
+stmt.setLong(1, id)                               // 파라미터 바인딩
+val rs = stmt.executeQuery()                       // 실행
+val user = User(rs.getLong("id"), rs.getString("name"))  // 결과 매핑
+rs.close(); stmt.close(); connection.close()       // 자원 정리
+```
+
+`SqlSession`은 이 과정을 전부 감싸서 처리한다. DB 연결 + 파라미터 바인딩 + SQL 실행 + 결과 매핑 + 자원 정리를 담당한다.
 
 ```
-SqlSessionFactory (애플리케이션당 1개)
-    │  DB 설정, Mapper 등록, 커넥션 풀 관리
+SqlSessionFactory (애플리케이션 시작 시 1번 생성)
+    │
+    │  - mybatis-config.xml 또는 Spring Boot 자동 설정 읽음
+    │  - DB 연결 정보, Mapper XML 위치, TypeHandler 등록 등 초기화
+    │  - 커넥션 풀(HikariCP 등)과 연결
+    │
     ▼
-SqlSession (요청당 생성)
-    │  실제 SQL 실행, 트랜잭션 범위
+SqlSession (HTTP 요청마다 생성 → 사용 → 반납)
+    │
+    │  - 커넥션 풀에서 Connection 하나를 빌려 사용
+    │  - SQL 실행, 트랜잭션 범위 관리
+    │  - 요청 처리 후 Connection을 풀에 반납
+    │
     ▼
-Mapper 프록시
-    │  인터페이스를 구현한 MyBatis 생성 프록시 객체
+Mapper 프록시 (SqlSession을 통해 동작)
+    │
+    │  - @Mapper 인터페이스의 구현체를 MyBatis가 자동 생성
+    │  - userMapper.findById(1L) 호출 →
+    │    SqlSession.selectOne("findById", 1L) 로 위임
 ```
 
-Spring Boot에서는 이 모든 게 자동 설정된다. `@Mapper` 인터페이스만 작성하면 MyBatis가 구현체(프록시)를 만들어서 Spring Bean으로 등록한다.
+`@Mapper` 인터페이스에 구현 코드가 없는데도 동작하는 이유가 여기 있다. MyBatis가 런타임에 프록시 구현체를 만들어 Spring Bean으로 등록한다. 실제 구현은 SqlSession이 처리한다.
+
+Spring Boot에서는 `SqlSessionFactory`와 `SqlSession` 설정이 자동으로 처리된다. `@Mapper`만 붙이면 된다.
 
 ### TypeHandler
 
-SQL 결과를 객체 필드로 변환할 때 TypeHandler가 동작한다.
+DB 타입과 Kotlin 타입은 1:1로 대응하지 않는다.
 
-```kotlin
-// DB: VARCHAR "ACTIVE"
-// Kotlin: enum class UserStatus { ACTIVE, INACTIVE }
-
-// MyBatis가 자동으로 변환
-val user = userMapper.findById(1L)
-user.status  // UserStatus.ACTIVE (enum으로 자동 매핑)
+```
+DB 타입          Kotlin 타입
+────────────────────────────
+VARCHAR        → String
+INTEGER        → Int
+TIMESTAMP      → LocalDateTime
+VARCHAR "ACTIVE" → enum UserStatus.ACTIVE  ← 자동 변환?
+VARCHAR (JSON)  → data class AddressInfo   ← 자동 변환?
 ```
 
-커스텀 TypeHandler로 직접 변환 로직을 작성할 수도 있다.
+`TypeHandler`는 이 변환을 담당한다. SQL 결과를 객체에 넣을 때(읽기), 객체 값을 SQL 파라미터로 바인딩할 때(쓰기) 양방향으로 동작한다.
+
+```
+ResultSet (DB 결과)
+    │  rs.getString("status") = "ACTIVE"
+    ▼
+TypeHandler
+    │  "ACTIVE" → UserStatus.ACTIVE (enum 변환)
+    ▼
+User.status = UserStatus.ACTIVE
+```
+
+`String`, `Int`, `Long`, `LocalDateTime`, `UUID` 같은 기본 타입은 MyBatis 내장 TypeHandler가 자동 처리한다. enum도 `EnumTypeHandler`(이름 기반)와 `EnumOrdinalTypeHandler`(순서 기반) 중 선택해서 쓸 수 있다.
+
+```yaml
+# application.yml - enum을 이름(문자열)으로 저장
+mybatis:
+  configuration:
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+```
+
+DB에 `"ACTIVE"` 로 저장되어 있다면 `EnumTypeHandler`를, `0`, `1` 숫자로 저장되어 있다면 `EnumOrdinalTypeHandler`를 쓴다.
+
+내장 TypeHandler로 처리가 안 되는 경우 직접 만든다. 대표적인 예가 JSON 컬럼이다.
 
 ```kotlin
-// JSON 컬럼을 객체로 변환하는 TypeHandler 예시
+// DB에 JSON 문자열로 저장된 컬럼을 Kotlin 객체로 변환
+// DB: '{"city": "서울", "street": "강남대로"}'
+// Kotlin: AddressInfo(city = "서울", street = "강남대로")
+
 @MappedTypes(AddressInfo::class)
 class JsonTypeHandler : BaseTypeHandler<AddressInfo>() {
     private val objectMapper = ObjectMapper()
 
-    override fun setNonNullParameter(ps: PreparedStatement, i: Int, parameter: AddressInfo, jdbcType: JdbcType?) {
+    // Kotlin 객체 → DB (INSERT/UPDATE)
+    override fun setNonNullParameter(
+        ps: PreparedStatement, i: Int,
+        parameter: AddressInfo, jdbcType: JdbcType?
+    ) {
         ps.setString(i, objectMapper.writeValueAsString(parameter))
     }
 
+    // DB → Kotlin 객체 (SELECT)
     override fun getNullableResult(rs: ResultSet, columnName: String): AddressInfo? =
         rs.getString(columnName)?.let { objectMapper.readValue(it, AddressInfo::class.java) }
+
+    override fun getNullableResult(rs: ResultSet, columnIndex: Int): AddressInfo? =
+        rs.getString(columnIndex)?.let { objectMapper.readValue(it, AddressInfo::class.java) }
+
+    override fun getNullableResult(cs: CallableStatement, columnIndex: Int): AddressInfo? =
+        cs.getString(columnIndex)?.let { objectMapper.readValue(it, AddressInfo::class.java) }
 }
 ```
+
+```yaml
+# application.yml - TypeHandler 위치 등록
+mybatis:
+  type-handlers-package: com.example.typehandler
+```
+
+이렇게 등록하면 `AddressInfo` 타입 필드는 자동으로 이 TypeHandler를 거친다.
 
 ---
 
