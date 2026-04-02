@@ -1,0 +1,220 @@
+---
+title: "HTTP & 네트워크 — 면접 대비 정리"
+description: "TCP 3-way handshake, HTTP/1.1 vs HTTP/2 vs HTTP/3, HTTPS TLS handshake, RESTful 설계 원칙까지. 백엔드 면접 네트워크 질문을 정리한다."
+date: "2026-04-02"
+category: "Network"
+tags: ["HTTP", "TCP", "HTTPS", "TLS", "REST", "HTTP2", "네트워크"]
+series: "면접 대비"
+seriesOrder: 11
+---
+
+## OSI 7계층 (간략)
+
+```
+7. Application  — HTTP, HTTPS, WebSocket, gRPC
+6. Presentation — SSL/TLS, 암호화
+5. Session      — 세션 관리
+4. Transport    — TCP, UDP (포트 번호)
+3. Network      — IP, 라우팅
+2. Data Link    — MAC 주소, 이더넷
+1. Physical     — 전기 신호, 케이블
+```
+
+백엔드 개발에서 중요한 것: 4계층 (TCP/UDP), 7계층 (HTTP).
+
+---
+
+## TCP vs UDP
+
+| 항목 | TCP | UDP |
+|------|-----|-----|
+| 연결 | 연결 지향 (3-way handshake) | 비연결 |
+| 신뢰성 | 순서 보장, 재전송 | 보장 없음 |
+| 속도 | 상대적으로 느림 | 빠름 |
+| 사용 | HTTP, FTP, DB 연결 | DNS, 스트리밍, 게임 |
+
+---
+
+## TCP 3-Way Handshake
+
+연결 수립 과정.
+
+```
+클라이언트                    서버
+    │                          │
+    │──── SYN (seq=100) ──────→│  클라이언트: 연결 요청
+    │                          │
+    │←── SYN+ACK (seq=200, ack=101) ──│  서버: 수신 확인 + 연결 요청
+    │                          │
+    │──── ACK (ack=201) ──────→│  클라이언트: 서버 확인
+    │                          │
+    │         연결 완료         │
+```
+
+**SYN**: Synchronize. 시퀀스 번호 동기화.  
+**ACK**: Acknowledge. 수신 확인.
+
+### 4-Way Handshake (연결 종료)
+
+```
+클라이언트                    서버
+    │──── FIN ────────────────→│
+    │←─── ACK ─────────────────│
+    │←─── FIN ─────────────────│  (서버가 남은 데이터 전송 후)
+    │──── ACK ────────────────→│
+    │   TIME_WAIT (2MSL 대기)  │
+```
+
+클라이언트는 FIN을 받아도 바로 끊지 않고 TIME_WAIT 상태로 대기한다. 서버가 마지막 ACK를 받지 못해 재전송하면 받을 수 있게.
+
+---
+
+## HTTP 버전별 차이
+
+### HTTP/1.1
+
+```
+요청 1 → 응답 1 → 요청 2 → 응답 2 → ...
+```
+
+**Keep-Alive**: TCP 연결을 재사용한다. 매 요청마다 3-way handshake 비용 절감.
+
+**HOL Blocking (Head-of-Line Blocking)**: 앞 요청의 응답이 오기 전에 다음 요청을 보낼 수 없다. 이를 우회하기 위해 여러 TCP 연결을 병렬로 열었다 (브라우저 보통 6개).
+
+### HTTP/2
+
+**멀티플렉싱**: 하나의 TCP 연결에서 여러 요청/응답을 동시에 주고받는다. 요청과 응답을 **프레임** 단위로 분리해 인터리빙.
+
+```
+TCP 연결 1개
+├── Stream 1: 요청 A / 응답 A
+├── Stream 2: 요청 B / 응답 B
+└── Stream 3: 요청 C / 응답 C
+```
+
+**Header Compression (HPACK)**: 반복되는 헤더를 압축한다.
+
+**Server Push**: 클라이언트가 요청하기 전에 서버가 리소스를 미리 보낸다.
+
+단점: TCP 레벨 HOL Blocking은 여전히 존재 (패킷 손실 시 전체 스트림 대기).
+
+### HTTP/3
+
+**QUIC** 프로토콜 기반 (UDP 위에 구현).
+
+TCP HOL Blocking 해결: QUIC은 스트림별로 독립적. 패킷 손실이 해당 스트림에만 영향.
+
+**0-RTT**: 이전에 연결한 서버에 재연결 시 handshake 없이 바로 데이터 전송.
+
+---
+
+## HTTPS & TLS Handshake
+
+**TLS 1.2 Handshake (4-RTT)**:
+
+```
+클라이언트                          서버
+    │──── ClientHello ─────────────→│  지원 암호화 방식 목록
+    │←─── ServerHello + 인증서 ─────│  선택된 암호화 방식 + 공개키
+    │                                │
+    │  (인증서 검증)                 │
+    │──── Pre-Master Secret (암호화)→│  공개키로 암호화한 비밀키
+    │←─── Finished ─────────────────│
+    │──── Finished ─────────────────→│
+    │                                │
+    │      암호화 통신 시작          │
+```
+
+**TLS 1.3** (현재 표준): 2-RTT로 단축. 0-RTT 옵션도 지원.
+
+### 인증서와 CA
+
+서버 인증서는 CA(Certificate Authority, 인증기관)가 서명한다. 브라우저는 CA의 공개키로 서명을 검증해 인증서가 신뢰할 수 있는지 확인한다.
+
+자체 서명 인증서(Self-Signed)는 CA 검증이 없어 브라우저가 경고를 표시한다. 개발 환경에서만 사용.
+
+---
+
+## RESTful API 설계
+
+**REST (Representational State Transfer)** 6가지 제약 조건:
+
+1. **Stateless**: 서버가 클라이언트 상태를 저장하지 않는다. 각 요청에 필요한 모든 정보가 포함.
+2. **Client-Server**: 클라이언트와 서버 역할이 분리.
+3. **Cacheable**: 응답은 캐시 가능/불가 명시.
+4. **Uniform Interface**: 일관된 인터페이스.
+5. **Layered System**: 중간 서버(프록시, 캐시) 존재 가능.
+6. **Code on Demand** (선택): 서버가 클라이언트에 코드 전송.
+
+### URI 설계 원칙
+
+```
+# 자원은 명사, 복수형
+GET    /users          # 목록
+GET    /users/1        # 단건
+POST   /users          # 생성
+PUT    /users/1        # 전체 수정
+PATCH  /users/1        # 부분 수정
+DELETE /users/1        # 삭제
+
+# 계층 관계
+GET /users/1/orders        # 사용자 1의 주문 목록
+GET /users/1/orders/5      # 사용자 1의 주문 5번
+
+# 동사 쓰지 않기 (틀린 예)
+POST /users/createUser   ❌
+GET  /users/getUser/1    ❌
+
+# 행위는 HTTP 메서드로
+POST /users/1/activate   ← 부득이한 경우만 예외
+```
+
+### HTTP 상태 코드
+
+| 코드 | 의미 | 사용 |
+|------|------|------|
+| 200 | OK | GET 성공 |
+| 201 | Created | POST로 리소스 생성 |
+| 204 | No Content | DELETE 성공 (응답 바디 없음) |
+| 400 | Bad Request | 요청 형식 오류 |
+| 401 | Unauthorized | 인증 필요 |
+| 403 | Forbidden | 인증됐지만 권한 없음 |
+| 404 | Not Found | 리소스 없음 |
+| 409 | Conflict | 중복 리소스 |
+| 422 | Unprocessable Entity | 유효성 검사 실패 |
+| 500 | Internal Server Error | 서버 오류 |
+
+---
+
+## WebSocket
+
+HTTP는 클라이언트가 요청해야 서버가 응답한다. WebSocket은 **양방향 실시간 통신**.
+
+```
+클라이언트 ──── HTTP Upgrade 요청 ────→ 서버
+클라이언트 ←──── 101 Switching ─────── 서버
+클라이언트 ←──── 서버 Push ──────────── 서버  (이제부터 양방향)
+클라이언트 ──── 메시지 ──────────────→ 서버
+```
+
+**사용 케이스**: 채팅, 실시간 알림, 주식 가격, 협업 도구.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. HTTP와 HTTPS의 차이는?**
+
+HTTP는 평문 전송. HTTPS는 TLS로 암호화. HTTPS는 도청 방지(기밀성), 위변조 방지(무결성), 서버 신원 확인(인증)을 제공한다.
+
+**Q. HTTP/1.1의 HOL Blocking이 HTTP/2에서 해결된 방식은?**
+
+HTTP/1.1은 순차적 요청-응답이라 앞 응답이 오기 전에 다음 요청을 보낼 수 없다. HTTP/2는 하나의 TCP 연결에서 스트림(Stream) 단위로 멀티플렉싱해 여러 요청을 동시에 처리한다. 단, TCP 레벨에서 패킷 손실이 발생하면 전체 연결이 대기하는 HOL은 남아있다. HTTP/3의 QUIC이 이를 해결한다.
+
+**Q. 401과 403의 차이는?**
+
+401 Unauthorized: 인증이 안 됨. 로그인이 필요한 상태 (이름과 달리 미인증). 403 Forbidden: 인증은 됐지만 해당 리소스에 접근 권한이 없음.
+
+**Q. REST에서 Stateless가 중요한 이유는?**
+
+서버가 클라이언트 상태를 저장하지 않으므로 어느 서버가 요청을 받아도 동일하게 처리할 수 있다. 서버를 수평 확장할 때 세션 동기화 문제가 없다. 클라이언트가 요청에 필요한 모든 정보(예: JWT)를 담아 보낸다.

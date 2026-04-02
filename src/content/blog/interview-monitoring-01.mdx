@@ -1,0 +1,300 @@
+---
+title: "모니터링 & 관찰성 — 면접 대비 정리"
+description: "Prometheus/Grafana 메트릭, 로그 레벨 전략, 분산 추적, Spring Boot Actuator, 알람 설계까지. 운영 관찰성을 갖추는 방법을 정리한다."
+date: "2026-04-02"
+category: "DevOps"
+tags: ["Prometheus", "Grafana", "모니터링", "로깅", "분산추적", "Actuator", "관찰성"]
+series: "면접 대비"
+seriesOrder: 18
+---
+
+## 관찰성 3요소
+
+**관찰성 (Observability)**: 시스템 내부 상태를 외부에서 얼마나 잘 파악할 수 있는가.
+
+```
+Metrics  — 숫자로 표현된 시스템 상태 (응답 시간, 에러율, 요청 수)
+Logs     — 이벤트 기록 (무슨 일이 언제 일어났는가)
+Traces   — 요청의 전체 흐름 (어느 서비스가 어디서 시간을 썼는가)
+```
+
+---
+
+## Metrics: Prometheus + Grafana
+
+### Prometheus
+
+Pull 방식으로 메트릭을 수집한다. 각 서비스가 `/metrics` 엔드포인트를 노출하면 Prometheus가 주기적으로 가져간다.
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'spring-app'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['app:8080']
+    metrics_path: '/actuator/prometheus'
+```
+
+### Spring Boot Actuator + Micrometer
+
+```yaml
+# application.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+```
+
+```gradle
+implementation 'org.springframework.boot:spring-boot-starter-actuator'
+implementation 'io.micrometer:micrometer-registry-prometheus'
+```
+
+`/actuator/prometheus`에서 Prometheus 포맷 메트릭이 나온다.
+
+### 커스텀 메트릭
+
+```java
+@Component
+public class OrderMetrics {
+    private final Counter orderCounter;
+    private final Timer orderProcessingTimer;
+
+    public OrderMetrics(MeterRegistry registry) {
+        this.orderCounter = Counter.builder("orders.placed")
+            .description("주문 생성 수")
+            .tag("status", "success")
+            .register(registry);
+
+        this.orderProcessingTimer = Timer.builder("orders.processing.time")
+            .description("주문 처리 시간")
+            .register(registry);
+    }
+
+    public void recordOrder() {
+        orderCounter.increment();
+    }
+
+    public <T> T recordProcessingTime(Supplier<T> action) {
+        return orderProcessingTimer.record(action);
+    }
+}
+```
+
+### 주요 메트릭 종류
+
+| 종류 | 설명 | 예시 |
+|------|------|------|
+| Counter | 단조 증가 (리셋 불가) | 총 요청 수, 에러 수 |
+| Gauge | 현재 값 | 현재 연결 수, 메모리 사용량 |
+| Timer | 시간 측정 + 분포 | API 응답 시간 |
+| Histogram | 값의 분포 | 요청 크기, 응답 크기 |
+
+### Grafana 대시보드
+
+PromQL로 메트릭을 쿼리해 시각화한다.
+
+```
+# API 에러율 (5xx 비율)
+sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+/
+sum(rate(http_server_requests_seconds_count[5m]))
+
+# 99퍼센타일 응답 시간
+histogram_quantile(0.99,
+  sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri)
+)
+
+# JVM 힙 사용량
+jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}
+```
+
+---
+
+## Logs: 로깅 전략
+
+### 로그 레벨
+
+```
+ERROR — 즉각 대응 필요. 요청 처리 실패, 외부 연동 오류
+WARN  — 주의 필요하지만 서비스는 동작. 재시도 성공, 성능 저하
+INFO  — 중요한 비즈니스 이벤트. 주문 생성, 사용자 로그인
+DEBUG — 개발/디버깅용. 상세 처리 과정
+TRACE — 매우 상세. 프레임워크 내부
+```
+
+운영 환경: `INFO` 이상.  
+개발 환경: `DEBUG` 이상.
+
+### 구조화 로그 (JSON)
+
+```java
+// Logback + Logstash Encoder
+// 로그가 JSON 형태로 출력됨
+log.info("주문 생성 완료",
+    kv("orderId", order.getId()),
+    kv("userId", order.getUserId()),
+    kv("amount", order.getAmount()));
+```
+
+```json
+{
+  "timestamp": "2026-04-02T10:00:00.000Z",
+  "level": "INFO",
+  "message": "주문 생성 완료",
+  "orderId": "12345",
+  "userId": "789",
+  "amount": 50000,
+  "traceId": "abc123",
+  "spanId": "def456"
+}
+```
+
+JSON 로그는 Elasticsearch(ELK Stack)나 CloudWatch Logs에서 필드 기반 검색이 가능하다.
+
+### 로그에 넣으면 안 되는 것
+
+```java
+// 절대 금지
+log.info("사용자 로그인: password={}", password);        // 비밀번호
+log.debug("카드 정보: {}", cardNumber);                  // 결제 정보
+log.info("사용자 정보: {}", user.toString());            // 개인정보 전체
+```
+
+---
+
+## Traces: 분산 추적
+
+MSA에서 요청이 여러 서비스를 거칠 때 전체 흐름을 추적한다.
+
+```
+요청 → API Gateway → 주문서비스 → 결제서비스 → 알림서비스
+         10ms           50ms          200ms          30ms
+                    ↑ 총 290ms
+```
+
+어느 서비스가 느린지 한 눈에 파악할 수 있다.
+
+### OpenTelemetry + Jaeger/Zipkin
+
+```yaml
+# application.yml
+spring:
+  application:
+    name: order-service
+management:
+  tracing:
+    sampling:
+      probability: 1.0  # 100% 샘플링 (운영에서는 0.1~0.3)
+```
+
+```gradle
+implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+implementation 'io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter'
+```
+
+Trace ID가 자동으로 로그에 포함된다. 로그와 트레이스를 연결할 수 있다.
+
+---
+
+## 알람 설계
+
+좋은 알람: **즉각 대응이 필요한 것만** 울린다. 알람이 너무 많으면 알람 피로로 중요한 것을 놓친다.
+
+### 알람 기준
+
+```yaml
+# Prometheus Alertmanager
+groups:
+- name: critical
+  rules:
+  # 에러율 1% 초과 5분 지속
+  - alert: HighErrorRate
+    expr: |
+      sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+      / sum(rate(http_server_requests_seconds_count[5m])) > 0.01
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "에러율 {{ $value | humanizePercentage }} 초과"
+
+  # 99퍼센타일 응답 시간 2초 초과
+  - alert: SlowResponse
+    expr: |
+      histogram_quantile(0.99,
+        sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+      ) > 2
+    for: 3m
+    labels:
+      severity: warning
+
+  # Pod 재시작 감지
+  - alert: PodRestarting
+    expr: increase(kube_pod_container_status_restarts_total[15m]) > 2
+    labels:
+      severity: warning
+```
+
+### SLO / SLI / SLA
+
+**SLI (Service Level Indicator)**: 측정 지표. "99퍼센타일 응답 시간", "에러율".
+
+**SLO (Service Level Objective)**: 내부 목표. "에러율 < 0.1%", "응답 시간 p99 < 500ms".
+
+**SLA (Service Level Agreement)**: 고객과의 계약. "월 가용성 99.9%".
+
+SLO를 SLA보다 엄격하게 설정해 위반 전에 대응할 시간을 확보한다.
+
+---
+
+## Spring Boot Actuator 엔드포인트
+
+```
+/actuator/health          — 헬스 상태 (K8s probe)
+/actuator/metrics         — 메트릭 목록
+/actuator/prometheus      — Prometheus 포맷 메트릭
+/actuator/info            — 애플리케이션 정보
+/actuator/loggers         — 런타임 로그 레벨 변경 (재시작 없이)
+/actuator/env             — 환경변수 조회
+/actuator/threaddump      — 스레드 덤프
+/actuator/heapdump        — 힙 덤프
+```
+
+운영 환경에서는 `/actuator/health`와 `/actuator/prometheus`만 외부 노출, 나머지는 내부 포트로 제한.
+
+```yaml
+management:
+  server:
+    port: 8081  # 내부 포트
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. 관찰성(Observability) 3요소는?**
+
+Metrics(메트릭), Logs(로그), Traces(분산 추적). 메트릭은 수치로 시스템 상태를 파악하고, 로그는 이벤트 상세를 기록하며, 트레이스는 분산 시스템에서 요청의 전체 흐름을 추적한다.
+
+**Q. 로그 레벨을 어떻게 설정하는가?**
+
+운영에서는 INFO 이상. DEBUG는 너무 많은 로그로 성능에 영향을 준다. Spring Boot Actuator로 재시작 없이 런타임에 특정 패키지 로그 레벨을 변경할 수 있어 장애 상황에서 유용하다.
+
+**Q. 어떤 메트릭을 모니터링하는가?**
+
+골든 시그널 4가지: 레이턴시(응답 시간), 트래픽(요청 수), 에러(에러율), 포화도(자원 사용률). JVM 관련: GC 빈도, 힙 사용률. 비즈니스: 주문 수, 결제 성공률.
+
+**Q. 알람이 너무 많이 울리면 어떻게 하는가?**
+
+임계값을 조정하거나 `for` 조건(지속 시간)을 늘려 일시적 스파이크에 반응하지 않게 한다. 비중요 알람은 severity를 낮추거나 야간에는 묵음 처리한다. 알람을 정기적으로 검토해 실제 대응이 필요했던 것과 아닌 것을 분류한다.

@@ -1,0 +1,252 @@
+---
+title: "자료구조 & 시간복잡도 — 면접 대비 정리"
+description: "Array, LinkedList, Stack, Queue, HashMap 내부 구조, Tree, Heap까지. 시간복잡도와 함께 언제 어떤 자료구조를 쓰는지 정리한다."
+date: "2026-04-02"
+category: "CS"
+tags: ["자료구조", "시간복잡도", "HashMap", "Tree", "Stack", "Queue", "CS기초"]
+series: "면접 대비"
+seriesOrder: 19
+---
+
+## 시간복잡도 Big-O
+
+| 복잡도 | 이름 | 예시 |
+|--------|------|------|
+| O(1) | 상수 | HashMap get, 배열 인덱스 접근 |
+| O(log n) | 로그 | 이진 탐색, B-Tree |
+| O(n) | 선형 | 배열 순회, LinkedList 탐색 |
+| O(n log n) | 선형로그 | 병합 정렬, 퀵 정렬 평균 |
+| O(n²) | 이차 | 버블 정렬, 이중 루프 |
+| O(2ⁿ) | 지수 | 피보나치 재귀 |
+
+---
+
+## Array vs LinkedList
+
+### Array (배열)
+
+```
+인덱스:  0    1    2    3
+값:    [10] [20] [30] [40]
+메모리: 연속 공간
+```
+
+- **접근**: O(1) — 인덱스로 바로
+- **검색**: O(n) — 순서대로 확인
+- **삽입/삭제 (중간)**: O(n) — 뒤 요소들을 당기거나 밀어야 함
+- **삽입 (끝)**: O(1) (amortized)
+
+### LinkedList
+
+```
+[10|→] → [20|→] → [30|→] → [40|null]
+각 노드가 다음 노드를 가리킴
+```
+
+- **접근**: O(n) — 처음부터 순서대로
+- **검색**: O(n)
+- **삽입/삭제 (앞)**: O(1)
+- **삽입/삭제 (중간, 위치 알 때)**: O(1)
+
+**선택 기준**:
+- 인덱스 접근이 많고, 크기가 고정에 가까우면 → Array
+- 앞뒤 삽입/삭제가 많으면 → LinkedList
+- 실무에서 Java `ArrayList`(동적 배열)가 대부분의 경우 더 빠름 (캐시 지역성)
+
+---
+
+## Stack & Queue
+
+### Stack (LIFO)
+
+```java
+Deque<Integer> stack = new ArrayDeque<>();
+stack.push(1);   // [1]
+stack.push(2);   // [1, 2]
+stack.pop();     // 2 반환, [1]
+stack.peek();    // 1 반환 (제거 안 함)
+```
+
+**사용 케이스**: 함수 호출 스택, 괄호 검사, DFS, 실행 취소(Undo).
+
+### Queue (FIFO)
+
+```java
+Queue<Integer> queue = new LinkedList<>();
+queue.offer(1);  // [1]
+queue.offer(2);  // [1, 2]
+queue.poll();    // 1 반환, [2]
+queue.peek();    // 2 반환 (제거 안 함)
+```
+
+**사용 케이스**: BFS, 작업 큐, 순서 보장 처리.
+
+---
+
+## HashMap 내부 구조
+
+Java `HashMap`은 배열(버킷) + 링크드리스트/레드블랙트리로 구현된다.
+
+```
+index = hash(key) % capacity
+
+버킷 배열:
+[0] → null
+[1] → (key="apple", val=1) → (key="mango", val=2)  ← 해시 충돌
+[2] → (key="banana", val=3)
+[3] → null
+...
+```
+
+### 동작 과정
+
+1. `key.hashCode()`로 해시값 계산
+2. `hash % capacity`로 버킷 인덱스 결정
+3. 해당 버킷에 노드 저장
+4. 충돌 시 체이닝 (링크드리스트)
+5. 버킷 내 노드 수 ≥ 8이면 레드블랙트리로 전환 (O(n) → O(log n))
+
+### Load Factor와 리사이징
+
+```
+default capacity: 16
+default load factor: 0.75
+threshold: 16 * 0.75 = 12
+
+12개 이상 저장 시 → 용량 2배(32) 확장 + 재해싱
+```
+
+리사이징은 O(n) 비용. 미리 크기를 알면 초기 용량 지정이 유리하다.
+
+```java
+Map<String, Integer> map = new HashMap<>(1024);  // 초기 용량 지정
+```
+
+### equals/hashCode와 HashMap
+
+```java
+// hashCode가 같고 equals가 같으면 → 같은 버킷, 같은 키로 취급
+// hashCode가 다르면 → 다른 버킷, 다른 키로 취급
+// hashCode가 같고 equals가 다르면 → 같은 버킷, 체이닝
+```
+
+커스텀 객체를 Key로 쓰려면 반드시 `equals`와 `hashCode`를 재정의해야 한다.
+
+---
+
+## Tree
+
+### 이진 탐색 트리 (BST)
+
+```
+        50
+       /  \
+      30    70
+     / \   / \
+    20  40 60  80
+```
+
+- 왼쪽 자식 < 부모 < 오른쪽 자식
+- 탐색/삽입/삭제: O(log n) 평균, O(n) 최악 (편향)
+
+### 레드블랙트리
+
+BST의 편향 문제를 해결한 자가 균형 트리. 항상 O(log n).
+
+Java `TreeMap`, `TreeSet`, HashMap의 버킷 내 충돌 처리에 사용.
+
+### 힙 (Heap)
+
+완전 이진 트리. 부모가 자식보다 항상 크거나(Max Heap) 작다(Min Heap).
+
+```
+Max Heap:
+        90
+       /  \
+      70    80
+     / \   /
+    40  60 50
+```
+
+- 최댓값/최솟값 접근: O(1)
+- 삽입/삭제: O(log n)
+- 배열로 구현 가능
+
+**사용 케이스**: 우선순위 큐, 힙 정렬, Dijkstra 최단 경로.
+
+```java
+PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());
+```
+
+---
+
+## 그래프
+
+### 표현 방식
+
+**인접 행렬**: 2D 배열. 간선 확인 O(1), 공간 O(V²).  
+**인접 리스트**: List of List. 공간 O(V+E). 희소 그래프에 유리.
+
+### BFS (너비 우선 탐색)
+
+```java
+void bfs(int start, List<List<Integer>> graph) {
+    boolean[] visited = new boolean[graph.size()];
+    Queue<Integer> queue = new LinkedList<>();
+
+    queue.offer(start);
+    visited[start] = true;
+
+    while (!queue.isEmpty()) {
+        int node = queue.poll();
+        System.out.print(node + " ");
+
+        for (int next : graph.get(node)) {
+            if (!visited[next]) {
+                visited[next] = true;
+                queue.offer(next);
+            }
+        }
+    }
+}
+```
+
+**사용 케이스**: 최단 경로 (가중치 없는 그래프), 레벨 탐색.
+
+### DFS (깊이 우선 탐색)
+
+```java
+void dfs(int node, boolean[] visited, List<List<Integer>> graph) {
+    visited[node] = true;
+    System.out.print(node + " ");
+
+    for (int next : graph.get(node)) {
+        if (!visited[next]) {
+            dfs(next, visited, graph);
+        }
+    }
+}
+```
+
+**사용 케이스**: 연결 요소 찾기, 사이클 감지, 위상 정렬.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. ArrayList와 LinkedList의 차이는?**
+
+ArrayList는 내부적으로 배열을 사용해 인덱스 접근이 O(1)이지만 중간 삽입/삭제는 O(n)이다. LinkedList는 노드 연결 구조라 앞/뒤 삽입/삭제는 O(1)이지만 인덱스 접근은 O(n)이다. 실무에서는 캐시 지역성 덕분에 ArrayList가 대부분의 경우 더 빠르다.
+
+**Q. HashMap에서 해시 충돌이 발생하면?**
+
+같은 버킷에 체이닝(LinkedList)으로 연결한다. 같은 버킷의 노드 수가 8 이상이면 레드블랙트리로 전환해 O(n) → O(log n)으로 개선한다. Load Factor 초과 시 용량을 2배로 늘리고 재해싱해 충돌을 줄인다.
+
+**Q. 우선순위 큐는 어떻게 구현되는가?**
+
+힙(Heap)으로 구현된다. Java의 `PriorityQueue`는 Min Heap이다. 삽입은 배열 끝에 추가 후 sift-up, 삭제는 루트를 제거하고 마지막 요소를 루트로 이동 후 sift-down. 각각 O(log n).
+
+**Q. Stack을 Java에서 구현할 때 Stack 클래스를 쓰지 않는 이유는?**
+
+`java.util.Stack`은 `Vector`를 상속해 모든 메서드가 synchronized다. 단일 스레드 환경에서 불필요한 동기화 비용이 발생한다. `ArrayDeque`를 사용하면 더 빠르고 Stack/Queue 모두 구현 가능하다.

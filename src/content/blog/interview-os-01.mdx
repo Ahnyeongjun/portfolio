@@ -1,0 +1,263 @@
+---
+title: "프로세스 & 스레드 & 동시성 — 면접 대비 정리"
+description: "프로세스 vs 스레드, 컨텍스트 스위칭, 동시성 vs 병렬성, 뮤텍스 vs 세마포어, 데드락 조건과 예방까지. OS 면접 질문을 정리한다."
+date: "2026-04-02"
+category: "OS"
+tags: ["프로세스", "스레드", "동시성", "병렬성", "뮤텍스", "세마포어", "데드락"]
+series: "면접 대비"
+seriesOrder: 12
+---
+
+## 프로세스 vs 스레드
+
+### 프로세스
+
+독립적인 실행 단위. OS가 자원을 할당하는 기본 단위.
+
+```
+프로세스 A                    프로세스 B
+┌─────────────────┐          ┌─────────────────┐
+│ Code Segment     │          │ Code Segment     │
+│ Data Segment     │          │ Data Segment     │
+│ Heap             │          │ Heap             │
+│ Stack            │          │ Stack            │
+│ (독립된 메모리)  │          │ (독립된 메모리)  │
+└─────────────────┘          └─────────────────┘
+```
+
+각 프로세스는 독립된 메모리 공간을 가진다. 한 프로세스가 죽어도 다른 프로세스에 영향 없다.
+
+**프로세스 간 통신(IPC)**: 파이프, 소켓, 공유 메모리, 메시지 큐. 별도 메커니즘이 필요하다.
+
+### 스레드
+
+프로세스 내 실행 흐름의 단위. 같은 프로세스 내 스레드는 메모리를 공유한다.
+
+```
+프로세스
+┌────────────────────────────┐
+│ Code Segment               │
+│ Data Segment  (공유)        │
+│ Heap          (공유)        │
+├──────────┬─────────────────┤
+│ Stack T1 │ Stack T2 (각각) │
+└──────────┴─────────────────┘
+```
+
+**공유**: Code, Data, Heap, 파일 디스크립터  
+**독립**: Stack, 레지스터, PC(Program Counter)
+
+스레드 간 통신이 프로세스 간보다 빠르다. 공유 메모리를 바로 접근하니까.  
+단점: 공유 자원 접근 시 동기화가 필요하다. 하나가 잘못되면 전체 프로세스에 영향.
+
+---
+
+## 컨텍스트 스위칭
+
+CPU가 현재 실행 중인 프로세스/스레드를 멈추고 다른 것을 실행하는 과정.
+
+```
+프로세스 A 실행
+    ↓
+인터럽트 (타이머, I/O 완료 등)
+    ↓
+A의 상태 저장 (레지스터, PC, 스택 포인터 → PCB)
+    ↓
+B의 상태 복원
+    ↓
+프로세스 B 실행
+```
+
+**PCB (Process Control Block)**: 프로세스 상태 정보를 저장하는 OS 자료구조.
+
+**스위칭 비용**:
+- 프로세스: 메모리 공간이 달라 TLB 플러시, 캐시 무효화 필요. 비용 높음.
+- 스레드: 같은 프로세스 내라 메모리 공간 공유. 비용 낮음.
+
+---
+
+## 동시성 vs 병렬성
+
+**동시성 (Concurrency)**: 여러 작업이 논리적으로 동시에 진행되는 것. 실제로는 빠르게 번갈아 실행.
+
+```
+CPU 1개
+시간→ A A A B B B A A B B
+      논리적으로는 A, B가 동시에 실행 중
+```
+
+**병렬성 (Parallelism)**: 여러 작업이 물리적으로 동시에 실행. 여러 CPU 코어 필요.
+
+```
+CPU 코어 1: A A A A A A
+CPU 코어 2: B B B B B B
+            실제로 동시에 실행
+```
+
+싱글 코어에서는 병렬성이 없다. 동시성만 있다.
+
+Java의 스레드는 동시성을 제공하고, 멀티코어 환경에서 병렬성도 달성한다.
+
+---
+
+## 경쟁 조건 (Race Condition)
+
+여러 스레드가 공유 자원에 동시에 접근해 결과가 실행 순서에 따라 달라지는 상황.
+
+```java
+// 공유 변수
+int count = 0;
+
+// 스레드 A
+count++;  // read(0) → add → write(1)
+
+// 스레드 B (동시에)
+count++;  // read(0) → add → write(1)
+
+// 결과: 2가 돼야 하는데 1이 됨
+```
+
+`count++`는 원자적 연산이 아니다. 읽기 → 수정 → 쓰기 3단계가 분리된다.
+
+---
+
+## 뮤텍스 vs 세마포어
+
+### 뮤텍스 (Mutex, Mutual Exclusion)
+
+한 번에 하나의 스레드만 임계 구역에 진입할 수 있도록 하는 락.
+
+```java
+Lock mutex = new ReentrantLock();
+
+mutex.lock();
+try {
+    count++;  // 임계 구역 (Critical Section)
+} finally {
+    mutex.unlock();
+}
+```
+
+- 락을 획득한 스레드만 해제할 수 있다.
+- Binary: 잠김/열림 두 상태.
+
+### 세마포어 (Semaphore)
+
+지정된 수의 스레드만 동시에 접근할 수 있도록 카운터를 사용.
+
+```java
+Semaphore semaphore = new Semaphore(3);  // 동시에 3개 허용
+
+semaphore.acquire();  // 카운터 -1 (0이면 블로킹)
+try {
+    useResource();
+} finally {
+    semaphore.release();  // 카운터 +1
+}
+```
+
+- 락을 획득하지 않은 스레드도 해제할 수 있다.
+- 카운터가 1이면 뮤텍스처럼 동작한다 (Binary Semaphore).
+
+**차이**: 뮤텍스는 소유권이 있다(락 획득자만 해제 가능). 세마포어는 소유권이 없다.
+
+**사용 케이스**:
+- 뮤텍스: 공유 변수 보호, 임계 구역
+- 세마포어: DB 커넥션 풀 개수 제한, 동시 접속자 수 제한
+
+---
+
+## 데드락 (Deadlock)
+
+두 개 이상의 스레드가 서로의 락을 기다리며 영원히 진행되지 않는 상태.
+
+### 4가지 조건 (Coffman 조건)
+
+**1. 상호 배제 (Mutual Exclusion)**: 자원을 한 번에 하나의 스레드만 사용.
+
+**2. 점유와 대기 (Hold and Wait)**: 자원을 가진 채로 다른 자원을 기다림.
+
+**3. 비선점 (No Preemption)**: 다른 스레드의 자원을 강제로 빼앗을 수 없음.
+
+**4. 순환 대기 (Circular Wait)**: A→B→C→A처럼 순환하며 대기.
+
+4가지를 **모두 만족**해야 데드락이 발생한다. 하나만 깨면 된다.
+
+### 예방 방법
+
+**자원 획득 순서 고정** (순환 대기 제거):
+
+```java
+// 항상 낮은 ID 먼저 락
+public void transfer(Account from, Account to, int amount) {
+    Account first = from.getId() < to.getId() ? from : to;
+    Account second = from.getId() < to.getId() ? to : from;
+
+    synchronized (first) {
+        synchronized (second) {
+            from.debit(amount);
+            to.credit(amount);
+        }
+    }
+}
+```
+
+**타임아웃 설정** (점유와 대기 해소):
+
+```java
+boolean acquired = lock.tryLock(5, TimeUnit.SECONDS);
+if (!acquired) {
+    // 데드락 의심 → 포기하고 재시도
+}
+```
+
+**한 번에 모든 자원 획득** (점유와 대기 해소):
+
+자원을 하나씩 획득하지 않고, 필요한 모든 자원을 한 번에 요청한다.
+
+---
+
+## Java 동시성 유틸리티
+
+```java
+// AtomicInteger: 원자적 연산
+AtomicInteger count = new AtomicInteger(0);
+count.incrementAndGet(); // count++ 원자적으로
+
+// ConcurrentHashMap: 스레드 안전한 맵
+ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+
+// CountDownLatch: N개 스레드가 끝날 때까지 대기
+CountDownLatch latch = new CountDownLatch(3);
+// 각 스레드에서 latch.countDown()
+latch.await(); // 카운트가 0이 될 때까지 블로킹
+
+// ExecutorService: 스레드 풀
+ExecutorService pool = Executors.newFixedThreadPool(8);
+pool.submit(() -> processTask());
+pool.shutdown();
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. 프로세스와 스레드의 차이는?**
+
+프로세스는 독립된 메모리 공간을 가지는 실행 단위다. 스레드는 프로세스 내의 실행 흐름으로, 같은 프로세스의 스레드끼리는 코드, 데이터, 힙을 공유하고 스택만 독립적으로 가진다. 스레드 간 통신이 더 빠르지만 공유 자원 동기화가 필요하다.
+
+**Q. 컨텍스트 스위칭이 뭐고 비용은?**
+
+CPU가 실행 중인 프로세스/스레드의 상태(레지스터, PC 등)를 저장하고 다른 것의 상태를 복원하는 과정이다. 프로세스 스위칭은 메모리 공간이 달라 TLB 플러시와 캐시 무효화가 발생해 비용이 높다. 스레드 스위칭은 같은 메모리 공간을 공유해 비용이 낮다.
+
+**Q. 뮤텍스와 세마포어의 차이는?**
+
+뮤텍스는 소유권이 있는 이진 락이다. 락을 획득한 스레드만 해제할 수 있다. 세마포어는 카운터 기반이고 소유권이 없다. 다른 스레드도 해제할 수 있고, 카운터로 동시 접근 수를 조절한다.
+
+**Q. 데드락 예방 방법은?**
+
+자원 획득 순서를 모든 스레드에서 동일하게 고정한다(순환 대기 제거). 락 획득에 타임아웃을 설정해 무한 대기를 방지한다. 필요한 자원을 한 번에 모두 획득하고 일부만 획득한 상태에서 대기하지 않는다.
+
+**Q. volatile 키워드는 무엇인가?**
+
+Java에서 멀티스레드 환경에 각 스레드가 변수를 CPU 캐시에 복사해 사용한다. volatile로 선언하면 항상 메인 메모리에서 읽고 쓴다. 가시성(Visibility)을 보장하지만 원자성은 보장하지 않는다. `count++` 같은 복합 연산에는 여전히 synchronized나 AtomicInteger가 필요하다.

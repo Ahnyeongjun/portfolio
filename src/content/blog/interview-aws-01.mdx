@@ -1,0 +1,288 @@
+---
+title: "AWS 핵심 서비스 — 면접 대비 정리"
+description: "EC2, ECS Fargate, RDS, ElastiCache, S3, SQS, API Gateway, IAM까지. 백엔드 개발자가 알아야 할 AWS 서비스와 아키텍처 패턴을 정리한다."
+date: "2026-04-02"
+category: "DevOps"
+tags: ["AWS", "EC2", "ECS", "RDS", "S3", "SQS", "ElastiCache", "IAM"]
+series: "면접 대비"
+seriesOrder: 22
+---
+
+## AWS 기본 개념
+
+**Region**: 물리적으로 분리된 데이터센터 집합. `ap-northeast-2` (서울), `us-east-1` (버지니아).
+
+**AZ (Availability Zone)**: 한 Region 내의 독립 데이터센터. 서울 Region에 4개. 한 AZ가 장애나도 다른 AZ는 정상.
+
+**VPC (Virtual Private Cloud)**: AWS 내 격리된 가상 네트워크. 서브넷으로 나눈다.
+
+```
+VPC (10.0.0.0/16)
+├── Public Subnet (10.0.1.0/24) — 인터넷 접근 가능 (ALB, NAT)
+├── Private Subnet (10.0.2.0/24) — 내부만 (ECS, EC2)
+└── DB Subnet (10.0.3.0/24) — DB만 (RDS)
+```
+
+---
+
+## 컴퓨팅
+
+### EC2
+
+가상 서버. 직접 OS 수준 접근 필요할 때.
+
+**인스턴스 타입**:
+- `t3.medium` — 범용, 버스터블 CPU
+- `m5.large` — 균형 잡힌 메모리/CPU
+- `c5.large` — CPU 집약
+- `r5.large` — 메모리 집약 (DB, Redis)
+
+**비용 최적화**:
+- On-Demand: 기본. 시간당 요금.
+- Reserved: 1~3년 약정. 최대 72% 할인.
+- Spot: 여유 용량 경매. 최대 90% 할인. 언제든 회수됨 → 무상태 작업에 적합.
+
+### ECS Fargate
+
+컨테이너 관리형 서비스. EC2 인스턴스를 직접 관리하지 않아도 된다.
+
+```
+ECS Cluster
+└── Service (원하는 Task 수 유지)
+    └── Task (컨테이너 실행 단위)
+        └── Container
+```
+
+```json
+// Task Definition
+{
+  "family": "app",
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [{
+    "name": "app",
+    "image": "123456789.dkr.ecr.ap-northeast-2.amazonaws.com/app:latest",
+    "portMappings": [{"containerPort": 8080}],
+    "environment": [
+      {"name": "SPRING_PROFILES_ACTIVE", "value": "prod"}
+    ],
+    "secrets": [
+      {"name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:..."}
+    ]
+  }]
+}
+```
+
+### ALB (Application Load Balancer)
+
+HTTP/HTTPS 트래픽을 여러 대상으로 분산.
+
+```
+인터넷 → ALB
+         ├── /api/* → ECS Service A (API 서버)
+         └── /admin/* → ECS Service B (어드민)
+```
+
+**Target Group**: 트래픽을 받는 대상 그룹. Health Check로 비정상 대상은 제외.
+
+---
+
+## 데이터베이스
+
+### RDS
+
+관리형 RDB. MySQL, PostgreSQL, Aurora 지원.
+
+```
+Multi-AZ 배포:
+                Primary (ap-northeast-2a)
+                    ↕ 동기 복제
+                Standby (ap-northeast-2c)  ← 자동 장애조치 (Failover)
+```
+
+**Read Replica**: 읽기 전용 복제본. 읽기 부하 분산.
+
+```
+애플리케이션
+├── 쓰기 → Primary RDS
+└── 읽기 → Read Replica (최대 5개)
+```
+
+**주요 설정**:
+```
+Multi-AZ: 고가용성 (약 2배 비용)
+자동 백업: 1~35일 보관
+Parameter Group: DB 설정값 (max_connections, shared_buffers 등)
+```
+
+### Aurora
+
+AWS 전용 클라우드 최적화 RDB. MySQL/PostgreSQL 호환.
+
+- 자동 스토리지 증가 (10GB~128TB)
+- 6개 AZ에 6개 복사본 자동 유지
+- Read Replica를 15개까지 지원
+- RDS MySQL 대비 5배, PostgreSQL 대비 3배 성능
+
+---
+
+## 캐시
+
+### ElastiCache
+
+관리형 Redis/Memcached.
+
+```yaml
+# Spring Boot 연결
+spring:
+  data:
+    redis:
+      host: my-cluster.xxxxx.0001.apn2.cache.amazonaws.com
+      port: 6379
+```
+
+**Cluster Mode**: 데이터를 여러 노드에 샤딩. 수평 확장.
+
+**Replication Group**: Primary + Replica. 고가용성.
+
+---
+
+## 스토리지
+
+### S3
+
+객체 스토리지. 파일, 이미지, 백업, 정적 자산.
+
+```java
+// Spring Boot S3 업로드
+@Service
+public class S3Service {
+    private final S3Client s3Client;
+    private final String bucketName;
+
+    public String upload(MultipartFile file, String key) {
+        PutObjectRequest request = PutObjectRequest.builder()
+            .bucket(bucketName)
+            .key(key)
+            .contentType(file.getContentType())
+            .build();
+
+        s3Client.putObject(request,
+            RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+        return "https://%s.s3.amazonaws.com/%s".formatted(bucketName, key);
+    }
+}
+```
+
+**Presigned URL**: 임시 업로드/다운로드 URL. 클라이언트가 S3에 직접 업로드할 때.
+
+```java
+// Presigned URL 생성 (15분 유효)
+PresignedPutObjectRequest presigned = presigner.presignPutObject(req ->
+    req.signatureDuration(Duration.ofMinutes(15))
+       .putObjectRequest(r -> r.bucket(bucketName).key(key)));
+
+return presigned.url().toString();
+```
+
+**S3 버킷 정책**:
+- Public: 정적 웹사이트 호스팅
+- Private + Presigned URL: 임시 접근
+- Private + CloudFront: CDN을 통한 배포
+
+---
+
+## 메시지 큐
+
+### SQS (Simple Queue Service)
+
+```
+Producer → SQS Queue → Consumer (Poll 방식)
+```
+
+**Standard Queue**: 최소 1회 배달, 순서 미보장, 높은 처리량.
+
+**FIFO Queue**: 정확히 1회 배달, 순서 보장, 처리량 제한 (초당 300~3000).
+
+```java
+// Spring Cloud AWS SQS
+@SqsListener("order-queue")
+public void handleOrder(OrderMessage message) {
+    orderService.process(message);
+}
+```
+
+**DLQ (Dead Letter Queue)**: 처리 실패한 메시지를 별도 큐로. 재시도 횟수 초과 시.
+
+---
+
+## IAM (Identity and Access Management)
+
+AWS 리소스 접근 제어.
+
+**IAM Role**: EC2, ECS Task에 권한 부여. Access Key 없이 안전하게.
+
+```json
+// ECS Task Role: S3와 Secrets Manager 접근 허용
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": "arn:aws:s3:::my-bucket/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["secretsmanager:GetSecretValue"],
+      "Resource": "arn:aws:secretsmanager:ap-northeast-2:*:secret:prod/*"
+    }
+  ]
+}
+```
+
+**최소 권한 원칙**: 필요한 최소한의 권한만 부여. `*` 권한은 절대 사용 금지.
+
+---
+
+## 일반적인 스타트업 아키텍처
+
+```
+인터넷
+    ↓
+Route53 (DNS)
+    ↓
+CloudFront (CDN, WAF)
+    ↓
+ALB (로드밸런서)
+    ↓
+ECS Fargate (애플리케이션)
+    ├── RDS PostgreSQL (Primary/Multi-AZ)
+    │   └── Read Replica
+    ├── ElastiCache Redis (캐시, 세션)
+    └── S3 (파일 스토리지)
+
+GitHub Actions → ECR → ECS (CI/CD)
+CloudWatch → Slack (알람)
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. EC2와 ECS Fargate의 차이는?**
+
+EC2는 가상 서버를 직접 관리한다. OS 패치, 스케일링, 인스턴스 관리를 직접 해야 한다. ECS Fargate는 서버리스 컨테이너 서비스다. EC2를 직접 관리하지 않고 컨테이너 단위로 CPU/메모리를 지정하면 AWS가 인프라를 관리한다.
+
+**Q. S3에 직접 업로드하는 방법은?**
+
+Presigned URL을 사용한다. 서버가 Presigned URL을 생성해 클라이언트에 전달하면, 클라이언트가 서버를 거치지 않고 S3에 직접 업로드한다. 서버 대역폭을 절약하고 업로드 속도가 빠르다.
+
+**Q. RDS Multi-AZ와 Read Replica의 차이는?**
+
+Multi-AZ는 고가용성을 위한 것이다. 동기 복제로 Primary 장애 시 Standby가 자동으로 Primary가 된다. Read Replica는 성능을 위한 것이다. 비동기 복제로 읽기 부하를 분산한다. Multi-AZ Standby는 읽기에 사용할 수 없다.
+
+**Q. IAM Role과 IAM User의 차이는?**
+
+IAM User는 사람 또는 애플리케이션을 위한 영구적인 자격증명(Access Key). IAM Role은 AWS 서비스(EC2, Lambda, ECS)에 임시로 부여하는 권한이다. EC2나 ECS에서 AWS SDK를 쓸 때 Role을 사용하면 Access Key를 코드에 넣지 않아도 된다.

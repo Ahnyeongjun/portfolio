@@ -1,0 +1,240 @@
+---
+title: "RabbitMQ vs Kafka & 사가 패턴 — 면접 대비 정리"
+description: "RabbitMQ와 Kafka의 아키텍처 차이, 선택 기준, 분산 트랜잭션 문제, Choreography/Orchestration 사가 패턴, 멱등성 처리까지 정리한다."
+date: "2026-04-02"
+category: "Architecture"
+tags: ["RabbitMQ", "Kafka", "사가패턴", "이벤트드리븐", "분산트랜잭션", "MSA"]
+series: "면접 대비"
+seriesOrder: 10
+---
+
+## RabbitMQ vs Kafka
+
+### RabbitMQ
+
+**메시지 브로커**. 메시지를 라우팅하고 소비자에게 전달하는 것이 목적.
+
+```
+Producer → Exchange → Queue → Consumer
+                 ↓ 라우팅 키 기반 분기
+            Queue A, Queue B, Queue C
+```
+
+메시지가 Consumer에게 전달되고 ACK를 받으면 **큐에서 삭제**된다.
+
+**핵심 특성**:
+- 복잡한 라우팅 (Topic, Direct, Fanout, Headers Exchange)
+- 메시지가 소비되면 사라짐
+- 소비자가 Pull/Push 방식 선택 가능
+- 메시지 순서 보장은 기본적으로 단일 큐 안에서만
+- 기본 보존 기간: ACK 후 삭제
+
+### Kafka
+
+**분산 로그 스트리밍 플랫폼**. 메시지를 저장하고 여러 소비자가 독립적으로 읽는 것이 목적.
+
+```
+Producer → Topic (Partition 0) → Consumer Group A
+                (Partition 1) → Consumer Group B
+                (Partition 2) → Consumer Group C
+```
+
+메시지가 소비자에게 전달돼도 **로그에 남는다**. 소비자마다 자신의 offset을 관리.
+
+**핵심 특성**:
+- 메시지가 보존 기간(기본 7일) 동안 유지
+- 여러 Consumer Group이 같은 토픽을 독립적으로 소비
+- Partition 내 순서 보장
+- 높은 처리량 (초당 수십만~수백만 메시지)
+- 재처리(replay) 가능
+
+---
+
+### 비교 요약
+
+| 항목 | RabbitMQ | Kafka |
+|------|---------|-------|
+| 패러다임 | 메시지 브로커 | 분산 로그 |
+| 메시지 보존 | ACK 후 삭제 | 기간 기반 보존 |
+| 소비자 모델 | Push (기본) | Pull |
+| 처리량 | 수만 msg/s | 수십만~수백만 msg/s |
+| 순서 보장 | 단일 큐 내 | Partition 내 |
+| 재처리 | 어렵 (Dead Letter Queue) | 쉬움 (offset 리셋) |
+| 라우팅 | 복잡한 라우팅 규칙 | Topic + Consumer Group |
+| 적합한 용도 | 작업 큐, 복잡한 라우팅 | 이벤트 스트리밍, 대용량 로그 |
+
+### 선택 기준
+
+**RabbitMQ를 쓸 때**:
+- 이메일 발송, 알림 등 작업 큐
+- 복잡한 라우팅이 필요할 때
+- 메시지 처리 후 삭제해도 될 때
+- 요청-응답 패턴 (RPC over MQ)
+
+**Kafka를 쓸 때**:
+- 대용량 이벤트 스트리밍
+- 여러 시스템이 같은 이벤트를 독립적으로 처리할 때
+- 이벤트 재처리(replay)가 필요할 때
+- 실시간 로그 집계, 데이터 파이프라인
+
+---
+
+## 분산 트랜잭션 문제
+
+MSA에서 각 서비스가 별도 DB를 가지면 단일 트랜잭션이 불가능하다.
+
+```
+주문 생성 → 결제 처리 → 재고 차감 → 배송 요청
+
+문제: 결제는 됐는데 재고 차감 실패하면?
+     DB가 다르니 ROLLBACK이 전파되지 않음
+```
+
+2PC (Two-Phase Commit)로 해결할 수 있지만 블로킹이 길고, 코디네이터 장애 시 전체가 멈춘다. 실무에서 잘 쓰지 않는다.
+
+---
+
+## 사가 패턴 (Saga Pattern)
+
+분산 트랜잭션을 **일련의 로컬 트랜잭션**으로 나누고, 실패 시 **보상 트랜잭션**을 실행한다.
+
+### Choreography (이벤트 기반)
+
+중앙 조정자 없이 서비스가 이벤트를 발행하고 구독한다.
+
+```
+주문서비스        결제서비스        재고서비스
+    │                 │                │
+    │──OrderCreated──→│                │
+    │                 │──PaymentDone──→│
+    │                 │                │
+    │  실패 시:       │                │
+    │                 │←─StockFailed──│
+    │←─PaymentCancelled──             │
+    │──OrderCancelled                 │
+```
+
+**장점**: 서비스 간 결합도 낮음. 유연하게 서비스 추가 가능.
+
+**단점**: 전체 흐름 파악이 어렵다. 이벤트 체인이 복잡해지면 디버깅 어려움.
+
+### Orchestration (중앙 조정자)
+
+별도 Orchestrator가 각 서비스를 직접 호출하고 흐름을 관리한다.
+
+```
+        Saga Orchestrator
+        /       |         \
+       ↓        ↓          ↓
+  주문서비스  결제서비스  재고서비스
+  (로컬TX)  (로컬TX)   (로컬TX)
+```
+
+```java
+// Saga Orchestrator 예시
+public class OrderSaga {
+
+    public void execute(OrderCreatedEvent event) {
+        try {
+            // 1. 결제
+            PaymentResult payment = paymentService.charge(event.getOrderId(), event.getAmount());
+
+            // 2. 재고 차감
+            stockService.decrease(event.getItems());
+
+            // 3. 배송 요청
+            deliveryService.schedule(event.getOrderId());
+
+        } catch (PaymentException e) {
+            // 보상: 주문 취소
+            orderService.cancel(event.getOrderId());
+
+        } catch (StockException e) {
+            // 보상: 결제 환불 + 주문 취소
+            paymentService.refund(event.getOrderId());
+            orderService.cancel(event.getOrderId());
+        }
+    }
+}
+```
+
+**장점**: 전체 흐름이 한 곳에 있어 파악 쉬움. 디버깅 편리.
+
+**단점**: Orchestrator가 단일 장애점. 서비스 간 결합이 생길 수 있음.
+
+---
+
+## 멱등성 (Idempotency)
+
+같은 요청을 여러 번 실행해도 결과가 같은 성질.
+
+메시지 큐에서는 **At-Least-Once** 보장이 일반적이다. 네트워크 오류로 같은 메시지가 두 번 올 수 있다.
+
+처리하지 않으면 이메일 2번 발송, 결제 2번 청구 같은 문제가 생긴다.
+
+### 해결: 처리 내역 기록
+
+```java
+@Transactional
+public void processPayment(PaymentEvent event) {
+    // 이미 처리된 이벤트인지 확인
+    if (processedEventRepository.existsById(event.getEventId())) {
+        log.info("이미 처리된 이벤트: {}", event.getEventId());
+        return;
+    }
+
+    // 처리
+    doPayment(event);
+
+    // 처리 완료 기록
+    processedEventRepository.save(new ProcessedEvent(event.getEventId()));
+}
+```
+
+`event_id`를 PK로 저장하면 중복 처리 방지. DB의 유니크 제약으로도 보장 가능.
+
+### Outbox 패턴
+
+메시지 발행과 DB 저장을 원자적으로 처리.
+
+```
+문제: DB 저장 성공 + 메시지 발행 실패 → 불일치
+
+해결:
+1. DB 트랜잭션 안에서 outbox 테이블에 메시지 저장
+2. 별도 프로세스가 outbox를 읽어 메시지 브로커로 발행
+3. 발행 성공 후 outbox에서 삭제
+```
+
+```java
+@Transactional
+public void createOrder(Order order) {
+    orderRepository.save(order);
+
+    // 같은 트랜잭션 안에서 outbox에 저장
+    outboxRepository.save(OutboxMessage.of("OrderCreated", order));
+    // 트랜잭션 커밋 → outbox에 메시지가 안전하게 저장됨
+}
+
+// 별도 스케줄러/CDC가 outbox를 읽어 MQ로 발행
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. RabbitMQ와 Kafka 중 어떤 것을 선택하는가?**
+
+알림, 이메일, 작업 큐처럼 메시지를 처리하고 삭제하는 패턴이면 RabbitMQ. 대용량 로그 수집, 여러 시스템이 같은 이벤트를 처리, 재처리가 필요하면 Kafka. 실무에서는 두 가지를 함께 쓰기도 한다.
+
+**Q. 사가 패턴에서 보상 트랜잭션이 실패하면 어떻게 하는가?**
+
+재시도 로직을 구현한다. 보상 트랜잭션도 멱등성을 가져야 한다. 재시도가 계속 실패하면 알림을 보내 운영자가 수동으로 처리하도록 한다. 모든 단계를 이벤트 소싱으로 기록하면 나중에 재처리도 가능하다.
+
+**Q. 멱등성을 어떻게 구현하는가?**
+
+요청/이벤트에 고유 ID를 부여하고, 처리 내역을 DB에 기록한다. 중복 요청이 오면 이미 처리된 것임을 확인하고 동일한 결과를 반환하되 재처리하지 않는다. DB의 유니크 제약을 활용하면 동시 중복 처리도 방지된다.
+
+**Q. Outbox 패턴은 왜 필요한가?**
+
+DB 저장과 메시지 발행은 별개 시스템이라 한쪽이 실패하면 불일치가 생긴다. Outbox는 같은 DB 트랜잭션 안에 메시지를 저장해 원자성을 보장한다. 메시지 발행은 나중에 별도 프로세스가 처리해 최종 일관성을 달성한다.

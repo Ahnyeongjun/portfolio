@@ -1,0 +1,361 @@
+---
+title: "CI/CD & Docker 심화 — 면접 대비 정리"
+description: "Docker 멀티스테이지 빌드, 이미지 최적화, GitHub Actions 파이프라인 구성, 무중단 배포 전략까지. 실무 CI/CD 자동화 경험 기반으로 정리한다."
+date: "2026-04-02"
+category: "DevOps"
+tags: ["Docker", "CI/CD", "GitHub Actions", "Jenkins", "Kubernetes", "무중단배포"]
+series: "면접 대비"
+seriesOrder: 2
+---
+
+## Docker 기본 동작 원리
+
+Docker는 Linux 커널의 두 기능을 사용한다.
+
+**namespace**: 프로세스, 네트워크, 파일시스템을 격리한다. 컨테이너가 서로를 볼 수 없는 이유다.
+
+**cgroup**: CPU, 메모리 등 자원 사용량을 제한한다. 컨테이너 하나가 호스트 자원을 전부 먹지 못하게 한다.
+
+VM과 다른 점은 OS 커널을 공유한다는 것이다.
+
+```
+VM                          Docker
+┌─────────────────┐         ┌─────────────────┐
+│ Guest OS (2GB+) │         │  Container       │
+│ App             │         │  App             │
+├─────────────────┤         ├─────────────────┤
+│ Hypervisor      │         │  Docker Engine   │
+├─────────────────┤         ├─────────────────┤
+│ Host OS         │         │  Host OS (공유) │
+└─────────────────┘         └─────────────────┘
+```
+
+---
+
+## 이미지 레이어 구조
+
+Dockerfile의 각 명령어는 레이어를 만든다.
+
+```dockerfile
+FROM openjdk:17-slim          # 레이어 1
+RUN apt-get install -y curl   # 레이어 2
+COPY build/libs/app.jar .     # 레이어 3
+CMD ["java", "-jar", "app.jar"]  # 레이어 4
+```
+
+변경되지 않은 레이어는 캐시를 재사용한다. **변경 빈도가 낮은 명령어를 위에, 높은 것을 아래에** 써야 빌드가 빠르다.
+
+나쁜 예:
+
+```dockerfile
+COPY . .          # 소스 전체 복사 — 파일 하나 바뀌면 이하 전부 캐시 무효화
+RUN ./gradlew build
+```
+
+좋은 예:
+
+```dockerfile
+COPY build.gradle settings.gradle ./   # 의존성 파일만 먼저
+COPY gradle/ gradle/
+RUN ./gradlew dependencies --no-daemon  # 의존성 캐시
+
+COPY src/ src/                          # 소스는 나중에
+RUN ./gradlew build --no-daemon -x test
+```
+
+---
+
+## 멀티스테이지 빌드
+
+빌드 도구와 런타임을 분리해 최종 이미지를 작게 만든다.
+
+```dockerfile
+# Stage 1: 빌드
+FROM gradle:8-jdk17 AS builder
+WORKDIR /app
+COPY . .
+RUN gradle build --no-daemon -x test
+
+# Stage 2: 실행
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/build/libs/app.jar app.jar
+
+# 보안: root가 아닌 사용자로 실행
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+| 방식 | 이미지 크기 | 빌드 도구 포함 |
+|------|------------|--------------|
+| 단일 스테이지 (JDK 포함) | ~600MB | O |
+| 멀티스테이지 (JRE만) | ~180MB | X |
+
+이미지가 작으면 레지스트리 푸시/풀 속도, 컨테이너 시작 시간 모두 빨라진다.
+
+---
+
+## GitHub Actions 파이프라인
+
+실무에서 실제로 쓴 구조다.
+
+```yaml
+# .github/workflows/deploy.yml
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+
+      - name: Run tests
+        run: ./gradlew test
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/app:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/app:$IMAGE_TAG
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to K8s
+        run: |
+          kubectl set image deployment/app \
+            app=$ECR_REGISTRY/app:${{ github.sha }}
+          kubectl rollout status deployment/app
+```
+
+흐름: `test → build-and-push → deploy`. 앞 단계가 실패하면 다음 단계로 가지 않는다.
+
+---
+
+## Jenkins vs GitHub Actions
+
+| 항목 | Jenkins | GitHub Actions |
+|------|---------|---------------|
+| 인프라 | 직접 서버 관리 | GitHub 관리 |
+| 설정 | Groovy DSL, 복잡 | YAML, 간단 |
+| 플러그인 | 1,800개+ | Marketplace |
+| 비용 | 서버 비용 | private 무료 시간 제한 |
+| 커스텀 환경 | 자유로움 | self-hosted runner로 가능 |
+
+내부 서버 환경이 필요하거나(보안 정책, VPN), 복잡한 파이프라인 제어가 필요하면 Jenkins. GitHub 기반 프로젝트에서 빠르게 세팅하려면 GitHub Actions.
+
+---
+
+## 무중단 배포 전략
+
+### Rolling Update
+
+기존 파드를 하나씩 새 버전으로 교체한다.
+
+```yaml
+# K8s Deployment
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # 최대 1개 추가 파드
+      maxUnavailable: 0  # 항상 desired 수 유지
+```
+
+장점: 추가 인프라 불필요.  
+단점: 배포 중 구버전/신버전이 동시에 존재한다. API가 호환되지 않으면 문제가 생긴다.
+
+### Blue-Green
+
+구버전(Blue)을 유지한 채 신버전(Green)을 별도로 띄운 후, 트래픽을 한 번에 전환한다.
+
+```
+사용자 → Load Balancer
+              ↓
+    [Blue: v1]  [Green: v2]  ← 검증 후 전환
+```
+
+장점: 즉시 롤백 가능(트래픽만 다시 Blue로).  
+단점: 인프라가 2배 필요한 순간이 있다.
+
+### Canary
+
+트래픽 일부만 신버전으로 보내고, 문제 없으면 점진적으로 늘린다.
+
+```yaml
+# K8s + Ingress 예시
+nginx.ingress.kubernetes.io/canary: "true"
+nginx.ingress.kubernetes.io/canary-weight: "10"  # 10%만 신버전으로
+```
+
+장점: 실제 트래픽으로 신버전 검증 가능.  
+단점: 설정이 복잡하다. Istio나 Argo Rollouts 같은 도구가 필요할 수 있다.
+
+---
+
+## K8s 핵심 오브젝트 관계
+
+```
+Deployment
+└── ReplicaSet
+    └── Pod (컨테이너 실행 단위)
+
+Service (Pod 그룹에 안정적인 엔드포인트 제공)
+└── Pod 선택: label selector
+
+Ingress (외부 HTTP 트래픽 → Service 라우팅)
+└── Service
+```
+
+```yaml
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-service
+  template:
+    metadata:
+      labels:
+        app: my-service
+    spec:
+      containers:
+      - name: app
+        image: my-image:v2
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+```
+
+`readinessProbe`가 없으면 컨테이너가 시작되자마자 트래픽을 받는다. Spring Boot는 애플리케이션이 뜨는 데 몇 초가 걸리기 때문에 준비 완료 전에 요청이 들어오면 에러가 난다.
+
+---
+
+## Docker Compose — 로컬 개발 환경
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mydb
+      SPRING_REDIS_HOST: redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+volumes:
+  postgres_data:
+```
+
+`depends_on`만 쓰면 컨테이너 시작 순서만 보장하고 서비스 준비는 보장하지 않는다. `condition: service_healthy`와 `healthcheck`를 같이 써야 DB가 실제로 준비됐을 때 앱이 시작된다.
+
+---
+
+## 실무에서 도입한 CI/CD 개선
+
+기존에는 수동 배포였다. 개발자가 직접 서버에 SSH 접속해서 jar를 올렸다.
+
+문제:
+
+- 배포 중 서비스가 잠깐 끊겼다
+- 누가 언제 뭘 배포했는지 기록이 없었다
+- 실수로 테스트 통과 안 된 코드가 올라간 적이 있었다
+
+개선:
+
+1. **GitHub Actions**: PR merge → 자동 테스트 → Docker 이미지 빌드 → 레지스트리 푸시
+2. **K8s Rolling Update**: `maxUnavailable: 0`으로 서비스 중단 없이 교체
+3. **Rollout 검증**: `kubectl rollout status` 명령으로 파이프라인에서 배포 성공 여부 확인
+4. **Slack 알림**: 배포 성공/실패 결과를 채널로 발송
+
+결과: 배포 시간 15분 → 3분, 배포 중 에러율 0%
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Docker와 VM의 차이는?**
+
+VM은 OS를 통째로 가상화해 커널을 격리한다. Docker는 호스트 커널을 공유하고 namespace/cgroup으로 프로세스를 격리한다. VM은 무겁고 완전히 격리되며, Docker는 가볍고 빠르지만 커널을 공유한다.
+
+**Q. 이미지 레이어 캐시를 잘 활용하려면?**
+
+자주 변경되는 파일(소스 코드)은 Dockerfile 아래에, 잘 안 바뀌는 것(의존성 설치)은 위에 둔다. 소스 코드만 바뀌면 의존성 레이어는 캐시에서 재사용된다.
+
+**Q. Rolling Update 중 구버전/신버전이 동시에 뜨면 어떤 문제가 생기는가?**
+
+API 하위 호환성이 없으면 문제다. 예를 들어 DB 컬럼을 삭제하는 마이그레이션을 신버전에서 먼저 실행하면, 아직 떠있는 구버전이 해당 컬럼을 참조해서 에러가 난다. 이런 경우 Blue-Green이나, 마이그레이션을 expand-contract 패턴으로 여러 배포에 걸쳐 나눠 진행한다.
+
+**Q. readinessProbe와 livenessProbe의 차이는?**
+
+- `readinessProbe`: 트래픽을 받을 준비가 됐는지. 실패하면 해당 파드는 Service 엔드포인트에서 제외된다.
+- `livenessProbe`: 컨테이너가 살아있는지. 실패하면 컨테이너를 재시작한다.
+
+Spring Boot 앱은 두 가지 다 `actuator/health`를 쓰되, readiness는 외부 의존성(DB, Redis) 포함, liveness는 앱 프로세스만 체크하도록 분리하면 더 정밀하다.

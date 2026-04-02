@@ -1,0 +1,300 @@
+---
+title: "Kotlin 특성 — 면접 대비 정리"
+description: "Java와의 차이점, Null Safety, 데이터 클래스, 확장 함수, 코루틴, Spring Boot에서 Kotlin 사용 패턴까지 정리한다."
+date: "2026-04-02"
+category: "Kotlin"
+tags: ["Kotlin", "코루틴", "Null Safety", "데이터클래스", "확장함수", "Spring Boot"]
+series: "면접 대비"
+seriesOrder: 17
+---
+
+## Java와 핵심 차이점
+
+### Null Safety
+
+Kotlin에서 null은 컴파일 타임에 제어된다.
+
+```kotlin
+var name: String = "홍길동"
+name = null  // 컴파일 에러
+
+var nullable: String? = null  // ?로 null 허용 명시
+nullable = "허용됨"
+
+// 안전 호출 연산자 ?.
+val length = nullable?.length  // null이면 null 반환
+
+// 엘비스 연산자 ?:
+val len = nullable?.length ?: 0  // null이면 0
+
+// 강제 호출 !! (null이면 NPE)
+val len2 = nullable!!.length  // null 아님을 보장할 때만 사용
+```
+
+Java의 수많은 NPE를 컴파일 타임에 방지한다.
+
+### val / var
+
+```kotlin
+val name = "홍길동"  // 불변 (Java의 final)
+var age = 30         // 가변
+
+// 가능한 한 val을 쓰는 것이 권장
+```
+
+### 데이터 클래스
+
+```kotlin
+data class User(
+    val id: Long,
+    val name: String,
+    val email: String
+)
+
+// 자동 생성: equals, hashCode, toString, copy, componentN
+val user1 = User(1L, "홍길동", "hong@test.com")
+val user2 = user1.copy(email = "new@test.com")  // 일부만 바꾼 복사본
+```
+
+Java의 Lombok `@Data` 또는 Java 14+ Record와 비슷하지만 더 기능이 많다.
+
+### 확장 함수
+
+기존 클래스를 수정하지 않고 새 함수를 추가한다.
+
+```kotlin
+// String에 함수 추가
+fun String.isEmail(): Boolean {
+    return this.contains("@") && this.contains(".")
+}
+
+// List에 함수 추가
+fun <T> List<T>.second(): T {
+    if (this.size < 2) throw IndexOutOfBoundsException()
+    return this[1]
+}
+
+// 사용
+"test@example.com".isEmail()  // true
+listOf(1, 2, 3).second()      // 2
+```
+
+유틸리티 클래스를 만들지 않아도 된다. 코드 가독성이 높아진다.
+
+### 스마트 캐스트
+
+```kotlin
+fun describe(obj: Any) {
+    if (obj is String) {
+        println(obj.length)  // 자동으로 String으로 캐스트, 형변환 불필요
+    }
+
+    when (obj) {
+        is Int -> println("정수: $obj")
+        is String -> println("문자열 길이: ${obj.length}")
+        is List<*> -> println("목록 크기: ${obj.size}")
+    }
+}
+```
+
+### 고차 함수와 람다
+
+```kotlin
+fun processItems(items: List<Int>, transform: (Int) -> Int): List<Int> {
+    return items.map(transform)
+}
+
+val doubled = processItems(listOf(1, 2, 3)) { it * 2 }
+// [2, 4, 6]
+
+// 인라인 함수: 람다를 함수 호출 대신 코드로 대체해 오버헤드 제거
+inline fun measureTime(block: () -> Unit): Long {
+    val start = System.currentTimeMillis()
+    block()
+    return System.currentTimeMillis() - start
+}
+```
+
+---
+
+## sealed class
+
+계층적인 타입을 표현한다. when 문에서 모든 케이스를 컴파일러가 확인한다.
+
+```kotlin
+sealed class ApiResult<out T> {
+    data class Success<T>(val data: T) : ApiResult<T>()
+    data class Error(val message: String, val code: Int) : ApiResult<Nothing>()
+    object Loading : ApiResult<Nothing>()
+}
+
+fun handleResult(result: ApiResult<User>) {
+    when (result) {
+        is ApiResult.Success -> println("사용자: ${result.data.name}")
+        is ApiResult.Error -> println("오류 ${result.code}: ${result.message}")
+        ApiResult.Loading -> println("로딩 중...")
+        // else 없어도 됨 — 컴파일러가 모든 케이스 확인
+    }
+}
+```
+
+---
+
+## 코루틴 (Coroutine)
+
+비동기 코드를 동기처럼 작성한다.
+
+```kotlin
+// 일반 스레드
+thread {
+    val result = apiCall()  // 블로킹
+    updateUI(result)
+}
+
+// 코루틴
+lifecycleScope.launch {
+    val result = withContext(Dispatchers.IO) {
+        apiCall()  // I/O 스레드에서 실행, 메인 스레드 블로킹 안 함
+    }
+    updateUI(result)  // 메인 스레드로 복귀
+}
+```
+
+### Dispatcher
+
+```kotlin
+Dispatchers.Main       // 메인 스레드 (Android UI)
+Dispatchers.IO         // I/O 작업 (파일, 네트워크, DB) — 스레드 풀
+Dispatchers.Default    // CPU 집약 작업 — CPU 코어 수만큼 스레드
+Dispatchers.Unconfined // 제약 없음 (특수 케이스)
+```
+
+### suspend 함수
+
+```kotlin
+suspend fun fetchUser(id: Long): User {
+    return withContext(Dispatchers.IO) {
+        userRepository.findById(id)  // 블로킹 I/O
+    }
+}
+
+// 동시 실행
+suspend fun fetchUserData(userId: Long): UserData {
+    val user = async { fetchUser(userId) }
+    val orders = async { fetchOrders(userId) }
+    // 두 작업 병렬 실행
+    return UserData(user.await(), orders.await())
+}
+```
+
+### Spring Boot에서 코루틴
+
+```kotlin
+@RestController
+class UserController {
+
+    @GetMapping("/users/{id}")
+    suspend fun getUser(@PathVariable id: Long): ResponseEntity<UserDto> {
+        val user = userService.findById(id)  // suspend 함수
+        return ResponseEntity.ok(user.toDto())
+    }
+}
+```
+
+Spring WebFlux + Kotlin Coroutine을 함께 사용하면 비동기 논블로킹을 직관적으로 작성할 수 있다.
+
+---
+
+## Spring Boot에서 Kotlin 실전 패턴
+
+### Repository + JPA
+
+```kotlin
+interface UserRepository : JpaRepository<User, Long> {
+    fun findByEmail(email: String): User?
+    fun findAllByStatus(status: UserStatus): List<User>
+}
+```
+
+### Entity
+
+```kotlin
+@Entity
+@Table(name = "users")
+class User(
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
+
+    @Column(nullable = false)
+    var name: String,
+
+    @Column(nullable = false, unique = true)
+    val email: String,
+
+    @Enumerated(EnumType.STRING)
+    var status: UserStatus = UserStatus.ACTIVE
+) {
+    // 비즈니스 메서드
+    fun deactivate() {
+        this.status = UserStatus.INACTIVE
+    }
+}
+```
+
+**주의**: JPA Entity에서 `data class` 쓰면 안 된다. `equals/hashCode`가 PK 기반이어야 하는데 data class는 모든 필드로 생성한다. 또한 프록시 생성을 위한 기본 생성자가 필요하다 (`@NoArgsConstructor` 또는 플러그인).
+
+### 서비스 레이어
+
+```kotlin
+@Service
+@Transactional(readOnly = true)
+class UserService(
+    private val userRepository: UserRepository  // 생성자 주입, val
+) {
+    fun findById(id: Long): User {
+        return userRepository.findById(id)
+            .orElseThrow { UserNotFoundException(id) }
+    }
+
+    @Transactional
+    fun updateName(id: Long, name: String) {
+        val user = findById(id)
+        user.name = name  // dirty checking
+    }
+}
+```
+
+---
+
+## Kotlin vs Java 비교
+
+| 항목 | Java | Kotlin |
+|------|------|--------|
+| Null 안전 | 런타임 NPE | 컴파일 타임 체크 |
+| 데이터 클래스 | Lombok or Record | data class |
+| 불변 | final 명시 | val |
+| 함수형 | Stream, Function | 람다, 확장 함수 |
+| 비동기 | CompletableFuture | Coroutine |
+| 타입 추론 | var (Java 10+) | 전반적으로 강력 |
+| 코드 간결성 | 상대적으로 장황 | 간결 |
+| JVM 호환 | Java | Java 100% 호환 |
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Java보다 Kotlin을 사용하는 이유는?**
+
+Null Safety로 NPE를 컴파일 타임에 방지. data class로 보일러플레이트 제거. 확장 함수로 기존 클래스를 수정 없이 기능 추가. 코루틴으로 비동기 코드를 직관적으로 작성. Java와 100% 호환이라 전환 비용이 낮다.
+
+**Q. data class와 일반 class의 차이는?**
+
+data class는 `equals`, `hashCode`, `toString`, `copy`, `componentN` 함수를 자동으로 생성한다. 모든 주 생성자 파라미터를 기준으로 동등성을 판단한다. JPA Entity에는 쓰지 않는 것이 권장된다.
+
+**Q. 코루틴이 스레드와 다른 점은?**
+
+스레드는 OS 스레드를 직접 사용해 컨텍스트 스위칭 비용이 크고, 수천 개를 만들면 메모리 부담이 크다. 코루틴은 JVM 레벨의 경량 실행 단위로 suspend 포인트에서 스레드를 반납하고 다른 코루틴을 실행한다. 수만 개를 만들어도 실제 스레드는 적게 쓴다.
+
+**Q. suspend 함수란?**
+
+코루틴 안에서만 호출할 수 있는 함수. 실행을 일시 중단(suspend)할 수 있다. 중단된 동안 해당 스레드는 다른 코루틴을 처리할 수 있다. 재개(resume) 시 중단된 지점부터 이어서 실행된다.

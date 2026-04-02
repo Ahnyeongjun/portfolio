@@ -1,0 +1,240 @@
+---
+title: "JWT & 인증/인가 — 면접 대비 정리"
+description: "세션 vs 토큰 방식, JWT 구조와 검증, Access/Refresh Token 전략, OAuth2 흐름, Spring Security 필터 체인까지 정리한다."
+date: "2026-04-02"
+category: "Java/Spring"
+tags: ["JWT", "OAuth2", "Spring Security", "인증", "인가", "토큰"]
+series: "면접 대비"
+seriesOrder: 13
+---
+
+## 인증 vs 인가
+
+**인증 (Authentication)**: 누구인지 확인. "이 사람이 홍길동 맞나?"
+
+**인가 (Authorization)**: 무엇을 할 수 있는지 확인. "홍길동이 이 자원에 접근할 권한이 있나?"
+
+순서는 항상 인증 → 인가.
+
+---
+
+## 세션 vs 토큰
+
+### 세션 방식
+
+```
+클라이언트 → 로그인 → 서버가 세션 생성 → 세션 ID를 쿠키로 전달
+클라이언트 → 요청 + 세션 ID → 서버가 세션 저장소 조회 → 인증
+```
+
+**장점**: 서버가 세션을 제어 가능 (즉시 무효화).  
+**단점**: 서버 수평 확장 시 세션 공유 문제. Redis 같은 공유 저장소 필요.
+
+### 토큰 방식 (JWT)
+
+```
+클라이언트 → 로그인 → 서버가 JWT 발급 → 클라이언트가 보관
+클라이언트 → 요청 + JWT → 서버가 서명 검증 → 인증 (DB 조회 없음)
+```
+
+**장점**: Stateless. 서버가 상태를 저장하지 않아 수평 확장 용이.  
+**단점**: 토큰 탈취 시 만료 전까지 막을 방법이 없음.
+
+---
+
+## JWT 구조
+
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IuyYiOqwleuCmCIsImlhdCI6MTUxNjIzOTAyMn0.
+SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+```
+
+점(`.`)으로 구분된 3부분:
+
+**Header** (Base64 인코딩):
+```json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+```
+
+**Payload** (Base64 인코딩):
+```json
+{
+  "sub": "1",           // subject (사용자 ID)
+  "name": "홍길동",
+  "role": "USER",
+  "iat": 1516239022,    // issued at
+  "exp": 1516242622     // expiration
+}
+```
+
+**Signature**:
+```
+HMACSHA256(
+  base64(header) + "." + base64(payload),
+  secret
+)
+```
+
+서버만 아는 secret으로 서명. 클라이언트가 payload를 변조하면 서명이 맞지 않아 검증 실패.
+
+**주의**: payload는 암호화가 아니라 인코딩이다. Base64 디코딩하면 누구나 내용을 볼 수 있다. 비밀번호, 민감 정보를 payload에 넣으면 안 된다.
+
+---
+
+## Access Token + Refresh Token 전략
+
+Access Token만 쓰면:
+- 만료를 짧게 → 자주 로그인해야 해서 UX 나쁨
+- 만료를 길게 → 탈취 시 오래 사용 가능
+
+해결: Access Token(단기) + Refresh Token(장기)
+
+```
+로그인 → Access Token(15분) + Refresh Token(7일) 발급
+
+요청 → Access Token 사용
+Access Token 만료 → Refresh Token으로 재발급 요청
+Refresh Token도 만료 → 재로그인
+```
+
+```
+클라이언트                                서버
+    │──── POST /auth/refresh ────────────→│
+    │      (Refresh Token 포함)            │
+    │                                     │
+    │          Refresh Token 검증         │
+    │          (DB에 저장된 것과 비교)     │
+    │                                     │
+    │←──── 새 Access Token ───────────────│
+```
+
+Refresh Token은 DB나 Redis에 저장해 탈취 시 무효화할 수 있도록 한다.
+
+**RTR (Refresh Token Rotation)**: Refresh Token을 사용할 때마다 새 Refresh Token도 함께 발급. 탈취된 Refresh Token이 사용되면 감지 가능.
+
+---
+
+## Spring Security 필터 체인
+
+```
+HTTP 요청
+    ↓
+SecurityFilterChain
+├── SecurityContextPersistenceFilter  (SecurityContext 로드/저장)
+├── UsernamePasswordAuthenticationFilter (폼 로그인)
+├── JwtAuthenticationFilter (커스텀 — JWT 검증)
+│       ↓ 검증 성공
+│   SecurityContextHolder에 Authentication 저장
+├── ExceptionTranslationFilter
+└── FilterSecurityInterceptor (인가 결정)
+    ↓
+Controller
+```
+
+### JWT 필터 구현
+
+```java
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+
+        String token = resolveToken(request);
+
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            Authentication auth = jwtTokenProvider.getAuthentication(token);
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
+        }
+        return null;
+    }
+}
+```
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
+    }
+}
+```
+
+---
+
+## OAuth2 흐름
+
+소셜 로그인(카카오, 구글 등)에서 사용.
+
+```
+사용자    클라이언트(우리 앱)    Authorization Server(카카오)    Resource Server(카카오 API)
+  │            │                         │                            │
+  │──로그인──→│                         │                            │
+  │            │──────인가 요청──────────→│                            │
+  │←──────────│←─────리다이렉트+코드────│                            │
+  │──인가코드→│                         │                            │
+  │            │──────코드+시크릿────────→│                            │
+  │            │←─────Access Token───────│                            │
+  │            │                                                      │
+  │            │──────Access Token───────────────────────────────────→│
+  │            │←──────사용자 정보───────────────────────────────────│
+```
+
+**Authorization Code Grant** (가장 일반적):
+1. 사용자가 카카오 로그인 버튼 클릭
+2. 카카오 로그인 페이지로 리다이렉트
+3. 사용자 로그인 → 카카오가 Authorization Code 발급
+4. 우리 서버가 Code + Client Secret으로 Access Token 요청
+5. Access Token으로 사용자 정보 조회
+6. 우리 서비스의 JWT 발급
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. JWT의 단점과 해결 방법은?**
+
+토큰 탈취 시 만료 전까지 무효화가 불가능하다. 해결: Access Token 만료를 짧게(15분), Refresh Token을 서버에 저장해 무효화 가능하게. 또는 블랙리스트 Redis에 로그아웃된 토큰을 저장.
+
+**Q. Access Token을 어디에 저장해야 하는가?**
+
+LocalStorage: XSS 공격에 취약. JavaScript로 접근 가능.  
+Memory: 가장 안전하지만 새로고침하면 사라짐.  
+HttpOnly Cookie: JavaScript 접근 불가라 XSS 방어. CSRF 공격 주의 (SameSite 설정으로 완화).
+
+**Q. 세션과 JWT 중 언제 무엇을 선택하는가?**
+
+세션: 즉각적인 로그아웃/무효화가 중요한 경우 (금융, 보안 민감 서비스). JWT: 수평 확장이 중요하고 Stateless가 필요한 경우 (API 서버, MSA).
+
+**Q. Spring Security에서 인증과 인가는 어떻게 분리되는가?**
+
+인증은 `AuthenticationManager`가 처리하고, 결과를 `SecurityContextHolder`에 저장한다. 인가는 `FilterSecurityInterceptor`나 `@PreAuthorize`가 `SecurityContext`의 `Authentication`을 보고 권한을 확인한다.

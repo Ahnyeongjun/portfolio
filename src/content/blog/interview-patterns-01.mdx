@@ -1,0 +1,374 @@
+---
+title: "설계 패턴 — 면접 대비 정리"
+description: "SOLID 원칙, Singleton/Strategy/Observer/Factory/Decorator 등 GoF 패턴, Spring에서 어떻게 쓰이는지까지 정리한다."
+date: "2026-04-02"
+category: "Java/Spring"
+tags: ["디자인패턴", "SOLID", "GoF", "Singleton", "Strategy", "Observer"]
+series: "면접 대비"
+seriesOrder: 14
+---
+
+## SOLID 원칙
+
+### S — Single Responsibility Principle (단일 책임)
+
+클래스는 하나의 이유로만 변경돼야 한다.
+
+```java
+// 위반: UserService가 너무 많은 책임
+class UserService {
+    public void saveUser(User user) { ... }
+    public void sendEmail(User user) { ... }  // 이메일 책임
+    public void generatePdfReport(User user) { ... }  // 리포트 책임
+}
+
+// 준수
+class UserService { public void saveUser(User user) { ... } }
+class EmailService { public void sendEmail(User user) { ... } }
+class ReportService { public void generatePdfReport(User user) { ... } }
+```
+
+### O — Open/Closed Principle (개방/폐쇄)
+
+확장에는 열려 있고, 수정에는 닫혀 있어야 한다.
+
+```java
+// 위반: 새 할인 정책 추가 시 기존 코드 수정 필요
+class DiscountService {
+    public double calculate(String type, double price) {
+        if (type.equals("VIP")) return price * 0.8;
+        if (type.equals("COUPON")) return price * 0.9;
+        // 새 타입 추가 시 여기를 수정해야 함
+    }
+}
+
+// 준수: 인터페이스로 확장
+interface DiscountPolicy {
+    double apply(double price);
+}
+
+class VipDiscount implements DiscountPolicy {
+    public double apply(double price) { return price * 0.8; }
+}
+
+class CouponDiscount implements DiscountPolicy {
+    public double apply(double price) { return price * 0.9; }
+}
+// 새 정책은 새 클래스로 추가, 기존 코드 수정 불필요
+```
+
+### L — Liskov Substitution Principle (리스코프 치환)
+
+자식 클래스는 부모 클래스를 대체할 수 있어야 한다.
+
+```java
+// 위반: Rectangle을 사용하는 코드에서 Square가 동작 다름
+class Rectangle {
+    void setWidth(int w) { this.width = w; }
+    void setHeight(int h) { this.height = h; }
+}
+
+class Square extends Rectangle {
+    void setWidth(int w) { this.width = w; this.height = w; }  // 부모의 계약 위반
+    void setHeight(int h) { this.width = h; this.height = h; }
+}
+```
+
+### I — Interface Segregation Principle (인터페이스 분리)
+
+클라이언트가 사용하지 않는 메서드에 의존하면 안 된다.
+
+```java
+// 위반
+interface Worker {
+    void work();
+    void eat();  // 로봇은 밥을 안 먹는데 구현해야 함
+}
+
+// 준수
+interface Workable { void work(); }
+interface Eatable { void eat(); }
+
+class Human implements Workable, Eatable { ... }
+class Robot implements Workable { ... }
+```
+
+### D — Dependency Inversion Principle (의존 역전)
+
+고수준 모듈이 저수준 모듈에 의존하면 안 된다. 둘 다 추상화에 의존해야 한다.
+
+```java
+// 위반
+class OrderService {
+    private MySQLOrderRepository repository = new MySQLOrderRepository(); // 구체 클래스
+}
+
+// 준수
+class OrderService {
+    private final OrderRepository repository; // 인터페이스에 의존
+
+    public OrderService(OrderRepository repository) {
+        this.repository = repository;
+    }
+}
+```
+
+---
+
+## 생성 패턴
+
+### Singleton
+
+인스턴스를 하나만 생성한다.
+
+```java
+// Thread-safe Singleton (Double-Checked Locking)
+public class DatabaseConnectionPool {
+    private static volatile DatabaseConnectionPool instance;
+
+    private DatabaseConnectionPool() {}
+
+    public static DatabaseConnectionPool getInstance() {
+        if (instance == null) {
+            synchronized (DatabaseConnectionPool.class) {
+                if (instance == null) {
+                    instance = new DatabaseConnectionPool();
+                }
+            }
+        }
+        return instance;
+    }
+}
+```
+
+Spring Bean의 기본 스코프가 Singleton이다. 직접 구현하지 않아도 된다.
+
+### Factory Method
+
+객체 생성을 서브클래스에 위임한다.
+
+```java
+interface NotificationSender {
+    void send(String message);
+}
+
+class EmailSender implements NotificationSender { ... }
+class SmsSender implements NotificationSender { ... }
+
+class NotificationFactory {
+    public static NotificationSender create(String type) {
+        return switch (type) {
+            case "EMAIL" -> new EmailSender();
+            case "SMS" -> new SmsSender();
+            default -> throw new IllegalArgumentException("Unknown type: " + type);
+        };
+    }
+}
+```
+
+---
+
+## 구조 패턴
+
+### Decorator
+
+기존 객체에 새 기능을 동적으로 추가한다. 상속 대신 합성.
+
+```java
+interface TextFormatter {
+    String format(String text);
+}
+
+class PlainText implements TextFormatter {
+    public String format(String text) { return text; }
+}
+
+class BoldDecorator implements TextFormatter {
+    private final TextFormatter wrapped;
+    public BoldDecorator(TextFormatter f) { this.wrapped = f; }
+    public String format(String text) { return "<b>" + wrapped.format(text) + "</b>"; }
+}
+
+class ItalicDecorator implements TextFormatter {
+    private final TextFormatter wrapped;
+    public ItalicDecorator(TextFormatter f) { this.wrapped = f; }
+    public String format(String text) { return "<i>" + wrapped.format(text) + "</i>"; }
+}
+
+// 조합
+TextFormatter formatter = new BoldDecorator(new ItalicDecorator(new PlainText()));
+formatter.format("hello"); // <b><i>hello</i></b>
+```
+
+Java IO (BufferedReader, InputStreamReader)가 Decorator 패턴이다.
+
+### Proxy
+
+실제 객체에 대한 접근을 제어한다.
+
+```java
+interface OrderService {
+    void placeOrder(Order order);
+}
+
+class OrderServiceImpl implements OrderService {
+    public void placeOrder(Order order) { ... }
+}
+
+class LoggingOrderServiceProxy implements OrderService {
+    private final OrderService target;
+
+    public LoggingOrderServiceProxy(OrderService target) {
+        this.target = target;
+    }
+
+    public void placeOrder(Order order) {
+        log.info("주문 시작: {}", order.getId());
+        target.placeOrder(order);
+        log.info("주문 완료: {}", order.getId());
+    }
+}
+```
+
+Spring AOP가 Proxy 패턴으로 동작한다.
+
+---
+
+## 행동 패턴
+
+### Strategy
+
+알고리즘을 캡슐화하고 교체 가능하게 만든다.
+
+```java
+interface SortStrategy {
+    void sort(List<Integer> list);
+}
+
+class QuickSort implements SortStrategy { ... }
+class MergeSort implements SortStrategy { ... }
+
+class Sorter {
+    private SortStrategy strategy;
+
+    public void setStrategy(SortStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public void sort(List<Integer> list) {
+        strategy.sort(list);
+    }
+}
+
+// 런타임에 전략 교체
+Sorter sorter = new Sorter();
+sorter.setStrategy(new QuickSort());
+sorter.sort(list);
+
+sorter.setStrategy(new MergeSort());  // 교체
+sorter.sort(list);
+```
+
+Spring의 `PlatformTransactionManager`가 Strategy 패턴이다. JPA, JDBC, JTA 구현체를 교체 가능.
+
+### Observer
+
+상태 변경을 구독자에게 자동으로 알린다.
+
+```java
+interface OrderEventListener {
+    void onOrderPlaced(OrderPlacedEvent event);
+}
+
+class EmailNotificationListener implements OrderEventListener {
+    public void onOrderPlaced(OrderPlacedEvent event) {
+        emailService.send(event.getUserEmail(), "주문 완료");
+    }
+}
+
+class StockDeductionListener implements OrderEventListener {
+    public void onOrderPlaced(OrderPlacedEvent event) {
+        stockService.decrease(event.getItems());
+    }
+}
+```
+
+Spring의 `ApplicationEventPublisher`가 Observer 패턴이다.
+
+```java
+@Service
+public class OrderService {
+    private final ApplicationEventPublisher publisher;
+
+    public void placeOrder(Order order) {
+        orderRepository.save(order);
+        publisher.publishEvent(new OrderPlacedEvent(order)); // 이벤트 발행
+    }
+}
+
+@EventListener
+public void handleOrderPlaced(OrderPlacedEvent event) {
+    emailService.send(event.getUserEmail(), "주문 완료");
+}
+```
+
+### Template Method
+
+알고리즘의 골격을 정의하고, 일부 단계를 서브클래스에서 구현.
+
+```java
+abstract class DataProcessor {
+    // 템플릿 메서드: 알고리즘 골격
+    public final void process() {
+        readData();
+        processData();  // 서브클래스에서 구현
+        writeData();
+    }
+
+    abstract void processData();
+
+    void readData() { System.out.println("데이터 읽기"); }
+    void writeData() { System.out.println("데이터 쓰기"); }
+}
+
+class CsvDataProcessor extends DataProcessor {
+    void processData() { System.out.println("CSV 파싱"); }
+}
+```
+
+Spring의 `JdbcTemplate`, `RestTemplate`이 Template Method 패턴이다.
+
+---
+
+## Spring에서 패턴 찾기
+
+| 패턴 | Spring 예시 |
+|------|------------|
+| Singleton | Bean 기본 스코프 |
+| Factory | `BeanFactory`, `ApplicationContext` |
+| Proxy | AOP, `@Transactional`, `@Cacheable` |
+| Template Method | `JdbcTemplate`, `RestTemplate`, `KafkaTemplate` |
+| Observer | `ApplicationEventPublisher`, `@EventListener` |
+| Strategy | `PlatformTransactionManager`, `MessageConverter` |
+| Decorator | `HttpServletRequestWrapper`, Spring Security 필터 |
+| Composite | `CompositeValidator` |
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. OCP를 실무에서 어떻게 적용하는가?**
+
+새 기능 추가 시 기존 클래스를 수정하지 않고 인터페이스를 구현하는 새 클래스를 추가한다. 결제 수단이 추가될 때 PaymentStrategy 인터페이스를 구현하는 새 클래스를 만들면 기존 결제 로직에 영향이 없다.
+
+**Q. Strategy 패턴과 if-else의 차이는?**
+
+if-else는 조건 추가 시 기존 메서드를 수정해야 한다 (OCP 위반). Strategy 패턴은 새 전략 클래스를 추가하면 된다. 또한 전략을 런타임에 교체할 수 있고, 각 전략을 독립적으로 테스트할 수 있다.
+
+**Q. Decorator와 Proxy의 차이는?**
+
+둘 다 객체를 감싸는 구조지만 목적이 다르다. Decorator는 기능 추가가 목적이고, 같은 인터페이스를 구현해 중첩 가능하다. Proxy는 접근 제어가 목적이다 (지연 로딩, 캐시, 로깅, 인증).
+
+**Q. 싱글톤 패턴의 단점은?**
+
+전역 상태를 가지면 테스트 간 격리가 어렵다. 멀티스레드 환경에서 동기화가 필요하다. 의존성이 숨어있어 결합도가 높아진다. Spring이 DI로 싱글톤 Bean을 관리하면 이런 문제를 상당 부분 해결한다.

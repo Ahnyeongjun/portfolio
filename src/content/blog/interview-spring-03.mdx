@@ -1,0 +1,234 @@
+---
+title: "JPA 심화 — 면접 대비 정리"
+description: "영속성 컨텍스트, N+1 문제와 해결법, 트랜잭션 전파, 낙관적/비관적 락까지. JPA 면접에서 반드시 나오는 개념을 정리한다."
+date: "2026-04-02"
+category: "Java/Spring"
+tags: ["JPA", "영속성컨텍스트", "N+1", "QueryDSL", "트랜잭션", "락"]
+series: "면접 대비"
+seriesOrder: 5
+---
+
+## 영속성 컨텍스트
+
+JPA가 엔티티를 관리하는 1차 저장소. EntityManager가 생성될 때 함께 만들어진다.
+
+```
+애플리케이션 → EntityManager → 영속성 컨텍스트 → DB
+```
+
+### 4가지 특징
+
+**1. 1차 캐시**
+
+같은 트랜잭션 안에서 같은 엔티티를 두 번 조회하면 DB 쿼리를 한 번만 날린다.
+
+```java
+// 트랜잭션 안에서
+Member m1 = em.find(Member.class, 1L); // DB 조회
+Member m2 = em.find(Member.class, 1L); // 1차 캐시에서 반환, DB 조회 안 함
+```
+
+**2. 동일성 보장**
+
+같은 트랜잭션 안에서 같은 PK로 조회한 엔티티는 `==` 비교가 true다.
+
+```java
+assertThat(m1 == m2).isTrue(); // true
+```
+
+**3. 쓰기 지연 (Write-Behind)**
+
+변경을 즉시 DB에 반영하지 않고 모아뒀다가 커밋 직전에 한 번에 flush한다.
+
+```java
+em.persist(member1); // INSERT 쿼리 생성, 아직 DB 안 감
+em.persist(member2); // INSERT 쿼리 생성, 아직 DB 안 감
+transaction.commit(); // 이때 flush → DB에 INSERT 2건
+```
+
+**4. 변경 감지 (Dirty Checking)**
+
+엔티티를 조회 시점의 스냅샷과 비교해 변경이 감지되면 UPDATE 쿼리를 자동 생성한다.
+
+```java
+@Transactional
+public void updateName(Long id, String name) {
+    Member member = memberRepository.findById(id).orElseThrow();
+    member.setName(name); // UPDATE 호출 불필요
+    // 트랜잭션 종료 시 자동으로 UPDATE 쿼리 실행
+}
+```
+
+---
+
+## 엔티티 생명주기
+
+```
+비영속 (new)
+    ↓ em.persist()
+영속 (managed)  ←── em.merge()
+    ↓ em.detach() / 트랜잭션 종료
+준영속 (detached)
+    ↓ em.remove()
+삭제 (removed)
+```
+
+**준영속** 상태의 엔티티는 영속성 컨텍스트가 관리하지 않는다. 변경 감지가 동작하지 않고, Lazy Loading이 실패할 수 있다.
+
+---
+
+## N+1 문제
+
+```java
+@Entity
+public class Team {
+    @OneToMany(fetch = FetchType.LAZY)
+    private List<Member> members;
+}
+```
+
+```java
+List<Team> teams = teamRepository.findAll(); // 쿼리 1번
+
+for (Team team : teams) {
+    System.out.println(team.getMembers().size()); // 팀마다 쿼리 1번
+}
+// 팀이 N개면 총 N+1번 쿼리
+```
+
+### 해결법 1: JPQL Fetch Join
+
+```java
+@Query("SELECT DISTINCT t FROM Team t JOIN FETCH t.members")
+List<Team> findAllWithMembers();
+```
+
+`JOIN FETCH`로 연관 엔티티를 한 번에 가져온다. 쿼리 1번.
+
+단점: 페이징 불가능 (컬렉션 fetch join + pagination → 경고 발생, 메모리에서 처리).
+
+### 해결법 2: @EntityGraph
+
+```java
+@EntityGraph(attributePaths = {"members"})
+List<Team> findAll();
+```
+
+내부적으로 LEFT OUTER JOIN을 날린다.
+
+### 해결법 3: @BatchSize
+
+```java
+@BatchSize(size = 100)
+@OneToMany
+private List<Member> members;
+```
+
+또는 전역 설정:
+```yaml
+spring.jpa.properties.hibernate.default_batch_fetch_size: 100
+```
+
+지연 로딩 시 `IN` 절로 한 번에 100개씩 가져온다. 컬렉션 페이징과 함께 쓸 수 있다.
+
+```sql
+-- 팀 100개 조회 후 멤버 조회 시
+SELECT * FROM member WHERE team_id IN (1, 2, 3, ... 100)
+-- N+1 → 2번으로 줄어듦
+```
+
+### 해결법 4: QueryDSL + Projection
+
+DTO로 직접 조회하면 연관 관계를 타지 않아 N+1 자체가 발생하지 않는다.
+
+```java
+List<TeamDto> result = queryFactory
+    .select(Projections.constructor(TeamDto.class,
+        team.id,
+        team.name,
+        member.count()
+    ))
+    .from(team)
+    .leftJoin(member).on(member.team.eq(team))
+    .groupBy(team.id)
+    .fetch();
+```
+
+---
+
+## 지연 로딩 (Lazy Loading) vs 즉시 로딩 (Eager Loading)
+
+```java
+@ManyToOne(fetch = FetchType.LAZY)   // 프록시 객체, 실제 접근 시 쿼리
+@ManyToOne(fetch = FetchType.EAGER)  // 즉시 JOIN 쿼리
+```
+
+**권장: 모든 연관관계를 LAZY로 설정하고, 필요할 때 fetch join으로 가져온다.**
+
+EAGER는 항상 JOIN 쿼리가 나가므로 불필요한 데이터를 가져오고, 예상치 못한 쿼리가 발생한다.
+
+---
+
+## 낙관적 락 vs 비관적 락
+
+### 낙관적 락 (Optimistic Lock)
+
+충돌이 거의 없다고 가정. DB 락을 걸지 않고 버전(version)으로 충돌을 감지한다.
+
+```java
+@Entity
+public class Product {
+    @Version
+    private Long version;
+    private int stock;
+}
+```
+
+```
+트랜잭션 A 읽기: product(version=1, stock=10)
+트랜잭션 B 읽기: product(version=1, stock=10)
+
+트랜잭션 A 수정: UPDATE product SET stock=9, version=2 WHERE id=1 AND version=1 → 성공
+트랜잭션 B 수정: UPDATE product SET stock=9, version=2 WHERE id=1 AND version=1 → 0 rows → OptimisticLockException
+```
+
+충돌 시 `OptimisticLockException` 발생. 재시도 로직이 필요하다.
+
+### 비관적 락 (Pessimistic Lock)
+
+충돌이 많다고 가정. DB 락을 걸어 다른 트랜잭션이 접근하지 못하게 막는다.
+
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+Optional<Product> findById(Long id);
+```
+
+```sql
+SELECT * FROM product WHERE id = 1 FOR UPDATE;
+```
+
+다른 트랜잭션은 락이 풀릴 때까지 대기한다. 데드락 위험이 있다.
+
+**선택 기준**:
+- 충돌이 드물고 성능이 중요 → 낙관적 락
+- 충돌이 잦거나 재고/결제 같이 정확성이 중요 → 비관적 락
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. N+1 문제가 뭐고 어떻게 해결하는가?**
+
+연관 엔티티를 개별적으로 조회해 N개의 추가 쿼리가 발생하는 문제다. Fetch Join으로 한 번에 가져오거나, @BatchSize로 IN 쿼리로 묶거나, DTO 직접 조회로 연관 관계를 타지 않도록 한다.
+
+**Q. 영속성 컨텍스트의 장점은?**
+
+1차 캐시로 같은 트랜잭션 내 중복 쿼리 제거, 동일성 보장으로 `==` 비교 가능, 쓰기 지연으로 쿼리 최소화, 변경 감지로 명시적 UPDATE 불필요.
+
+**Q. @Transactional(readOnly = true)는 왜 쓰는가?**
+
+읽기 전용임을 명시하면 Hibernate가 스냅샷 저장과 변경 감지를 생략한다. 성능이 조금 향상되고, 의도적으로 읽기만 하는 메서드임을 명확히 한다. 또한 일부 DB는 readOnly 트랜잭션을 읽기 전용 슬레이브로 라우팅하기도 한다.
+
+**Q. 낙관적 락과 비관적 락의 차이는?**
+
+낙관적 락은 버전 번호로 충돌을 감지하고 충돌 시 예외를 던진다. DB 락을 쓰지 않아 성능이 좋지만 재시도 로직이 필요하다. 비관적 락은 DB의 SELECT FOR UPDATE로 실제 락을 걸어 다른 트랜잭션의 접근을 막는다. 데드락 위험이 있지만 충돌이 잦을 때 적합하다.

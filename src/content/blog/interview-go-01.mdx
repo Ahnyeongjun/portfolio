@@ -1,0 +1,305 @@
+---
+title: "Go 동시성 & GIS 타일링 — 면접 대비 정리"
+description: "goroutine, channel, worker pool 패턴부터 GIS 위성 타일 병렬 처리 구조까지. 실무에서 API 응답을 4초→0.5초로 줄인 경험 기반으로 정리한다."
+date: "2026-04-02"
+category: "Go"
+tags: ["Go", "goroutine", "channel", "동시성", "GIS", "타일링", "성능최적화"]
+series: "면접 대비"
+seriesOrder: 1
+---
+
+## 왜 Go를 선택했는가
+
+GIS 플랫폼에서 위성 영상 타일을 실시간으로 생성해 클라이언트에 내려줘야 했다. 기존 Python 서버는 단일 요청에 4초가 걸렸다. 동시에 여러 사용자가 붙으면 더 늦어졌다.
+
+문제는 두 가지였다.
+
+**CPU 바운드 작업**: 위성 영상 크롭 → 리샘플링 → PNG 인코딩. 계산이 많다.
+
+**I/O 바운드 작업**: 위성 영상 원본 파일을 디스크에서 읽어야 한다. 파일이 크면 읽는 시간도 길다.
+
+Python GIL 때문에 멀티스레딩이 실질적으로 동작하지 않는다. 멀티프로세싱으로 가면 프로세스 간 통신 비용이 커진다.
+
+Go는 goroutine이 가볍고(2KB 스택에서 시작), 채널로 안전하게 통신하며, 런타임이 M:N 스케줄링을 처리한다. 선택 이유가 명확했다.
+
+---
+
+## goroutine 기본 동작 방식
+
+```go
+func main() {
+    go fetchTile(x, y, z)  // 새 goroutine 시작
+    fmt.Println("메인은 계속 실행됨")
+}
+```
+
+goroutine은 OS 스레드가 아니다. Go 런타임이 관리하는 경량 실행 단위다.
+
+```
+OS Thread (1~2MB)
+└── Go Scheduler
+    ├── goroutine 1 (2KB~)
+    ├── goroutine 2
+    └── goroutine 3
+```
+
+Go 런타임은 `GOMAXPROCS`개의 OS 스레드(기본: CPU 코어 수)를 만들고, 수천 개의 goroutine을 그 위에서 스케줄링한다.
+
+---
+
+## channel — goroutine 간 통신
+
+```go
+ch := make(chan TileResult)
+
+go func() {
+    tile := processTile(x, y, z)
+    ch <- tile  // 보내기
+}()
+
+result := <-ch  // 받기 (블로킹)
+```
+
+### 버퍼드 채널
+
+```go
+ch := make(chan TileResult, 10)  // 10개까지 비블로킹으로 쌓임
+```
+
+버퍼가 꽉 차면 보내기가 블로킹된다. 버퍼가 비면 받기가 블로킹된다.
+
+### select — 여러 채널 동시 대기
+
+```go
+select {
+case result := <-tileCh:
+    return result, nil
+case err := <-errCh:
+    return nil, err
+case <-time.After(3 * time.Second):
+    return nil, errors.New("timeout")
+}
+```
+
+---
+
+## Worker Pool 패턴
+
+타일 요청이 100개 들어올 때 goroutine을 100개 만들면 메모리 낭비가 생긴다. Worker Pool은 고정된 수의 goroutine이 작업 큐에서 꺼내 처리하는 패턴이다.
+
+```go
+type TileRequest struct {
+    X, Y, Z int
+    ResultCh chan<- TileResult
+}
+
+func startWorkerPool(workerCount int, jobs <-chan TileRequest) {
+    for i := 0; i < workerCount; i++ {
+        go func() {
+            for req := range jobs {
+                tile := processTile(req.X, req.Y, req.Z)
+                req.ResultCh <- tile
+            }
+        }()
+    }
+}
+
+func main() {
+    jobs := make(chan TileRequest, 100)
+    startWorkerPool(8, jobs)  // CPU 코어 수만큼
+
+    // 요청 투입
+    resultCh := make(chan TileResult, 1)
+    jobs <- TileRequest{X: 10, Y: 20, Z: 5, ResultCh: resultCh}
+    result := <-resultCh
+}
+```
+
+실제로 쓴 구조다. `workerCount`는 서버 CPU 코어 수(8)로 고정했고, `jobs` 채널 버퍼(100)는 순간 트래픽 스파이크를 흡수하는 역할을 했다.
+
+---
+
+## GIS 타일링 파이프라인
+
+위성 영상 타일 생성 흐름은 이렇다.
+
+```
+클라이언트 요청 (x, y, z)
+        ↓
+  [캐시 확인] — 히트 → PNG 반환
+        ↓ 미스
+  [원본 파일 경로 계산]
+        ↓
+  [파일 I/O: 위성 영상 읽기]
+        ↓
+  [크롭: 해당 타일 영역 추출]
+        ↓
+  [리샘플링: 줌 레벨에 맞게 리사이즈]
+        ↓
+  [PNG 인코딩]
+        ↓
+  [캐시 저장 + 응답]
+```
+
+병렬화 포인트는 두 군데였다.
+
+**1. 파일 I/O와 처리 분리**
+
+파일을 읽는 동안 다른 요청의 처리를 진행한다.
+
+```go
+func processTilePipeline(req TileRequest) TileResult {
+    // 1. 파일 경로 계산 (빠름)
+    path := getTilePath(req.X, req.Y, req.Z)
+
+    // 2. 파일 읽기 (I/O 바운드)
+    rawData, err := os.ReadFile(path)
+    if err != nil {
+        return TileResult{Err: err}
+    }
+
+    // 3. 크롭 + 리샘플링 + 인코딩 (CPU 바운드)
+    png, err := encodeTile(rawData, req.X, req.Y, req.Z)
+    return TileResult{PNG: png, Err: err}
+}
+```
+
+**2. 멀티밴드 위성 영상 병렬 읽기**
+
+위성 영상은 R/G/B/NIR 밴드를 따로 저장한다. 각 밴드를 순서대로 읽으면 느리다.
+
+```go
+func readBands(basePath string) ([][]byte, error) {
+    bands := []string{"red", "green", "blue", "nir"}
+    results := make([][]byte, len(bands))
+    errs := make([]error, len(bands))
+
+    var wg sync.WaitGroup
+    for i, band := range bands {
+        wg.Add(1)
+        go func(idx int, b string) {
+            defer wg.Done()
+            path := fmt.Sprintf("%s_%s.tif", basePath, b)
+            data, err := os.ReadFile(path)
+            results[idx] = data
+            errs[idx] = err
+        }(i, band)
+    }
+    wg.Wait()
+
+    for _, err := range errs {
+        if err != nil {
+            return nil, err
+        }
+    }
+    return results, nil
+}
+```
+
+4개 밴드를 동시에 읽으니 I/O 시간이 1/4로 줄었다.
+
+---
+
+## sync 패키지 — 공유 자원 보호
+
+### WaitGroup
+
+```go
+var wg sync.WaitGroup
+
+for _, req := range requests {
+    wg.Add(1)
+    go func(r TileRequest) {
+        defer wg.Done()
+        process(r)
+    }(req)
+}
+
+wg.Wait()  // 전부 끝날 때까지 대기
+```
+
+### Mutex — 캐시 공유 시
+
+```go
+type TileCache struct {
+    mu    sync.RWMutex
+    store map[string][]byte
+}
+
+func (c *TileCache) Get(key string) ([]byte, bool) {
+    c.mu.RLock()         // 읽기 잠금 (여러 goroutine 동시 가능)
+    defer c.mu.RUnlock()
+    v, ok := c.store[key]
+    return v, ok
+}
+
+func (c *TileCache) Set(key string, val []byte) {
+    c.mu.Lock()          // 쓰기 잠금 (단독)
+    defer c.mu.Unlock()
+    c.store[key] = val
+}
+```
+
+`sync.Map`을 쓸 수도 있지만, 읽기가 쓰기보다 압도적으로 많은 캐시 구조에서는 `RWMutex`가 성능상 낫다.
+
+---
+
+## context — 타임아웃과 취소
+
+클라이언트가 요청을 끊었는데 서버가 계속 타일을 처리하면 낭비다.
+
+```go
+func handleTileRequest(w http.ResponseWriter, r *http.Request) {
+    ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+    defer cancel()
+
+    resultCh := make(chan TileResult, 1)
+    go func() {
+        resultCh <- processTileWithCtx(ctx, x, y, z)
+    }()
+
+    select {
+    case result := <-resultCh:
+        if result.Err != nil {
+            http.Error(w, result.Err.Error(), 500)
+            return
+        }
+        w.Write(result.PNG)
+    case <-ctx.Done():
+        http.Error(w, "timeout", 408)
+    }
+}
+```
+
+`processTileWithCtx` 안에서도 `ctx.Done()` 체크를 넣어두면 중간에 취소된 요청은 빠르게 종료된다.
+
+---
+
+## 성능 결과
+
+| 항목 | 개선 전 (Python) | 개선 후 (Go) |
+|------|-----------------|-------------|
+| 단일 타일 응답 | 4초 | 0.5초 |
+| 동시 처리 | GIL로 사실상 단일 | Worker 8개 병렬 |
+| 메모리 | 요청당 Python 프로세스 | goroutine 2KB~ |
+| 처리량 | ~5 req/s | ~80 req/s |
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. goroutine과 thread의 차이는?**
+
+OS 스레드는 1~2MB 스택을 고정 할당한다. goroutine은 2KB에서 시작해 필요에 따라 늘어난다. Go 런타임이 M:N 스케줄링으로 여러 goroutine을 적은 수의 OS 스레드에 매핑한다.
+
+**Q. channel을 쓰는 이유는?**
+
+"공유 메모리로 통신하지 말고, 통신으로 메모리를 공유하라(Don't communicate by sharing memory; share memory by communicating)"는 Go 철학을 구현한 것이다. Mutex로 공유 변수를 보호하는 대신, 데이터를 채널로 전달하면 소유권이 명확해지고 데이터 레이스가 줄어든다.
+
+**Q. goroutine leak은 어떻게 방지하는가?**
+
+goroutine을 시작할 때 반드시 종료 조건을 만든다. context 취소, 채널 닫기, done 채널이 대표적이다. goroutine이 무한 대기에 빠지지 않도록 `select`에 `ctx.Done()` 케이스를 항상 넣는다.
+
+**Q. Worker Pool과 goroutine을 직접 만드는 것의 차이는?**
+
+요청마다 goroutine을 만들면 트래픽 스파이크 시 goroutine 수가 무한정 늘어날 수 있다. Worker Pool은 최대 동시 작업 수를 고정해 메모리와 CPU 사용량을 예측 가능하게 만든다.

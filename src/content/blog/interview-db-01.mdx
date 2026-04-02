@@ -1,0 +1,198 @@
+---
+title: "DB 인덱스 & 실행계획 — 면접 대비 정리"
+description: "B-Tree 인덱스 구조, 클러스터드/논클러스터드 차이, 복합 인덱스 설계, EXPLAIN ANALYZE 읽기, 인덱스가 안 타는 경우까지 정리한다."
+date: "2026-04-02"
+category: "Database"
+tags: ["인덱스", "B-Tree", "실행계획", "EXPLAIN", "PostgreSQL", "쿼리최적화"]
+series: "면접 대비"
+seriesOrder: 6
+---
+
+## 인덱스가 필요한 이유
+
+인덱스가 없으면 테이블을 처음부터 끝까지 전부 스캔(Full Table Scan)한다. 100만 건이면 100만 번 읽어야 한다.
+
+인덱스가 있으면 B-Tree 구조로 원하는 데이터의 위치를 빠르게 찾는다. 로그 시간 복잡도.
+
+대신 인덱스는 INSERT/UPDATE/DELETE 시 함께 갱신되므로 쓰기 성능이 느려진다. 모든 컬럼에 인덱스를 걸면 안 된다.
+
+---
+
+## B-Tree 인덱스 구조
+
+```
+            [Root Node]
+           /     |      \
+      [50]      [100]    [150]
+       / \       / \      / \
+  [10,30] [70,90] [110,130] [160,180]
+     ↓       ↓        ↓         ↓
+  실제 데이터 포인터 (Leaf Node)
+```
+
+**특징**:
+- 항상 정렬된 상태를 유지한다.
+- 범위 검색(`BETWEEN`, `>`, `<`, `LIKE 'abc%'`)에 효율적이다.
+- Leaf Node 간 연결 리스트로 순차 접근이 빠르다.
+
+B+Tree를 실제로 쓴다. 데이터는 Leaf Node에만 있고, 상위 노드는 키만 갖는다.
+
+---
+
+## 클러스터드 인덱스 vs 논클러스터드 인덱스
+
+### 클러스터드 인덱스
+
+**인덱스 순서 = 실제 데이터 물리 정렬 순서**. 테이블당 1개만 존재한다.
+
+MySQL(InnoDB): PK가 클러스터드 인덱스. 데이터 자체가 PK 순서로 저장된다.
+
+```
+PK 인덱스 Leaf Node → 실제 데이터 행이 여기 있음
+```
+
+### 논클러스터드 인덱스 (Secondary Index)
+
+인덱스와 데이터가 별도로 저장된다. Leaf Node에 실제 데이터의 위치(포인터 또는 PK)를 가진다.
+
+```
+Secondary Index Leaf Node → PK → 클러스터드 인덱스 탐색 → 실제 데이터
+```
+
+MySQL에서 Secondary Index는 PK를 포인터로 갖는다. PK가 크면 Secondary Index도 커진다.
+
+---
+
+## 커버링 인덱스 (Covering Index)
+
+쿼리에 필요한 컬럼이 **모두 인덱스에 포함**되어 있어 실제 데이터 행을 읽지 않아도 되는 경우.
+
+```sql
+-- 인덱스: (user_id, created_at, status)
+SELECT status FROM orders WHERE user_id = 1 AND created_at > '2024-01-01';
+-- 인덱스만으로 응답 가능 → 테이블 접근 없음
+```
+
+데이터 페이지 I/O가 없어 매우 빠르다.
+
+---
+
+## 복합 인덱스 설계
+
+```sql
+CREATE INDEX idx_order_user_date ON orders(user_id, created_at, status);
+```
+
+### 선행 컬럼 원칙
+
+복합 인덱스는 **왼쪽 컬럼부터 순서대로** 사용될 때만 인덱스가 탄다.
+
+```sql
+WHERE user_id = 1                           -- 인덱스 사용 O
+WHERE user_id = 1 AND created_at > '...'   -- 인덱스 사용 O
+WHERE created_at > '...'                    -- 인덱스 사용 X (user_id 없음)
+WHERE user_id = 1 AND status = 'PAID'      -- user_id는 사용, status는 범위 스캔
+```
+
+### 선택도 (Selectivity)
+
+카디널리티가 높은 컬럼(중복이 적은)을 앞에 둔다.
+
+```
+user_id: 100만 개 → 카디널리티 높음 → 앞에
+status: 'PAID'/'PENDING'/'CANCELLED' → 카디널리티 낮음 → 뒤에
+```
+
+---
+
+## 인덱스가 안 타는 경우
+
+**1. 컬럼에 함수 적용**
+
+```sql
+-- 인덱스 안 탐
+WHERE YEAR(created_at) = 2024
+WHERE LOWER(email) = 'test@test.com'
+
+-- 인덱스 탐
+WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31'
+WHERE email = 'TEST@TEST.COM'  -- 또는 함수 기반 인덱스
+```
+
+**2. LIKE 와일드카드가 앞에 오는 경우**
+
+```sql
+WHERE name LIKE '%홍길동'   -- 인덱스 안 탐 (Full Scan)
+WHERE name LIKE '홍길동%'   -- 인덱스 탐
+```
+
+**3. 타입 불일치**
+
+```sql
+-- phone이 VARCHAR인데 숫자로 비교
+WHERE phone = 01012345678   -- 묵시적 형변환 → 인덱스 안 탐
+WHERE phone = '01012345678' -- 인덱스 탐
+```
+
+**4. OR 조건**
+
+```sql
+WHERE user_id = 1 OR status = 'PAID'  -- 각각 인덱스가 있어도 비효율적
+-- UNION ALL로 분리하면 더 나을 수 있음
+```
+
+**5. NOT, !=, IS NOT NULL**
+
+부정 조건은 인덱스를 타지 않거나 비효율적으로 탄다. (DB와 상황에 따라 다름)
+
+---
+
+## EXPLAIN ANALYZE 읽기 (PostgreSQL)
+
+```sql
+EXPLAIN ANALYZE
+SELECT * FROM orders WHERE user_id = 1 AND status = 'PAID';
+```
+
+```
+Index Scan using idx_orders_user_status on orders
+  (cost=0.43..8.45 rows=3 width=120)
+  (actual time=0.082..0.095 rows=3 loops=1)
+  Index Cond: ((user_id = 1) AND (status = 'PAID'))
+Planning Time: 0.5 ms
+Execution Time: 0.15 ms
+```
+
+**주요 항목**:
+
+| 항목 | 의미 |
+|------|------|
+| `Seq Scan` | Full Table Scan. 인덱스 미사용 |
+| `Index Scan` | 인덱스로 행 위치 찾고 테이블 접근 |
+| `Index Only Scan` | 커버링 인덱스, 테이블 접근 없음 |
+| `cost=0.43..8.45` | 예상 비용 (시작..총) |
+| `rows=3` | 예상 행 수 |
+| `actual time` | 실제 실행 시간 |
+| `loops` | 반복 횟수 |
+
+`rows` 예상치와 `actual rows`가 크게 다르면 통계가 오래된 것이다. `ANALYZE` 명령으로 통계를 갱신한다.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. 인덱스를 언제 걸어야 하는가?**
+
+WHERE 절에 자주 오는 컬럼, JOIN에 사용되는 컬럼, ORDER BY/GROUP BY 컬럼. 하지만 쓰기가 많은 테이블에 인덱스를 과하게 걸면 INSERT/UPDATE 성능이 저하된다. 카디널리티가 낮은 컬럼(성별, 상태 등)은 단독 인덱스 효과가 적다.
+
+**Q. 클러스터드 인덱스와 논클러스터드 인덱스의 차이는?**
+
+클러스터드는 데이터가 인덱스 순서대로 물리 저장되어 Leaf Node에 실제 데이터가 있다. 논클러스터드는 별도 인덱스 구조를 만들고 Leaf Node에 데이터 위치(포인터 또는 PK)를 가진다. 클러스터드 인덱스는 테이블당 1개뿐이고 MySQL InnoDB에서는 PK가 자동으로 클러스터드 인덱스가 된다.
+
+**Q. 복합 인덱스에서 컬럼 순서가 왜 중요한가?**
+
+B-Tree는 첫 번째 컬럼으로 정렬하고, 동일 값에서 두 번째 컬럼으로 정렬한다. 첫 번째 컬럼이 WHERE 조건에 없으면 인덱스 전체를 사용할 수 없다. 또한 카디널리티가 높은 컬럼을 앞에 두면 초기 필터링 효과가 크다.
+
+**Q. 실행계획에서 Seq Scan이 나오면 무조건 문제인가?**
+
+아니다. 테이블 행이 적거나, 조건에 해당하는 행이 전체의 상당 비율을 차지하면 인덱스보다 Full Scan이 빠를 수 있다. 옵티마이저가 통계를 기반으로 판단한다. 중요한 것은 실제 실행 시간(`actual time`)이다.

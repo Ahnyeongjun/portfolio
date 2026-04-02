@@ -1,0 +1,289 @@
+---
+title: "테스트 전략 — 면접 대비 정리"
+description: "테스트 피라미드, 단위/통합/E2E 테스트, Mockito, Testcontainers, Spring Boot Test, TDD까지. 실무에서 테스트를 어떻게 작성하는지 정리한다."
+date: "2026-04-02"
+category: "Java/Spring"
+tags: ["테스트", "TDD", "Mockito", "Testcontainers", "JUnit", "Spring Boot Test"]
+series: "면접 대비"
+seriesOrder: 21
+---
+
+## 테스트 피라미드
+
+```
+        /\
+       /E2E\        (적음, 느림, 비쌈)
+      /------\
+     /  통합  \
+    /----------\
+   /  단위 테스트 \    (많음, 빠름, 저렴)
+  /--------------\
+```
+
+**단위 테스트**: 하나의 클래스/메서드를 격리해 테스트. 외부 의존성은 Mock.
+
+**통합 테스트**: 여러 컴포넌트가 함께 동작하는지. DB, 메시지 큐 등 실제 인프라 포함.
+
+**E2E 테스트**: 전체 시스템을 사용자 관점에서. 느리고 비싸다.
+
+---
+
+## 단위 테스트: Mockito
+
+```java
+@ExtendWith(MockitoExtension.class)
+class OrderServiceTest {
+
+    @Mock
+    private OrderRepository orderRepository;
+
+    @Mock
+    private PaymentService paymentService;
+
+    @InjectMocks
+    private OrderService orderService;
+
+    @Test
+    @DisplayName("주문 생성 시 결제가 요청된다")
+    void createOrder_shouldRequestPayment() {
+        // Given
+        CreateOrderRequest request = new CreateOrderRequest(1L, List.of(item), 50_000);
+        Order savedOrder = Order.create(request);
+        when(orderRepository.save(any())).thenReturn(savedOrder);
+
+        // When
+        orderService.createOrder(request);
+
+        // Then
+        verify(paymentService, times(1)).charge(savedOrder.getId(), 50_000);
+    }
+
+    @Test
+    @DisplayName("재고 부족 시 OrderException이 발생한다")
+    void createOrder_withInsufficientStock_throwsException() {
+        // Given
+        when(stockService.check(any())).thenReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.createOrder(request))
+            .isInstanceOf(OrderException.class)
+            .hasMessage("재고 부족");
+    }
+}
+```
+
+### Mock vs Spy vs Stub
+
+```java
+@Mock   // 전체 Mock. 모든 메서드가 기본값 반환
+@Spy    // 실제 객체를 감싸고, 지정한 메서드만 override
+@Stub   // 특정 호출에 대한 응답을 미리 지정 (when().thenReturn())
+```
+
+```java
+// Spy 예시
+@Spy
+private List<String> list = new ArrayList<>();
+
+list.add("item");       // 실제 ArrayList.add() 호출
+doReturn(10).when(list).size(); // size()만 override
+```
+
+---
+
+## 통합 테스트: Spring Boot Test
+
+```java
+@SpringBootTest
+@Transactional  // 테스트 후 롤백
+class OrderServiceIntegrationTest {
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Test
+    void createOrder_savedToDatabase() {
+        // Given
+        CreateOrderRequest request = new CreateOrderRequest(1L, items, 50_000);
+
+        // When
+        Order created = orderService.createOrder(request);
+
+        // Then
+        Order found = orderRepository.findById(created.getId()).orElseThrow();
+        assertThat(found.getAmount()).isEqualTo(50_000);
+    }
+}
+```
+
+`@SpringBootTest`는 전체 컨텍스트를 로드한다. 느리다. 필요한 Bean만 로드하려면:
+
+```java
+@WebMvcTest(OrderController.class)      // 웹 레이어만
+@DataJpaTest                             // JPA 레이어만 (H2 인메모리 DB)
+@DataRedisTest                           // Redis 레이어만
+```
+
+---
+
+## Testcontainers
+
+실제 Docker 컨테이너로 인프라를 띄워 테스트한다. H2 인메모리 DB의 한계(실제 DB와 동작 차이)를 해결한다.
+
+```java
+@SpringBootTest
+@Testcontainers
+class OrderRepositoryTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
+        .withDatabaseName("testdb")
+        .withUsername("test")
+        .withPassword("test");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Test
+    void findByUserId_returnsOrders() {
+        // 실제 PostgreSQL로 테스트
+        Order order = Order.create(1L, 50_000);
+        orderRepository.save(order);
+
+        List<Order> orders = orderRepository.findByUserId(1L);
+        assertThat(orders).hasSize(1);
+    }
+}
+```
+
+**장점**: 실제 DB 동작과 동일. PostgreSQL 전용 기능(JSON, 파티션, 특수 타입) 테스트 가능.
+
+**단점**: 컨테이너 시작 시간 (10~30초). CI/CD에서 Docker가 필요.
+
+---
+
+## Controller 테스트: MockMvc
+
+```java
+@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private OrderService orderService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void createOrder_returns201() throws Exception {
+        // Given
+        CreateOrderRequest request = new CreateOrderRequest(1L, items, 50_000);
+        Order created = Order.create(1L, 50_000);
+        when(orderService.createOrder(any())).thenReturn(created);
+
+        // When & Then
+        mockMvc.perform(post("/api/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(created.getId()))
+            .andExpect(jsonPath("$.amount").value(50_000));
+    }
+}
+```
+
+---
+
+## TDD (Test-Driven Development)
+
+```
+Red → Green → Refactor
+
+1. Red: 실패하는 테스트 먼저 작성
+2. Green: 테스트가 통과할 최소한의 코드 작성
+3. Refactor: 코드 개선 (테스트는 여전히 통과해야)
+```
+
+```java
+// Step 1: 실패하는 테스트 작성
+@Test
+void calculate_discountedPrice() {
+    PriceCalculator calc = new PriceCalculator();
+    assertThat(calc.calculateVipPrice(10_000)).isEqualTo(8_000);  // 20% 할인
+}
+// → PriceCalculator.calculateVipPrice() 없음 → 컴파일 에러
+
+// Step 2: 최소 구현
+public int calculateVipPrice(int price) {
+    return (int) (price * 0.8);
+}
+// → 테스트 통과 (Green)
+
+// Step 3: 리팩토링
+public int calculateVipPrice(int price) {
+    return applyDiscount(price, VIP_DISCOUNT_RATE);
+}
+```
+
+**TDD의 장점**:
+- 요구사항을 명확히 이해하고 시작
+- 테스트가 자연스럽게 작성됨
+- 설계가 자연히 느슨한 결합으로
+- 리팩토링에 안전망
+
+---
+
+## 테스트 품질 지표
+
+### 코드 커버리지
+
+```
+라인 커버리지: 실행된 라인 / 전체 라인
+분기 커버리지: 실행된 분기 / 전체 분기 (if-else, switch)
+```
+
+80% 커버리지가 목표가 아니다. 중요한 비즈니스 로직을 커버하는 것이 목표.
+
+### 좋은 테스트의 특징 (FIRST)
+
+```
+Fast        — 빠르게 실행
+Isolated    — 독립적 (다른 테스트에 의존 없음)
+Repeatable  — 반복 실행 시 같은 결과
+Self-validating — 자동으로 성공/실패 판단
+Timely      — 적시에 작성 (코드 직후 또는 직전)
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Mock과 Stub의 차이는?**
+
+Stub은 특정 호출에 미리 정의된 응답을 반환하는 것이다. Mock은 Stub을 포함하면서 추가로 호출 여부, 횟수, 인수를 검증한다. Mockito에서 `when().thenReturn()`이 Stubbing, `verify()`가 Mock 검증이다.
+
+**Q. H2 인메모리 DB 대신 Testcontainers를 쓰는 이유는?**
+
+H2는 PostgreSQL과 SQL 방언이 달라 실제 환경과 다르게 동작할 수 있다. 특히 PostgreSQL 전용 기능(JSON 타입, 파티션, 특수 함수)은 H2에서 테스트할 수 없다. Testcontainers는 실제 PostgreSQL 컨테이너를 띄워 운영 환경과 동일한 동작을 보장한다.
+
+**Q. @SpringBootTest와 @WebMvcTest의 차이는?**
+
+@SpringBootTest는 전체 애플리케이션 컨텍스트를 로드한다. 통합 테스트에 적합하지만 느리다. @WebMvcTest는 웹 레이어(Controller, Filter, Advice)만 로드하고 Service, Repository는 Mock으로 대체한다. Controller 단위 테스트에 적합하고 빠르다.
+
+**Q. TDD를 실무에 적용할 때 어려운 점은?**
+
+외부 시스템(DB, API)에 의존하는 코드는 Mock 설정이 복잡하다. 요구사항이 자주 바뀌면 테스트 수정 비용이 크다. 기존 코드베이스에 TDD를 도입하기 어렵다. 이런 경우 중요한 비즈니스 로직부터 단위 테스트를 추가하고, 통합 테스트는 핵심 흐름만 커버하는 방식으로 시작한다.

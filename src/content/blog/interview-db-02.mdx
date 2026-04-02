@@ -1,0 +1,181 @@
+---
+title: "트랜잭션 격리 수준 & MVCC — 면접 대비 정리"
+description: "ACID, 트랜잭션 격리 수준 4단계, 각 단계에서 발생하는 문제(Dirty Read, Phantom Read), MVCC 동작 원리, PostgreSQL vs MySQL 차이를 정리한다."
+date: "2026-04-02"
+category: "Database"
+tags: ["트랜잭션", "ACID", "MVCC", "격리수준", "PostgreSQL", "MySQL", "데드락"]
+series: "면접 대비"
+seriesOrder: 7
+---
+
+## ACID
+
+**Atomicity (원자성)**: 트랜잭션의 모든 작업이 성공하거나, 모두 실패한다. 계좌이체에서 출금만 되고 입금이 안 되는 상황은 없어야 한다.
+
+**Consistency (일관성)**: 트랜잭션 전후로 DB의 제약 조건(무결성)이 유지된다. 잔액이 음수가 되면 안 된다는 제약이 있으면, 트랜잭션 후에도 지켜진다.
+
+**Isolation (격리성)**: 동시에 실행되는 트랜잭션이 서로 영향을 주지 않는다. 정도는 격리 수준으로 조절한다.
+
+**Durability (지속성)**: 커밋된 트랜잭션의 결과는 시스템 장애가 발생해도 유지된다. WAL(Write-Ahead Log)으로 보장한다.
+
+---
+
+## 격리 수준 4단계
+
+### 동시성 문제 3가지
+
+**Dirty Read**: 커밋되지 않은 다른 트랜잭션의 데이터를 읽는 것.
+
+```
+TX A: UPDATE balance = 0 (커밋 안 됨)
+TX B: SELECT balance → 0 읽음  ← Dirty Read
+TX A: ROLLBACK → balance 원복
+TX B는 존재하지 않는 값을 읽었다
+```
+
+**Non-Repeatable Read**: 같은 트랜잭션 내에서 같은 쿼리를 두 번 실행했을 때 결과가 다른 것.
+
+```
+TX A: SELECT balance → 1000
+TX B: UPDATE balance = 500, COMMIT
+TX A: SELECT balance → 500  ← 달라짐
+```
+
+**Phantom Read**: 같은 조건의 쿼리를 두 번 실행했을 때 없던 행이 생기거나 있던 행이 사라지는 것.
+
+```
+TX A: SELECT COUNT(*) WHERE age > 20 → 5
+TX B: INSERT INTO users (age=25), COMMIT
+TX A: SELECT COUNT(*) WHERE age > 20 → 6  ← 없던 행이 생김
+```
+
+---
+
+### 격리 수준별 허용 문제
+
+| 격리 수준 | Dirty Read | Non-Repeatable Read | Phantom Read |
+|-----------|-----------|---------------------|--------------|
+| READ UNCOMMITTED | 발생 | 발생 | 발생 |
+| READ COMMITTED | 없음 | 발생 | 발생 |
+| REPEATABLE READ | 없음 | 없음 | 발생 (MySQL은 없음) |
+| SERIALIZABLE | 없음 | 없음 | 없음 |
+
+**MySQL InnoDB 기본값**: REPEATABLE READ  
+**PostgreSQL 기본값**: READ COMMITTED
+
+---
+
+### READ UNCOMMITTED
+
+커밋 안 된 데이터도 읽는다. 실무에서 거의 쓰지 않는다.
+
+### READ COMMITTED
+
+커밋된 데이터만 읽는다. 대부분의 서비스 DB 기본값.
+
+```
+TX A: SELECT balance → 1000  (TX B 커밋 전)
+TX B: UPDATE balance = 500, COMMIT
+TX A: SELECT balance → 500   (TX B 커밋 후 → 달라짐: Non-Repeatable Read)
+```
+
+### REPEATABLE READ
+
+트랜잭션 시작 시점의 스냅샷을 읽는다. 같은 쿼리는 항상 같은 결과를 반환한다.
+
+MySQL InnoDB에서는 MVCC + 넥스트키 락으로 Phantom Read도 방지한다.
+
+### SERIALIZABLE
+
+트랜잭션을 직렬로 실행한 것처럼 동작한다. 가장 안전하지만 가장 느리다.
+
+---
+
+## MVCC (Multi-Version Concurrency Control)
+
+**읽기와 쓰기가 서로를 블로킹하지 않도록** 데이터의 여러 버전을 유지하는 기법이다.
+
+읽기는 락을 걸지 않고 **스냅샷(일관된 시점의 데이터)** 을 읽는다. 쓰기는 새 버전을 만든다.
+
+### PostgreSQL MVCC
+
+```
+행 구조: (xmin, xmax, data)
+- xmin: 이 행을 INSERT한 트랜잭션 ID
+- xmax: 이 행을 DELETE/UPDATE한 트랜잭션 ID (없으면 0)
+```
+
+```
+원본:  (xmin=100, xmax=0,   balance=1000)
+수정:  (xmin=200, xmax=0,   balance=500)  ← TX 200이 새 버전 생성
+삭제:  (xmin=100, xmax=200, balance=1000) ← 원본의 xmax에 200 기록
+```
+
+TX 150이 읽으면 → xmin ≤ 150인 버전 중 xmax > 150인 것 → 원본(1000) 읽음.
+
+TX 250이 읽으면 → xmin ≤ 250인 버전 중 xmax > 250인 것 → 새 버전(500) 읽음.
+
+**Vacuum**: 오래된 버전(dead tuple)을 정리한다. 자동 실행(autovacuum).
+
+### MySQL InnoDB MVCC
+
+Undo Log를 사용한다.
+
+```
+현재 행: balance=500 (TX 200이 쓴 최신)
+Undo Log: balance=1000 (TX 100이 쓴 이전 버전)
+```
+
+이전 버전이 필요한 트랜잭션은 Undo Log를 거슬러 올라가 읽는다.
+
+### PostgreSQL vs MySQL MVCC 차이
+
+| 항목 | PostgreSQL | MySQL InnoDB |
+|------|-----------|-------------|
+| 구현 방식 | 행에 버전 정보 저장 | Undo Log |
+| 정리 방법 | VACUUM | 자동 Purge |
+| 기본 격리 수준 | READ COMMITTED | REPEATABLE READ |
+| Phantom Read 방지 | SERIALIZABLE에서만 | REPEATABLE READ에서도 (Gap Lock) |
+
+---
+
+## 데드락
+
+두 트랜잭션이 서로 상대방의 락을 기다리는 상황.
+
+```
+TX A: LOCK 상품A, 상품B를 원함
+TX B: LOCK 상품B, 상품A를 원함
+
+TX A: 상품A 락 획득 → 상품B 기다림
+TX B: 상품B 락 획득 → 상품A 기다림
+→ 교착 상태
+```
+
+**DB가 데드락을 감지하면**: 하나의 트랜잭션을 강제로 롤백하고 오류를 반환한다.
+
+**예방 방법**:
+1. 항상 같은 순서로 자원에 접근한다 (상품A → 상품B 순서 고정).
+2. 트랜잭션을 짧게 유지한다.
+3. 락 범위를 최소화한다.
+4. 데드락이 반복되면 재시도 로직을 추가한다.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. MVCC가 뭔가?**
+
+데이터를 여러 버전으로 관리해 읽기와 쓰기가 서로를 블로킹하지 않도록 하는 기법이다. 읽기는 스냅샷을 보고, 쓰기는 새 버전을 생성한다. 이를 통해 읽기 락 없이 일관된 데이터를 제공한다.
+
+**Q. REPEATABLE READ에서 Phantom Read가 MySQL은 안 발생하고 PostgreSQL은 발생하는 이유는?**
+
+MySQL InnoDB는 REPEATABLE READ에서 Gap Lock(넥스트키 락)으로 범위에 새 행이 삽입되는 것을 막는다. PostgreSQL은 REPEATABLE READ에서 스냅샷 읽기를 제공하지만 Gap Lock을 쓰지 않아 다른 트랜잭션이 행을 삽입할 수 있다. PostgreSQL에서 Phantom Read를 막으려면 SERIALIZABLE이 필요하다.
+
+**Q. 데드락이 발생하면 어떻게 처리하는가?**
+
+대부분의 DB는 데드락을 감지해 자동으로 한쪽 트랜잭션을 롤백한다. 애플리케이션에서는 이 오류를 잡아서 재시도한다. 근본 해결은 자원 접근 순서 통일, 트랜잭션 범위 축소, 락 타임아웃 설정.
+
+**Q. READ COMMITTED와 REPEATABLE READ의 차이를 실무 사례로 설명하면?**
+
+주문 처리에서 재고를 읽고 줄이는 로직이 있다고 할 때, READ COMMITTED에서는 재고 SELECT와 UPDATE 사이에 다른 트랜잭션이 재고를 바꾸면 Non-Repeatable Read가 발생해 동시에 여러 주문이 마지막 재고를 가져갈 수 있다. REPEATABLE READ나 비관적 락을 써야 한다.

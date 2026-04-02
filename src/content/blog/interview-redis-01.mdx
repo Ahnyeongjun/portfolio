@@ -1,0 +1,303 @@
+---
+title: "Redis 캐시 전략 & 분산락 — 면접 대비 정리"
+description: "Redis 자료구조별 사용 케이스, Cache-Aside/Write-Through 전략, Cache Stampede, Redisson 분산락, RDB/AOF 영속성까지 정리한다."
+date: "2026-04-02"
+category: "Database"
+tags: ["Redis", "캐시", "분산락", "Redisson", "Cache-Aside", "성능최적화"]
+series: "면접 대비"
+seriesOrder: 8
+---
+
+## Redis가 빠른 이유
+
+**인메모리**: 데이터를 RAM에 저장한다. 디스크 I/O가 없어 나노초 단위 응답.
+
+**단순한 자료구조**: 복잡한 쿼리 파싱이 없다. 명령이 단순하고 빠르다.
+
+**Single Thread**: 이벤트 루프 기반 단일 스레드. 컨텍스트 스위칭과 락 경쟁이 없다. 단, 하나의 명령이 오래 걸리면 전체가 블로킹된다.
+
+---
+
+## 자료구조별 사용 케이스
+
+### String
+
+가장 기본. 문자열, 숫자, JSON 직렬화 객체.
+
+```
+SET user:1 '{"id":1,"name":"홍길동"}'  EX 3600
+GET user:1
+INCR page_view_count  # 원자적 증가
+```
+
+**사용 케이스**: 세션, 캐시, 카운터, 분산락.
+
+### Hash
+
+필드-값 쌍의 맵. 객체를 필드별로 저장.
+
+```
+HSET user:1 name 홍길동 age 30 email test@test.com
+HGET user:1 name
+HGETALL user:1
+```
+
+**사용 케이스**: 사용자 프로필, 설정값. String에 JSON 전체를 넣으면 특정 필드만 수정해도 전체를 다시 써야 하는데, Hash는 필드 단위 수정이 가능하다.
+
+### List
+
+순서가 있는 문자열 목록.
+
+```
+LPUSH queue:email "job1"   # 왼쪽에 추가
+RPOP queue:email            # 오른쪽에서 꺼냄
+LRANGE notifications:1 0 9  # 0번~9번 조회
+```
+
+**사용 케이스**: 메시지 큐, 최근 방문 목록, 알림 피드.
+
+### Set
+
+중복 없는 문자열 집합.
+
+```
+SADD online_users user:1 user:2 user:3
+SISMEMBER online_users user:1  # 포함 여부
+SCARD online_users              # 원소 수
+SINTER set1 set2               # 교집합
+```
+
+**사용 케이스**: 온라인 사용자 목록, 태그, 좋아요 중복 방지.
+
+### Sorted Set (ZSet)
+
+점수(score)로 정렬된 집합.
+
+```
+ZADD leaderboard 1500 user:1
+ZADD leaderboard 2000 user:2
+ZREVRANK leaderboard user:2  # 내림차순 순위 (0-based)
+ZREVRANGE leaderboard 0 9 WITHSCORES  # 상위 10명
+```
+
+**사용 케이스**: 실시간 랭킹, 지연 작업 큐(score=실행 시간), 범위 검색.
+
+---
+
+## 캐시 전략
+
+### Cache-Aside (Lazy Loading)
+
+```
+읽기:
+1. Cache에서 조회
+2. 히트 → 반환
+3. 미스 → DB 조회 → Cache에 저장 → 반환
+
+쓰기:
+1. DB에 쓰기
+2. Cache 삭제 (Invalidation)
+```
+
+```java
+public User getUser(Long id) {
+    String key = "user:" + id;
+    User cached = redis.get(key, User.class);
+    if (cached != null) return cached;
+
+    User user = userRepository.findById(id).orElseThrow();
+    redis.set(key, user, Duration.ofHours(1));
+    return user;
+}
+
+public void updateUser(User user) {
+    userRepository.save(user);
+    redis.delete("user:" + user.getId()); // 캐시 삭제
+}
+```
+
+**장점**: 실제로 읽히는 데이터만 캐시됨. 캐시 장애 시 DB로 폴백 가능.
+
+**단점**: 첫 조회 시 항상 Cache Miss. 캐시 삭제와 DB 쓰기 사이 짧은 불일치 가능.
+
+### Write-Through
+
+```
+쓰기:
+1. Cache에 쓰기
+2. DB에 쓰기 (동기)
+```
+
+데이터 일관성이 높지만 쓰기 지연이 발생한다. 캐시에 안 쓰인 데이터는 Cache Miss.
+
+### Write-Behind (Write-Back)
+
+```
+쓰기:
+1. Cache에 쓰기 (즉시 반환)
+2. 비동기로 DB에 쓰기 (배치)
+```
+
+쓰기 성능이 빠르지만 Cache 장애 시 데이터 유실 위험이 있다.
+
+---
+
+## Cache Stampede (캐시 스탬피드)
+
+캐시가 만료된 순간 여러 요청이 동시에 DB로 몰리는 현상.
+
+```
+00:00:00 - 인기 상품 캐시 TTL 만료
+00:00:00 - 동시 요청 1000개 → 전부 DB 조회 시도
+→ DB 과부하
+```
+
+**해결법 1: Mutex Lock (캐시 재생성 락)**
+
+```java
+public Product getProduct(Long id) {
+    String key = "product:" + id;
+    Product cached = redis.get(key);
+    if (cached != null) return cached;
+
+    // 락 획득 시도 (SET NX EX)
+    String lockKey = "lock:product:" + id;
+    boolean locked = redis.setIfAbsent(lockKey, "1", Duration.ofSeconds(5));
+
+    if (locked) {
+        try {
+            Product product = productRepository.findById(id).orElseThrow();
+            redis.set(key, product, Duration.ofMinutes(10));
+            return product;
+        } finally {
+            redis.delete(lockKey);
+        }
+    } else {
+        // 락 실패 → 잠깐 대기 후 캐시 재조회
+        Thread.sleep(100);
+        return redis.get(key);
+    }
+}
+```
+
+**해결법 2: TTL 랜덤 지터**
+
+```java
+int ttl = 3600 + random.nextInt(600); // 3600~4200초 랜덤
+redis.set(key, value, Duration.ofSeconds(ttl));
+```
+
+동일 TTL이면 동시에 만료된다. 지터를 추가하면 만료가 분산된다.
+
+**해결법 3: Background Refresh**
+
+TTL 만료 전에 비동기로 미리 갱신한다.
+
+---
+
+## 분산락 (Distributed Lock)
+
+여러 서버가 있을 때 특정 작업을 하나의 서버만 실행하도록 보장.
+
+### SET NX EX (기본 구현)
+
+```java
+// 락 획득
+Boolean locked = redis.setIfAbsent("lock:order:" + orderId, serverId, Duration.ofSeconds(30));
+
+if (Boolean.TRUE.equals(locked)) {
+    try {
+        processOrder(orderId);
+    } finally {
+        // 내가 건 락만 해제 (Lua 스크립트로 원자적 처리)
+        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+                       "return redis.call('del', KEYS[1]) else return 0 end";
+        redis.execute(script, List.of("lock:order:" + orderId), serverId);
+    }
+}
+```
+
+**주의**: 작업 시간이 TTL보다 길면 락이 먼저 풀려 다른 서버가 진입할 수 있다.
+
+### Redisson (실무 권장)
+
+```java
+@Autowired
+private RedissonClient redisson;
+
+public void processOrder(Long orderId) {
+    RLock lock = redisson.getLock("lock:order:" + orderId);
+
+    try {
+        boolean acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
+        // tryLock(waitTime=5초, leaseTime=30초, unit)
+
+        if (!acquired) {
+            throw new LockAcquisitionException("락 획득 실패");
+        }
+
+        doProcessOrder(orderId);
+
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    } finally {
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+}
+```
+
+Redisson은 **워치독(Watchdog)** 기능이 있어, 작업이 진행 중이면 TTL을 자동으로 연장한다.
+
+---
+
+## Redis 영속성
+
+Redis는 기본적으로 인메모리이므로 재시작하면 데이터가 사라진다. 영속성 옵션:
+
+### RDB (Redis Database)
+
+특정 시점의 스냅샷을 파일로 저장.
+
+```
+save 900 1    # 900초 내 1번 이상 변경 시 저장
+save 300 10   # 300초 내 10번 이상 변경 시 저장
+```
+
+장점: 파일이 작고 복구 속도 빠름.  
+단점: 마지막 스냅샷 이후 데이터는 유실될 수 있음.
+
+### AOF (Append Only File)
+
+모든 쓰기 명령을 로그로 기록.
+
+```
+appendonly yes
+appendfsync everysec  # 1초마다 fsync (권장)
+```
+
+장점: 데이터 유실 최소화.  
+단점: 파일 크기가 크고 복구 속도 느림.
+
+**실무**: RDB + AOF 혼합 사용. 스냅샷 빠른 복구 + AOF로 유실 최소화.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Redis가 Single Thread인데 빠른 이유는?**
+
+데이터가 메모리에 있어 I/O 대기가 없다. 명령이 단순하고 실행이 빠르다. 단일 스레드라 락 경쟁과 컨텍스트 스위칭 비용이 없다. I/O 다중화로 수천 개의 클라이언트 연결을 효율적으로 처리한다.
+
+**Q. Cache-Aside에서 캐시 무효화는 언제 하는가?**
+
+DB 업데이트 후 캐시를 삭제(delete)한다. 캐시를 업데이트(set)하지 않고 삭제하는 이유는, 동시에 여러 쓰기가 발생할 때 순서가 꼬여 낡은 값이 캐시에 남을 수 있기 때문이다. 삭제 후 다음 읽기 시 DB에서 최신값을 가져온다.
+
+**Q. 분산락에서 TTL을 너무 짧게 잡으면 어떤 문제가 생기는가?**
+
+작업이 TTL 안에 끝나지 않으면 락이 해제되고, 다른 서버가 같은 작업을 시작한다. 두 서버가 같은 작업을 동시에 처리하게 되어 분산락의 목적이 사라진다. Redisson의 워치독이 이를 해결한다.
+
+**Q. Redis 클러스터와 레플리카의 차이는?**
+
+레플리카(Replication)는 마스터의 데이터를 슬레이브에 복제한다. 읽기 분산과 장애 시 페일오버에 쓴다. 클러스터(Cluster)는 데이터를 16384개 슬롯으로 샤딩해 여러 노드에 분산 저장한다. 수평 확장이 가능하고 각 노드는 레플리카를 가질 수 있다.

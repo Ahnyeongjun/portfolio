@@ -1,0 +1,206 @@
+---
+title: "DB 설계 & 파티셔닝 & 샤딩 — 면접 대비 정리"
+description: "정규화 1~3NF, 역정규화 기준, 파티셔닝 vs 샤딩, PostgreSQL 파티션 테이블, 샤딩 키 설계, CQRS 패턴까지 정리한다."
+date: "2026-04-02"
+category: "Database"
+tags: ["정규화", "파티셔닝", "샤딩", "DB설계", "CQRS", "스케일링"]
+series: "면접 대비"
+seriesOrder: 20
+---
+
+## 정규화 (Normalization)
+
+중복을 제거하고 데이터 무결성을 보장하기 위해 테이블을 분리하는 과정.
+
+### 제1정규형 (1NF)
+
+모든 컬럼에 원자값만 저장. 반복 그룹 없음.
+
+```sql
+-- 위반: 하나의 컬럼에 여러 값
+orders: id=1, products="A,B,C"
+
+-- 1NF 준수
+order_items: order_id=1, product="A"
+             order_id=1, product="B"
+             order_id=1, product="C"
+```
+
+### 제2정규형 (2NF)
+
+1NF를 만족하면서, 부분 함수 종속 제거. 복합 PK의 일부에만 종속되는 컬럼 분리.
+
+```sql
+-- 위반: (order_id, product_id)가 PK인데 product_name은 product_id에만 종속
+order_items: order_id, product_id, quantity, product_name  ← product_name이 부분 종속
+
+-- 2NF 준수: products 테이블 분리
+order_items: order_id, product_id, quantity
+products:    product_id, product_name
+```
+
+### 제3정규형 (3NF)
+
+2NF를 만족하면서, 이행적 함수 종속 제거.
+
+```sql
+-- 위반: order_id → user_id → user_email (이행적 종속)
+orders: order_id, user_id, user_email  ← user_email은 user_id에 종속
+
+-- 3NF 준수
+orders: order_id, user_id
+users:  user_id, user_email
+```
+
+---
+
+## 역정규화 (Denormalization)
+
+정규화된 구조를 성능을 위해 일부 의도적으로 중복 허용.
+
+```sql
+-- 정규화: 주문 총액을 볼 때마다 JOIN + SUM
+SELECT o.id, SUM(oi.price * oi.quantity)
+FROM orders o JOIN order_items oi ON o.id = oi.order_id
+GROUP BY o.id;
+
+-- 역정규화: total_amount 컬럼 추가
+orders: id, user_id, total_amount  ← 중복이지만 JOIN 없이 바로 조회
+```
+
+**역정규화 적용 기준**:
+- 읽기가 압도적으로 많고 쓰기가 적은 데이터
+- JOIN 비용이 크고 성능이 중요한 경우
+- 데이터 일관성 유지 방법이 명확한 경우 (트리거, 애플리케이션 로직)
+
+---
+
+## 파티셔닝 (Partitioning)
+
+하나의 테이블을 논리적으로 여러 조각으로 나눈다. **같은 DB 서버 내**에서 발생.
+
+### Range 파티셔닝
+
+```sql
+-- PostgreSQL
+CREATE TABLE orders (
+    id BIGINT,
+    created_at TIMESTAMP,
+    amount DECIMAL
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE orders_2024 PARTITION OF orders
+    FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+
+CREATE TABLE orders_2025 PARTITION OF orders
+    FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
+```
+
+날짜 기반 조회가 많은 로그, 이벤트 데이터에 적합. 2024년 데이터만 조회하면 `orders_2024` 파티션만 스캔 (파티션 프루닝).
+
+### Hash 파티셔닝
+
+```sql
+CREATE TABLE users (
+    id BIGINT,
+    name TEXT
+) PARTITION BY HASH (id);
+
+CREATE TABLE users_0 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 0);
+CREATE TABLE users_1 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 1);
+CREATE TABLE users_2 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 2);
+CREATE TABLE users_3 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 3);
+```
+
+균등하게 분산. 특정 날짜 범위 조회보단 균등 부하 분산에 적합.
+
+### 파티셔닝 효과
+
+- 특정 파티션만 스캔 (파티션 프루닝) → 쿼리 성능 향상
+- 오래된 파티션 통째로 삭제 (`DROP TABLE orders_2022`) → DELETE보다 빠름
+- 파티션별 독립적인 인덱스
+
+---
+
+## 샤딩 (Sharding)
+
+데이터를 **여러 DB 서버**에 분산 저장. 수평 확장.
+
+```
+User ID 1~1000만  → DB Shard 1 (서버 A)
+User ID 1000만~2000만 → DB Shard 2 (서버 B)
+User ID 2000만~  → DB Shard 3 (서버 C)
+```
+
+### 샤딩 키 선택 기준
+
+샤딩 키는 가장 중요한 설계 결정이다. 잘못 선택하면 나중에 바꾸기 매우 어렵다.
+
+**좋은 샤딩 키**:
+- 높은 카디널리티 (균등 분산)
+- 자주 쓰이는 쿼리 조건
+- 단조 증가가 아닌 것 (핫스팟 방지)
+
+**나쁜 샤딩 키**:
+- 타임스탬프 단독 (최신 샤드에 쓰기 집중)
+- 낮은 카디널리티 (국가 코드 같은 것 → 특정 샤드 과부하)
+
+### 샤딩의 문제점
+
+**크로스 샤드 조인 불가**: 다른 샤드의 데이터를 JOIN할 수 없다. 애플리케이션 레벨에서 처리해야 한다.
+
+**분산 트랜잭션**: 여러 샤드에 걸친 트랜잭션이 어렵다.
+
+**리샤딩**: 샤드 수를 변경하면 데이터를 다시 분배해야 한다. Consistent Hashing으로 완화.
+
+---
+
+## CQRS (Command Query Responsibility Segregation)
+
+읽기(Query)와 쓰기(Command)를 분리하는 패턴.
+
+```
+쓰기 요청 → Command Model → Write DB (정규화된 RDB)
+                               ↓ 이벤트 발행
+읽기 요청 → Query Model  ← Read DB (역정규화된 뷰, Redis, Elasticsearch)
+```
+
+**왜 분리하는가?**
+
+쓰기와 읽기의 요구사항이 다르다. 쓰기는 정규화된 DB가 일관성에 유리하다. 읽기는 역정규화, 캐시, 전문 검색 등 최적화가 필요하다.
+
+```java
+// Command: 주문 생성 (Write DB)
+@Transactional
+public Order createOrder(CreateOrderCommand cmd) {
+    Order order = Order.create(cmd);
+    orderRepository.save(order);
+    eventPublisher.publish(new OrderCreatedEvent(order));
+    return order;
+}
+
+// Query: 주문 목록 조회 (Read DB / Cache)
+public List<OrderSummaryDto> getOrderList(Long userId) {
+    return orderQueryRepository.findSummaryByUserId(userId);  // 역정규화된 뷰
+}
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. 정규화의 목적과 단점은?**
+
+목적: 중복 제거, 이상 현상(삽입/삭제/갱신) 방지, 데이터 무결성 보장. 단점: 테이블이 분리되어 JOIN이 많아지고 조회 성능이 낮아질 수 있다. 이 경우 역정규화를 고려한다.
+
+**Q. 파티셔닝과 샤딩의 차이는?**
+
+파티셔닝은 하나의 DB 서버 내에서 테이블을 논리적으로 분할한다. 샤딩은 데이터를 여러 DB 서버에 분산 저장한다. 파티셔닝은 쿼리 성능 향상이 주목적이고, 샤딩은 수평 확장과 쓰기 분산이 주목적이다.
+
+**Q. 샤딩 키를 잘못 선택하면 어떤 문제가 생기는가?**
+
+특정 샤드에 트래픽이 몰리는 핫스팟이 발생한다. 예를 들어 타임스탬프를 샤딩 키로 쓰면 항상 최신 샤드에 쓰기가 집중된다. 또한 크로스 샤드 조회가 많아지면 성능이 오히려 나빠진다.
+
+**Q. CQRS를 언제 적용하는가?**
+
+읽기와 쓰기 패턴이 크게 다를 때. 대시보드, 검색, 목록 조회는 복잡한 집계가 필요하지만 쓰기는 단순한 경우. 트래픽 비율이 읽기가 압도적으로 많을 때 읽기 모델을 별도로 최적화해 Write DB 부하를 줄인다.

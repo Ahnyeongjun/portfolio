@@ -1,0 +1,163 @@
+---
+title: "JVM & GC — 면접 대비 정리"
+description: "JVM 구조, Heap 메모리 레이아웃, GC 알고리즘(G1GC), STW까지. Java 백엔드 면접에서 가장 많이 나오는 JVM 질문을 정리한다."
+date: "2026-04-02"
+category: "Java/Spring"
+tags: ["JVM", "GC", "G1GC", "Heap", "Java", "성능"]
+series: "면접 대비"
+seriesOrder: 3
+---
+
+## JVM이 뭔가
+
+Java Virtual Machine. Java 소스코드는 `.class`(바이트코드)로 컴파일되고, JVM이 이 바이트코드를 각 OS에서 실행한다. "Write Once, Run Anywhere"가 가능한 이유다.
+
+```
+.java → (javac) → .class → (JVM) → 실행
+```
+
+---
+
+## JVM 내부 구조
+
+```
+┌──────────────────────────────────────────┐
+│              JVM                          │
+│                                          │
+│  Class Loader                            │
+│  └── .class 파일 로드 → 링킹 → 초기화   │
+│                                          │
+│  Runtime Data Area                       │
+│  ├── Method Area   (클래스 메타데이터)   │
+│  ├── Heap          (객체 저장)           │
+│  ├── Stack         (스레드별, 메서드 프레임) │
+│  ├── PC Register   (스레드별, 현재 명령어 주소) │
+│  └── Native Method Stack                 │
+│                                          │
+│  Execution Engine                        │
+│  ├── Interpreter   (바이트코드 해석)     │
+│  ├── JIT Compiler  (자주 쓰는 코드 네이티브 변환) │
+│  └── GC            (힙 메모리 관리)      │
+└──────────────────────────────────────────┘
+```
+
+**Method Area**: 클래스 정보, static 변수, 상수 풀. JVM 전체 공유.
+
+**Heap**: 객체와 배열이 저장되는 공간. GC가 관리한다. 스레드 공유.
+
+**Stack**: 메서드 호출마다 스택 프레임이 쌓인다. 지역변수, 파라미터, 리턴값. 스레드마다 독립.
+
+---
+
+## Heap 구조 (GC 관점)
+
+```
+┌─────────────────────────────────────────┐
+│                  Heap                    │
+│                                          │
+│  Young Generation          Old Generation│
+│  ┌──────────────────┐      ┌───────────┐│
+│  │ Eden             │      │           ││
+│  │ Survivor 0  (S0) │  →   │  Old Gen  ││
+│  │ Survivor 1  (S1) │      │           ││
+│  └──────────────────┘      └───────────┘│
+│                                          │
+│  Metaspace (클래스 메타데이터, 힙 외부) │
+└─────────────────────────────────────────┘
+```
+
+### 객체 생명주기
+
+1. 새 객체는 **Eden**에 생성된다.
+2. Eden이 꽉 차면 **Minor GC** 발생. 살아남은 객체는 S0으로 이동, age+1.
+3. Minor GC가 반복되면서 age가 임계값(기본 15)을 넘은 객체는 **Old Gen**으로 이동(Promotion).
+4. Old Gen이 꽉 차면 **Major GC(Full GC)** 발생.
+
+---
+
+## GC 알고리즘
+
+### Serial GC
+단일 스레드로 GC 처리. STW 시간이 길다. 클라이언트 환경용.
+
+### Parallel GC (Java 8 기본)
+여러 스레드로 GC 처리. 처리량(Throughput)은 높지만 STW는 여전히 있다.
+
+### G1GC (Java 9+ 기본)
+
+Garbage-First GC. Heap을 고정 크기의 Region으로 나눈다.
+
+```
+┌────┬────┬────┬────┐
+│ E  │ S  │ O  │ E  │  E: Eden Region
+├────┼────┼────┼────┤  S: Survivor Region
+│ O  │ H  │ O  │ S  │  O: Old Region
+├────┼────┼────┼────┤  H: Humongous (대용량 객체)
+│ E  │ O  │ E  │ O  │
+└────┴────┴────┴────┘
+```
+
+Region 단위로 GC를 수행하고, GC 효과가 큰(가비지가 많은) Region부터 처리한다. 이것이 "Garbage-First"의 의미다.
+
+**목표**: `-XX:MaxGCPauseMillis=200` 같이 목표 STW 시간을 지정하면 G1이 맞추려 시도한다.
+
+### ZGC / Shenandoah (Java 15+)
+STW를 수 밀리초 이하로 줄인 저지연 GC. 대용량 힙(수백GB)에 적합.
+
+---
+
+## STW (Stop-The-World)
+
+GC가 실행될 때 **모든 애플리케이션 스레드가 멈추는 것**이다. GC가 살아있는 객체를 추적하는 동안 힙 상태가 변하면 안 되기 때문이다.
+
+STW가 길어지면:
+- API 응답 지연 (갑자기 수백ms~수초 지연)
+- 타임아웃 에러
+- 사용자 경험 저하
+
+---
+
+## GC 튜닝 기초
+
+```bash
+# 힙 크기 설정 (최소=최대로 고정하면 GC 시 리사이징 비용 없음)
+-Xms2g -Xmx2g
+
+# G1GC 사용
+-XX:+UseG1GC
+
+# STW 목표 시간
+-XX:MaxGCPauseMillis=200
+
+# GC 로그 남기기
+-Xlog:gc*:file=/logs/gc.log:time,uptime:filecount=5,filesize=20m
+```
+
+GC 튜닝 전에 먼저 GC 로그를 수집하고 패턴을 파악한다. 추측으로 튜닝하면 역효과가 난다.
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Java는 Call by Value인가 Call by Reference인가?**
+
+항상 Call by Value다. 기본 타입은 값 자체가, 객체는 참조값(주소)이 복사된다. 메서드 안에서 파라미터 변수에 다른 객체를 할당해도 원본에 영향이 없다.
+
+**Q. Static 변수는 어디에 저장되는가?**
+
+Method Area에 저장된다. JVM 전체에서 공유되며, 클래스가 로드될 때 생성된다.
+
+**Q. GC가 자주 발생하면 어떻게 해결하는가?**
+
+1. GC 로그 수집해서 어떤 GC(Minor/Major)가 자주 발생하는지 확인.
+2. Minor GC가 자주 발생하면 Eden 크기 늘리기.
+3. Old Gen Full GC가 자주 발생하면 메모리 누수 의심 → 힙 덤프 분석.
+4. 불필요한 객체 생성 줄이기 (특히 루프 안 String 연결).
+
+**Q. STW를 줄이는 방법은?**
+
+G1GC나 ZGC로 교체, MaxGCPauseMillis 목표 설정, 힙 크기 적절히 설정(너무 크면 GC 시간도 길어짐), 객체 수명 단축(Young Gen에서 처리되도록).
+
+**Q. JIT 컴파일러란?**
+
+자주 실행되는 바이트코드(핫스팟)를 네이티브 코드로 컴파일해 캐싱한다. 이후 실행에서는 컴파일된 네이티브 코드를 직접 실행하므로 인터프리터보다 빠르다.
