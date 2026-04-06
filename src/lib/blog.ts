@@ -16,6 +16,7 @@ export interface BlogPost {
   content: string;
   series?: string;
   seriesOrder?: number;
+  hidden?: boolean;
 }
 
 export interface BlogPostMeta {
@@ -28,6 +29,7 @@ export interface BlogPostMeta {
   readingTime: string;
   series?: string;
   seriesOrder?: number;
+  hidden?: boolean;
 }
 
 export interface SeriesGroup {
@@ -68,6 +70,7 @@ function parsePost(slug: string): BlogPost | null {
     content,
     series: data.series || undefined,
     seriesOrder: data.seriesOrder || undefined,
+    hidden: data.hidden || false,
   };
 }
 
@@ -84,6 +87,7 @@ export function getAllPosts(): BlogPostMeta[] {
       return meta;
     })
     .filter((post): post is BlogPostMeta => post !== null)
+    .filter((post) => !post.hidden)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return posts;

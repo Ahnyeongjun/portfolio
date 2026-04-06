@@ -1,0 +1,331 @@
+---
+title: "API 설계 고급 — 면접 대비 정리"
+description: "API 버전 관리, 페이지네이션 방식 비교, Rate Limiting, 멱등성 설계, API 문서화까지. 실무 수준의 REST API 설계 고려사항을 정리한다."
+date: "2026-04-02"
+category: "Architecture"
+tags: ["API설계", "REST", "페이지네이션", "Rate Limiting", "멱등성", "Swagger"]
+hidden: true
+series: "면접 대비"
+seriesOrder: 24
+---
+
+## API 버전 관리
+
+### URI 버전 관리 (가장 많이 씀)
+
+```
+GET /api/v1/users
+GET /api/v2/users
+```
+
+**장점**: 직관적, 캐시하기 쉬움.  
+**단점**: URI가 변경되어 하위 호환성 표현이 어색.
+
+### 헤더 버전 관리
+
+```
+GET /api/users
+Accept: application/vnd.myapp.v2+json
+```
+
+또는:
+```
+GET /api/users
+X-API-Version: 2
+```
+
+**장점**: URI 일관성 유지.  
+**단점**: 테스트, 캐시가 복잡.
+
+### 쿼리 파라미터
+
+```
+GET /api/users?version=2
+```
+
+### 버전 관리 전략
+
+```java
+// URI 기반 버전 관리
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserControllerV1 { ... }
+
+@RestController
+@RequestMapping("/api/v2/users")
+public class UserControllerV2 { ... }
+```
+
+**버전 전환 원칙**:
+- 하위 호환되는 변경 (필드 추가) → 버전 올리지 않음
+- 하위 호환 깨지는 변경 (필드 제거, 타입 변경, 응답 구조 변경) → 버전 올림
+- 구버전은 일정 기간 유지 후 deprecated → sunset 헤더로 안내
+
+```
+Deprecation: true
+Sunset: Sat, 01 Jan 2027 00:00:00 GMT
+Link: <https://api.example.com/v2/users>; rel="successor-version"
+```
+
+---
+
+## 페이지네이션
+
+### Offset 기반
+
+```
+GET /api/posts?page=3&size=20
+GET /api/posts?offset=40&limit=20
+```
+
+```java
+@GetMapping("/posts")
+public Page<PostDto> getPosts(
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "20") int size
+) {
+    Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    return postRepository.findAll(pageable).map(PostDto::from);
+}
+```
+
+**응답 구조**:
+```json
+{
+  "content": [...],
+  "page": 3,
+  "size": 20,
+  "totalElements": 1523,
+  "totalPages": 77,
+  "last": false
+}
+```
+
+**단점**:
+- 데이터가 실시간으로 바뀌면 페이지가 밀리거나 중복 노출
+- 깊은 페이지 (page=10000)는 DB에서 OFFSET이 커져 느림
+  - `SELECT ... LIMIT 20 OFFSET 200000` → 200020개 읽고 버림
+
+### Cursor 기반 (무한 스크롤, 실시간 피드)
+
+```
+GET /api/posts?cursor=eyJpZCI6MTIzfQ&size=20
+```
+
+cursor = 마지막으로 받은 항목의 식별자 (Base64 인코딩)
+
+```java
+@GetMapping("/posts")
+public CursorPage<PostDto> getPosts(
+    @RequestParam(required = false) String cursor,
+    @RequestParam(defaultValue = "20") int size
+) {
+    Long lastId = cursor != null ? decodeCursor(cursor) : null;
+
+    List<Post> posts = lastId == null
+        ? postRepository.findTopByOrderByIdDesc(PageRequest.of(0, size + 1))
+        : postRepository.findByIdLessThanOrderByIdDesc(lastId, PageRequest.of(0, size + 1));
+
+    boolean hasNext = posts.size() > size;
+    if (hasNext) posts = posts.subList(0, size);
+
+    String nextCursor = hasNext ? encodeCursor(posts.get(posts.size() - 1).getId()) : null;
+
+    return new CursorPage<>(posts.stream().map(PostDto::from).toList(), nextCursor, hasNext);
+}
+```
+
+**장점**: 일관된 결과, 깊은 페이지도 빠름 (인덱스 범위 스캔).  
+**단점**: 전체 페이지 수, 특정 페이지 이동 불가.
+
+### 선택 기준
+
+| 상황 | 방식 |
+|------|------|
+| 관리자 페이지, 검색 결과 | Offset (페이지 번호 UI 필요) |
+| 피드, 타임라인, 무한 스크롤 | Cursor |
+| 대용량 배치 처리 | Cursor (Keyset) |
+
+---
+
+## Rate Limiting
+
+과도한 요청으로부터 서버를 보호.
+
+### 알고리즘
+
+**Token Bucket**:
+- 버킷에 토큰이 N개 있고, 요청마다 토큰을 소비
+- 토큰은 일정 속도로 충전
+- 버킷이 비면 요청 거절
+- **순간 폭발 허용**: 버킷이 꽉 차있으면 한꺼번에 소비 가능
+
+**Fixed Window**:
+- 1분 단위로 카운터 초기화
+- 100 req/min 제한
+- **경계 문제**: 59초에 100개, 61초에 100개 → 2초에 200개
+
+**Sliding Window**:
+- 현재 시각 기준으로 과거 1분의 요청 수를 계산
+- 더 정확하지만 메모리 사용 多
+
+### Spring + Redis Rate Limiting
+
+```java
+@Aspect
+@Component
+public class RateLimitAspect {
+
+    private final RedisTemplate<String, String> redisTemplate;
+
+    @Around("@annotation(RateLimit)")
+    public Object rateLimit(ProceedingJoinPoint pjp, RateLimit rateLimit) throws Throwable {
+        String key = "rate:" + getClientIp() + ":" + pjp.getSignature().getName();
+
+        String script = """
+            local count = redis.call('incr', KEYS[1])
+            if count == 1 then
+                redis.call('expire', KEYS[1], ARGV[1])
+            end
+            return count
+            """;
+
+        Long count = redisTemplate.execute(
+            new DefaultRedisScript<>(script, Long.class),
+            List.of(key),
+            String.valueOf(rateLimit.windowSeconds())
+        );
+
+        if (count > rateLimit.limit()) {
+            throw new RateLimitExceededException("요청 한도 초과");
+        }
+
+        return pjp.proceed();
+    }
+}
+```
+
+**응답**:
+```
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1735689600
+Retry-After: 30
+```
+
+---
+
+## 멱등성 설계
+
+같은 요청을 여러 번 보내도 결과가 동일해야 하는 API.
+
+```
+GET, HEAD, OPTIONS, DELETE → 멱등 (기본)
+PUT → 멱등 (같은 내용으로 덮어씀)
+POST → 기본적으로 비멱등 → 멱등하게 만들려면 Idempotency-Key 사용
+```
+
+### Idempotency-Key 패턴
+
+```
+POST /api/payments
+Idempotency-Key: a1b2c3d4-e5f6-...
+{
+  "amount": 50000,
+  "orderId": "order-123"
+}
+```
+
+```java
+@PostMapping("/payments")
+public ResponseEntity<PaymentResult> pay(
+    @RequestHeader("Idempotency-Key") String idempotencyKey,
+    @RequestBody PaymentRequest request
+) {
+    // 이미 처리된 키인지 확인
+    Optional<PaymentResult> cached = idempotencyStore.get(idempotencyKey);
+    if (cached.isPresent()) {
+        return ResponseEntity.ok(cached.get());  // 동일한 결과 반환
+    }
+
+    PaymentResult result = paymentService.pay(request);
+
+    // 결과 저장 (24시간)
+    idempotencyStore.save(idempotencyKey, result, Duration.ofHours(24));
+
+    return ResponseEntity.status(201).body(result);
+}
+```
+
+---
+
+## API 응답 설계
+
+### 일관된 응답 구조
+
+```json
+// 성공
+{
+  "success": true,
+  "data": { "id": 1, "name": "홍길동" },
+  "meta": { "requestId": "abc-123" }
+}
+
+// 에러
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "입력값이 올바르지 않습니다.",
+    "details": [
+      { "field": "email", "message": "이메일 형식이 올바르지 않습니다." }
+    ]
+  },
+  "meta": { "requestId": "abc-123" }
+}
+```
+
+### 날짜 형식
+
+```
+ISO 8601 UTC 사용: 2024-01-15T10:30:00Z
+타임존 있는 경우: 2024-01-15T19:30:00+09:00
+```
+
+클라이언트가 각자 로컬 타임존으로 변환.
+
+---
+
+## API 문서화: SpringDoc (Swagger)
+
+```java
+@Operation(summary = "주문 생성", description = "새 주문을 생성하고 결제를 요청합니다.")
+@ApiResponses({
+    @ApiResponse(responseCode = "201", description = "주문 생성 성공"),
+    @ApiResponse(responseCode = "400", description = "입력값 오류"),
+    @ApiResponse(responseCode = "409", description = "재고 부족")
+})
+@PostMapping("/orders")
+public ResponseEntity<OrderResponse> createOrder(
+    @Parameter(description = "주문 정보") @Valid @RequestBody CreateOrderRequest request
+) {
+    ...
+}
+```
+
+---
+
+## 면접에서 자주 나오는 질문
+
+**Q. Offset 페이지네이션의 성능 문제를 어떻게 해결하는가?**
+
+Cursor 기반 페이지네이션으로 전환한다. `WHERE id < :lastId ORDER BY id DESC LIMIT 20`으로 인덱스 범위 스캔을 사용해 OFFSET의 대량 스캔을 피한다. 전체 페이지 수나 특정 페이지 이동이 필요하지 않은 무한 스크롤 UI에서 적합하다.
+
+**Q. Rate Limiting을 어디에 구현하는가?**
+
+API Gateway나 Nginx 레벨에서 구현하면 애플리케이션 서버에 도달하기 전에 차단할 수 있어 효율적이다. 세밀한 비즈니스 로직 기반 제한(사용자 플랜별 다른 한도)은 애플리케이션 레벨에서 Redis로 구현한다.
+
+**Q. POST가 멱등하지 않은 이유와 멱등하게 만드는 방법은?**
+
+POST는 매번 새 리소스를 생성하도록 설계되어 기본적으로 비멱등하다. 결제나 중복 주문 방지가 필요하면 Idempotency-Key 헤더를 받아 같은 키의 요청을 재처리하지 않고 저장된 결과를 반환한다.
