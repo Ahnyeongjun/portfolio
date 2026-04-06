@@ -409,6 +409,179 @@ def start_server():
 
 ---
 
+## 3-1. Depends 의존성 테스트
+
+실제 FastAPI 앱에서는 `Depends()`가 곳곳에 쓰인다. 테스트에서는 이 의존성을 **override**해서 실제 DB, 실제 인증 서버 없이도 테스트할 수 있다.
+
+### dependency_overrides 원리
+
+```python
+# 운영 코드
+@router.get("/users/me")
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+# 테스트에서 get_current_user를 가짜로 교체
+app.dependency_overrides[get_current_user] = lambda: fake_user
+```
+
+`app.dependency_overrides`는 딕셔너리다. 키는 원래 의존성 함수, 값은 대체할 함수. 테스트가 끝나면 반드시 `clear()`해야 한다.
+
+### 인증 의존성 override
+
+JWT 토큰을 검증하는 `get_current_user`를 테스트에서 교체하는 예시다.
+
+```python
+# app/dependencies/auth.py
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from app.models import User
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    # 실제로는 JWT 검증 후 유저 반환
+    user = verify_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="인증 실패")
+    return user
+```
+
+```python
+# tests/conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+from app.dependencies.auth import get_current_user
+from app.models import User
+
+@pytest.fixture
+def fake_user():
+    return User(id=1, name="테스트유저", email="test@test.com", role="USER")
+
+@pytest.fixture
+def fake_admin():
+    return User(id=2, name="관리자", email="admin@test.com", role="ADMIN")
+
+@pytest.fixture
+def authenticated_client(fake_user):
+    """인증된 일반 유저로 요청하는 TestClient"""
+    app.dependency_overrides[get_current_user] = lambda: fake_user
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+@pytest.fixture
+def admin_client(fake_admin):
+    """관리자 권한으로 요청하는 TestClient"""
+    app.dependency_overrides[get_current_user] = lambda: fake_admin
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+```
+
+```python
+# tests/integration/test_auth_endpoints.py
+
+def test_내_정보_조회_인증됨(authenticated_client, fake_user):
+    response = authenticated_client.get("/users/me")
+    assert response.status_code == 200
+    assert response.json()["email"] == fake_user.email
+
+
+def test_내_정보_조회_미인증():
+    # override 없이 그냥 TestClient 사용 → 실제 인증 로직 실행 → 401
+    client = TestClient(app)
+    response = client.get("/users/me")
+    assert response.status_code == 401
+
+
+def test_관리자_전용_엔드포인트(admin_client):
+    response = admin_client.get("/admin/users")
+    assert response.status_code == 200
+
+
+def test_일반유저_관리자_엔드포인트_접근_거부(authenticated_client):
+    response = authenticated_client.get("/admin/users")
+    assert response.status_code == 403
+```
+
+실제 JWT 토큰 없이도 "인증된 상태"를 만들어 테스트할 수 있다.
+
+### 서비스 의존성 override
+
+DB 없이 서비스 레이어를 Mock으로 대체해서 라우터만 테스트한다.
+
+```python
+# app/routers/user_router.py
+from app.services.user_service import UserService, get_user_service
+
+@router.get("/users/{user_id}")
+def get_user(
+    user_id: int,
+    service: UserService = Depends(get_user_service)
+):
+    return service.get_user(user_id)
+```
+
+```python
+# tests/integration/test_user_router.py
+from unittest.mock import MagicMock
+from app.services.user_service import get_user_service
+from app.schemas import UserResponse
+
+def test_유저_조회_서비스_Mock(client):  # 여기서 client는 DB가 주입된 fixture
+    # 서비스 자체를 Mock으로 교체
+    mock_service = MagicMock()
+    mock_service.get_user.return_value = UserResponse(
+        id=1, name="홍길동", email="hong@test.com"
+    )
+
+    app.dependency_overrides[get_user_service] = lambda: mock_service
+
+    response = TestClient(app).get("/users/1")
+
+    assert response.status_code == 200
+    assert response.json()["name"] == "홍길동"
+    mock_service.get_user.assert_called_once_with(1)
+
+    app.dependency_overrides.clear()
+```
+
+### 여러 의존성 동시 override
+
+```python
+@pytest.fixture
+def client_with_all_mocks(fake_user):
+    """DB, 인증, 외부 API 전부 Mock으로 교체"""
+    mock_db = MagicMock()
+    mock_external = MagicMock()
+    mock_external.fetch.return_value = {"data": "mock"}
+
+    app.dependency_overrides[get_db] = lambda: mock_db
+    app.dependency_overrides[get_current_user] = lambda: fake_user
+    app.dependency_overrides[get_external_api] = lambda: mock_external
+
+    yield TestClient(app)
+
+    app.dependency_overrides.clear()  # 반드시 정리
+```
+
+### conftest.py에서 자동 정리
+
+여러 테스트에서 override를 쓰다 보면 `clear()` 빠뜨리기 쉽다. `autouse` fixture로 자동화한다.
+
+```python
+# tests/conftest.py
+@pytest.fixture(autouse=True)
+def clear_dependency_overrides():
+    """모든 테스트 후 의존성 override 초기화"""
+    yield
+    app.dependency_overrides.clear()
+```
+
+이렇게 하면 각 테스트에서 `clear()`를 직접 호출하지 않아도 된다.
+
+---
+
 ## 4. TDD (Test Driven Development)
 
 TDD는 **테스트를 먼저 작성하고, 그 테스트를 통과시키는 코드를 나중에 작성**하는 개발 방식이다.
