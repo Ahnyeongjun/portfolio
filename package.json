@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@nuguri03/tokens": "^0.1.0",
+    "@nuguri03/ui": "^0.3.0",
     "@vercel/analytics": "^1.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

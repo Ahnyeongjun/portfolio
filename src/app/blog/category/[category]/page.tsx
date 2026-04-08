@@ -4,9 +4,8 @@ import {
   getPostsByCategory,
   getBlogListItemsByCategory,
 } from "@/lib/blog";
-import { BlogCard } from "@/components/blog/BlogCard";
-import { SeriesCard } from "@/components/blog/SeriesCard";
-import { CategoryFilter } from "@/components/blog/CategoryFilter";
+import { BlogCard, CategoryFilter } from "@nuguri03/ui";
+import { SeriesCard } from "@nuguri03/ui";
 import { Header } from "@/components/Header";
 import { FileText } from "lucide-react";
 

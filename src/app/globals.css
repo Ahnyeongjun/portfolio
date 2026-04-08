@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@nuguri03/tokens/css";
 
 :root {
   --background: 210 30% 98%;
