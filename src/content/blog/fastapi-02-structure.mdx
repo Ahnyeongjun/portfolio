@@ -220,6 +220,81 @@ my_app/
 
 ---
 
+## DDD란?
+
+이 구조는 **DDD(Domain-Driven Design, 도메인 주도 설계)** 의 아이디어에서 왔다.
+
+DDD의 핵심은 단순하다. **관련된 코드를 기능 단위(도메인)로 묶는다.**
+
+기능 단위가 아닌 역할 단위로 나누면 이렇게 된다:
+
+```
+app/
+├── routers/
+│   ├── user_router.py
+│   └── order_router.py
+├── services/
+│   ├── user_service.py
+│   └── order_service.py
+└── models/
+    ├── user.py
+    └── order.py
+```
+
+유저 관련 코드 하나를 수정하려면 `routers/`, `services/`, `models/` 세 폴더를 왔다갔다 해야 한다.
+
+도메인 단위로 나누면:
+
+```
+app/
+├── users/
+│   ├── router.py
+│   ├── service.py
+│   └── models.py
+└── orders/
+    ├── router.py
+    ├── service.py
+    └── models.py
+```
+
+유저 관련 코드는 전부 `users/` 폴더 안에 있다. 한 도메인을 수정할 때 다른 도메인을 건드릴 필요가 없다.
+
+---
+
+## core/ 폴더
+
+프로젝트가 커지면 **여러 도메인에서 공통으로 쓰이는 코드**가 생긴다. 이런 코드는 특정 도메인에 속하지 않으므로 `core/` 폴더에 둔다.
+
+```
+app/
+├── core/
+│   ├── config.py        ← 환경변수, 전역 설정
+│   ├── database.py      ← DB 연결, 세션
+│   ├── exceptions.py    ← 공통 예외 클래스
+│   └── dependencies.py  ← 공통 Depends 함수
+├── users/
+│   ├── router.py
+│   ├── service.py
+│   ├── repository.py
+│   ├── models.py
+│   └── schemas.py
+└── auth/
+    ├── router.py
+    ├── jwt.py
+    ├── hashing.py
+    └── dependencies.py
+```
+
+`core/`는 도메인이 아니라 **인프라 레이어**다. 도메인 폴더(`users/`, `auth/`)는 `core/`를 가져다 쓰지만, `core/`는 특정 도메인에 의존하지 않는다.
+
+| 폴더 | 담는 것 | 예시 |
+|------|---------|------|
+| `core/` | 전 도메인 공통 | DB 연결, 설정값, 공통 예외 |
+| `users/` | 유저 도메인 | 유저 CRUD, 유저 모델 |
+| `auth/` | 인증 도메인 | 로그인, JWT, bcrypt |
+
+---
+
 ## 자동 문서 (Swagger UI)
 
 FastAPI의 큰 장점 중 하나는 **자동으로 API 문서를 만들어준다**는 것이다.
