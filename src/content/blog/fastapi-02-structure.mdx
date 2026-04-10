@@ -295,6 +295,68 @@ app/
 
 ---
 
+## CQRS — 읽기와 쓰기 분리
+
+DDD를 더 깊이 적용하면 **CQRS(Command Query Responsibility Segregation)** 패턴으로 이어진다.
+
+핵심 아이디어는 하나다. **데이터를 바꾸는 작업(Command)과 데이터를 읽는 작업(Query)은 성격이 다르므로 분리한다.**
+
+```
+Command (쓰기)   →  CREATE, UPDATE, DELETE  →  상태를 변경한다
+Query   (읽기)   →  SELECT                  →  상태를 그대로 반환한다
+```
+
+일반적인 repository는 읽기와 쓰기를 한 파일에 섞는다:
+
+```python
+# users/repository.py — 읽기/쓰기 혼재
+class UserRepository:
+    def find_by_id(self, user_id: int) -> User: ...      # 읽기
+    def find_all(self) -> list[User]: ...                 # 읽기
+    def save(self, user: User) -> User: ...               # 쓰기
+    def delete(self, user_id: int) -> None: ...           # 쓰기
+```
+
+CQRS를 적용하면 파일 자체를 나눈다:
+
+```python
+# users/command_repository.py — 쓰기만
+class UserCommandRepository:
+    def save(self, user: User) -> User: ...
+    def delete(self, user_id: int) -> None: ...
+
+# users/query_repository.py — 읽기만
+class UserQueryRepository:
+    def find_by_id(self, user_id: int) -> User: ...
+    def find_all(self, name_filter: str | None = None) -> list[User]: ...
+```
+
+폴더 구조로 보면:
+
+```
+app/
+├── users/
+│   ├── router.py
+│   ├── service.py
+│   ├── command_repository.py  ← INSERT / UPDATE / DELETE
+│   ├── query_repository.py    ← SELECT
+│   ├── models.py
+│   └── schemas.py
+```
+
+### 왜 분리하는가
+
+읽기와 쓰기는 요구사항이 다르게 진화한다.
+
+- **쓰기**는 트랜잭션, 유효성 검증, 비즈니스 규칙이 중요하다
+- **읽기**는 성능과 응답 형태 최적화가 중요하다
+
+규모가 커지면 읽기 전용 DB(replica)를 따로 두거나, 읽기 모델을 캐시에 올리는 등의 최적화를 하게 된다. 이때 처음부터 분리되어 있으면 변경 범위가 좁다.
+
+이 시리즈에서는 단순함을 위해 `repository.py` 하나로 진행하지만, 실제 서비스에서는 도메인 복잡도에 따라 CQRS 도입을 고려해볼 수 있다.
+
+---
+
 ## 자동 문서 (Swagger UI)
 
 FastAPI의 큰 장점 중 하나는 **자동으로 API 문서를 만들어준다**는 것이다.
