@@ -91,6 +91,39 @@ code, pre {
   font-family: var(--font-family-mono);
 }
 
+/* ===== MDX 블로그 본문 스타일 ===== */
+.prose-custom {
+  color: hsl(var(--foreground));
+  line-height: 1.8;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 제목 — h2에 하단 구분선 추가 */
+.prose-custom h2 {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* 코드 블록 내부 code — pre가 배경을 담당하므로 reset */
+.prose-custom pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: hsl(var(--foreground));
+  font-size: inherit;
+}
+
+/* 테이블 전체 정렬 */
+.prose-custom table {
+  width: 100%;
+}
+
+/* 인라인 코드 가독성 */
+.prose-custom :not(pre) > code {
+  color: hsl(var(--primary));
+}
+
 /* Custom utility classes */
 .text-gradient {
   background-clip: text;
