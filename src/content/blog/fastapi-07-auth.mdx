@@ -86,28 +86,29 @@ pip install python-jose[cryptography] passlib[bcrypt]
 
 ## 이번 편에서 변경하는 것
 
-6편까지 만든 구조에서 **auth 도메인 폴더**를 추가하고, 기존 파일 일부를 수정한다.
+6편까지 만든 구조에서 **auth 도메인 폴더**를 추가하고, 기존 `users/` 파일 일부를 수정한다.
 
 ```
 app/
 ├── main.py
 ├── database.py
 ├── config.py              ← 추가 (JWT 설정)
-├── models.py              ← 수정 (hashed_password 컬럼 추가)
-├── schemas.py             ← 수정 (로그인/토큰 스키마 추가)
-├── auth/                  ← 추가 (auth 도메인)
-│   ├── __init__.py
-│   ├── hashing.py         ← bcrypt 해시/검증
-│   ├── jwt.py             ← JWT 생성/검증
-│   └── dependencies.py    ← HTTPBearer 의존성
-├── routers/
-│   ├── user_router.py
-│   └── auth_router.py     ← 추가 (로그인 API)
-└── services/
-    └── user_service.py    ← 수정 (authenticate_user 추가)
+├── users/
+│   ├── router.py          ← 수정 (/users/me 추가)
+│   ├── service.py         ← 수정 (authenticate_user 추가)
+│   ├── repository.py
+│   ├── models.py          ← 수정 (hashed_password 컬럼 추가)
+│   ├── schemas.py         ← 수정 (LoginRequest, TokenResponse 추가)
+│   └── dependencies.py
+└── auth/                  ← 추가 (auth 도메인)
+    ├── __init__.py
+    ├── hashing.py         ← bcrypt 해시/검증
+    ├── jwt.py             ← JWT 생성/검증
+    ├── dependencies.py    ← HTTPBearer 의존성
+    └── router.py          ← 로그인 API
 ```
 
-`models.py`, `services/user_service.py`는 새로 만드는 게 아니라 **기존 파일을 수정**한다.
+`users/` 안의 파일들은 새로 만드는 게 아니라 **기존 파일을 수정**한다.
 
 ---
 
@@ -197,12 +198,12 @@ def get_current_user_id(
 
 ---
 
-## models.py 수정 — hashed_password 컬럼 추가
+## users/models.py 수정 — hashed_password 컬럼 추가
 
 6편의 `User` 모델에 `hashed_password` 컬럼을 추가한다.
 
 ```python
-# app/models.py (기존 파일 수정)
+# app/users/models.py (기존 파일 수정)
 from sqlalchemy import Column, Integer, String
 from app.database import Base
 
@@ -219,16 +220,16 @@ class User(Base):
 
 ---
 
-## services/user_service.py 수정 — authenticate_user 추가
+## users/service.py 수정 — authenticate_user 추가
 
 6편의 `UserService`에 로그인 검증 메서드를 추가한다.
 
 ```python
-# app/services/user_service.py (기존 파일 수정)
+# app/users/service.py (기존 파일 수정)
 from sqlalchemy.orm import Session
-from app.models import User
-from app.schemas import UserCreate, UserResponse
-from app.repositories.user_repository import UserRepository
+from app.users.models import User
+from app.users.schemas import UserCreate, UserResponse
+from app.users.repository import UserRepository
 from app.auth.hashing import hash_password, verify_password  # 추가
 
 class UserService:
@@ -262,10 +263,10 @@ class UserService:
 
 ---
 
-## schemas.py 수정 — 로그인/토큰 스키마 추가
+## users/schemas.py 수정 — 로그인/토큰 스키마 추가
 
 ```python
-# app/schemas.py (기존 파일 수정 — 아래 두 클래스 추가)
+# app/users/schemas.py (기존 파일 수정 — 아래 두 클래스 추가)
 from pydantic import BaseModel
 
 # ... 기존 UserCreate, UserResponse ...
@@ -281,15 +282,15 @@ class TokenResponse(BaseModel):
 
 ---
 
-## routers/auth_router.py — 로그인 API
+## auth/router.py — 로그인 API
 
 ```python
-# app/routers/auth_router.py
+# app/auth/router.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas import LoginRequest, TokenResponse
-from app.services.user_service import UserService, get_user_service
+from app.users.schemas import LoginRequest, TokenResponse
+from app.users.service import UserService, get_user_service
 from app.auth.jwt import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -313,10 +314,10 @@ def login(
 
 ## 인증이 필요한 API 만들기
 
-기존 `user_router.py`에 `Depends(get_current_user_id)`를 추가하면 해당 엔드포인트는 토큰 없이 접근할 수 없다.
+기존 `users/router.py`에 `Depends(get_current_user_id)`를 추가하면 해당 엔드포인트는 토큰 없이 접근할 수 없다.
 
 ```python
-# app/routers/user_router.py (기존 파일 수정)
+# app/users/router.py (기존 파일 수정)
 from fastapi import APIRouter, Depends
 from app.auth.dependencies import get_current_user_id
 
@@ -346,9 +347,10 @@ def get_my_info(user_id: int = Depends(get_current_user_id)):
 ## main.py — 라우터 등록
 
 ```python
-# app/main.py (auth_router 등록 추가)
+# app/main.py (auth 라우터 등록 추가)
 from fastapi import FastAPI
-from app.routers import user_router, auth_router
+from app.users import router as user_router
+from app.auth import router as auth_router
 
 app = FastAPI()
 

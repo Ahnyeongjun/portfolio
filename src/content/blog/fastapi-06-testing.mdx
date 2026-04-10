@@ -54,26 +54,27 @@ pip install pytest pytest-asyncio httpx
 
 ## 테스트할 앱 구조
 
-이전 편에서 만든 유저 API를 기반으로 테스트를 작성한다.
+5편에서 만든 유저 API를 기반으로 테스트를 작성한다.
 
 ```
 app/
 ├── main.py
-├── routers/
-│   └── user_router.py
-├── services/
-│   └── user_service.py
-├── repositories/
-│   └── user_repository.py
-├── models.py
-└── schemas.py
+├── database.py
+└── users/
+    ├── router.py
+    ├── service.py
+    ├── repository.py
+    ├── models.py
+    ├── schemas.py
+    └── dependencies.py
 tests/
-├── unit/
-│   └── test_user_service.py
-├── integration/
-│   └── test_user_router.py
+├── conftest.py
+├── users/
+│   ├── test_service.py    ← 단위 테스트
+│   ├── test_router.py     ← 통합 테스트
+│   └── test_flow.py       ← E2E 테스트
 └── e2e/
-    └── test_user_flow.py
+    └── conftest.py
 ```
 
 ---
@@ -85,9 +86,9 @@ tests/
 ### 서비스 계층 테스트
 
 ```python
-# app/services/user_service.py
-from app.repositories.user_repository import UserRepository
-from app.schemas import UserCreate, UserResponse
+# app/users/service.py
+from app.users.repository import UserRepository
+from app.users.schemas import UserCreate, UserResponse
 
 class UserService:
     def __init__(self, repo: UserRepository):
@@ -106,11 +107,11 @@ class UserService:
 ```
 
 ```python
-# tests/unit/test_user_service.py
+# tests/users/test_service.py
 import pytest
 from unittest.mock import MagicMock
-from app.services.user_service import UserService
-from app.schemas import UserCreate, UserResponse
+from app.users.service import UserService
+from app.users.schemas import UserCreate, UserResponse
 
 @pytest.fixture
 def mock_repo():
@@ -261,18 +262,16 @@ def client(db):
 ### 라우터 통합 테스트
 
 ```python
-# tests/integration/test_user_router.py
+# tests/users/test_router.py
 import pytest
 
 
 def test_유저_생성(client):
-    # When
     response = client.post("/users", json={
         "name": "홍길동",
         "email": "hong@test.com"
     })
 
-    # Then
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "홍길동"
@@ -281,25 +280,19 @@ def test_유저_생성(client):
 
 
 def test_유저_생성_이메일_중복(client):
-    # Given: 이미 같은 이메일로 유저 생성
     client.post("/users", json={"name": "기존유저", "email": "hong@test.com"})
 
-    # When: 같은 이메일로 다시 생성 시도
     response = client.post("/users", json={"name": "홍길동", "email": "hong@test.com"})
 
-    # Then
     assert response.status_code == 409
 
 
 def test_유저_조회(client):
-    # Given
     created = client.post("/users", json={"name": "홍길동", "email": "hong@test.com"}).json()
     user_id = created["id"]
 
-    # When
     response = client.get(f"/users/{user_id}")
 
-    # Then
     assert response.status_code == 200
     assert response.json()["name"] == "홍길동"
 
@@ -310,27 +303,21 @@ def test_유저_조회_없는_ID(client):
 
 
 def test_유저_목록(client):
-    # Given
     client.post("/users", json={"name": "유저1", "email": "user1@test.com"})
     client.post("/users", json={"name": "유저2", "email": "user2@test.com"})
 
-    # When
     response = client.get("/users")
 
-    # Then
     assert response.status_code == 200
     assert len(response.json()) == 2
 
 
 def test_유저_삭제(client):
-    # Given
     created = client.post("/users", json={"name": "홍길동", "email": "hong@test.com"}).json()
     user_id = created["id"]
 
-    # When
     response = client.delete(f"/users/{user_id}")
 
-    # Then
     assert response.status_code == 204
     assert client.get(f"/users/{user_id}").status_code == 404
 ```
@@ -350,7 +337,7 @@ pip install pytest-asyncio httpx
 ```
 
 ```python
-# tests/e2e/test_user_flow.py
+# tests/users/test_flow.py
 import pytest
 import httpx
 
@@ -395,7 +382,6 @@ E2E 테스트는 실제 서버가 실행 중이어야 한다. CI/CD 파이프라
 import pytest
 import subprocess
 import time
-import httpx
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -432,19 +418,18 @@ app.dependency_overrides[get_current_user] = lambda: fake_user
 JWT 토큰을 검증하는 `get_current_user`를 테스트에서 교체하는 예시다.
 
 ```python
-# app/dependencies/auth.py
+# app/auth/dependencies.py
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
-from app.models import User
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.users.models import User
+from app.auth.jwt import decode_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+security = HTTPBearer()
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
-    # 실제로는 JWT 검증 후 유저 반환
-    user = verify_token(token)
-    if not user:
-        raise HTTPException(status_code=401, detail="인증 실패")
-    return user
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> int:
+    return decode_token(credentials.credentials)
 ```
 
 ```python
@@ -452,39 +437,27 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.dependencies.auth import get_current_user
-from app.models import User
+from app.auth.dependencies import get_current_user_id
 
 @pytest.fixture
-def fake_user():
-    return User(id=1, name="테스트유저", email="test@test.com", role="USER")
+def fake_user_id():
+    return 1
 
 @pytest.fixture
-def fake_admin():
-    return User(id=2, name="관리자", email="admin@test.com", role="ADMIN")
-
-@pytest.fixture
-def authenticated_client(fake_user):
-    """인증된 일반 유저로 요청하는 TestClient"""
-    app.dependency_overrides[get_current_user] = lambda: fake_user
-    yield TestClient(app)
-    app.dependency_overrides.clear()
-
-@pytest.fixture
-def admin_client(fake_admin):
-    """관리자 권한으로 요청하는 TestClient"""
-    app.dependency_overrides[get_current_user] = lambda: fake_admin
+def authenticated_client(fake_user_id):
+    """인증된 유저로 요청하는 TestClient"""
+    app.dependency_overrides[get_current_user_id] = lambda: fake_user_id
     yield TestClient(app)
     app.dependency_overrides.clear()
 ```
 
 ```python
-# tests/integration/test_auth_endpoints.py
+# tests/users/test_router.py
 
-def test_내_정보_조회_인증됨(authenticated_client, fake_user):
+def test_내_정보_조회_인증됨(authenticated_client, fake_user_id):
     response = authenticated_client.get("/users/me")
     assert response.status_code == 200
-    assert response.json()["email"] == fake_user.email
+    assert response.json()["user_id"] == fake_user_id
 
 
 def test_내_정보_조회_미인증():
@@ -492,16 +465,6 @@ def test_내_정보_조회_미인증():
     client = TestClient(app)
     response = client.get("/users/me")
     assert response.status_code == 401
-
-
-def test_관리자_전용_엔드포인트(admin_client):
-    response = admin_client.get("/admin/users")
-    assert response.status_code == 200
-
-
-def test_일반유저_관리자_엔드포인트_접근_거부(authenticated_client):
-    response = authenticated_client.get("/admin/users")
-    assert response.status_code == 403
 ```
 
 실제 JWT 토큰 없이도 "인증된 상태"를 만들어 테스트할 수 있다.
@@ -511,8 +474,8 @@ def test_일반유저_관리자_엔드포인트_접근_거부(authenticated_clie
 DB 없이 서비스 레이어를 Mock으로 대체해서 라우터만 테스트한다.
 
 ```python
-# app/routers/user_router.py
-from app.services.user_service import UserService, get_user_service
+# app/users/router.py
+from app.users.service import UserService, get_user_service
 
 @router.get("/users/{user_id}")
 def get_user(
@@ -523,13 +486,12 @@ def get_user(
 ```
 
 ```python
-# tests/integration/test_user_router.py
+# tests/users/test_router.py
 from unittest.mock import MagicMock
-from app.services.user_service import get_user_service
-from app.schemas import UserResponse
+from app.users.service import get_user_service
+from app.users.schemas import UserResponse
 
-def test_유저_조회_서비스_Mock(client):  # 여기서 client는 DB가 주입된 fixture
-    # 서비스 자체를 Mock으로 교체
+def test_유저_조회_서비스_Mock():
     mock_service = MagicMock()
     mock_service.get_user.return_value = UserResponse(
         id=1, name="홍길동", email="hong@test.com"
@@ -546,26 +508,7 @@ def test_유저_조회_서비스_Mock(client):  # 여기서 client는 DB가 주�
     app.dependency_overrides.clear()
 ```
 
-### 여러 의존성 동시 override
-
-```python
-@pytest.fixture
-def client_with_all_mocks(fake_user):
-    """DB, 인증, 외부 API 전부 Mock으로 교체"""
-    mock_db = MagicMock()
-    mock_external = MagicMock()
-    mock_external.fetch.return_value = {"data": "mock"}
-
-    app.dependency_overrides[get_db] = lambda: mock_db
-    app.dependency_overrides[get_current_user] = lambda: fake_user
-    app.dependency_overrides[get_external_api] = lambda: mock_external
-
-    yield TestClient(app)
-
-    app.dependency_overrides.clear()  # 반드시 정리
-```
-
-### conftest.py에서 자동 정리
+### 자동 정리
 
 여러 테스트에서 override를 쓰다 보면 `clear()` 빠뜨리기 쉽다. `autouse` fixture로 자동화한다.
 
@@ -597,9 +540,9 @@ Refactor → 코드 정리
 **Step 1 - Red: 실패하는 테스트 먼저 작성**
 
 ```python
-# tests/unit/test_password_validator.py
+# tests/users/test_password.py
 import pytest
-from app.utils.password_validator import validate_password  # 아직 없는 파일
+from app.users.utils import validate_password  # 아직 없는 파일
 
 
 def test_비밀번호_8자_이상():
@@ -625,14 +568,14 @@ def test_비밀번호_특수문자_포함():
 지금 이 테스트를 실행하면 `ImportError`로 실패한다. 아직 `validate_password`가 없으니 당연하다.
 
 ```bash
-pytest tests/unit/test_password_validator.py
+pytest tests/users/test_password.py
 # ERROR: cannot import name 'validate_password'
 ```
 
 **Step 2 - Green: 테스트를 통과시키는 코드 작성**
 
 ```python
-# app/utils/password_validator.py
+# app/users/utils.py
 import re
 
 def validate_password(password: str) -> bool:
@@ -648,14 +591,14 @@ def validate_password(password: str) -> bool:
 ```
 
 ```bash
-pytest tests/unit/test_password_validator.py
+pytest tests/users/test_password.py
 # 4 passed ✓
 ```
 
 **Step 3 - Refactor: 코드 정리**
 
 ```python
-# app/utils/password_validator.py
+# app/users/utils.py
 import re
 
 RULES = [
@@ -670,32 +613,25 @@ def validate_password(password: str) -> bool:
 ```
 
 ```bash
-pytest tests/unit/test_password_validator.py
+pytest tests/users/test_password.py
 # 4 passed ✓  — 리팩터링 후에도 테스트 통과
 ```
 
-리팩터링 후에도 테스트가 통과하면 동작이 유지된다는 것이 보장된다.
-
 ### TDD로 API 엔드포인트 개발하기
-
-실제 개발 흐름을 TDD로 따라가본다.
 
 **요구사항: 유저 검색 API를 추가한다 (`GET /users?name=홍`)**
 
 ```python
 # Step 1: 테스트 먼저 작성
-# tests/integration/test_user_search.py
+# tests/users/test_router.py
 
 def test_이름으로_유저_검색(client):
-    # Given
     client.post("/users", json={"name": "홍길동", "email": "hong@test.com"})
     client.post("/users", json={"name": "홍판서", "email": "hong2@test.com"})
     client.post("/users", json={"name": "이몽룡", "email": "lee@test.com"})
 
-    # When
     response = client.get("/users?name=홍")
 
-    # Then
     assert response.status_code == 200
     results = response.json()
     assert len(results) == 2
@@ -709,13 +645,13 @@ def test_검색_결과_없음(client):
 ```
 
 ```bash
-pytest tests/integration/test_user_search.py
+pytest tests/users/test_router.py::test_이름으로_유저_검색
 # FAILED — /users?name=홍 이 아직 구현 안 됨
 ```
 
 ```python
 # Step 2: 구현
-# app/routers/user_router.py
+# app/users/router.py
 from typing import Optional
 
 @router.get("/users")
@@ -724,13 +660,13 @@ def get_users(name: Optional[str] = None, service: UserService = Depends(get_use
 ```
 
 ```python
-# app/services/user_service.py
+# app/users/service.py
 def get_users(self, name_filter: Optional[str] = None) -> list[UserResponse]:
     return self.repo.find_all(name_filter=name_filter)
 ```
 
 ```bash
-pytest tests/integration/test_user_search.py
+pytest tests/users/test_router.py
 # 2 passed ✓
 ```
 
@@ -743,14 +679,13 @@ pytest tests/integration/test_user_search.py
 pytest
 
 # 특정 디렉토리만
-pytest tests/unit/
-pytest tests/integration/
+pytest tests/users/
 
 # 특정 파일만
-pytest tests/unit/test_user_service.py
+pytest tests/users/test_service.py
 
 # 특정 테스트 함수만
-pytest tests/unit/test_user_service.py::test_create_user_성공
+pytest tests/users/test_service.py::test_create_user_성공
 
 # 상세 출력
 pytest -v
@@ -773,10 +708,10 @@ pytest --cov=app --cov-report=term-missing
 # 출력 예시
 Name                          Stmts   Miss  Cover
 -------------------------------------------------
+app/users/router.py              25      2    92%
+app/users/service.py             18      1    94%
+app/users/repository.py          20      0   100%
 app/main.py                       8      0   100%
-app/routers/user_router.py       25      2    92%
-app/services/user_service.py     18      1    94%
-app/repositories/user_repo.py    20      0   100%
 -------------------------------------------------
 TOTAL                            71      3    96%
 ```
@@ -796,14 +731,3 @@ TOTAL                            71      3    96%
 | 버그 수정 | 버그를 재현하는 테스트 먼저 작성 후 수정 |
 
 테스트를 처음 도입할 때는 **통합 테스트부터** 시작하는 것이 효과적이다. 코드 변경 없이 기존 동작을 검증하는 안전망을 먼저 구축한 후, 단위 테스트와 TDD를 점진적으로 적용한다.
-
----
-
-## 시리즈: Python FastAPI 입문
-
-1. [시작하기 전에](/blog/fastapi-intro)
-2. [FastAPI 구조 - 라우터, 3계층 아키텍처](/blog/fastapi-02-structure)
-3. [Pydantic과 의존성 주입](/blog/fastapi-03-pydantic-di)
-4. [REST API 만들기](/blog/fastapi-04-rest-api)
-5. [SQLAlchemy와 데이터베이스 연동](/blog/fastapi-05-database)
-6. **테스트 - 단위 테스트, 통합 테스트, E2E, TDD** ← 현재 글
