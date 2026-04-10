@@ -12,7 +12,6 @@ import {
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllPosts, getPostBySlug, getSeriesPosts } from "@/lib/blog";
-import { mdxComponents } from "@nuguri03/ui";
 
 export function generateStaticParams() {
   const posts = getAllPosts();
@@ -190,7 +189,6 @@ export default async function BlogPostPage({
             <div className="prose-custom">
               <MDXRemote
                 source={post.content}
-                components={mdxComponents}
                 options={{
                   mdxOptions: {
                     remarkPlugins: [remarkGfm],
