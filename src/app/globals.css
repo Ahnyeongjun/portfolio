@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source "../../node_modules/@nuguri03/ui/dist";
 @import "@nuguri03/tokens/css";
 
 :root {
