@@ -209,6 +209,9 @@ export default async function BlogPostPage({
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                         <ChevronLeft className="w-3 h-3" />
                         이전 글
+                        {prevPost.seriesOrder != null && (
+                          <span className="ml-1 text-primary/70">· {prevPost.seriesOrder}편</span>
+                        )}
                       </div>
                       <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
                         {prevPost.title}
@@ -223,6 +226,9 @@ export default async function BlogPostPage({
                       className="group glass rounded-xl p-4 hover:bg-white/5 transition-colors text-right"
                     >
                       <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground mb-1">
+                        {nextPost.seriesOrder != null && (
+                          <span className="mr-1 text-primary/70">{nextPost.seriesOrder}편 ·</span>
+                        )}
                         다음 글
                         <ChevronRight className="w-3 h-3" />
                       </div>
