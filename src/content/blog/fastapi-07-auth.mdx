@@ -25,7 +25,7 @@ seriesOrder: 7
 로그인 흐름을 살펴보면:
 
 ```
-1. 클라이언트가 아이디/비밀번호로 로그인 요청
+1. 클라이언트가 이메일/비밀번호로 로그인 요청
 2. 서버가 검증 후 JWT 토큰을 발급
 3. 클라이언트는 이후 요청마다 토큰을 헤더에 담아서 전송
 4. 서버는 토큰을 검증해서 누구의 요청인지 확인
@@ -84,25 +84,37 @@ pip install python-jose[cryptography] passlib[bcrypt]
 
 ---
 
-## 프로젝트 구조
+## 이번 편에서 변경하는 것
+
+6편까지 만든 구조에서 **auth 도메인 폴더**를 추가하고, 기존 파일 일부를 수정한다.
 
 ```
 app/
-├── auth.py          # JWT 생성/검증
-├── dependencies.py  # FastAPI 의존성 (토큰 추출)
+├── main.py
+├── database.py
+├── config.py              ← 추가 (JWT 설정)
+├── models.py              ← 수정 (hashed_password 컬럼 추가)
+├── schemas.py             ← 수정 (로그인/토큰 스키마 추가)
+├── auth/                  ← 추가 (auth 도메인)
+│   ├── __init__.py
+│   ├── hashing.py         ← bcrypt 해시/검증
+│   ├── jwt.py             ← JWT 생성/검증
+│   └── dependencies.py    ← HTTPBearer 의존성
 ├── routers/
-│   └── auth.py      # 로그인 API
-├── services/
-│   └── user.py      # 유저 조회/생성
-└── models.py        # DB 모델
+│   ├── user_router.py
+│   └── auth_router.py     ← 추가 (로그인 API)
+└── services/
+    └── user_service.py    ← 수정 (authenticate_user 추가)
 ```
+
+`models.py`, `services/user_service.py`는 새로 만드는 게 아니라 **기존 파일을 수정**한다.
 
 ---
 
-## 설정값
+## config.py — JWT 설정값
 
 ```python
-# config.py
+# app/config.py
 SECRET_KEY = "your-secret-key-change-this-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -112,10 +124,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 ---
 
-## bcrypt 비밀번호 처리
+## auth/hashing.py — bcrypt 비밀번호 처리
 
 ```python
-# auth.py
+# app/auth/hashing.py
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -134,14 +146,14 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 ---
 
-## JWT 생성/검증
+## auth/jwt.py — JWT 생성/검증
 
 ```python
-# auth.py
+# app/auth/jwt.py
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from fastapi import HTTPException
-from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 def create_access_token(user_id: int) -> str:
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -154,7 +166,7 @@ def create_access_token(user_id: int) -> str:
 def decode_token(token: str) -> int:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return int(payload["sub"])  # user_id 반환
+        return int(payload["sub"])
     except JWTError:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
 ```
@@ -163,13 +175,13 @@ def decode_token(token: str) -> int:
 
 ---
 
-## 의존성 주입으로 토큰 추출
+## auth/dependencies.py — 토큰 추출 의존성
 
 ```python
-# dependencies.py
+# app/auth/dependencies.py
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends
-from auth import decode_token
+from app.auth.jwt import decode_token
 
 security = HTTPBearer()
 
@@ -185,56 +197,78 @@ def get_current_user_id(
 
 ---
 
-## 유저 모델과 서비스
+## models.py 수정 — hashed_password 컬럼 추가
+
+6편의 `User` 모델에 `hashed_password` 컬럼을 추가한다.
 
 ```python
-# models.py (SQLAlchemy)
+# app/models.py (기존 파일 수정)
+from sqlalchemy import Column, Integer, String
+from app.database import Base
+
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=False)  # 추가
 ```
 
-```python
-# services/user.py
-from sqlalchemy.orm import Session
-from models import User
-from auth import hash_password, verify_password
-
-def create_user(db: Session, email: str, password: str) -> User:
-    user = User(email=email, hashed_password=hash_password(password))
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-def authenticate_user(db: Session, email: str, password: str) -> User | None:
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
-```
-
-비밀번호를 DB에 저장할 때 `hashed_password`로 저장하고, 로그인 시 `verify_password`로 비교한다.
+평문 비밀번호 대신 bcrypt 해시값을 저장한다.
 
 ---
 
-## 로그인 API
+## services/user_service.py 수정 — authenticate_user 추가
+
+6편의 `UserService`에 로그인 검증 메서드를 추가한다.
 
 ```python
-# routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException
+# app/services/user_service.py (기존 파일 수정)
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from database import get_db
-from services.user import authenticate_user
-from auth import create_access_token
+from app.models import User
+from app.schemas import UserCreate, UserResponse
+from app.repositories.user_repository import UserRepository
+from app.auth.hashing import hash_password, verify_password  # 추가
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo
+
+    def create_user(self, data: UserCreate) -> UserResponse:
+        if self.repo.find_by_email(data.email):
+            raise ValueError("이미 존재하는 이메일입니다")
+        # 비밀번호 해싱 후 저장
+        hashed = hash_password(data.password)
+        return self.repo.save(data, hashed_password=hashed)
+
+    def get_user(self, user_id: int) -> UserResponse:
+        user = self.repo.find_by_id(user_id)
+        if not user:
+            raise ValueError(f"유저 {user_id}를 찾을 수 없습니다")
+        return user
+
+    # 추가
+    def authenticate_user(self, db: Session, email: str, password: str) -> User | None:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            return None
+        if not verify_password(password, user.hashed_password):
+            return None
+        return user
+```
+
+`create_user`에서도 평문이 아닌 해시된 비밀번호를 저장하도록 수정했다.
+
+---
+
+## schemas.py 수정 — 로그인/토큰 스키마 추가
+
+```python
+# app/schemas.py (기존 파일 수정 — 아래 두 클래스 추가)
+from pydantic import BaseModel
+
+# ... 기존 UserCreate, UserResponse ...
 
 class LoginRequest(BaseModel):
     email: str
@@ -243,10 +277,30 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+```
+
+---
+
+## routers/auth_router.py — 로그인 API
+
+```python
+# app/routers/auth_router.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.schemas import LoginRequest, TokenResponse
+from app.services.user_service import UserService, get_user_service
+from app.auth.jwt import create_access_token
+
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)):
-    user = authenticate_user(db, body.email, body.password)
+def login(
+    body: LoginRequest,
+    db: Session = Depends(get_db),
+    service: UserService = Depends(get_user_service),
+):
+    user = service.authenticate_user(db, body.email, body.password)
     if not user:
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 틀렸습니다")
     token = create_access_token(user.id)
@@ -259,12 +313,12 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 
 ## 인증이 필요한 API 만들기
 
-`Depends(get_current_user_id)`를 추가하면 해당 라우터는 토큰 없이 접근할 수 없다.
+기존 `user_router.py`에 `Depends(get_current_user_id)`를 추가하면 해당 엔드포인트는 토큰 없이 접근할 수 없다.
 
 ```python
-# routers/users.py
+# app/routers/user_router.py (기존 파일 수정)
 from fastapi import APIRouter, Depends
-from dependencies import get_current_user_id
+from app.auth.dependencies import get_current_user_id
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -276,15 +330,30 @@ def get_my_info(user_id: int = Depends(get_current_user_id)):
 요청 흐름:
 
 ```
-클라이언트                   서버
-   │                          │
-   │  GET /users/me           │
-   │  Authorization: Bearer eyJ... ─────────►  HTTPBearer가 토큰 추출
-   │                          │                    ↓
-   │                          │              decode_token() 검증
-   │                          │                    ↓
-   │◄─────────────────────────│              user_id를 라우터에 주입
-   │  { "user_id": 1 }        │
+클라이언트                        서버
+   │                               │
+   │  GET /users/me                │
+   │  Authorization: Bearer eyJ... ────►  HTTPBearer가 토큰 추출
+   │                               │           ↓
+   │                               │     decode_token() 검증
+   │                               │           ↓
+   │◄──────────────────────────────│     user_id를 라우터에 주입
+   │  { "user_id": 1 }             │
+```
+
+---
+
+## main.py — 라우터 등록
+
+```python
+# app/main.py (auth_router 등록 추가)
+from fastapi import FastAPI
+from app.routers import user_router, auth_router
+
+app = FastAPI()
+
+app.include_router(user_router.router)
+app.include_router(auth_router.router)  # 추가
 ```
 
 ---
@@ -293,12 +362,12 @@ def get_my_info(user_id: int = Depends(get_current_user_id)):
 
 ```
 회원가입
-  └─ POST /auth/register
+  └─ POST /users
        └─ hash_password("내비밀번호") → DB 저장
 
 로그인
   └─ POST /auth/login
-       └─ verify_password() 검증
+       └─ authenticate_user() → verify_password() 검증
        └─ create_access_token(user_id) → 토큰 발급
 
 인증된 API 호출
