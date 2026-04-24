@@ -11,9 +11,9 @@ interface TechCategory {
 }
 
 const techCategories: TechCategory[] = [
-  { icon: Server, title: 'Backend', skills: ['Spring Boot', 'Java', 'FastAPI', 'Go', 'Python'] },
+  { icon: Server, title: 'Backend', skills: ['Spring Boot', 'Java', 'Kotlin', 'FastAPI', 'Go', 'Python'] },
   { icon: Code2, title: 'Frontend', skills: ['TypeScript', 'Next.js', 'Tailwind CSS'] },
-  { icon: Database, title: 'Database', skills: ['PostgreSQL', 'Redis', 'RabbitMQ', 'Debezium CDC'] },
+  { icon: Database, title: 'Database', skills: ['PostgreSQL', 'Redis', 'RabbitMQ', 'Kafka'] },
   { icon: Cloud, title: 'DevOps', skills: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions'] },
 ];
 

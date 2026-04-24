@@ -303,6 +303,34 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "team-mcp-agent",
+    title: "팀 업무 자동화 MCP 에이전트",
+    description: "SuperMCP 기반 Slack·Gmail·캘린더·Git·사무실 예약 통합 자동화 에이전트 — 팀 10명 실사용 중",
+    tags: ["Python", "SuperMCP", "MCP", "Slack API", "Gmail API", "Google Calendar API"],
+    status: "deployed",
+    type: "personal",
+    category: ["backend", "ai"],
+    period: "2026.03 ~ 2026.04",
+    role: "설계 및 개발",
+    longDescription: "주간보고 작성, 일정 관리, 사무실 예약 등 반복 업무를 자동화하기 위해 개인적으로 개발하여 팀 전체(10명)에 공유한 MCP 기반 에이전트입니다. SuperMCP 프레임워크를 활용해 Slack, Gmail, Google Calendar, Git, 사내 아마란스 예약 사이트를 단일 에이전트로 통합했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "MCP 에이전트 설계 및 개발",
+        items: [
+          "SuperMCP 기반 멀티서비스 통합 에이전트 설계 — Slack, Gmail, Google Calendar, Git, 사내 아마란스 예약 시스템 연동",
+          "Git 커밋 로그 + 캘린더 일정을 분석하여 주간보고 초안 자동 생성 및 엑셀 저장",
+          "Google Calendar 연동으로 일정 자동 생성 및 팀원 공유",
+          "아마란스 사내 예약 사이트 자동 접근으로 사무실 예약 자동화",
+        ],
+      },
+    ],
+    achievements: [
+      "팀 10명 전원 실사용 중인 업무 자동화 도구로 정착",
+      "주간보고 작성·사무실 예약 등 반복 업무 자동화로 팀 생산성 향상",
+    ],
+  },
+  {
     id: "satellite-platform",
     title: "위성 영상 분석 플랫폼 고도화",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
@@ -321,9 +349,11 @@ export const projects: Project[] = [
         role: "MSA & 이벤트 드리븐 아키텍처 전환",
         items: [
           "서비스 간 영향을 최소화하고 에러 지점을 명확히 파악하기 위해 MSA & 이벤트 드리븐 아키텍처 도입",
+          "외부망·폐쇄망 간 DB 양방향 동기화 구현 — 네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제를 직접 개발한 Outbox 패턴 라이브러리로 대체",
           "기능별 플로우 차트 정리 및 테스트 로직 추가, 커밋 시 자동 테스트되도록 CI/CD 작성",
-          "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 동시 요청 시 ID 중복 방지 및 발생 서버 추적",
-          "9개 MSA 서비스 분리 및 서비스별 레플리카 10개 이상 운영",
+          "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 폐쇄망·공개망이 분리된 환경에서 외부 코디네이터(ZooKeeper 등) 접근이 불가하여 기성 라이브러리 사용 불가, worker ID를 망별로 사전 할당하여 양쪽에서 충돌 없는 고유 ID 생성 및 파일 기반으로 전달된 로그에서 발생 서버 즉시 추적 가능",
+          "9개 MSA 서비스 분리 — 서비스 간 장애 격리와 독립 배포를 위한 아키텍처 전환으로, 한 서비스 장애가 전체 시스템으로 전파되던 문제 해소",
+          "HPA 기반 동적 스케일링 — 영상 분석 요청 특성상 처리 시간이 길어 동시 요청 시 스레드 풀 고갈 문제 발생, 레플리카를 여러 노드에 자동 분산하여 동시 처리량 확보",
           "Gateway를 통한 인증·로깅·도메인별 서비스 조합 구조화",
         ],
       },
@@ -345,10 +375,59 @@ export const projects: Project[] = [
     achievements: [
       "오류 관련 고객 문의 대응 속도 1주 → 하루 내로 감소",
       "장애로 인한 재배포 건수 월 10건 → 1건 내외로 감소하여 운영 안정성 확보",
-      "공통 모듈 업데이트 시 배포 대상 12개 → 1개, 배포 속도 4분 → 30초로 감소",
+      "인증·로깅 등 백엔드 공통 모듈을 Spring Cloud Gateway로, 프론트엔드 공통 설정을 공통 라이브러리로 각각 일원화 — 기존에는 12개 서비스에 각각 내장되어 업데이트 시 전체 재배포 필요했으나, 각 공통 모듈 1개만 재배포하면 되도록 개선되어 배포 속도 4분 → 30초로 감소",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
+    ],
+  },
+  {
+    id: "outbox-module",
+    title: "Outbox 패턴 기반 이벤트 캡처 모듈",
+    description: "Debezium CDC slot 불안정 문제를 AOP + MyBatis 인터셉터 기반 아웃박스 패턴으로 대체, 폐쇄망 파일 동기화 구현",
+    tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2026.02 ~ 2026.04",
+    role: "라이브러리 설계 및 개발",
+    longDescription: "외부망과 폐쇄망이 분리된 환경에서 두 망 간 유일한 통신 수단은 파일 기반 중계 서버입니다. 기존에는 Debezium CDC로 변경 이벤트를 캡처했으나, 서버·네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제가 발생했습니다. PostgreSQL WAL은 무제한 저장되지 않으며 replication slot이 읽은 위치까지만 삭제를 지연하는데, slot이 깨져 재생성되면 이전 LSN 위치를 잃어버리고 그 사이 삭제된 WAL은 복구할 수 없어 전체 스냅샷부터 재수행해야 하는 구조적 취약점이 있었습니다. 이를 해결하기 위해 애플리케이션 레벨에서 AOP와 MyBatis 인터셉터로 이벤트를 캡처하는 Spring Boot 자동설정 라이브러리를 직접 개발하고 실무 프로젝트에 적용했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "이벤트 캡처",
+        items: [
+          "MyBatis Executor 인터셉터로 INSERT/UPDATE/DELETE 자동 감지 — 비즈니스 코드 변경 없이 투명하게 이벤트 캡처",
+          "TransactionSynchronization.beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 같은 트랜잭션으로 처리해 이벤트 유실 방지",
+          "@OutboxDomain / @OutboxEvent 애노테이션으로 도메인·메서드 단위 캡처 여부 제어",
+          "DefaultOutboxConverter에서 password·token 등 민감 필드 자동 제외 후 Jackson 직렬화",
+        ],
+      },
+      {
+        role: "배치 & 파일 생성",
+        items: [
+          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링",
+          "FOR UPDATE SKIP LOCKED로 다중 인스턴스 환경에서 중복 처리 방지",
+          "seq_from ~ seq_to 범위를 JSON Gzip 파일(sync_{seqFrom}_{seqTo}_{timestamp}.json.gz)로 압축 생성 후 중계 서버 경로에 적재",
+          "자정 배치로 7일 이상 된 SENT 레코드 자동 정리",
+        ],
+      },
+      {
+        role: "루프 방지",
+        items: [
+          "ThreadLocal 기반 OutboxContext로 suppress 상태 관리 — 폐쇄망에서 수신한 데이터를 적용할 때 Outbox 재발행 차단",
+          "source 필드로 이벤트 출처 식별, 양방향 동기화 시 무한 루프 방지",
+        ],
+      },
+    ],
+    achievements: [
+      "Debezium replication slot 반복 장애 해소 — 애플리케이션 레벨 이벤트 캡처로 인프라 의존성 제거",
+      "비즈니스 코드 무침투 설계 — 애노테이션 추가만으로 기존 서비스에 즉시 적용 가능",
+      "트랜잭션 원자성 보장으로 이벤트 유실 0건 달성",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
     ],
   },
   {
@@ -362,7 +441,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2024.04 ~ 2024.12",
     role: "인증·권한 시스템 설계 및 개발",
-    longDescription: "사용자 로그인 정보 조회 시 응답 속도 저하와, 특정 사용자의 권한 수정이 일부 서비스에 반영되지 않는 문제를 해결했습니다. Redis에 저장된 전체 세션을 풀스캔해야 하는 구조와, 재귀적 트리 구조 메뉴에서 N+1 쿼리가 원인이었습니다.",
+    longDescription: "멀티모듈 WAR 구조에서 모듈별로 세션이 분산되어 있어 Redis로 세션을 단일화했습니다. 이후 사용자 로그인 정보 조회 시 응답 속도 저하와, 특정 사용자의 권한 수정이 일부 서비스에 반영되지 않는 문제가 발생했습니다. Redis에 저장된 전체 세션을 풀스캔해야 하는 구조와, 재귀적 트리 구조 메뉴에서 N+1 쿼리가 원인이었습니다.",
     details: [],
     roleDetails: [
       {
@@ -389,7 +468,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "역인덱스 기반 세션 조회 및 N+1 제거로 응답 속도 개선 및 권한 변경 실시간 반영 보장",
+      "Redis O(N) 풀스캔 → O(1) 역인덱스 전환으로 세션 조회 속도 개선, 인증 필터에서 권한 정보를 메모리 매핑으로 전환하여 매 요청마다 발생하던 DB 쿼리 제거, 권한 변경 실시간 반영 보장",
       "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화, 각 서비스별 세션 유지 불필요",
     ],
   },
@@ -418,8 +497,8 @@ export const projects: Project[] = [
       {
         role: "인프라 최적화",
         items: [
-          "Nginx Ingress 설정으로 로드밸런싱 및 세션 유지 적용",
-          "세션 연결이 유지된 채 애플리케이션 단에서 로드밸런싱 — Replica 수를 개발자가 신경 쓰지 않아도 되는 확장성 확보",
+          "Nginx Ingress upstream keepalive 설정으로 각 Pod에 대한 커넥션 풀 관리 — 매 요청마다 TCP 핸드셰이크가 반복되던 오버헤드 제거",
+          "지도 이동 시 타일 요청이 수십 개씩 동시에 발생하는 GIS 특성 상 단일 인스턴스 스레드 풀 고갈 문제 존재 — HPA로 부하에 따라 레플리카를 여러 노드에 자동 분산하여 동시 처리량 확보",
           "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인",
           "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 폴리곤 선별 렌더링",
         ],
@@ -428,7 +507,6 @@ export const projects: Project[] = [
     achievements: [
       "WMTS 도입과 이미지 캐싱으로 API 응답 속도 4초 → 0.5초 미만으로 감소",
       "서비스 간 세션 경쟁 제거로 안정성 확보 및 락 제거",
-      "캐시 미스 시 응답 지연 방지를 위한 사전 생성 범위 선정이 운영상 핵심 요소임을 파악",
     ],
   },
   {
@@ -450,7 +528,7 @@ export const projects: Project[] = [
         items: [
           "폴더 감시 방식을 이벤트 드리븐 파이프라인으로 전환 — 완료 즉시 다음 큐 실행, 대기 시간 제거",
           "ack/nack 기반 메시지 유실 방지 (RabbitMQ)",
-          "Saga(Choreography) 패턴 적용 — 실패 시 자동 재처리 및 작업 상태 추적으로 장애 시점 명확화",
+          "Saga(Choreography) 패턴 적용 — 실패 시 보상 트랜잭션 자동 실행 및 작업 상태 추적으로 장애 시점 명확화, 보상 재시도 초과 시 DLQ로 격리하여 무한 루프 방지 및 수동 처리 가능하도록 구성",
         ],
       },
     ],
@@ -477,8 +555,8 @@ export const projects: Project[] = [
       {
         role: "테스트 환경 구축",
         items: [
-          "쿠버네티스 클러스터를 활용하여 논리적으로 분리, 사내 온프레미스 서버에 운영과 동일한 테스트 환경 구축",
-          "동시에 여러 프로젝트를 운영할 수 있도록 구축하여 서버 자원을 필요한 곳에만 할당",
+          "운영 클러스터와 테스트 클러스터를 물리적으로 분리 — 테스트 클러스터에 MSA 전체를 동일하게 올려 운영 환경과 완전히 격리된 검증 환경 구축",
+          "클러스터 분리로 테스트 워크로드가 운영 서비스에 영향을 주지 않으며, 서버 자원을 필요한 곳에만 할당하여 기존 서버 5대 → 2대로 효율화",
         ],
       },
     ],
@@ -499,6 +577,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2021.12 ~ 2023.12",
     role: "객체 탐지 모델 학습 및 스트리밍 시스템 개발",
+    longDescription: "드론 탑재 환경에서 실시간 객체 탐지 및 위성 영상 세그멘테이션 스트리밍 시스템을 개발했습니다. YOLOv5 추론 시 소켓으로 프레임을 전달하는 구조에서 프레임 수신 속도가 추론 속도를 초과하며 큐가 누적되어 메모리가 고갈되는 문제가 있었습니다. 소켓 통신 레이어를 제거하고 LibTorch로 C++에서 모델을 직접 로드하여 해결했습니다.",
     details: [],
     roleDetails: [
       {
@@ -513,7 +592,7 @@ export const projects: Project[] = [
         role: "YOLOv5 기반 객체 탐지 (RTMP 송출)",
         items: [
           "커스텀 데이터셋 모델 학습 및 가중치 추출",
-          "PyTorch 모델 → C++ 직접 적용으로 메모리 이슈 해결",
+          "소켓으로 프레임 전달 시 수신 속도 > 추론 속도로 큐 누적 → 메모리 고갈 문제 발생 — 소켓 통신 제거 후 LibTorch로 C++에서 모델 직접 로드하여 해결",
           "TCP 소켓 + OpenCV 기반 실시간 추론 및 스트리밍",
         ],
       },
