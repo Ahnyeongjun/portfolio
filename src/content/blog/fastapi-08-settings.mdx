@@ -1,0 +1,288 @@
+---
+title: "환경변수 관리 - pydantic-settings와 .env"
+description: "pydantic-settings로 환경변수를 타입 안전하게 관리하고, .env 파일로 개발/프로덕션 설정을 분리한다."
+date: "2026-04-12"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "pydantic-settings", "환경변수", "설정"]
+series: "Python FastAPI 입문"
+seriesOrder: 8
+---
+
+7편에서 `SECRET_KEY`를 코드에 하드코딩했다. 이번 편에서는 `pydantic-settings`로 환경변수를 타입 안전하게 관리하고, `.env` 파일로 개발/프로덕션 설정을 분리한다.
+
+## 왜 환경변수인가
+
+7편 `core/config.py`를 다시 보자.
+
+```python
+# app/core/config.py (7편 — 나쁜 예)
+SECRET_KEY = "your-secret-key-change-this-in-production"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+```
+
+이 코드에는 두 가지 문제가 있다.
+
+**보안 문제** — `SECRET_KEY`가 소스코드에 박혀 있으면 GitHub에 올리는 순간 전 세계에 공개된다. JWT 서명 키가 노출되면 누구든 유효한 토큰을 위조할 수 있다.
+
+**환경별 분리 불가** — 개발 DB와 프로덕션 DB 주소가 다른데, 코드에 하드코딩하면 배포할 때마다 코드를 수정해야 한다.
+
+```
+개발 환경  DATABASE_URL = "postgresql://localhost/dev_db"
+프로덕션   DATABASE_URL = "postgresql://prod-server/prod_db"
+```
+
+환경변수는 이 두 문제를 한 번에 해결한다. 코드에서 값을 분리하고, 환경마다 다른 값을 주입한다.
+
+## 설치
+
+```bash
+pip install pydantic-settings
+```
+
+`pydantic-settings`는 Pydantic v2의 별도 패키지다. FastAPI와 함께 쓸 때 타입 검증까지 해주는 게 장점이다.
+
+## .env 파일
+
+프로젝트 루트에 `.env` 파일을 만든다.
+
+```bash
+# .env
+DATABASE_URL=postgresql://user:password@localhost/mydb
+SECRET_KEY=super-secret-key-minimum-32-characters-long
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+DEBUG=true
+```
+
+**중요**: `.env` 파일은 절대 Git에 올리면 안 된다. `.gitignore`에 반드시 추가해야 한다.
+
+```bash
+# .gitignore
+.env
+.env.*
+!.env.example  # 예시 파일은 올려도 됨
+```
+
+`.env.example`은 실제 값 없이 키만 담은 파일이다. 팀원이 어떤 변수가 필요한지 알 수 있도록 함께 커밋한다.
+
+```bash
+# .env.example
+DATABASE_URL=
+SECRET_KEY=
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+DEBUG=false
+```
+
+## core/config.py — pydantic-settings로 재작성
+
+```python
+# app/core/config.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from functools import lru_cache
+
+class Settings(BaseSettings):
+    # DB
+    database_url: str
+    # JWT
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    # 앱
+    debug: bool = False
+    app_name: str = "FastAPI App"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",           # .env 파일 경로
+        env_file_encoding="utf-8",
+        case_sensitive=False,      # DATABASE_URL = database_url 동일하게 취급
+    )
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+```
+
+`BaseSettings`는 일반 Pydantic 모델처럼 동작하지만, 값을 아래 순서로 가져온다.
+
+1. 실제 환경변수 (`export SECRET_KEY=...`)
+2. `.env` 파일
+3. 필드 기본값
+
+우선순위가 높은 곳의 값이 낮은 곳을 덮어쓴다. 프로덕션 서버에서는 `.env` 파일 없이 실제 환경변수만 주입하면 된다.
+
+## @lru_cache를 쓰는 이유
+
+`get_settings()`를 호출할 때마다 `.env` 파일을 다시 읽으면 낭비다. `@lru_cache`는 첫 호출 결과를 캐시해서 이후 호출은 즉시 반환한다.
+
+```python
+# 첫 호출 — .env 파일 읽기 발생
+settings = get_settings()
+
+# 이후 호출 — 캐시에서 반환 (파일 읽기 없음)
+settings = get_settings()
+```
+
+## 기존 코드 교체
+
+### core/database.py
+
+```python
+# app/core/database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from app.core.config import get_settings
+
+settings = get_settings()
+
+engine = create_engine(
+    settings.database_url,  # 하드코딩 제거
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=1800,
+    pool_pre_ping=True,
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+class Base(DeclarativeBase):
+    pass
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+```
+
+### core/jwt.py
+
+```python
+# app/core/jwt.py
+from datetime import datetime, timedelta
+from jose import jwt, JWTError
+from fastapi import HTTPException
+from app.core.config import get_settings
+
+def create_access_token(user_id: int) -> str:
+    settings = get_settings()
+    expire = datetime.utcnow() + timedelta(
+        minutes=settings.access_token_expire_minutes
+    )
+    payload = {"sub": str(user_id), "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
+
+def decode_token(token: str) -> int:
+    settings = get_settings()
+    try:
+        payload = jwt.decode(
+            token, settings.secret_key, algorithms=[settings.algorithm]
+        )
+        return int(payload["sub"])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰")
+```
+
+## 테스트에서 설정 재정의
+
+테스트 환경에서는 실제 DB 대신 테스트 DB를 써야 한다. `@lru_cache`를 쓰면 캐시를 지워서 설정을 교체할 수 있다.
+
+```python
+# tests/conftest.py
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core.config import get_settings, Settings
+
+def get_test_settings():
+    return Settings(
+        database_url="sqlite:///./test.db",
+        secret_key="test-secret-key-for-testing-only",
+    )
+
+@pytest.fixture
+def client():
+    app.dependency_overrides[get_settings] = get_test_settings
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+```
+
+## 의존성 주입으로 설정 사용하기
+
+라우터에서 설정값이 필요한 경우 FastAPI의 `Depends`로 주입받을 수 있다.
+
+```python
+# app/some_router.py
+from fastapi import APIRouter, Depends
+from app.core.config import Settings, get_settings
+
+router = APIRouter()
+
+@router.get("/info")
+def app_info(settings: Settings = Depends(get_settings)):
+    return {
+        "app_name": settings.app_name,
+        "debug": settings.debug,
+    }
+```
+
+## 환경별 .env 파일 분리
+
+규모가 커지면 환경마다 파일을 나누는 게 편하다.
+
+```
+.env             ← 로컬 개발용 (gitignore)
+.env.test        ← 테스트용
+.env.production  ← 프로덕션용 (gitignore)
+.env.example     ← 키 목록만 (Git 포함)
+```
+
+```python
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV = os.getenv("APP_ENV", "development")
+
+class Settings(BaseSettings):
+    database_url: str
+    secret_key: str
+    # ...
+
+    model_config = SettingsConfigDict(
+        env_file=f".env.{ENV}" if ENV != "development" else ".env"
+    )
+
+# 프로덕션 서버 실행
+# APP_ENV=production uvicorn app.main:app
+```
+
+## 변경된 파일 요약
+
+```
+app/
+├── core/
+│   ├── config.py    ← 전면 재작성 (pydantic-settings)
+│   ├── database.py  ← database_url을 settings에서 가져옴
+│   └── jwt.py       ← secret_key, algorithm을 settings에서 가져옴
+├── .env             ← 새로 추가 (gitignore)
+├── .env.example     ← 새로 추가 (Git 포함)
+└── .gitignore       ← .env 추가
+```
+
+## 정리
+
+```
+코드 (Git)                    환경변수 / .env (서버)
+──────────────────            ──────────────────────
+Settings 클래스               실제 비밀값
+(타입, 기본값)                (DB 주소, 시크릿 키)
+                ↓
+        get_settings()  ← @lru_cache로 한 번만 로딩
+                ↓
+    database.py, jwt.py 등에서 사용
+```
+
+코드와 설정을 분리하면 같은 코드베이스로 개발/스테이징/프로덕션을 모두 운영할 수 있다. 보안 키는 절대 코드에 들어가지 않는다.

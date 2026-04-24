@@ -1,0 +1,302 @@
+---
+title: "DB 커넥션 풀, 트랜잭션, 인덱스"
+description: "커넥션 풀로 DB 연결을 재사용하고, 트랜잭션으로 데이터 무결성을 보장하고, 인덱스로 조회 속도를 높인다."
+date: "2026-04-18"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "SQLAlchemy", "커넥션 풀", "트랜잭션", "인덱스", "PostgreSQL"]
+series: "Python FastAPI 입문"
+seriesOrder: 10
+---
+
+기능은 동작하는데 느리거나 데이터가 꼬이는 경우, 대부분 이 세 가지 중 하나다. 커넥션 풀로 연결을 재사용하고, 트랜잭션으로 데이터 무결성을 보장하고, 인덱스로 조회 속도를 높인다.
+
+## 이번 편에서 다루는 것
+
+```
+DB 커넥션 & 커넥션 풀 → 트랜잭션 → 인덱스
+    (연결 관리)           (원자성)    (조회 성능)
+```
+
+10편까지 만든 코드는 기능적으로는 동작하지만, 아직 아래 문제들이 잠재해 있다.
+
+- 요청마다 DB 연결을 새로 열면 성능이 나빠진다 → **커넥션 풀**
+- 여러 쿼리를 묶어서 실패 시 한꺼번에 되돌려야 한다 → **트랜잭션**
+- 데이터가 많아지면 조회가 느려진다 → **인덱스**
+
+## DB 커넥션이란?
+
+DB 커넥션(Database Connection)은 애플리케이션과 데이터베이스 사이의 통신 채널이다.
+
+```
+FastAPI 앱 ──────────────────────────── PostgreSQL
+           TCP 소켓 + 인증 + 세션 설정
+```
+
+DB 연결을 맺으려면 TCP 핸드셰이크, 인증, 세션 초기화 등 여러 단계를 거쳐야 한다. 이 과정은 생각보다 느리다. 요청마다 새 연결을 만들고 닫으면 오버헤드가 쌓인다.
+
+## 커넥션 풀(Connection Pool)
+
+커넥션 풀은 미리 만들어둔 DB 연결을 재사용하는 구조다.
+
+```
+요청 A ──►│           │──► DB 연결 #1
+요청 B ──►│ 풀(Pool)  │──► DB 연결 #2
+요청 C ──►│           │──► DB 연결 #3
+                ↑
+          연결을 재사용
+         (닫지 않고 반납)
+```
+
+| 방식 | 연결 생성 비용 | 처리량 |
+|------|--------------|--------|
+| 요청마다 새 연결 | 매번 발생 | 낮음 |
+| 커넥션 풀 | 최초 1회 | 높음 |
+
+### SQLAlchemy 커넥션 풀 설정
+
+5편에서 작성한 `core/database.py`를 확장한다.
+
+```python
+# app/core/database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from app.core.config import get_settings
+
+settings = get_settings()
+
+engine = create_engine(
+    settings.database_url,
+    pool_size=5,        # 평소 유지할 연결 수
+    max_overflow=10,    # pool_size 초과 시 추가로 허용할 수
+    pool_timeout=30,    # 연결을 기다리는 최대 시간(초)
+    pool_recycle=1800,  # 30분마다 연결 재생성 (좀비 연결 방지)
+    pool_pre_ping=True, # 사용 전 연결이 살아있는지 확인
+)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+class Base(DeclarativeBase):
+    pass
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()  # 실제 TCP 연결을 닫는 게 아니라 풀에 반납
+```
+
+`db.close()`는 TCP 연결을 끊는 게 아니라 풀에 반납하는 동작이다. 다음 요청이 이 연결을 재사용한다.
+
+| 파라미터 | 의미 | 권장값 |
+|---------|------|--------|
+| `pool_size` | 항상 유지할 연결 수 | CPU 코어 수 × 2 |
+| `max_overflow` | 피크 트래픽 시 추가 연결 | `pool_size`의 2배 |
+| `pool_timeout` | 연결 대기 타임아웃 | 30초 |
+| `pool_recycle` | 연결 재생성 주기 | 1800초 (30분) |
+| `pool_pre_ping` | 끊긴 연결 자동 감지 | `True` 권장 |
+
+## 트랜잭션이란?
+
+트랜잭션(Transaction)은 여러 DB 작업을 하나의 단위로 묶는 것이다. **"전부 성공하거나, 전부 실패하거나"**가 핵심이다.
+
+### 왜 필요한가?
+
+계좌이체를 생각해보자.
+
+```
+A의 잔액 -10,000원  (성공)
+B의 잔액 +10,000원  (실패 — 서버 다운)
+```
+
+중간에 실패하면 A의 돈만 사라진다. 트랜잭션이 없으면 이런 상황을 막을 수 없다.
+
+### ACID 특성
+
+| 특성 | 영문 | 의미 |
+|------|------|------|
+| 원자성 | Atomicity | 전부 성공 또는 전부 실패 |
+| 일관성 | Consistency | 트랜잭션 전후로 DB 규칙이 유지됨 |
+| 격리성 | Isolation | 동시에 실행되는 트랜잭션이 서로 영향 안 줌 |
+| 지속성 | Durability | 완료된 트랜잭션은 영구 저장 |
+
+### flush() vs commit()
+
+SQLAlchemy에서 가장 헷갈리는 부분이다.
+
+```python
+db.add(user)    # 메모리에 등록 (DB에 아직 없음)
+db.flush()      # SQL 전송 — DB에 반영됐지만 확정 아님. 같은 트랜잭션 내 조회는 가능
+db.commit()     # 최종 확정 — 이 시점에 영구 저장
+db.rollback()   # 되돌리기 — commit 전에만 가능
+```
+
+`flush()`는 `user.id`처럼 DB가 자동 생성하는 값을 얻어야 할 때 쓴다. 커밋하지 않았으니 롤백도 가능한 상태다.
+
+### 실전 예시 — 여러 테이블에 걸친 작업
+
+```python
+# app/users/service.py
+from sqlalchemy.orm import Session
+from app.users.models import User, UserProfile
+from app.users.exceptions import UserAlreadyExistsException
+from app.core.hashing import hash_password
+
+class UserService:
+    def create_user_with_profile(
+        self, db: Session, email: str, password: str, bio: str
+    ) -> User:
+        if self.repo.find_by_email(db, email):
+            raise UserAlreadyExistsException()
+
+        try:
+            # 1. 유저 생성
+            user = User(email=email, hashed_password=hash_password(password))
+            db.add(user)
+            db.flush()  # user.id를 얻기 위해 flush (아직 커밋 아님)
+
+            # 2. 프로필 생성 (user.id 필요)
+            profile = UserProfile(user_id=user.id, bio=bio)
+            db.add(profile)
+
+            # 3. 전부 성공 시 커밋
+            db.commit()
+            db.refresh(user)
+            return user
+
+        except Exception:
+            db.rollback()  # 실패 시 전부 되돌리기
+            raise
+```
+
+유저 생성과 프로필 생성은 하나의 트랜잭션이다. 프로필 저장이 실패하면 유저도 함께 롤백된다.
+
+## 인덱스란?
+
+인덱스(Index)는 DB 조회 속도를 높이기 위한 별도의 자료구조다. 책의 목차처럼, 인덱스가 없으면 모든 행을 하나씩 스캔해야 한다.
+
+### Full Scan vs Index Scan
+
+```
+인덱스 없이 email로 조회
+──────────────────────────
+행 1: hong@example.com    ← 비교
+행 2: kim@example.com     ← 비교
+...
+행 100만: target@example.com ← 발견 (최대 100만 번 비교)
+
+인덱스 있을 때
+──────────────
+B-Tree에서 위치 바로 탐색 (약 20번 비교)
+```
+
+| 방식 | 데이터 100만 건 | 시간 복잡도 |
+|------|----------------|------------|
+| Full Scan | 최대 100만 번 | O(n) |
+| Index Scan | 약 20번 | O(log n) |
+
+### 인덱스의 종류
+
+- **B-Tree 인덱스 (기본)** — 등호(`=`), 범위(`>`, `<`), 정렬(`ORDER BY`)에 효과적. PostgreSQL/MySQL 기본 타입.
+- **Unique 인덱스** — 중복 값을 허용하지 않는 인덱스. `email`같이 유일해야 하는 컬럼에 사용.
+- **복합 인덱스 (Composite Index)** — 여러 컬럼을 묶어서 만드는 인덱스. `WHERE status = 'active' AND created_at > ?` 같은 조건에 효과적.
+
+### SQLAlchemy에서 인덱스 설정
+
+```python
+# app/users/models.py
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Index
+from sqlalchemy.sql import func
+from app.core.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)  # PK는 자동으로 인덱스
+    email = Column(String, unique=True, nullable=False)  # unique=True → Unique 인덱스 자동 생성
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # 복합 인덱스 — is_active + created_at 조합으로 자주 조회한다면
+    __table_args__ = (
+        Index("ix_users_active_created", "is_active", "created_at"),
+    )
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, nullable=False, index=True)  # index=True → 단일 인덱스
+    title = Column(String, nullable=False)
+    content = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+```
+
+인덱스를 모델에 추가했다면 Alembic으로 마이그레이션을 생성해야 반영된다.
+
+```bash
+alembic revision --autogenerate -m "add indexes"
+alembic upgrade head
+```
+
+### 어떤 컬럼에 인덱스를 걸어야 하는가?
+
+**거는 게 좋은 경우**
+- `WHERE` 절에 자주 등장하는 컬럼
+- `JOIN` 조건에 쓰이는 컬럼 (외래 키)
+- `ORDER BY`, `GROUP BY`에 쓰이는 컬럼
+- `UNIQUE` 제약이 필요한 컬럼
+
+**피해야 하는 경우**
+- 데이터가 적은 테이블 (수백 건 이하)
+- 값의 종류가 매우 적은 컬럼 (`True/False` 같은 불리언 단독)
+- 쓰기가 매우 빈번한 컬럼 (인덱스 갱신 비용 발생)
+
+인덱스는 조회는 빠르게, 쓰기는 느리게 만든다. 무분별하게 걸면 INSERT/UPDATE 성능이 저하된다.
+
+### 인덱스 확인 (PostgreSQL)
+
+```sql
+-- 테이블의 인덱스 목록 조회
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'users';
+
+-- 실행 계획 확인
+EXPLAIN ANALYZE
+SELECT * FROM users WHERE email = 'test@example.com';
+```
+
+`EXPLAIN ANALYZE` 결과에서 `Index Scan`이 보이면 인덱스가 활용되고 있는 것이다. `Seq Scan`이 보이면 Full Scan 중이다.
+
+## 전체 흐름 정리
+
+```
+요청 들어옴
+    │
+    ▼
+커넥션 풀에서 연결 꺼냄 (get_db)
+    │
+    ▼
+트랜잭션 시작 (autocommit=False)
+    │
+    ├─── repository: flush()
+    │         ↑
+    │    인덱스가 SELECT 속도를 높임
+    │
+    ▼
+성공 → db.commit()
+실패 → db.rollback()
+    │
+    ▼
+연결을 풀에 반납 (db.close)
+```
+
+| 개념 | 역할 | SQLAlchemy |
+|------|------|------------|
+| 커넥션 풀 | DB 연결 재사용 | `create_engine(pool_size=...)` |
+| 트랜잭션 | 작업 단위 묶기 | `commit()` / `rollback()` |
+| 인덱스 | 조회 성능 향상 | `index=True`, `Index(...)` |
+
+커넥션 풀은 설정 한 줄로 큰 성능 차이를 만든다. 트랜잭션은 여러 테이블에 걸친 작업에서 데이터 무결성을 지킨다. 인덱스는 데이터가 수천 건만 넘어가도 체감이 크다.

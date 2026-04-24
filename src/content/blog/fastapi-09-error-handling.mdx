@@ -1,0 +1,377 @@
+---
+title: "에러 핸들링과 미들웨어"
+description: "일관된 에러 응답 형식을 만들고, 글로벌 예외 핸들러와 미들웨어로 모든 요청/응답을 깔끔하게 처리한다."
+date: "2026-04-14"
+category: "Python/FastAPI"
+tags: ["Python", "FastAPI", "에러 핸들링", "미들웨어", "CORS", "예외 처리"]
+series: "Python FastAPI 입문"
+seriesOrder: 9
+---
+
+지금까지 만든 API는 에러가 발생하면 500이 그냥 터진다. 이번 편에서는 일관된 에러 응답 형식을 만들고, 글로벌 예외 핸들러와 미들웨어로 모든 요청/응답을 깔끔하게 처리한다.
+
+## 현재 코드의 문제
+
+7편까지 만든 서비스는 에러를 이렇게 처리하고 있다.
+
+```python
+# users/service.py
+def create_user(self, ...):
+    if self.repo.find_by_email(db, email):
+        raise ValueError("이미 존재하는 이메일입니다")  # ← 그냥 500
+```
+
+클라이언트 입장에서는 이렇게 받는다.
+
+```json
+// HTTP 500
+{
+  "detail": "Internal Server Error"
+}
+```
+
+두 가지 문제가 있다.
+
+**클라이언트가 원인을 모른다** — 이메일 중복인지, DB 오류인지, 코드 버그인지 구분이 안 된다.
+
+**에러 응답 형식이 제각각이다** — `HTTPException`은 `{"detail": "..."}`, `ValueError`는 500, 없는 엔드포인트는 또 다른 형식이다. 프론트엔드가 에러를 파싱하기 어렵다.
+
+목표는 모든 에러를 아래 형식으로 통일하는 것이다.
+
+```json
+{
+  "code": "USER_ALREADY_EXISTS",
+  "message": "이미 존재하는 이메일입니다",
+  "detail": null
+}
+```
+
+## 커스텀 예외 클래스
+
+```python
+# app/core/exceptions.py
+from fastapi import HTTPException
+
+class AppException(HTTPException):
+    """애플리케이션 전용 기본 예외"""
+    def __init__(self, status_code: int, code: str, message: str, detail=None):
+        super().__init__(status_code=status_code)
+        self.code = code
+        self.message = message
+        self.detail = detail
+
+# 400 — 잘못된 요청
+class BadRequestException(AppException):
+    def __init__(self, message: str, code: str = "BAD_REQUEST", detail=None):
+        super().__init__(400, code, message, detail)
+
+# 401 — 인증 실패
+class UnauthorizedException(AppException):
+    def __init__(self, message: str = "인증이 필요합니다", code: str = "UNAUTHORIZED"):
+        super().__init__(401, code, message)
+
+# 403 — 권한 없음
+class ForbiddenException(AppException):
+    def __init__(self, message: str = "접근 권한이 없습니다", code: str = "FORBIDDEN"):
+        super().__init__(403, code, message)
+
+# 404 — 리소스 없음
+class NotFoundException(AppException):
+    def __init__(self, message: str, code: str = "NOT_FOUND"):
+        super().__init__(404, code, message)
+
+# 409 — 충돌 (이미 존재)
+class ConflictException(AppException):
+    def __init__(self, message: str, code: str = "CONFLICT"):
+        super().__init__(409, code, message)
+```
+
+도메인별로 더 구체적인 예외도 만들 수 있다.
+
+```python
+# app/users/exceptions.py
+from app.core.exceptions import ConflictException, NotFoundException
+
+class UserAlreadyExistsException(ConflictException):
+    def __init__(self):
+        super().__init__("이미 존재하는 이메일입니다", "USER_ALREADY_EXISTS")
+
+class UserNotFoundException(NotFoundException):
+    def __init__(self, user_id: int):
+        super().__init__(f"유저 {user_id}를 찾을 수 없습니다", "USER_NOT_FOUND")
+```
+
+## 에러 응답 스키마
+
+```python
+# app/core/schemas.py
+from pydantic import BaseModel
+from typing import Any
+
+class ErrorResponse(BaseModel):
+    code: str
+    message: str
+    detail: Any = None
+```
+
+## 글로벌 예외 핸들러
+
+```python
+# app/core/exception_handlers.py
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from app.core.exceptions import AppException
+
+async def app_exception_handler(request: Request, exc: AppException):
+    """커스텀 AppException 처리"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "code": exc.code,
+            "message": exc.message,
+            "detail": exc.detail,
+        }
+    )
+
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Pydantic 유효성 검사 실패 처리"""
+    errors = exc.errors()
+    detail = [
+        {
+            "field": ".".join(str(loc) for loc in e["loc"][1:]),  # body 제외
+            "message": e["msg"],
+        }
+        for e in errors
+    ]
+    return JSONResponse(
+        status_code=422,
+        content={
+            "code": "VALIDATION_ERROR",
+            "message": "요청 데이터가 올바르지 않습니다",
+            "detail": detail,
+        }
+    )
+
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """처리되지 않은 예외 — 500"""
+    # 실제 서비스에서는 Sentry 같은 도구로 여기서 에러를 수집한다
+    return JSONResponse(
+        status_code=500,
+        content={
+            "code": "INTERNAL_SERVER_ERROR",
+            "message": "서버 내부 오류가 발생했습니다",
+            "detail": None,
+        }
+    )
+```
+
+## main.py에 핸들러 등록
+
+```python
+# app/main.py
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from app.core.exceptions import AppException
+from app.core.exception_handlers import (
+    app_exception_handler,
+    validation_exception_handler,
+    unhandled_exception_handler,
+)
+from app.users.router import router as user_router
+from app.auth.router import router as auth_router
+
+app = FastAPI()
+
+# 예외 핸들러 등록
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
+
+# 라우터 등록
+app.include_router(user_router)
+app.include_router(auth_router)
+```
+
+## 서비스에서 커스텀 예외 사용
+
+이제 `ValueError` 대신 명확한 예외를 쓴다.
+
+```python
+# app/users/service.py
+from app.users.exceptions import UserAlreadyExistsException, UserNotFoundException
+
+class UserService:
+    def create_user(self, db, email: str, password: str):
+        if self.repo.find_by_email(db, email):
+            raise UserAlreadyExistsException()  # 409 자동
+        hashed = hash_password(password)
+        user = self.repo.save(db, email, hashed)
+        db.commit()
+        return user
+
+    def get_user(self, db, user_id: int):
+        user = self.repo.find_by_id(db, user_id)
+        if not user:
+            raise UserNotFoundException(user_id)  # 404 자동
+        return user
+```
+
+## 에러 응답 예시
+
+```json
+// POST /users — 이미 존재하는 이메일
+// HTTP 409
+{
+  "code": "USER_ALREADY_EXISTS",
+  "message": "이미 존재하는 이메일입니다",
+  "detail": null
+}
+
+// POST /users — 이메일 형식 오류
+// HTTP 422
+{
+  "code": "VALIDATION_ERROR",
+  "message": "요청 데이터가 올바르지 않습니다",
+  "detail": [
+    { "field": "email", "message": "value is not a valid email address" }
+  ]
+}
+```
+
+## 미들웨어
+
+미들웨어(Middleware)는 모든 요청이 라우터에 도달하기 전, 그리고 응답이 클라이언트에 전달되기 전에 실행되는 코드다.
+
+```
+클라이언트
+    │ 요청
+    ▼
+[미들웨어 1]
+[미들웨어 2]  ← 여러 개 쌓을 수 있음
+    │
+    ▼
+라우터 → 서비스 → 레포지토리
+    │
+    ▼
+[미들웨어 2]
+[미들웨어 1]  ← 역순으로 응답 처리
+    │ 응답
+    ▼
+클라이언트
+```
+
+주로 인증, 로깅, CORS, 요청 처리 시간 측정 등에 쓴다.
+
+### 요청 로깅 미들웨어
+
+```python
+# app/core/middleware.py
+import time
+import logging
+from fastapi import Request
+
+logger = logging.getLogger(__name__)
+
+async def logging_middleware(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    duration = (time.time() - start) * 1000  # ms
+    logger.info(
+        f"{request.method} {request.url.path} "
+        f"→ {response.status_code} ({duration:.1f}ms)"
+    )
+    return response
+```
+
+### CORS 미들웨어
+
+브라우저에서 API를 직접 호출하려면 CORS 설정이 필요하다.
+
+```python
+# app/main.py 추가
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 프론트엔드 주소
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
+
+## main.py 최종
+
+```python
+# app/main.py
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.exceptions import AppException
+from app.core.exception_handlers import (
+    app_exception_handler,
+    validation_exception_handler,
+    unhandled_exception_handler,
+)
+from app.core.middleware import logging_middleware
+from app.users.router import router as user_router
+from app.auth.router import router as auth_router
+
+app = FastAPI()
+
+# 미들웨어 (등록 역순으로 실행)
+app.middleware("http")(logging_middleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 예외 핸들러
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
+
+# 라우터
+app.include_router(user_router)
+app.include_router(auth_router)
+```
+
+## 변경된 파일 요약
+
+```
+app/
+├── core/
+│   ├── exceptions.py         ← 새로 추가 (AppException 계층)
+│   ├── exception_handlers.py ← 새로 추가 (글로벌 핸들러)
+│   ├── middleware.py         ← 새로 추가 (로깅)
+│   └── schemas.py            ← 새로 추가 (ErrorResponse)
+├── users/
+│   ├── exceptions.py         ← 새로 추가 (도메인 예외)
+│   └── service.py            ← 수정 (ValueError → 커스텀 예외)
+├── auth/
+│   └── router.py             ← 수정 (HTTPException → UnauthorizedException)
+└── main.py                   ← 수정 (핸들러, 미들웨어 등록)
+```
+
+## 정리
+
+```
+예외 발생
+    │
+    ▼
+AppException?  ─ Yes ─► app_exception_handler    → 의미 있는 4xx 응답
+    │
+   No
+    ▼
+ValidationError? ─ Yes ► validation_exception_handler → 422 + 필드 상세
+    │
+   No
+    ▼
+그 외 Exception ─────────► unhandled_exception_handler → 500 + 로그
+```
+
+에러 처리를 한 곳에 모으면 서비스 코드가 깔끔해진다. 서비스는 비즈니스 로직만 담당하고, 에러 포맷 걱정은 핸들러에 위임하면 된다.
