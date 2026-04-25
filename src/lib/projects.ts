@@ -23,6 +23,7 @@ export interface Project {
   achievements: string[];
   resources?: ProjectResource[];
   hidden?: boolean;
+  backendActive?: boolean;
 }
 
 export const projects: Project[] = [
@@ -85,6 +86,7 @@ export const projects: Project[] = [
     imageUrl: "/swyp-app4_thum.png",
     link: "https://dashboard-phi-one-35.vercel.app/login",
     status: "live",
+    backendActive: true,
     type: "personal",
     category: ["backend", "ai"],
     period: "2026.03 ~ 2026.04",
@@ -134,6 +136,7 @@ export const projects: Project[] = [
     imageUrl: "/deadline-mate_thum.png",
     link: "https://completionisland.vercel.app/main",
     status: "live",
+    backendActive: true,
     type: "team",
     category: ["backend"],
     period: "2026.03 ~ 2026.04",

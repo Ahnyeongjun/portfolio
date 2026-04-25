@@ -158,7 +158,7 @@ export default async function ProjectPage({
                   <ExternalLink className="w-4 h-4" />
                   프로젝트 방문하기
                 </a>
-                {project.type !== "company" && (
+                {project.type !== "company" && !project.backendActive && (
                   <p className="mt-2 text-sm text-muted-foreground">
                     * 현재 백엔드 서버가 중단되어 MSW(Mock)로 동작 중입니다.
                   </p>
