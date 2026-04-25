@@ -78,6 +78,98 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "mapin",
+    title: "Mapin",
+    description: "URL 입력 시 AI가 콘텐츠 관점을 분석하고 반대 관점 콘텐츠를 자동 추천하는 개인 콘텐츠 관리 서비스",
+    tags: ["Spring Boot", "Java 21", "PostgreSQL", "OpenAI", "YouTube API", "Virtual Threads", "CompletableFuture"],
+    link: "https://dashboard-phi-one-35.vercel.app/login",
+    status: "live",
+    type: "personal",
+    category: ["backend", "ai"],
+    period: "2026.03 ~ 2026.04",
+    role: "백엔드 개발 (단독)",
+    longDescription: "유튜브·뉴스 URL을 입력하면 GPT가 콘텐츠의 관점을 0.0(부정)~1.0(긍정) 점수로 분류하고, YouTube와 Naver를 병렬 검색해 반대 관점의 콘텐츠를 추천하는 서비스입니다. Java 21 Virtual Threads와 CompletableFuture로 분석 파이프라인을 구성하고, 3단계 캐싱으로 GPT 호출 비용을 최소화했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "AI 분석 파이프라인",
+        items: [
+          "GPT-4.1-mini 기반 관점 스코어링 — 제목·설명·썸네일 분석 후 viewpoint_score(0.0~1.0)·키워드·반대관점 검색어 JSON 출력",
+          "YouTube API + Naver 검색 API 병렬 호출 (CompletableFuture) — 반대관점 쿼리 3개를 동시 실행해 후보 콘텐츠 수집",
+          "Java 21 Virtual Threads로 다중 URL 배치 분석 동시 처리 (최대 10개)",
+          "3단계 캐싱 — opposition_json 직렬화 캐시 → is_analyzed 플래그 → content_keywords DB 풀 순으로 GPT 호출 최소화",
+        ],
+      },
+      {
+        role: "추천 시스템",
+        items: [
+          "사용자 분석 히스토리(최근 20개) 기반 키워드 풀 구성, viewpoint_score 차이 ≥0.4 조건으로 반대관점 콘텐츠 추천",
+          "키워드 매칭 횟수 + 스코어 거리 복합 정렬로 추천 품질 확보",
+        ],
+      },
+      {
+        role: "인프라 및 인증",
+        items: [
+          "Spring Boot 4.0.3 + PostgreSQL, HikariCP 커넥션 풀 관리",
+          "Google·Apple OIDC OAuth 2.0 + JWT (JJWT 0.12.6) 인증, 토큰 자동 갱신",
+        ],
+      },
+    ],
+    achievements: [
+      "3단계 캐싱으로 동일 콘텐츠 재분석 시 GPT API 호출 0회 달성",
+      "Virtual Threads + CompletableFuture 병렬 파이프라인으로 단일 분석 대비 다중 URL 처리 속도 개선",
+    ],
+    resources: [
+      { label: "웹 대시보드", url: "https://dashboard-phi-one-35.vercel.app/login", type: "link" },
+      { label: "App Store", url: "https://apps.apple.com/kr/app/mapin/id6761400852", type: "link" },
+      { label: "GitHub (프론트)", url: "https://github.com/mapin-application/dashboard", type: "link" },
+    ],
+  },
+  {
+    id: "deadline-mate",
+    title: "DeadlineMate",
+    description: "스터디·프로젝트 모임을 개설하고 주간 Todo와 달성률로 팀 목표를 함께 관리하는 모임 플랫폼",
+    tags: ["Spring Boot", "Java 21", "MySQL", "JPA", "QueryDSL", "JWT", "OAuth", "Spring Event"],
+    status: "live",
+    type: "team",
+    category: ["backend"],
+    period: "2026.03 ~ 2026.04",
+    role: "백엔드 개발",
+    longDescription: "스터디·프로젝트 모임을 개설하고 주간 Todo를 함께 관리하며 달성률을 추적하는 서비스입니다. FESI 13기 팀 프로젝트로, 11개 도메인을 설계하고 이벤트 기반 알림 시스템과 QueryDSL 동적 검색, CQRS 패턴을 적용했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "모임 & 검색",
+        items: [
+          "QueryDSL 기반 동적 검색 — 상태·마감일·카테고리·인기순/최신순 복합 필터링",
+          "CQRS 패턴 적용 — GatheringService(커맨드)·GatheringQueryService(쿼리) 분리",
+          "WeeklyPlan + WeeklyPlanDetail로 주차별 목표 관리, Todo 완료율 추적",
+        ],
+      },
+      {
+        role: "이벤트 기반 알림",
+        items: [
+          "@TransactionalEventListener(AFTER_COMMIT)으로 모임 생성·시작·완료·평가 이벤트 발행 — 트랜잭션 안전성 확보",
+          "모임 상태 전환(RECRUITING→ONGOING→COMPLETED) 시 멤버 전원 알림 자동 발송",
+        ],
+      },
+      {
+        role: "인증 & 평판 시스템",
+        items: [
+          "OAuthClientFactory 패턴으로 Kakao·Google 멀티 프로바이더 OAuth 통합, 로그인 시도 제한(브루트포스 방지)",
+          "투두 주간 달성률 기반 평판점수 산정 — 50% 미달 및 2주 연속 미달성 시 페널티 적용",
+        ],
+      },
+    ],
+    achievements: [
+      "11개 도메인 설계 및 211개 Java 파일 규모 백엔드 구현",
+      "이벤트 기반 알림으로 도메인 간 결합 없이 알림 로직 분리",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/FESI13-3/FESI13-backend", type: "link" },
+    ],
+  },
+  {
     id: "booksight",
     title: "Booksight",
     description: "오늘 출간된 책들을 생일처럼 축하하는 서비스",
@@ -369,6 +461,12 @@ export const projects: Project[] = [
         items: [
           "Next.js FSD 아키텍처 리팩토링",
           "Storybook 통합 테스트 및 사내 프론트엔드 공통 라이브러리 운영",
+        ],
+      },
+      {
+        role: "폐쇄망 패키지 저장소 통합",
+        items: [
+          "Pulp 도입으로 Maven(Java) 단독 운영에서 PyPI(Python)·npm(JavaScript) 포함 멀티 포맷 내부 미러로 전환 — 폐쇄망 환경에서 pip install·npm install 모두 내부 저장소에서 처리 가능하도록 구성",
         ],
       },
     ],
