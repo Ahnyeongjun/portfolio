@@ -82,6 +82,7 @@ export const projects: Project[] = [
     title: "Mapin",
     description: "URL 입력 시 AI가 콘텐츠 관점을 분석하고 반대 관점 콘텐츠를 자동 추천하는 개인 콘텐츠 관리 서비스",
     tags: ["Spring Boot", "Java 21", "PostgreSQL", "OpenAI", "YouTube API", "Virtual Threads", "CompletableFuture"],
+    imageUrl: "/swyp-app4_thum.png",
     link: "https://dashboard-phi-one-35.vercel.app/login",
     status: "live",
     type: "personal",
