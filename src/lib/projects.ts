@@ -130,6 +130,7 @@ export const projects: Project[] = [
     title: "DeadlineMate",
     description: "스터디·프로젝트 모임을 개설하고 주간 Todo와 달성률로 팀 목표를 함께 관리하는 모임 플랫폼",
     tags: ["Spring Boot", "Java 21", "MySQL", "JPA", "QueryDSL", "JWT", "OAuth", "Spring Event"],
+    link: "https://completionisland.vercel.app/main",
     status: "live",
     type: "team",
     category: ["backend"],
@@ -166,6 +167,7 @@ export const projects: Project[] = [
       "이벤트 기반 알림으로 도메인 간 결합 없이 알림 로직 분리",
     ],
     resources: [
+      { label: "서비스", url: "https://completionisland.vercel.app/main", type: "link" },
       { label: "GitHub", url: "https://github.com/FESI13-3/FESI13-backend", type: "link" },
     ],
   },
