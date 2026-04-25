@@ -91,36 +91,37 @@ export const projects: Project[] = [
     category: ["backend", "ai"],
     period: "2026.03 ~ 2026.04",
     role: "백엔드 개발 (단독)",
-    longDescription: "유튜브·뉴스 URL을 입력하면 GPT가 콘텐츠의 관점을 0.0(부정)~1.0(긍정) 점수로 분류하고, YouTube와 Naver를 병렬 검색해 반대 관점의 콘텐츠를 추천하는 서비스입니다. Java 21 Virtual Threads와 CompletableFuture로 분석 파이프라인을 구성하고, 3단계 캐싱으로 GPT 호출 비용을 최소화했습니다.",
+    longDescription: "유튜브·뉴스 URL을 입력하면 GPT-4.1-mini가 콘텐츠 관점을 0.0(부정)~1.0(긍정)으로 점수화하고, YouTube·Naver를 병렬 검색해 반대 관점 콘텐츠를 추천하는 서비스입니다. 분석 파이프라인을 Java 21 Virtual Threads + CompletableFuture로 구성하고, 3단계 캐싱으로 동일 콘텐츠 재요청 시 GPT 호출을 0회로 줄였습니다.",
     details: [],
     roleDetails: [
       {
         role: "AI 분석 파이프라인",
         items: [
-          "GPT-4.1-mini 기반 관점 스코어링 — 제목·설명·썸네일 분석 후 viewpoint_score(0.0~1.0)·키워드·반대관점 검색어 JSON 출력",
-          "YouTube API + Naver 검색 API 병렬 호출 (CompletableFuture) — 반대관점 쿼리 3개를 동시 실행해 후보 콘텐츠 수집",
-          "Java 21 Virtual Threads로 다중 URL 배치 분석 동시 처리 (최대 10개)",
-          "3단계 캐싱 — opposition_json 직렬화 캐시 → is_analyzed 플래그 → content_keywords DB 풀 순으로 GPT 호출 최소화",
+          "GPT-4.1-mini로 제목·설명·썸네일(detail:LOW) 분석 → viewpoint_score(0.0~1.0)·키워드·반대관점 검색어 JSON 출력, 후보 전체를 배치로 1회 스코어링해 토큰 비용 절감",
+          "YouTube API + Naver 검색 API CompletableFuture 병렬 호출 — 반대관점 쿼리 2~3개를 동시 실행 후 MIN_OPPOSITION_DISTANCE(0.4) 기준으로 필터링, 부족 시 약한 반대관점으로 자동 채우는 fallback 로직 구현",
+          "AsyncConfig에서 Executors.newVirtualThreadPerTaskExecutor()로 pipelineExecutor 구성 — 스레드 풀 한도 없이 URL당 Virtual Thread 할당, 30초 글로벌 타임아웃으로 파이프라인 보호",
+        ],
+      },
+      {
+        role: "3단계 캐싱",
+        items: [
+          "L1 opposition_json: 분석 결과를 JSON 직렬화해 DB 저장 — 재요청 시 GPT·검색 단계 전부 스킵",
+          "L2 is_analyzed 플래그: 소스 콘텐츠 분석 이력 재활용 — GPT 분석 호출만 스킵, 검색은 수행",
+          "L3 content_keywords 풀: 키워드 기반 후보 DB 조회 → 임베딩 활성화 시 평균 벡터로 50개 풀 조회 후 메모리에서 viewpointScore 필터링 (2-stage retrieval)",
         ],
       },
       {
         role: "추천 시스템",
         items: [
-          "사용자 분석 히스토리(최근 20개) 기반 키워드 풀 구성, viewpoint_score 차이 ≥0.4 조건으로 반대관점 콘텐츠 추천",
-          "키워드 매칭 횟수 + 스코어 거리 복합 정렬로 추천 품질 확보",
-        ],
-      },
-      {
-        role: "인프라 및 인증",
-        items: [
-          "Spring Boot 4.0.3 + PostgreSQL, HikariCP 커넥션 풀 관리",
-          "Google·Apple OIDC OAuth 2.0 + JWT (JJWT 0.12.6) 인증, 토큰 자동 갱신",
+          "최근 분석 이력 20개에서 키워드 풀 구성 → 후보 최대 200개 수집, viewpointScore 차이 ≥0.4 조건으로 반대관점 콘텐츠 추천",
+          "키워드 매칭 횟수 + 스코어 거리 복합 정렬, 메모리 스트림 처리로 N+1 쿼리 없이 추천 목록 생성",
         ],
       },
     ],
     achievements: [
-      "3단계 캐싱으로 동일 콘텐츠 재분석 시 GPT API 호출 0회 달성",
-      "Virtual Threads + CompletableFuture 병렬 파이프라인으로 단일 분석 대비 다중 URL 처리 속도 개선",
+      "3단계 캐싱으로 재분석 요청 시 GPT API 호출 0회 — L1 캐시 히트 시 파이프라인 전 단계 스킵",
+      "배치 스코어링으로 후보 N개를 GPT 1회 호출로 처리 — 개별 호출 대비 토큰 비용 절감",
+      "App Store + 웹 대시보드 동시 배포 (iOS 앱 심사 통과)",
     ],
     resources: [
       { label: "웹 대시보드", url: "https://dashboard-phi-one-35.vercel.app/login", type: "link" },
@@ -141,35 +142,37 @@ export const projects: Project[] = [
     category: ["backend"],
     period: "2026.03 ~ 2026.04",
     role: "백엔드 개발",
-    longDescription: "스터디·프로젝트 모임을 개설하고 주간 Todo를 함께 관리하며 달성률을 추적하는 서비스입니다. FESI 13기 팀 프로젝트로, 11개 도메인을 설계하고 이벤트 기반 알림 시스템과 QueryDSL 동적 검색, CQRS 패턴을 적용했습니다.",
+    longDescription: "스터디·프로젝트 모임을 개설하고 주간 Todo와 달성률을 팀 단위로 관리하는 서비스입니다. FESI 13기 팀 프로젝트로 11개 도메인을 설계했습니다. @TransactionalEventListener 기반 이벤트 알림, QueryDSL Exists Subquery 동적 필터링, 목록 조회 N+1 제거, PESSIMISTIC_WRITE 동시성 제어 등을 직접 구현했습니다.",
     details: [],
     roleDetails: [
       {
         role: "모임 & 검색",
         items: [
-          "QueryDSL 기반 동적 검색 — 상태·마감일·카테고리·인기순/최신순 복합 필터링",
-          "CQRS 패턴 적용 — GatheringService(커맨드)·GatheringQueryService(쿼리) 분리",
-          "WeeklyPlan + WeeklyPlanDetail로 주차별 목표 관리, Todo 완료율 추적",
+          "QueryDSL BooleanBuilder + Exists Subquery로 다대다 관계(모임↔카테고리·태그) 동적 필터링 — IN 대신 EXISTS로 불필요한 조인 제거",
+          "목록 조회 N+1 제거 — 모임 ID 배치 수집 후 태그·이미지·리더 정보를 IN 쿼리로 각 1회 조회, LinkedHashMap으로 순서 보장",
+          "CQRS 분리 — GatheringService(생성·수정·삭제)·GatheringQueryService(목록·상세 조회) 책임 분리, 스케줄러로 일일 RECRUITING→IN_PROGRESS 상태 자동 전환 및 이벤트 발행",
+          "PESSIMISTIC_WRITE 락으로 동시 신청 시 maxMembers 초과 방지, Batch UPDATE로 currentMembers 원자적 증감 처리",
         ],
       },
       {
         role: "이벤트 기반 알림",
         items: [
-          "@TransactionalEventListener(AFTER_COMMIT)으로 모임 생성·시작·완료·평가 이벤트 발행 — 트랜잭션 안전성 확보",
-          "모임 상태 전환(RECRUITING→ONGOING→COMPLETED) 시 멤버 전원 알림 자동 발송",
+          "@TransactionalEventListener(AFTER_COMMIT)으로 모임 생성·시작·완료·찌르기·평가 5종 이벤트 발행 — 트랜잭션 커밋 후에만 외부 호출하여 데이터 일관성 보장",
+          "평판 시스템 이벤트 분리 — 평가 데이터 저장과 userClient 평판 점수 업데이트를 이벤트로 분리해 외부 서비스 실패 시에도 평가 데이터 유실 없는 fault tolerance 확보",
         ],
       },
       {
-        role: "인증 & 평판 시스템",
+        role: "인증",
         items: [
-          "OAuthClientFactory 패턴으로 Kakao·Google 멀티 프로바이더 OAuth 통합, 로그인 시도 제한(브루트포스 방지)",
-          "투두 주간 달성률 기반 평판점수 산정 — 50% 미달 및 2주 연속 미달성 시 페널티 적용",
+          "OAuthClientFactory 패턴으로 Kakao·Google 멀티 프로바이더 통합 — OAuthClient 인터페이스 구현체를 Map으로 관리해 새 제공자 추가 시 클래스 1개만 등록",
+          "LoginAttemptService로 로그인 시도 횟수 추적, 임계치 초과 시 잠금 처리로 브루트포스 방어",
         ],
       },
     ],
     achievements: [
-      "11개 도메인 설계 및 211개 Java 파일 규모 백엔드 구현",
-      "이벤트 기반 알림으로 도메인 간 결합 없이 알림 로직 분리",
+      "목록 조회 N+1 제거 — 모임·태그·이미지·리더 4개 테이블을 각 1회 IN 쿼리로 일괄 처리",
+      "이벤트 기반 알림으로 모임 도메인과 알림 로직 완전 분리, 평가 실패 시에도 모임 데이터 보존",
+      "PESSIMISTIC_WRITE + Batch UPDATE로 동시 신청 경쟁 조건 해소",
     ],
     resources: [
       { label: "서비스", url: "https://completionisland.vercel.app/main", type: "link" },
