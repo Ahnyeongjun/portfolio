@@ -463,8 +463,10 @@ export const projects: Project[] = [
       {
         role: "AI 모델 서빙 시스템",
         items: [
-          "PyTorch 기반 모델 서빙 (SwinTransformer, ConvNeXt)",
-          "객체탐지(RINO, YOLO26), 영역분할(UPerNet), 변화탐지(ChangeStar) 고도화",
+          "ConvNeXt 백본 + UPerNet 디코더 기반 위성 영상 6클래스 시맨틱 세그멘테이션 구현 — ImageNet-22k pretrained ConvNeXt-Tiny 가중치로 전이학습, 위성 도메인에 fine-tuning",
+          "UPerNet 디코더 구조: PPM(1×1·2×2·3×3·6×6 global pooling으로 전역 맥락 포착) → FPN(top-down 업샘플링으로 저수준·고수준 feature 융합) → 4스케일 concat → 픽셀 분류 (forest·water·ground·building·meadow·road)",
+          "ConvNeXt 4단계 멀티스케일 feature(P1~P4, 96→192→384→768ch)가 UPerNet FPN과 자연스럽게 결합 — ViT 대비 메모리 효율 우위, DDP 분산학습 안정적",
+          "관심정보탐지(POI): YOLO25 기반 객체탐지와 세그멘테이션 결합, RINO·ChangeStar 변화탐지 모델 고도화",
         ],
       },
       {
