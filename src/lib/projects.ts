@@ -91,7 +91,7 @@ export const projects: Project[] = [
     category: ["backend", "ai"],
     period: "2026.03 ~ 2026.04",
     role: "백엔드 개발 (단독)",
-    longDescription: "유튜브·뉴스 URL을 입력하면 GPT-4.1-mini가 콘텐츠 관점을 0.0(부정)~1.0(긍정)으로 점수화하고, YouTube·Naver를 병렬 검색해 반대 관점 콘텐츠를 추천하는 서비스입니다. 분석 파이프라인을 Java 21 Virtual Threads + CompletableFuture로 구성하고, 3단계 캐싱으로 동일 콘텐츠 재요청 시 GPT 호출을 0회로 줄였습니다.",
+    longDescription: "스위프(SWYP) 앱개발 4기에서 진행한 프로젝트입니다. 유튜브·뉴스를 소비할 때 비슷한 관점의 콘텐츠만 반복 노출되는 필터버블 문제를 해결하고자 기획했습니다. URL을 저장하면 AI가 콘텐츠 관점을 자동 분석하고 반대 시각의 콘텐츠를 추천해주는 개인 콘텐츠 관리 서비스입니다. iOS 앱과 웹 대시보드로 동시 배포되었으며, 백엔드를 단독으로 설계·개발했습니다.",
     details: [],
     roleDetails: [
       {
@@ -142,7 +142,7 @@ export const projects: Project[] = [
     category: ["backend"],
     period: "2026.03 ~ 2026.04",
     role: "백엔드 개발",
-    longDescription: "스터디·프로젝트 모임을 개설하고 주간 Todo와 달성률을 팀 단위로 관리하는 서비스입니다. FESI 13기 팀 프로젝트로 11개 도메인을 설계했습니다. @TransactionalEventListener 기반 이벤트 알림, QueryDSL Exists Subquery 동적 필터링, 목록 조회 N+1 제거, PESSIMISTIC_WRITE 동시성 제어 등을 직접 구현했습니다.",
+    longDescription: "FESI 13기에서 진행한 팀 프로젝트입니다. 스터디나 프로젝트 모임을 개설하고 팀원들과 주간 Todo를 공유하며 달성률을 함께 관리하는 서비스입니다. 11개 도메인을 설계했으며, 모임 검색·신청·알림·평판까지 전체 백엔드 흐름을 담당했습니다.",
     details: [],
     roleDetails: [
       {
