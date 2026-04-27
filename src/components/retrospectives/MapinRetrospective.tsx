@@ -1,4 +1,4 @@
-import { Zap, Layers, Brain, BookOpen } from "lucide-react";
+import { Zap, Layers, Brain, Database, BookOpen } from "lucide-react";
 
 function Section({
   icon: Icon,
@@ -135,6 +135,43 @@ List<ScoredContent> results = gpt.scoreBatch(prompt); // 1회`}</CodeBlock>
           </p>
         </Section>
 
+        <Section icon={Database} title="2-Stage Embedding Retrieval — 벡터 유사도로 반대관점 후보 확보">
+          <p>
+            키워드 텍스트 매칭만으로는 주제는 비슷하지만 관점이 다른 콘텐츠를 찾기 어렵습니다.
+            <Highlight>text-embedding-3-small</Highlight>로 각 키워드를 1536차원 벡터로 변환하고,
+            최근 분석한 콘텐츠들의 키워드 벡터를 산술 평균해 소스의 주제 벡터를 구성했습니다.
+          </p>
+          <CodeBlock>{`// 1단계: pgvector 코사인 유사도로 주제 유사 콘텐츠 50개 확보
+WITH topic_pool AS (
+    SELECT c.id, c.viewpoint_score,
+           1 - (k.embedding <=> ?::vector) AS topic_sim
+    FROM content_keywords ck
+    JOIN keywords k ON ck.keyword_id = k.id
+    JOIN contents c ON ck.content_id = c.content_id
+    WHERE k.embedding IS NOT NULL
+    GROUP BY c.id, c.viewpoint_score
+    ORDER BY topic_sim DESC
+    LIMIT 50  -- poolSize
+)
+-- 2단계: 풀 안에서 opposition 우선 정렬
+SELECT * FROM topic_pool
+ORDER BY
+    (ABS(viewpoint_score - ?) >= 0.4) DESC,  -- opposition 우선
+    (topic_sim * 0.4 + ABS(viewpoint_score - ?) * 0.6) DESC`}</CodeBlock>
+          <p>
+            DB에서 주제 유사도로 50개를 뽑은 뒤, 메모리에서
+            <Highlight>viewpointScore 차이 ≥ 0.4</Highlight> 조건으로 opposition을 먼저 채우고
+            부족하면 similar 콘텐츠로 보충합니다.
+          </p>
+          <p>
+            pgvector를 처음 써봤는데, JPA 엔티티에서 지원이 제한적이라 벡터 저장·조회는
+            <Highlight>JdbcTemplate</Highlight>으로 raw SQL을 직접 작성했습니다.
+            벡터를 <code>float[]</code>로 직렬화해 <code>?::vector</code>로 캐스팅하는 방식입니다.
+            임베딩 기능은 설정값으로 활성화·비활성화할 수 있어,
+            비용이 부담스러울 때는 키워드 매칭만으로 동작하도록 폴백을 열어뒀습니다.
+          </p>
+        </Section>
+
         <Section icon={BookOpen} title="성장과 배움">
           <div>
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
@@ -143,6 +180,7 @@ List<ScoredContent> results = gpt.scoreBatch(prompt); // 1회`}</CodeBlock>
                 "Java 21 Virtual Threads — I/O 집약적 파이프라인에서 스레드 풀 한도 없이 동시성 확보",
                 "3단계 캐싱 설계 — 파이프라인 어느 단계부터 재사용 가능한지 분석해 GPT 호출 최소화",
                 "배치 스코어링 — N개 후보를 GPT 1회 호출로 처리해 레이턴시와 비용 동시 절감",
+                "pgvector 2-Stage Retrieval — 코사인 유사도로 주제 근접 50개 확보 후 viewpointScore로 메모리 필터링",
                 "synchronized pinning 이슈 — Virtual Threads 환경에서 피해야 할 패턴 체득",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
