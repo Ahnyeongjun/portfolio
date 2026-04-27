@@ -208,11 +208,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "QueryDSL 첫 도입 — 타입 안전한 동적 쿼리와 런타임 정렬 패턴 체득",
-      "초기 데이터 적재 기술 비교 (코루틴 → JPA → JdbcTemplate) 끝에 최적 방식 선택",
-      "Spring Batch Reader-Processor-Writer 패턴으로 국립중앙도서관 신간 수집 자동화",
-      "external 패키지로 외부 연동(CSV 파이프라인, API 클라이언트) 책임 분리 관리 첫 경험",
-      "오랜만에 다시 쓴 Kotlin — 코루틴/JPA 삽질 덕분에 Spring 트랜잭션 컨텍스트 깊게 이해",
+      "문화데이터 CSV 12만 건 — 코루틴·JPA 적재 실패 후 JdbcTemplate 배치 INSERT로 안정 적재",
+      "Spring Batch Reader-Processor-Writer로 국립중앙도서관 신간 수집 자동화 — JobExplorer 중복 실행 방지",
+      "AOP + Spring Event로 검색 로그 비침투 수집 → 2차 배치에서 미수집 도서 자동 보강",
+      "external 패키지로 외부 연동 책임 분리 — CSV 파이프라인·API 클라이언트와 비즈니스 로직 경계 명확화",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/HBD-BookSight", type: "link" },
