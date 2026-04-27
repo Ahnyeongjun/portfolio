@@ -13,7 +13,7 @@ export const activities: ActivityItem[] = [
     title: 'FESI 13기 백엔드 멘토링',
     type: '멘토링',
     period: '2026.03 ~ 2026.04',
-    description: '수강생 6명 대상 백엔드 멘토링 — PR 리뷰, REST API 설계 원칙 지도 및 DDD 개념을 TDD로 직접 구현해보는 실습 진행',
+    description: '수강생 6명 대상 백엔드 멘토링 — PR 리뷰, REST API 설계 원칙 지도 및 DDD 기반 도메인 설계를 TDD로 검증하는 실습 진행',
   },
   {
     title: '제4회 블레이버스 MVP 개발 해커톤',
@@ -25,7 +25,7 @@ export const activities: ActivityItem[] = [
     title: '스위프 (SWYP) 웹 9기 ~ 11기, 앱 4기',
     type: '동아리',
     period: '2025.01 ~ 2026.04',
-    description: '4개 기수 참여 — 9기 백엔드(모먼티어), 10기 프론트엔드(축지법), 11기 PM·프론트엔드(위딩), 앱 4기 백엔드',
+    description: '4개 기수 참여 — 9기 백엔드(모먼티어), 10기 프론트엔드(축지법), 11기 PM·프론트엔드(위딩), 앱 4기 백엔드(Mapin)',
   },
   {
     title: '항해99 백엔드코스 9기',
