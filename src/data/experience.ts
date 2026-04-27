@@ -5,7 +5,7 @@ export const career: CareerInfo = {
   position: '연구원',
   period: '2021.07 ~ 현재',
   duration: '5년차',
-  description: '위성 영상 분석 플랫폼 MSA 전환 주도, AI 모델 서빙, 인증 시스템 고도화',
+  description: '모놀리식 → 9개 서비스 MSA 전환 주도, Go API 응답 4초→0.5초, 재배포 월 10건→1건',
 };
 
 export const activities: ActivityItem[] = [
@@ -37,7 +37,7 @@ export const activities: ActivityItem[] = [
     title: 'AI 커리어스쿨',
     type: '교육',
     period: '2024.06 ~ 2024.09',
-    description: '데이터 분석법, 파이썬을 이용한 데이터 시각화 학습',
+    description: 'Python 기반 데이터 분석 및 시각화 학습 — 위성 영상 데이터 파이프라인·AI 모델 서빙 업무의 데이터 처리 흐름 이해에 기반이 됨',
   },
 ];
 
