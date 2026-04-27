@@ -1,4 +1,4 @@
-import { Search, Bell, Lock, Layers, GitBranch, BookOpen } from "lucide-react";
+import { Search, Bell, Lock, Layers, GitBranch, KeyRound, BookOpen } from "lucide-react";
 
 function Section({
   icon: Icon,
@@ -205,6 +205,53 @@ public record GatheringListRow(
           </p>
         </Section>
 
+        <Section icon={KeyRound} title="OAuthClientFactory — Enum 키로 멀티 프로바이더 관리">
+          <p>
+            Kakao·Google 두 가지 OAuth를 지원하면서 처음 구현하면 자연스럽게
+            provider 문자열로 분기하는 if-else가 생깁니다. 새 제공자가 추가될 때마다
+            조건 분기를 찾아 수정해야 하고, 누락 시 런타임 오류로 이어집니다.
+          </p>
+          <CodeBlock>{`// OAuthProviderType — 별도 모듈로 분리해 import해서 사용
+public enum OAuthProviderType {
+    KAKAO, GOOGLE;
+}
+
+// OAuthClient 인터페이스
+public interface OAuthClient {
+    OAuthUserInfo getUserInfo(String accessToken);
+    OAuthProviderType getProviderType();
+}
+
+// Factory — Enum을 키로 Map에 보관
+@Component
+public class OAuthClientFactory {
+    private final Map<OAuthProviderType, OAuthClient> clients;
+
+    public OAuthClientFactory(List<OAuthClient> clientList) {
+        this.clients = clientList.stream()
+            .collect(Collectors.toMap(
+                OAuthClient::getProviderType,
+                Function.identity()
+            ));
+    }
+
+    public OAuthClient getClient(OAuthProviderType providerType) {
+        return Optional.ofNullable(clients.get(providerType))
+            .orElseThrow(() -> new UnsupportedOAuthProviderException(providerType));
+    }
+}`}</CodeBlock>
+          <p>
+            <Highlight>OAuthProviderType</Highlight>을 별도 모듈로 분리해 여러 서비스에서
+            import해서 쓰도록 구성했습니다. 새 OAuth 제공자를 추가할 때는
+            Enum에 값 하나 추가 + <Highlight>OAuthClient</Highlight> 구현 클래스 1개 등록만 하면
+            Factory와 라우팅 코드는 전혀 건드리지 않아도 됩니다.
+          </p>
+          <p>
+            String 키 대신 Enum을 쓴 이유는 오타로 인한 런타임 오류를 컴파일 타임에 잡고,
+            지원하는 제공자 목록을 코드만 보고 파악할 수 있게 하기 위해서입니다.
+          </p>
+        </Section>
+
         <Section icon={BookOpen} title="성장과 배움">
           <div>
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
@@ -215,6 +262,7 @@ public record GatheringListRow(
                 "EXISTS vs IN — 다대다 관계 필터링에서 EXISTS가 중복 행 없이 더 효율적인 이유",
                 "@TransactionalEventListener(AFTER_COMMIT) — 외부 호출 실패가 핵심 트랜잭션에 영향을 주지 않는 설계",
                 "PESSIMISTIC_WRITE vs Optimistic Lock — 경쟁 빈도와 재시도 가능 여부로 락 전략 선택",
+                "OAuthClientFactory + Enum 키 — String 분기 제거, 컴파일 타임 타입 안전성 확보, 제공자 추가 시 클래스 1개만 등록",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

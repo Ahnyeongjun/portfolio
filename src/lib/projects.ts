@@ -295,8 +295,8 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "공공데이터 API 배치 처리로 축제 데이터 자동화",
-      "QueryDSL 동적 쿼리로 복잡한 필터링 조건 처리",
+      "Tour API에서 수천 건 축제 데이터 수 시간 주기 자동 수집 — Spring Batch Reader-Processor-Writer 파이프라인 구성",
+      "지역·테마·날짜·좌표 복합 조건 QueryDSL 동적 쿼리로 구현 — 목록·달력·지도 뷰별 API 분리 제공",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp10-9", type: "link" },

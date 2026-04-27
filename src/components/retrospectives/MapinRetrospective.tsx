@@ -1,4 +1,4 @@
-import { Zap, Layers, Brain, Database, BookOpen } from "lucide-react";
+import { Zap, Layers, Brain, Database, GitMerge, BookOpen } from "lucide-react";
 
 function Section({
   icon: Icon,
@@ -135,6 +135,46 @@ List<ScoredContent> results = gpt.scoreBatch(prompt); // 1회`}</CodeBlock>
           </p>
         </Section>
 
+        <Section icon={GitMerge} title="CompletableFuture 병렬 검색 — 실패해도 결과를 버리지 않는 방법">
+          <p>
+            반대관점 후보를 수집할 때 YouTube API와 Naver 검색 API를 동시에 호출합니다.
+            처음엔 순차 호출로 구현했는데, 쿼리 2~3개 × 2개 API면 최대 6번의 직렬 호출이 되어
+            레이턴시가 쌓였습니다.
+          </p>
+          <CodeBlock>{`// 순차 호출 — 쿼리 N개 × API 2개 = 직렬 호출
+for (String query : queries) {
+    results.addAll(youtubeClient.search(query));
+    results.addAll(naverClient.search(query));
+}
+
+// 병렬 호출 — 전체를 동시 실행, 각자 실패해도 빈 리스트로 계속
+List<CompletableFuture<List<Content>>> futures = queries.stream()
+    .flatMap(q -> Stream.of(
+        youtubeClient.searchAsync(q)
+            .exceptionally(e -> List.of()),  // YouTube 실패 → 빈 리스트
+        naverClient.searchAsync(q)
+            .exceptionally(e -> List.of())   // Naver 실패 → 빈 리스트
+    ))
+    .toList();
+
+List<Content> candidates = CompletableFuture
+    .allOf(futures.toArray(new CompletableFuture[0]))
+    .thenApply(v -> futures.stream()
+        .flatMap(f -> f.join().stream())
+        .collect(Collectors.toList()))
+    .get(30, TimeUnit.SECONDS);`}</CodeBlock>
+          <p>
+            핵심은 <Highlight>exceptionally(() → List.of())</Highlight> 처리입니다.
+            YouTube가 실패해도 Naver 결과만으로 진행하고, 반대도 마찬가지입니다.
+            둘 다 실패하면 빈 리스트가 되어 L3 캐시 폴백으로 넘어갑니다.
+          </p>
+          <p>
+            <Highlight>allOf</Highlight>로 전체를 묶은 뒤 30초 타임아웃을 걸어 파이프라인이
+            무한정 대기하지 않도록 보호했습니다. 개별 API 타임아웃은 각 클라이언트에서
+            따로 설정하고, 30초는 파이프라인 전체를 끊는 마지막 안전망입니다.
+          </p>
+        </Section>
+
         <Section icon={Database} title="2-Stage Embedding Retrieval — 벡터 유사도로 반대관점 후보 확보">
           <p>
             키워드 텍스트 매칭만으로는 주제는 비슷하지만 관점이 다른 콘텐츠를 찾기 어렵습니다.
@@ -178,6 +218,7 @@ ORDER BY
             <ul className="space-y-2 ml-1">
               {[
                 "Java 21 Virtual Threads — I/O 집약적 파이프라인에서 스레드 풀 한도 없이 동시성 확보",
+                "CompletableFuture 병렬 검색 — exceptionally()로 부분 실패를 허용하면서 전체 결과를 allOf로 병합",
                 "3단계 캐싱 설계 — 파이프라인 어느 단계부터 재사용 가능한지 분석해 GPT 호출 최소화",
                 "배치 스코어링 — N개 후보를 GPT 1회 호출로 처리해 레이턴시와 비용 동시 절감",
                 "pgvector 2-Stage Retrieval — 코사인 유사도로 주제 근접 50개 확보 후 viewpointScore로 메모리 필터링",
