@@ -8,6 +8,8 @@ import { BooksightRetrospective } from "@/components/retrospectives/BooksightRet
 import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
 import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
 import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
+import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
+import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -227,6 +229,8 @@ export default async function ProjectPage({
             {project.id === "booksight" && <BooksightRetrospective />}
             {project.id === "chukjibeob" && <ChukjibeobRetrospective />}
             {project.id === "with-ing" && <WithingRetrospective />}
+            {project.id === "mapin" && <MapinRetrospective />}
+            {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.length > 0 && (
