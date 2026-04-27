@@ -407,30 +407,30 @@ export const projects: Project[] = [
   {
     id: "team-mcp-agent",
     title: "팀 업무 자동화 MCP 에이전트",
-    description: "SuperMCP 기반 Slack·Gmail·캘린더·Git·사무실 예약 통합 자동화 에이전트 — 팀 10명 실사용 중",
-    tags: ["Python", "SuperMCP", "MCP", "Slack API", "Gmail API", "Google Calendar API"],
+    description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트 — 팀 10명 실사용 중",
+    tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
     status: "deployed",
     type: "company",
     company: "한컴인스페이스",
     category: ["backend", "ai"],
     period: "2026.03 ~ 2026.04",
     role: "설계 및 개발",
-    longDescription: "주간보고 작성, 일정 관리, 사무실 예약 등 반복 업무를 자동화하기 위해 개인적으로 개발하여 팀 전체(10명)에 공유한 MCP 기반 에이전트입니다. SuperMCP 프레임워크를 활용해 Slack, Gmail, Google Calendar, Git, 사내 아마란스 예약 사이트를 단일 에이전트로 통합했습니다.",
+    longDescription: "주간보고 작성, 일정 관리, 사내 HRWeb 입력 등 반복 업무를 자동화하기 위해 개인적으로 개발하여 팀 전체(10명)에 공유한 MCP 기반 에이전트입니다. FastMCP로 8개 도구를 구현하고 Cursor·Claude Desktop에서 바로 호출할 수 있도록 연동했습니다.",
     details: [],
     roleDetails: [
       {
         role: "MCP 에이전트 설계 및 개발",
         items: [
-          "SuperMCP 기반 멀티서비스 통합 에이전트 설계 — Slack, Gmail, Google Calendar, Git, 사내 아마란스 예약 시스템 연동",
-          "Git 커밋 로그 + 캘린더 일정을 분석하여 주간보고 초안 자동 생성 및 엑셀 저장",
-          "Google Calendar 연동으로 일정 자동 생성 및 팀원 공유",
-          "아마란스 사내 예약 사이트 자동 접근으로 사무실 예약 자동화",
+          "FastMCP 기반 8개 도구 구현 — list_commits·get_trips·create_calendar_event·generate_report·send_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
+          "Git subprocess로 리포별 커밋 로그 수집 → 폴더 단위 그룹핑, Google Calendar OAuth로 출장 일정 조회 → 두 소스를 병합해 주간보고 초안 자동 생성 후 Gmail SMTP로 발송",
+          "엑셀 템플릿을 ZIP 내 XML 레벨로 직접 조작 — 서식·수식 100% 보존하면서 C열 카테고리 자동 감지 후 D/H 셀에 내용 주입",
+          "사내 HRWeb(아마란스) Playwright 자동화 — 로그인 → 월 선택 → 날짜·프로젝트·공수 입력까지 전 흐름 브라우저 자동화, Git 커밋이 없는 날은 주변 커밋 패턴으로 description 추론",
         ],
       },
     ],
     achievements: [
       "팀 10명 전원 실사용 중인 업무 자동화 도구로 정착",
-      "주간보고 작성·사무실 예약 등 반복 업무 자동화로 팀 생산성 향상",
+      "주간보고 작성(Git+Calendar 병합 → 엑셀 생성 → Gmail 발송)·HRWeb 공수 입력 전 과정 자동화",
     ],
   },
   {
@@ -457,7 +457,7 @@ export const projects: Project[] = [
           "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 폐쇄망·공개망이 분리된 환경에서 외부 코디네이터(ZooKeeper 등) 접근이 불가하여 기성 라이브러리 사용 불가, worker ID를 망별로 사전 할당하여 양쪽에서 충돌 없는 고유 ID 생성 및 파일 기반으로 전달된 로그에서 발생 서버 즉시 추적 가능",
           "9개 MSA 서비스 분리 — 서비스 간 장애 격리와 독립 배포를 위한 아키텍처 전환으로, 한 서비스 장애가 전체 시스템으로 전파되던 문제 해소",
           "HPA 기반 동적 스케일링 — 영상 분석 요청 특성상 처리 시간이 길어 동시 요청 시 스레드 풀 고갈 문제 발생, 레플리카를 여러 노드에 자동 분산하여 동시 처리량 확보",
-          "Gateway를 통한 인증·로깅·도메인별 서비스 조합 구조화",
+          "Spring Cloud Gateway로 인증·로깅·도메인별 라우팅 일원화 — 외부망·폐쇄망 분리 환경에서 각 망이 접근 가능한 서비스 경로를 Gateway 레이어에서 구분 관리",
         ],
       },
       {
@@ -472,7 +472,7 @@ export const projects: Project[] = [
       {
         role: "프론트엔드 개선",
         items: [
-          "Next.js FSD 아키텍처 리팩토링",
+          "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js FSD 아키텍처로 전면 마이그레이션",
           "Storybook 통합 테스트 및 사내 프론트엔드 공통 라이브러리 운영",
         ],
       },
@@ -487,6 +487,8 @@ export const projects: Project[] = [
       "오류 관련 고객 문의 대응 속도 1주 → 하루 내로 감소",
       "장애로 인한 재배포 건수 월 10건 → 1건 내외로 감소하여 운영 안정성 확보",
       "인증·로깅 등 백엔드 공통 모듈을 Spring Cloud Gateway로, 프론트엔드 공통 설정을 공통 라이브러리로 각각 일원화 — 기존에는 12개 서비스에 각각 내장되어 업데이트 시 전체 재배포 필요했으나, 각 공통 모듈 1개만 재배포하면 되도록 개선되어 배포 속도 4분 → 30초로 감소",
+      "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js FSD 아키텍처로 전면 마이그레이션",
+      "외부 코디네이터 없이 Snowflake ID 생성기 직접 구현 — 폐쇄망·공개망 worker ID 사전 할당으로 양쪽 ID 충돌 없는 분산 식별 체계 구축",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -579,7 +581,8 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "Redis O(N) 풀스캔 → O(1) 역인덱스 전환으로 세션 조회 속도 개선, 인증 필터에서 권한 정보를 메모리 매핑으로 전환하여 매 요청마다 발생하던 DB 쿼리 제거, 권한 변경 실시간 반영 보장",
+      "Redis O(N) 풀스캔 → O(1) 역인덱스 전환으로 세션 조회 속도 개선, 권한 변경 실시간 반영 보장",
+      "인증 필터에서 권한 정보를 메모리 매핑으로 전환 — 매 요청마다 발생하던 DB 쿼리 제거",
       "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화, 각 서비스별 세션 유지 불필요",
     ],
   },
@@ -600,9 +603,8 @@ export const projects: Project[] = [
       {
         role: "WMS → WMTS 전환",
         items: [
-          "개별 영상 표출 시 WMS를 사용하여 사용성 유지",
-          "다량 영상 표출 시 WMTS 타입별로 특정 타일을 미리 캐싱하여 조합하는 방식으로 전환",
-          "Go 기반 고루틴 병렬 처리 및 Redis 캐싱",
+          "WMS는 요청마다 해당 바운더리의 영상을 동적으로 겹쳐 합성하므로 영상 수가 늘수록 응답 시간이 선형 증가 — WMTS로 전환해 z/x/y 좌표를 캐시 키로 고정, 영상들을 쌓은 합성 결과를 Redis에 저장하여 동일 타일 재요청 시 합성 연산 완전 스킵",
+          "Go 고루틴으로 타일 생성 단계를 병렬화 — 요청된 좌표 범위의 타일들을 동시에 생성 후 Redis에 적재, 이후 요청은 Redis hit 즉시 반환",
         ],
       },
       {
@@ -610,14 +612,15 @@ export const projects: Project[] = [
         items: [
           "Nginx Ingress upstream keepalive 설정으로 각 Pod에 대한 커넥션 풀 관리 — 매 요청마다 TCP 핸드셰이크가 반복되던 오버헤드 제거",
           "지도 이동 시 타일 요청이 수십 개씩 동시에 발생하는 GIS 특성 상 단일 인스턴스 스레드 풀 고갈 문제 존재 — HPA로 부하에 따라 레플리카를 여러 노드에 자동 분산하여 동시 처리량 확보",
-          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인",
-          "MBTiles 벡터 타일링으로 줌 레벨/좌표 기반 폴리곤 선별 렌더링",
+          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인 — 좌표 투영 변환 후 지리 범위를 픽셀 경계로 래스터화",
+          "MBTiles 벡터 타일링으로 줌 레벨·타일 좌표 기반 폴리곤 선별 렌더링",
         ],
       },
     ],
     achievements: [
-      "WMTS 도입과 이미지 캐싱으로 API 응답 속도 4초 → 0.5초 미만으로 감소",
-      "서비스 간 세션 경쟁 제거로 안정성 확보 및 락 제거",
+      "WMTS 도입과 Redis 타일 캐싱으로 API 응답 속도 4초 → 0.5초 미만으로 감소",
+      "Nginx keepalive 커넥션 풀로 매 요청 TCP 재연결 오버헤드 제거 및 세션 경쟁 해소",
+      "HPA 자동 스케일링으로 동시 타일 요청 급증 시 레플리카 확장, 단일 인스턴스 스레드 고갈 방지",
     ],
   },
   {
@@ -666,8 +669,8 @@ export const projects: Project[] = [
       {
         role: "테스트 환경 구축",
         items: [
-          "운영 클러스터와 테스트 클러스터를 물리적으로 분리 — 테스트 클러스터에 MSA 전체를 동일하게 올려 운영 환경과 완전히 격리된 검증 환경 구축",
-          "클러스터 분리로 테스트 워크로드가 운영 서비스에 영향을 주지 않으며, 서버 자원을 필요한 곳에만 할당하여 기존 서버 5대 → 2대로 효율화",
+          "운영 클러스터와 테스트 클러스터를 물리적으로 분리 — ETL 로직·AI 모델·DB를 테스트 클러스터에 동일하게 구성하여 운영과 완전히 격리된 검증 환경 구축",
+          "클러스터 분리로 테스트 워크로드가 운영 서비스에 영향을 주지 않으며, K8s Pod 배치로 서버 자원을 필요한 곳에만 할당하여 기존 서버 5대 → 2대로 효율화",
         ],
       },
     ],
@@ -709,8 +712,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "드론 탑재 환경에서 실시간 객체 탐지 스트리밍 구현",
-      "C++ 네이티브 적용으로 메모리 최적화 및 안정성 확보",
+      "LibTorch C++ 직접 로드로 소켓 큐 누적 메모리 고갈 문제 해소 — 드론 탑재 환경 실시간 추론 안정화",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },
