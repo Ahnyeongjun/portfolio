@@ -189,6 +189,51 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "concert-reservation",
+    title: "콘서트 예약 시스템",
+    description: "항해99 백엔드코스 — 동시성·이벤트 드리븐·부하 테스트까지 백엔드 핵심 문제를 단계적으로 해결한 프로젝트",
+    tags: ["Spring Boot", "Java", "MySQL", "Redis", "Kafka", "k6", "InfluxDB", "Grafana", "JUnit5"],
+    status: "deployed",
+    type: "personal",
+    category: ["backend"],
+    period: "2025.07 ~ 2025.09",
+    role: "백엔드 개발 (항해99 9기)",
+    longDescription: "항해99 백엔드코스 9기에서 진행한 콘서트 예약 시스템입니다. 설계부터 시작해 동시성 제어, 캐싱, 이벤트 드리븐 아키텍처, Kafka 마이그레이션, 부하 테스트까지 10주에 걸쳐 단계적으로 완성했습니다. 상위 10% 수료.",
+    details: [],
+    roleDetails: [
+      {
+        role: "동시성 제어",
+        items: [
+          "좌석 중복 예약 방지를 위해 DB 비관적 락 → Redis 분산락(simple·spin·pub-sub) → 낙관적 락 순으로 전환하며 각 방식의 트레이드오프 직접 검증",
+          "k6 + InfluxDB + Grafana로 부하 테스트 수행 — 분산락 재시도 로직이 처리 지연의 주 원인임을 병목으로 특정, 낙관적 락으로 전환해 해결",
+        ],
+      },
+      {
+        role: "이벤트 드리븐 & Kafka",
+        items: [
+          "@TransactionalEventListener(AFTER_COMMIT)으로 예약·결제 이벤트 트랜잭션 경계 밖에서 발행 — 코어 트랜잭션 실패 시 외부 호출 방지",
+          "Redis 대기열을 Kafka 토픽으로 전환 — 예약·결제 이벤트를 별도 토픽으로 분리, Redis는 활성 토큰 관리에만 한정",
+          "Choreography Saga 패턴 + Redis DLQ로 분산 트랜잭션 실패 시 보상 이벤트 처리",
+        ],
+      },
+      {
+        role: "성능 최적화",
+        items: [
+          "EXPLAIN 기반 슬로우 쿼리 분석 — 카디널리티·사용 패턴 고려한 인덱스 전략 수립으로 쿼리 성능 개선",
+          "Redis Sorted Set 기반 실시간 콘서트 랭킹 — 최근 1시간 예약 건수를 스케줄러로 집계, 조회 시 O(log N) 처리",
+        ],
+      },
+    ],
+    achievements: [
+      "분산락 재시도 로직이 응답 지연의 원인임을 k6+Grafana 부하 테스트로 특정 — 낙관적 락 전환으로 병목 제거",
+      "Redis 대기열을 Kafka로 마이그레이션하고 Choreography Saga + DLQ 패턴으로 분산 트랜잭션 일관성 확보",
+      "EXPLAIN 기반 인덱스 설계, Redis 캐싱, 비관적·낙관적·분산락 비교 검증까지 백엔드 핵심 문제를 단계적으로 직접 해결",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/hanghae99-backend/2-SERVICE", type: "link" },
+    ],
+  },
+  {
     id: "booksight",
     title: "Booksight",
     description: "오늘 출간된 책들을 생일처럼 축하하는 서비스",
