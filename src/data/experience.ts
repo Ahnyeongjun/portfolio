@@ -5,7 +5,7 @@ export const career: CareerInfo = {
   position: '연구원',
   period: '2021.07 ~ 현재',
   duration: '5년차',
-  description: '모놀리식 → 9개 서비스 MSA 전환 주도, Go API 응답 4초→0.5초, 재배포 월 10건→1건',
+  description: '구조적 병목을 직접 진단하고 아키텍처 수준에서 해결 — MSA 전환으로 재배포 월 10건→1건, API 응답 4초→0.5초 달성',
 };
 
 export const activities: ActivityItem[] = [

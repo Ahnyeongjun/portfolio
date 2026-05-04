@@ -60,10 +60,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "7가지 기계 장치(드론, V4 엔진, 로봇팔, 로봇 그리퍼, 판스프링, 만력기, 서스펜션) 3D 분해·조립 학습 콘텐츠 구현",
-      "피보나치 스피어 알고리즘 기반 자연스러운 부품 분해 애니메이션 구현",
-      "SSE 스트리밍 AI 응답 + 타이핑 애니메이션으로 실시간 학습 보조 경험 제공",
-      "Undo/Redo·워크플로우·퀴즈·메모·PDF 내보내기를 통합한 완결된 학습 흐름 설계",
+      "2D 교재만으로는 기계 구조 이해가 어렵다는 교육 한계를 3D 인터랙티브 시뮬레이션으로 해결 — 드론·V4 엔진 등 7가지 기계 장치 분해·조립 학습 콘텐츠 구현",
+      "부품이 같은 방향으로 분해되어 겹치는 시각적 충돌 문제를 피보나치 스피어 알고리즘으로 해결 — 모든 부품이 균일하게 퍼지는 자연스러운 분해 애니메이션 구현",
+      "AI 응답 대기 중 학습 흐름이 끊기는 문제를 SSE 스트리밍으로 해결 — 응답이 생성되는 즉시 표시해 실시간 학습 몰입감 유지",
+      "분산된 학습 도구 간 맥락 전환이 빈번한 문제를 단일 화면 통합 플로우로 해결 — Undo/Redo·퀴즈·메모·워크플로우·PDF 내보내기를 하나의 학습 흐름으로 통합",
     ],
     resources: [
       {
@@ -119,9 +119,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "3단계 캐싱으로 재분석 요청 시 GPT API 호출 0회 — L1 캐시 히트 시 파이프라인 전 단계 스킵",
-      "배치 스코어링으로 후보 N개를 GPT 1회 호출로 처리 — 개별 호출 대비 토큰 비용 절감",
-      "App Store + 웹 대시보드 동시 배포 (iOS 앱 심사 통과)",
+      "동일 콘텐츠 재분석마다 GPT API 비용이 반복 발생하는 문제를 3단계 캐싱 전략(L1 결과 캐시·L2 분석 이력·L3 키워드 풀)으로 해결 — 재요청 시 API 호출 0회 달성",
+      "반대관점 후보 N개를 개별 스코어링하는 방식의 토큰 낭비를 배치 스코어링으로 개선 — GPT 1회 호출로 전체 후보 처리",
+      "iOS App Store + 웹 대시보드 동시 배포 — 앱 심사 통과로 양 플랫폼 실사용자 확보",
     ],
     resources: [
       { label: "웹 대시보드", url: "https://dashboard-phi-one-35.vercel.app/login", type: "link" },
@@ -133,7 +133,7 @@ export const projects: Project[] = [
     id: "deadline-mate",
     title: "DeadlineMate",
     description: "스터디·프로젝트 모임을 개설하고 주간 Todo와 달성률로 팀 목표를 함께 관리하는 모임 플랫폼",
-    tags: ["Spring Boot", "Java 21", "MySQL", "JPA", "QueryDSL", "JWT", "OAuth", "Spring Event"],
+    tags: ["Spring Boot", "Java 21", "MySQL", "JPA", "QueryDSL", "JWT", "OAuth", "Spring Event", "JUnit5", "Mockito"],
     imageUrl: "/deadline-mate_thum.png",
     link: "https://completionisland.vercel.app/main",
     status: "live",
@@ -168,11 +168,20 @@ export const projects: Project[] = [
           "LoginAttemptService로 로그인 시도 횟수 추적, 임계치 초과 시 잠금 처리로 브루트포스 방어",
         ],
       },
+      {
+        role: "테스트 & CI",
+        items: [
+          "51개 테스트 파일 — Controller(단위)·Service(Mockito BDD)·Repository(@DataJpaTest/H2)·E2E(@SpringBootTest) 3-layer 피라미드 구조로 전 도메인 커버",
+          "@Nested + @DisplayName 한글 계층 구조로 테스트 의도 명확화, ArgumentCaptor·BDDMockito.given/then 패턴으로 이벤트 발행·상태 변이 검증",
+          "GitHub Actions CI — PR → main/dev 머지 전 자동 테스트 실행, H2 테스트 프로파일 분리로 외부 DB 의존성 없는 빌드 환경 구성",
+        ],
+      },
     ],
     achievements: [
-      "목록 조회 N+1 제거 — 모임·태그·이미지·리더 4개 테이블을 각 1회 IN 쿼리로 일괄 처리",
-      "이벤트 기반 알림으로 모임 도메인과 알림 로직 완전 분리, 평가 실패 시에도 모임 데이터 보존",
-      "PESSIMISTIC_WRITE + Batch UPDATE로 동시 신청 경쟁 조건 해소",
+      "모임 목록 조회 시 태그·이미지·리더를 건별 조회해 N+1이 발생하던 문제를 IN 쿼리 일괄 처리로 해결 — 4개 테이블 각 1회 쿼리로 최적화",
+      "알림 실패가 모임 데이터에 영향을 주는 강결합 구조를 @TransactionalEventListener 이벤트 분리로 해결 — 평가 서비스 장애 시에도 모임 데이터 유실 없는 fault tolerance 확보",
+      "동시 신청 시 maxMembers 초과 가능성을 PESSIMISTIC_WRITE + Batch UPDATE로 해결 — 경쟁 조건 없는 원자적 증감 처리",
+      "전 도메인 51개 테스트 파일 작성 — 단위·통합·E2E 3-layer 구조 + GitHub Actions CI로 PR마다 자동 검증",
     ],
     resources: [
       { label: "서비스", url: "https://completionisland.vercel.app/main", type: "link" },
@@ -208,10 +217,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "문화데이터 CSV 12만 건 — 코루틴·JPA 적재 실패 후 JdbcTemplate 배치 INSERT로 안정 적재",
-      "Spring Batch Reader-Processor-Writer로 국립중앙도서관 신간 수집 자동화 — JobExplorer 중복 실행 방지",
-      "AOP + Spring Event로 검색 로그 비침투 수집 → 2차 배치에서 미수집 도서 자동 보강",
-      "external 패키지로 외부 연동 책임 분리 — CSV 파이프라인·API 클라이언트와 비즈니스 로직 경계 명확화",
+      "12만 건 초기 데이터 적재 시 코루틴·JPA 방식이 OOM으로 실패하는 문제를 JdbcTemplate 배치 INSERT로 전환하여 해결 — 전체 데이터 안정 적재 완료",
+      "매일 신간 수집이 중복 실행될 경우 데이터 정합성이 깨지는 문제를 Spring Batch + JobExplorer 중복 실행 방지로 해결 — 국립중앙도서관 API 자동 수집 파이프라인 구축",
+      "검색 로그 수집 로직이 비즈니스 코드에 침투해 가독성을 해치는 문제를 AOP + Spring Event로 해결 — 미수집 도서 자동 보강 2차 배치와 비침투 연동",
+      "외부 API·CSV 파이프라인이 비즈니스 로직과 혼재되어 유지보수가 어렵던 문제를 external 패키지 분리로 해결 — 외부 연동 변경 시 비즈니스 코드 무영향",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/HBD-BookSight", type: "link" },
@@ -255,9 +264,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "Next.js·Zustand·Storybook 첫 학습 프로젝트로 프론트엔드 아키텍처 독립 설계",
-      "MCP 기반 AI 백엔드 구축 — Tour API + OpenAI를 Agent 도구로 연동하는 구조 설계 및 구현",
-      "Storybook 기반 컴포넌트 문서화 체계 구축 (컴포넌트 + 페이지 스토리)",
+      "처음 접하는 Next.js·Zustand·Storybook으로 프론트엔드를 독립 설계 — 기술 학습과 실서비스 출시를 동시에 달성",
+      "Tour API와 AI를 직접 연결하면 외부 API 오류가 AI 응답에 영향을 미치는 결합 문제를 MCP 아키텍처로 해결 — OpenAI Agent가 Tour API를 도구로 호출하는 구조로 책임 분리",
+      "컴포넌트를 매번 페이지에서 직접 검증해야 하는 비효율을 Storybook으로 해결 — 컴포넌트·페이지 스토리 기반 독립 검증 체계 구축",
     ],
     resources: [
       { label: "GitHub (Frontend)", url: "https://github.com/SWYP-TRAVEL", type: "link" },
@@ -294,8 +303,8 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "Tour API에서 수천 건 축제 데이터 수 시간 주기 자동 수집 — Spring Batch Reader-Processor-Writer 파이프라인 구성",
-      "지역·테마·날짜·좌표 복합 조건 QueryDSL 동적 쿼리로 구현 — 목록·달력·지도 뷰별 API 분리 제공",
+      "축제 정보를 수동 입력하면 최신성 유지가 어려운 문제를 Spring Batch 자동 수집 파이프라인으로 해결 — Tour API에서 수천 건 축제 데이터 수 시간 주기 자동 갱신",
+      "지역·테마·날짜·좌표 조건이 복합 적용될 때 쿼리를 동적으로 구성하기 어렵던 문제를 QueryDSL BooleanBuilder로 해결 — 목록·달력·지도 뷰별 API를 단일 동적 쿼리 로직으로 처리",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp10-9", type: "link" },
@@ -351,10 +360,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "6주 내 MVP 출시 (기획 → 배포)",
-      "540가지 체형 조합 SHA256 해시 캐싱으로 GPT-4 API 반복 호출 비용 절감",
-      "Next.js API Route 프록시 패턴으로 CORS 문제 해결 및 인증 헤더 중앙화",
-      "조건 완화 폴백 전략으로 웨딩홀 추천 결과 0건 방지",
+      "기획부터 배포까지 6주의 짧은 일정에서 PM·프론트엔드·AI 추천·서버 관리를 동시에 담당해 MVP 출시 달성",
+      "체형·스타일 조합 540가지마다 GPT-4 API가 반복 호출되는 비용 문제를 SHA256 해시 키 MySQL 캐싱으로 해결 — 동일 조합 재요청 시 API 호출 0회",
+      "프론트엔드에서 백엔드 직접 호출 시 CORS와 인증 헤더 중복 관리 문제가 발생하던 구조를 Next.js API Route 프록시로 해결 — 인증 헤더 중앙화 및 보안 강화",
+      "조건이 까다로울수록 웨딩홀 추천 결과가 0건이 되는 문제를 조건 완화 폴백 전략으로 해결 — 항상 결과를 반환하는 추천 경험 구현",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/swyp11", type: "link" },
@@ -428,8 +437,8 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "팀 10명 전원 실사용 중인 업무 자동화 도구로 정착",
-      "주간보고 작성(Git+Calendar 병합 → 엑셀 생성 → Gmail 발송)·HRWeb 공수 입력 전 과정 자동화",
+      "반복 수작업으로 30분~1시간이 소요되던 주간보고 작성과 HRWeb 공수 입력 업무를 FastMCP 에이전트로 전 과정 자동화 — Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송까지 단일 명령으로 처리",
+      "개인 도구에 그치지 않고 Claude Desktop·Cursor에서 바로 호출 가능하도록 배포해 팀 10명 전원이 실사용하는 도구로 공유",
     ],
   },
   {
@@ -469,10 +478,12 @@ export const projects: Project[] = [
         ],
       },
       {
-        role: "프론트엔드 개선",
+        role: "프론트엔드 마이그레이션 & 아키텍처 설계",
         items: [
-          "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js FSD 아키텍처로 전면 마이그레이션",
-          "Storybook 통합 테스트 및 사내 프론트엔드 공통 라이브러리 운영",
+          "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js 15 + FSD 아키텍처로 전면 재설계 — features 37개·entities 26개로 기능별 의존성 방향 명확화, 파일 수 146개→209개로 모듈화 완료",
+          "CesiumJS + Resium 기반 위성 영상 지도 뷰어 구현 — 3D 지구 위에 위성 영상·벡터 타일(MVT) 레이어 오버레이, SwipeViewer로 시점 동기화 좌우 영상 비교 기능 구현",
+          "동일 코드베이스에서 mgaia·apiss·moon 3개 배포 환경을 cross-env 환경변수 빌드로 분기 — 환경별 API·설정 분리로 단일 레포에서 다중 배포 지원",
+          "Storybook 통합 및 사내 공통 UI 라이브러리 운영 — 공통 컴포넌트 문서화로 팀 내 UI 일관성 확보 및 중복 개발 방지",
         ],
       },
       {
@@ -483,11 +494,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "오류 관련 고객 문의 대응 속도 1주 → 하루 내로 감소",
-      "장애로 인한 재배포 건수 월 10건 → 1건 내외로 감소하여 운영 안정성 확보",
-      "인증·로깅 등 백엔드 공통 모듈을 Spring Cloud Gateway로, 프론트엔드 공통 설정을 공통 라이브러리로 각각 일원화 — 기존에는 12개 서비스에 각각 내장되어 업데이트 시 전체 재배포 필요했으나, 각 공통 모듈 1개만 재배포하면 되도록 개선되어 배포 속도 4분 → 30초로 감소",
-      "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js FSD 아키텍처로 전면 마이그레이션",
-      "외부 코디네이터 없이 Snowflake ID 생성기 직접 구현 — 폐쇄망·공개망 worker ID 사전 할당으로 양쪽 ID 충돌 없는 분산 식별 체계 구축",
+      "모놀리식 구조로 한 서비스 장애가 전체로 전파되던 문제를 9개 MSA 서비스 분리로 해결 — 장애 격리와 독립 배포로 재배포 월 10건→1건, 고객 오류 문의 대응 1주→하루 이내로 개선",
+      "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
+      "폐쇄망·공개망 분리 환경에서 외부 코디네이터(ZooKeeper) 접근 불가로 기성 분산 ID 라이브러리를 쓸 수 없는 제약을 Snowflake 알고리즘 직접 구현으로 해결 — 망별 worker ID 사전 할당으로 충돌 없는 ID 체계 구축",
+      "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -534,9 +544,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "Debezium replication slot 반복 장애 해소 — 애플리케이션 레벨 이벤트 캡처로 인프라 의존성 제거",
-      "비즈니스 코드 무침투 설계 — 애노테이션 추가만으로 기존 서비스에 즉시 적용 가능",
-      "트랜잭션 원자성 보장으로 이벤트 유실 0건 달성",
+      "네트워크 불안정으로 Debezium replication slot이 반복적으로 깨져 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — 인프라 의존성 제거",
+      "라이브러리 도입 시 기존 비즈니스 코드를 수정해야 하는 침투 문제를 Spring 자동설정 + 애노테이션 방식으로 해결 — 코드 변경 없이 기존 서비스에 즉시 적용 가능",
+      "비즈니스 트랜잭션과 이벤트 저장이 분리되어 발생하던 이벤트 유실 가능성을 TransactionSynchronization.beforeCommit()으로 같은 트랜잭션에서 처리하여 해결 — 이벤트 유실 0건 달성",
     ],
     resources: [
       { label: "GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
@@ -580,9 +590,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "Redis O(N) 풀스캔 → O(1) 역인덱스 전환으로 세션 조회 속도 개선, 권한 변경 실시간 반영 보장",
-      "인증 필터에서 권한 정보를 메모리 매핑으로 전환 — 매 요청마다 발생하던 DB 쿼리 제거",
-      "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화, 각 서비스별 세션 유지 불필요",
+      "전체 세션을 풀스캔해야 하는 Redis 구조로 권한 변경이 일부 서비스에 즉시 반영되지 않던 문제를 userId→sessionId 역인덱스로 해결 — O(N) 풀스캔→O(1) 조회, 권한 변경 실시간 반영",
+      "매 요청마다 재귀 트리 구조 메뉴 권한을 DB에서 반복 조회하던 N+1 문제를 WITH RECURSIVE CTE + 메모리 매핑으로 해결 — 요청당 DB 쿼리 제거",
+      "서비스별로 분산 관리되던 인증·라우팅·로깅 코드를 Spring Cloud Gateway로 일원화 — 각 서비스별 세션 관리 불필요, 공통 코드 유지보수 범위 단일화",
     ],
   },
   {
@@ -617,9 +627,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "WMTS 도입과 Redis 타일 캐싱으로 API 응답 속도 4초 → 0.5초 미만으로 감소",
-      "Nginx keepalive 커넥션 풀로 매 요청 TCP 재연결 오버헤드 제거 및 세션 경쟁 해소",
-      "HPA 자동 스케일링으로 동시 타일 요청 급증 시 레플리카 확장, 단일 인스턴스 스레드 고갈 방지",
+      "영상 수가 늘수록 WMS 방식의 바운더리 합성 응답 시간이 선형 증가하던 문제를 WMTS + Redis 타일 캐싱으로 해결 — API 응답 4초→0.5초 미만 달성",
+      "K8s 레플리카가 Ingress를 타지 않고 매 요청 TCP 재연결이 반복되던 문제를 Nginx keepalive 커넥션 풀로 해결 — 재연결 오버헤드 제거 및 세션 경쟁 해소",
+      "지도 이동 시 타일 요청이 수십 개씩 동시에 몰리는 GIS 특성상 단일 인스턴스 스레드 풀이 고갈되던 문제를 HPA 자동 스케일링으로 해결 — 부하에 따라 레플리카 자동 분산",
     ],
   },
   {
@@ -646,9 +656,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "장애 없는 데이터 실패율 0건 달성 — 실제 문제가 있는 데이터만 쌓이도록 개선",
-      "장애 파악 시간 하루 → 한두 시간 이내로 감소",
-      "메시지 큐 기반으로 처리량에 탄력적으로 확장 가능한 구조 설계",
+      "Salt 폴링 구조의 격리성 미비로 정상 데이터가 실패 데이터에 영향받던 문제를 RabbitMQ 이벤트 드리븐으로 전환하여 해결 — 실제 문제가 있는 데이터만 격리, 정상 데이터 실패율 0건 달성",
+      "파이프라인 중간 장애 발생 시 원인 파악에 하루가 소요되던 문제를 Saga 패턴 보상 트랜잭션 + DLQ 격리로 해결 — 장애 시점 명확화, 파악 시간 하루→2시간 이내",
+      "수동 처리가 필요하던 위성 영상 전처리를 이벤트 드리븐 파이프라인으로 전환 — 처리량에 탄력적으로 확장 가능한 구조 구축",
     ],
   },
   {
@@ -674,8 +684,8 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "모든 엔지니어가 같은 환경에서 테스트함으로써 운영 환경 배포 후 장애 발생 대폭 감소",
-      "서버 자원 효율화 — 서버 5대 → 2대로 감소",
+      "로컬과 운영 환경 차이로 테스트를 통과해도 운영 배포 후 장애가 반복되던 문제를 운영과 동일한 K8s 테스트 클러스터 구축으로 해결 — 환경 차이로 인한 배포 후 장애 대폭 감소",
+      "서버 1대에 서비스 1개씩 운영하던 비효율을 K8s Pod 배치로 해결 — 서버 5대→2대로 자원 효율화",
     ],
   },
   {
@@ -711,7 +721,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "LibTorch C++ 직접 로드로 소켓 큐 누적 메모리 고갈 문제 해소 — 드론 탑재 환경 실시간 추론 안정화",
+      "소켓으로 프레임을 전달할 때 수신 속도가 추론 속도를 초과하여 큐가 누적되고 메모리가 고갈되던 문제를 소켓 레이어 제거 후 LibTorch C++ 직접 모델 로드로 해결 — 드론 탑재 환경 실시간 추론 안정화",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },
