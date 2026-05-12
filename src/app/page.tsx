@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ScrollButtons, SectionNav } from "@nuguri03/ui";
 import { HeroSection } from "@/components/sections/HeroSection";
+import { MetricsSection } from "@/components/sections/MetricsSection";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { ExperienceSection } from "@/components/sections/ExperienceSection";
 import { TechStackSection } from "@/components/TechStackSection";
@@ -35,6 +36,7 @@ export default function Home() {
       <Header />
       <main>
         <HeroSection role={profile.role} name={profile.name} tagline={profile.tagline} />
+        <MetricsSection />
         <AboutSection
           name={profile.name}
           initials={profile.initials}

@@ -82,7 +82,7 @@ export const projects: Project[] = [
     id: "mapin",
     title: "Mapin",
     description: "URL 입력 시 AI가 콘텐츠 관점을 분석하고 반대 관점 콘텐츠를 자동 추천하는 개인 콘텐츠 관리 서비스",
-    tags: ["Spring Boot", "Java 21", "PostgreSQL", "OpenAI", "YouTube API", "Virtual Threads", "CompletableFuture"],
+    tags: ["Spring Boot 4.0", "Java 21", "PostgreSQL", "OpenAI", "YouTube API", "Virtual Threads", "CompletableFuture"],
     imageUrl: "/swyp-app4_thum.png",
     link: "https://dashboard-phi-one-35.vercel.app/login",
     status: "live",
@@ -121,6 +121,8 @@ export const projects: Project[] = [
     achievements: [
       "동일 콘텐츠 재분석마다 GPT API 비용이 반복 발생하는 문제를 3단계 캐싱 전략(L1 결과 캐시·L2 분석 이력·L3 키워드 풀)으로 해결 — 재요청 시 API 호출 0회 달성",
       "반대관점 후보 N개를 개별 스코어링하는 방식의 토큰 낭비를 배치 스코어링으로 개선 — GPT 1회 호출로 전체 후보 처리",
+      "URL당 Virtual Thread 할당 + CompletableFuture 병렬 처리로 YouTube·Naver 검색 동시 실행, 30초 글로벌 타임아웃으로 파이프라인 보호 — Spring Boot 4.0 (Spring Framework 7) 기반 구현",
+      "E2E 포함 13개 테스트 파일 작성 — UserJourneyE2ETest로 핵심 분석 파이프라인 전 흐름 검증",
       "iOS App Store + 웹 대시보드 동시 배포 — 앱 심사 통과로 양 플랫폼 실사용자 확보",
     ],
     resources: [
@@ -178,10 +180,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
+      "전 도메인 51개 테스트 파일 작성 — 단위·통합·E2E 3-layer 구조 + GitHub Actions CI로 PR마다 자동 검증",
       "모임 목록 조회 시 태그·이미지·리더를 건별 조회해 N+1이 발생하던 문제를 IN 쿼리 일괄 처리로 해결 — 4개 테이블 각 1회 쿼리로 최적화",
       "알림 실패가 모임 데이터에 영향을 주는 강결합 구조를 @TransactionalEventListener 이벤트 분리로 해결 — 평가 서비스 장애 시에도 모임 데이터 유실 없는 fault tolerance 확보",
       "동시 신청 시 maxMembers 초과 가능성을 PESSIMISTIC_WRITE + Batch UPDATE로 해결 — 경쟁 조건 없는 원자적 증감 처리",
-      "전 도메인 51개 테스트 파일 작성 — 단위·통합·E2E 3-layer 구조 + GitHub Actions CI로 PR마다 자동 검증",
     ],
     resources: [
       { label: "서비스", url: "https://completionisland.vercel.app/main", type: "link" },
@@ -225,6 +227,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
+      "항해99 백엔드코스 9기 상위 10% 수료 — TDD, 이벤트 드리븐 설계, k6 부하 테스트를 실전 프로젝트로 검증",
       "분산락 재시도 로직이 응답 지연의 원인임을 k6+Grafana 부하 테스트로 특정 — 낙관적 락 전환으로 병목 제거",
       "Redis 대기열을 Kafka로 마이그레이션하고 Choreography Saga + DLQ 패턴으로 분산 트랜잭션 일관성 확보",
       "EXPLAIN 기반 인덱스 설계, Redis 캐싱, 비관적·낙관적·분산락 비교 검증까지 백엔드 핵심 문제를 단계적으로 직접 해결",
@@ -520,6 +523,8 @@ export const projects: Project[] = [
           "UPerNet 디코더 구조: PPM(1×1·2×2·3×3·6×6 global pooling으로 전역 맥락 포착) → FPN(top-down 업샘플링으로 저수준·고수준 feature 융합) → 4스케일 concat → 픽셀 분류 (forest·water·ground·building·meadow·road)",
           "ConvNeXt 4단계 멀티스케일 feature(P1~P4, 96→192→384→768ch)가 UPerNet FPN과 자연스럽게 결합 — ViT 대비 메모리 효율 우위, DDP 분산학습 안정적",
           "관심정보탐지(POI): YOLO25 기반 객체탐지와 세그멘테이션 결합, RINO·ChangeStar 변화탐지 모델 고도화",
+          "J_ECD(형태학적 변화탐지): 3×3 kernel 형태학적 필터링 4회 반복 + 그림자 제거 후 변화 폴리곤 Shapefile 출력, COG 변환 + gdalwarp 멀티스레드 + EPSG:5179 재투영",
+          "J_MCD(딥러닝 변화탐지): MambaCD(State Space Model) 파인튜닝 — MINIMA 특징 정합 + ECDF 히스토그램 매칭으로 다시기 영상 간 방사 보정, 타일 단위 추론 후 결과 병합",
         ],
       },
       {
@@ -541,11 +546,86 @@ export const projects: Project[] = [
     achievements: [
       "모놀리식 구조로 한 서비스 장애가 전체로 전파되던 문제를 9개 MSA 서비스 분리로 해결 — 장애 격리와 독립 배포로 재배포 월 10건→1건, 고객 오류 문의 대응 1주→하루 이내로 개선",
       "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
-      "폐쇄망·공개망 분리 환경에서 외부 코디네이터(ZooKeeper) 접근 불가로 기성 분산 ID 라이브러리를 쓸 수 없는 제약을 Snowflake 알고리즘 직접 구현으로 해결 — 망별 worker ID 사전 할당으로 충돌 없는 ID 체계 구축",
+      "파일 기반 중계만 가능한 분리망 환경에서 UUID는 발생 서버 추적 불가, 외부 코디네이터 기반 라이브러리는 접근 불가 — Snowflake 알고리즘 직접 구현으로 worker ID에 망 정보 인코딩, ID만으로 발생 서버 즉시 추적 가능",
       "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
+    ],
+  },
+  {
+    id: "satellite-ai",
+    title: "위성 영상 ML 추론 서비스 플랫폼",
+    description: "Aliyun GPUShare GPU 메모리 분할로 물리 GPU 1장에서 추론 서비스 70파드 병렬 운영",
+    tags: ["FastAPI", "ONNX Runtime", "CUDA", "YOLOv26", "Python", "Kubernetes", "Aliyun GPUShare"],
+    status: "deployed",
+    type: "company",
+    category: ["backend", "ai"],
+    company: "한컴인스페이스",
+    period: "2024.10 ~ 진행중",
+    role: "ML 추론 서비스 설계 및 개발",
+    longDescription: "위성 영상 분석 요청이 증가함에 따라 단일 GPU 서버에 모델 하나를 고정 운영하는 방식으로는 동시 추론이 불가능한 구조적 한계가 있었습니다. K8s GPU 할당이 카운트 단위여서 1파드=1GPU가 강제되었고, 추론 서비스가 분리되지 않아 수동 처리가 반복됐습니다. FastAPI + ONNX Runtime 기반 추론 서비스 3종을 독립 배포하고, Aliyun GPUShare 스케줄러 익스텐더를 구성해 GPU 메모리 단위 분할 운영 체계를 구축했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "추론 서비스 3종 개발",
+        items: [
+          "object-detection: YOLOv26 OBB/HBB 듀얼모델 — 20클래스(선박·항공기·차량·교량 등), SMALL_CLASSES(4~7, 17)는 HBB, 나머지는 OBB로 객체 크기 기반 자동 라우팅, letterbox 1024px 전처리, mAP ~70%",
+          "segmentation: UPerNet+ConvNeXt 백본 — 6클래스 토지피복(산림/수계/건물/도로/초지/나지), ONNX Runtime CUDAExecutionProvider 직접 세션 구성",
+          "inferencer: Super-Resolution 모델 — rasterio로 GeoTIFF 직접 처리, 512×512 패딩, 픽셀값 [0,1] 정규화 후 (C,H,W) transpose",
+          "FastAPI 엔드포인트 설계 — POST /inference(자동 라우팅), /inference/obb, /inference/hbb, /inference/path(K8s 공유볼륨 경로 기반), CLASS_ALIAS 매핑 응답 표준화",
+        ],
+      },
+      {
+        role: "GPU 메모리 분할 운영",
+        items: [
+          "Aliyun GPUShare 스케줄러 익스텐더 직접 구성 — `aliyun.com/gpu-mem` 리소스 단위로 파드별 GPU 메모리 할당",
+          "gprocessor 30파드 × 1GiB + inferencer 40파드 × 1GiB 동시 운영 — 물리 GPU 1장에서 70파드 병렬 점유",
+          "GPU 노드 node selector 분리로 추론 워크로드와 일반 워크로드 격리",
+        ],
+      },
+    ],
+    achievements: [
+      "K8s GPU 카운트 단위 할당으로 1파드=1GPU가 강제되던 구조를 Aliyun GPUShare 메모리 단위 분할로 해결 — 물리 GPU 1장에서 70파드 병렬 추론 운영",
+      "단일 모델 고정으로 동시 추론이 불가하던 구조를 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포로 전환 — object-detection·segmentation·inferencer 각각 독립 스케일링",
+      "20클래스 객체 탐지에서 OBB와 HBB를 각각 선택하는 복잡한 라우팅을 객체 크기 기반 자동 분기 로직으로 단순화 — 사용자는 단일 엔드포인트(/inference)만 호출",
+    ],
+  },
+  {
+    id: "satellite-collection",
+    title: "위성 데이터 수집 파이프라인",
+    description: "Salt-Stack 기반 워크플로우 엔진으로 다누리·Sentinel·Landsat 등 10+ 소스 단일 파이프라인 통합",
+    tags: ["Python", "Salt-Stack", "GDAL", "SFTP", "Go", "Kubernetes"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2024.12 ~ 진행중",
+    role: "수집 워크플로우 엔진 설계 및 개발",
+    longDescription: "위성 소스가 늘어날수록 소스별 수집 로직이 제각각으로 난립하여 신규 위성 추가 시 파이프라인 전체를 수정해야 하는 문제가 있었습니다. 수집·카탈로그·잡 처리가 강결합되어 있어 한 부분의 변경이 전체에 영향을 줬습니다. Salt-Stack 기반 분산 워크플로우 엔진(janus)을 구축하고 H_BASE/S_BASE 추상 클래스로 수집기 인터페이스를 표준화하여, 10개 이상의 위성 소스를 단일 파이프라인으로 통합했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "janus 워크플로우 엔진",
+        items: [
+          "Salt-Stack 기반 분산 워크플로우 엔진(janus) 구축 — H_BASE(수확 기반)/S_BASE(소스 기반) 추상 클래스로 수집기 인터페이스 표준화",
+          "다누리(KPLO)·창천위성·Sentinel·Landsat·Planet·MODIS 등 10+ 소스를 동일 파이프라인 구조로 통합 — geocode(Nominatim 리버스 지오코딩), inharv(다중 소스 수확 스케줄러) 포함",
+          "신규 위성 소스 추가 시 H_BASE/S_BASE 상속 클래스 1개만 구현 — 기존 파이프라인 코드 수정 없이 자동 통합",
+        ],
+      },
+      {
+        role: "망연계 relay 및 알림",
+        items: [
+          "SFTP 기반 망연계 relay 직접 구현 — 외부망↔폐쇄망 간 파일 기반 데이터 중계, 네트워크 분리 환경에서 단방향 파일 전달",
+          "이메일 알림 5종 직접 구현 — 분석완료(anlscomplete)·시스템에러(systemerror)·가입(signup)·비밀번호찾기(searchpassword)·보안다운로드(download_security, 서약서 PDF + 이력 CSV ZIP 첨부)",
+          "KARI(한국항공우주연구원) 납품 환경 대응 — neonsat@kari.re.kr 기반 알림 발송 체계 구성",
+        ],
+      },
+    ],
+    achievements: [
+      "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정이 필요하던 구조를 H_BASE/S_BASE 추상 클래스 표준화로 해결 — 신규 소스 추가 시 클래스 1개만 구현, 기존 코드 수정 0건",
+      "외부망↔폐쇄망 단절 환경에서 데이터 전달 수단이 없던 문제를 SFTP 기반 relay 직접 구현으로 해결 — 파일 기반 단방향 중계로 망간 데이터 동기화",
+      "10+ 위성 소스(다누리·창천위성·Sentinel·Landsat·Planet·MODIS 등)를 단일 janus 워크플로우 엔진으로 통합 운영",
     ],
   },
   {
@@ -574,7 +654,7 @@ export const projects: Project[] = [
       {
         role: "배치 & 파일 생성",
         items: [
-          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링",
+          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링 (check interval 5초), 13개 테이블 변경 자동 감지 (mc_user·mc_survey·mc_auth_grp·mc_menu 등)",
           "FOR UPDATE SKIP LOCKED로 다중 인스턴스 환경에서 중복 처리 방지",
           "seq_from ~ seq_to 범위를 JSON Gzip 파일(sync_{seqFrom}_{seqTo}_{timestamp}.json.gz)로 압축 생성 후 중계 서버 경로에 적재",
           "자정 배치로 7일 이상 된 SENT 레코드 자동 정리",
@@ -735,29 +815,30 @@ export const projects: Project[] = [
   },
   {
     id: "drone-detection",
-    title: "비전 AI 모델 서빙 시스템 개발",
-    description: "실시간 객체 탐지 및 위성 영상 세그멘테이션 스트리밍 서비스",
-    tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "C++", "OpenCV"],
+    title: "드론 탑재 실시간 객체 탐지 시스템",
+    description: "YOLOv5·Faster R-CNN 기반 실시간 탐지, RealSense D435 depth로 2D BBox → 3D 절대좌표 변환 후 GCS 자동 보고",
+    tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "RealSense D435", "C++", "OpenCV", "UDP"],
     imageUrl: "/drone-detection_thum.png",
     status: "deployed",
     type: "company",
     category: ["ai"],
     company: "한컴인스페이스",
-    period: "2021.12 ~ 2023.12",
+    period: "2021.12 ~ 2025.12",
     role: "객체 탐지 모델 학습 및 스트리밍 시스템 개발",
-    longDescription: "드론 탑재 환경에서 실시간 객체 탐지 및 위성 영상 세그멘테이션 스트리밍 시스템을 개발했습니다. YOLOv5 추론 시 소켓으로 프레임을 전달하는 구조에서 프레임 수신 속도가 추론 속도를 초과하며 큐가 누적되어 메모리가 고갈되는 문제가 있었습니다. 소켓 통신 레이어를 제거하고 LibTorch로 C++에서 모델을 직접 로드하여 해결했습니다.",
+    longDescription: "드론 탑재 환경에서 실시간 객체 탐지 시스템을 개발하고 고도화했습니다. 초기에는 YOLOv5 + LibTorch C++ 기반 스트리밍 시스템을 구축했고, 이후 재난탐지 요건에 맞게 ROS Noetic + Faster R-CNN + RealSense D435 depth 카메라 기반으로 확장해 탐지 대상의 3D 절대좌표를 실시간 산출하고 GCS로 전송하는 시스템을 완성했습니다.",
     details: [],
     roleDetails: [
       {
-        role: "Faster R-CNN 기반 객체 탐지 (ROS 연동)",
+        role: "재난탐지 시스템 고도화 (2024.10 ~ 2025.12)",
         items: [
-          "ResNet-FPN 기반 6종 객체 분류 추론",
-          "RGB-Depth 동기화로 실시간 스트리밍 안정화",
-          "UDP 소켓 기반 영상 스트리밍",
+          "ROS Noetic + Faster R-CNN ResNet50-FPN — 7클래스(폭발물·화재·부상자·탈출구·석유·사람) 실시간 추론, ~2~3fps",
+          "ApproximateTimeSynchronizer로 RGB·Depth 비동기 스트림 동기화(slop=0.5s) — 타임스탬프 불일치로 잘못된 depth가 사용되는 문제 해결",
+          "핀홀 카메라 모델 역투영으로 2D BBox 중심점 → 3D 카메라 좌표 변환, 카메라→드론 좌표계 변환 행렬 적용 후 절대 3D 좌표 산출",
+          "커스텀 ROS 메시지(MultiTarget/TargetData) 직접 설계, UDP로 GCS 실시간 전송, systemd 서비스로 드론 부팅 시 자동 기동",
         ],
       },
       {
-        role: "YOLOv5 기반 객체 탐지 (RTMP 송출)",
+        role: "YOLOv5 기반 스트리밍 시스템 (2021.12 ~ 2023.12)",
         items: [
           "커스텀 데이터셋 모델 학습 및 가중치 추출",
           "소켓으로 프레임 전달 시 수신 속도 > 추론 속도로 큐 누적 → 메모리 고갈 문제 발생 — 소켓 통신 제거 후 LibTorch로 C++에서 모델 직접 로드하여 해결",
@@ -766,7 +847,9 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "소켓으로 프레임을 전달할 때 수신 속도가 추론 속도를 초과하여 큐가 누적되고 메모리가 고갈되던 문제를 소켓 레이어 제거 후 LibTorch C++ 직접 모델 로드로 해결 — 드론 탑재 환경 실시간 추론 안정화",
+      "2D 영상만으로 거리 추정이 불가하던 한계를 RealSense D435 depth + 핀홀 모델 역투영으로 해결 — 탐지 대상의 3D 절대좌표를 실시간 산출해 GCS 자동 보고",
+      "RGB·Depth 스트림 타임스탬프 불일치로 depth 오매핑이 발생하던 문제를 ApproximateTimeSynchronizer(slop=0.5s)로 해결 — 동기화된 프레임 쌍만 추론에 사용",
+      "소켓으로 프레임을 전달할 때 수신 속도가 추론 속도를 초과하여 큐가 누적되고 메모리가 고갈되던 문제를 LibTorch C++ 직접 모델 로드로 해결 — 드론 탑재 환경 실시간 추론 안정화",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },

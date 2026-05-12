@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { Building2, ArrowRight, Calendar } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { Section, SectionHeader, Timeline, TimelineItem, Tag } from '@nuguri03/ui';
 import type { Project } from '@nuguri03/ui';
 
@@ -33,36 +32,10 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
               period={project.period}
               tags={project.tags}
               href={`/projects/${project.id}`}
+              linkLabel="자세히 보기"
               delay={index * 0.15}
             >
-              {project.roleDetails && project.roleDetails.length > 0 && (
-                <div className="space-y-4 mb-5">
-                  {project.roleDetails.map((section, sIdx) => (
-                    <div key={sIdx}>
-                      <h5 className="text-sm font-semibold text-foreground mb-2">{section.role}</h5>
-                      <ul className="space-y-1 pl-1">
-                        {section.items.map((item, iIdx) => (
-                          <li key={iIdx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="text-primary mt-1.5 shrink-0">&#183;</span>{item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {project.achievements.length > 0 && (
-                <div className="mb-5">
-                  <h5 className="text-sm font-semibold text-foreground mb-2">주요 성과</h5>
-                  <ul className="space-y-1 pl-1">
-                    {project.achievements.map((item, aIdx) => (
-                      <li key={aIdx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="text-accent mt-1.5 shrink-0">&#10003;</span>{item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
             </TimelineItem>
           ))}
         </Timeline>

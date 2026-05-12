@@ -162,6 +162,19 @@ export function ExperienceSection({ career, activities, education, certification
             )}
           </StatCard>
         </div>
+        <GlassCard delay={0.6} className="mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Github className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">GitHub Contributions</h3>
+          </div>
+          <a href={githubProfileUrl} target="_blank" rel="noopener noreferrer">
+            <img
+              src={`https://ghchart.rshah.org/${githubUsername}`}
+              alt="GitHub contribution graph"
+              className="w-full rounded opacity-90 hover:opacity-100 transition-opacity"
+            />
+          </a>
+        </GlassCard>
       </div>
     </Section>
   );

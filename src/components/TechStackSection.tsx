@@ -11,10 +11,12 @@ interface TechCategory {
 }
 
 const techCategories: TechCategory[] = [
-  { icon: Server, title: 'Backend', skills: ['Spring Boot', 'Java', 'Kotlin', 'FastAPI', 'Go', 'Python'] },
-  { icon: Code2, title: 'Frontend', skills: ['TypeScript', 'Next.js', 'Tailwind CSS'] },
-  { icon: Database, title: 'Database', skills: ['PostgreSQL', 'Redis', 'RabbitMQ', 'Kafka'] },
-  { icon: Cloud, title: 'DevOps', skills: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions'] },
+  { icon: Server, title: 'Backend', skills: ['Spring Boot', 'Java', 'JPA', 'QueryDSL', 'Spring Batch', 'Kotlin', 'FastAPI', 'Go', 'Python'] },
+  { icon: Code2, title: 'Frontend', skills: ['TypeScript', 'Next.js', 'Tailwind CSS', 'Cesium.js'] },
+  { icon: Database, title: 'Database', skills: ['MySQL', 'PostgreSQL', 'Redis', 'RabbitMQ', 'Kafka'] },
+  { icon: Cloud, title: 'DevOps', skills: ['Kubernetes', 'Docker', 'AWS', 'NCP', 'Jenkins', 'GitHub Actions', 'OpenSearch', 'Fluent-bit'] },
+  { icon: Server, title: 'ML / AI', skills: ['PyTorch', 'ONNX Runtime', 'OpenCV', 'ROS', 'YOLOv26', 'CUDA'] },
+  { icon: Database, title: 'Geospatial', skills: ['GDAL', 'PostGIS', 'rasterio', 'Salt-Stack'] },
 ];
 
 export function TechStackSection() {
@@ -23,7 +25,7 @@ export function TechStackSection() {
       <SectionHeader
         title="기술"
         titleHighlight="스택"
-        subtitle="위성영상 파이프라인, K8s 인프라, 프론트엔드 아키텍처 전 영역 경험"
+        subtitle="백엔드 아키텍처 설계부터 인프라 운영, AI 에이전트 개발까지"
         className="mb-16"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

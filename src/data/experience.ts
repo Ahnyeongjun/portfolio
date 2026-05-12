@@ -5,7 +5,7 @@ export const career: CareerInfo = {
   position: '연구원',
   period: '2021.07 ~ 현재',
   duration: '5년차',
-  description: '구조적 병목을 직접 진단하고 아키텍처 수준에서 해결 — MSA 전환으로 재배포 월 10건→1건, API 응답 4초→0.5초 달성',
+  description: 'MSA 전환으로 재배포 월 10건→1건, ML 추론 서비스 3종 독립 배포 · GPU 70파드 병렬 운영, Outbox 패턴 라이브러리로 이벤트 유실 0건',
 };
 
 export const activities: ActivityItem[] = [
