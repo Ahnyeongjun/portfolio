@@ -461,35 +461,6 @@ export const projects: Project[] = [
     ],
   },
   {
-    id: "team-mcp-agent",
-    title: "팀 업무 자동화 MCP 에이전트",
-    description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트 — 팀 10명 실사용 중",
-    tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
-    status: "deployed",
-    type: "company",
-    company: "한컴인스페이스",
-    category: ["backend", "ai"],
-    period: "2026.03 ~ 2026.04",
-    role: "설계 및 개발",
-    longDescription: "주간보고 작성, 일정 관리, 사내 HRWeb 입력 등 반복 업무를 자동화하기 위해 개인적으로 개발하여 팀 전체(10명)에 공유한 MCP 기반 에이전트입니다. FastMCP로 8개 도구를 구현하고 Cursor·Claude Desktop에서 바로 호출할 수 있도록 연동했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "MCP 에이전트 설계 및 개발",
-        items: [
-          "FastMCP 기반 8개 도구 구현 — list_commits·get_trips·create_calendar_event·generate_report·send_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
-          "Git subprocess로 리포별 커밋 로그 수집 → 폴더 단위 그룹핑, Google Calendar OAuth로 출장 일정 조회 → 두 소스를 병합해 주간보고 초안 자동 생성 후 Gmail SMTP로 발송",
-          "엑셀 템플릿을 ZIP 내 XML 레벨로 직접 조작 — 서식·수식 100% 보존하면서 C열 카테고리 자동 감지 후 D/H 셀에 내용 주입",
-          "사내 HRWeb(아마란스) Playwright 자동화 — 로그인 → 월 선택 → 날짜·프로젝트·공수 입력까지 전 흐름 브라우저 자동화, Git 커밋이 없는 날은 주변 커밋 패턴으로 description 추론",
-        ],
-      },
-    ],
-    achievements: [
-      "반복 수작업으로 30분~1시간이 소요되던 주간보고 작성과 HRWeb 공수 입력 업무를 FastMCP 에이전트로 전 과정 자동화 — Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송까지 단일 명령으로 처리",
-      "개인 도구에 그치지 않고 Claude Desktop·Cursor에서 바로 호출 가능하도록 배포해 팀 10명 전원이 실사용하는 도구로 공유",
-    ],
-  },
-  {
     id: "satellite-platform",
     title: "위성 영상 분석 플랫폼 고도화",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
@@ -551,6 +522,55 @@ export const projects: Project[] = [
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
+    ],
+  },
+  {
+    id: "outbox-module",
+    title: "Outbox 패턴 기반 이벤트 캡처 모듈",
+    description: "Debezium CDC slot 불안정 문제를 AOP + MyBatis 인터셉터 기반 아웃박스 패턴으로 대체, 폐쇄망 파일 동기화 구현",
+    tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2026.02 ~ 2026.04",
+    role: "라이브러리 설계 및 개발",
+    longDescription: "외부망과 폐쇄망이 분리된 환경에서 두 망 간 유일한 통신 수단은 파일 기반 중계 서버입니다. 기존에는 Debezium CDC로 변경 이벤트를 캡처했으나, 서버·네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제가 발생했습니다. PostgreSQL WAL은 무제한 저장되지 않으며 replication slot이 읽은 위치까지만 삭제를 지연하는데, slot이 깨져 재생성되면 이전 LSN 위치를 잃어버리고 그 사이 삭제된 WAL은 복구할 수 없어 전체 스냅샷부터 재수행해야 하는 구조적 취약점이 있었습니다. 이를 해결하기 위해 애플리케이션 레벨에서 AOP와 MyBatis 인터셉터로 이벤트를 캡처하는 Spring Boot 자동설정 라이브러리를 직접 개발하고 실무 프로젝트에 적용했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "이벤트 캡처",
+        items: [
+          "MyBatis Executor 인터셉터로 INSERT/UPDATE/DELETE 자동 감지 — 비즈니스 코드 변경 없이 투명하게 이벤트 캡처",
+          "TransactionSynchronization.beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 같은 트랜잭션으로 처리해 이벤트 유실 방지",
+          "@OutboxDomain / @OutboxEvent 애노테이션으로 도메인·메서드 단위 캡처 여부 제어",
+          "DefaultOutboxConverter에서 password·token 등 민감 필드 자동 제외 후 Jackson 직렬화",
+        ],
+      },
+      {
+        role: "배치 & 파일 생성",
+        items: [
+          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링 (check interval 5초), 13개 테이블 변경 자동 감지 (mc_user·mc_survey·mc_auth_grp·mc_menu 등)",
+          "FOR UPDATE SKIP LOCKED로 다중 인스턴스 환경에서 중복 처리 방지",
+          "seq_from ~ seq_to 범위를 JSON Gzip 파일(sync_{seqFrom}_{seqTo}_{timestamp}.json.gz)로 압축 생성 후 중계 서버 경로에 적재",
+          "자정 배치로 7일 이상 된 SENT 레코드 자동 정리",
+        ],
+      },
+      {
+        role: "루프 방지",
+        items: [
+          "ThreadLocal 기반 OutboxContext로 suppress 상태 관리 — 폐쇄망에서 수신한 데이터를 적용할 때 Outbox 재발행 차단",
+          "source 필드로 이벤트 출처 식별, 양방향 동기화 시 무한 루프 방지",
+        ],
+      },
+    ],
+    achievements: [
+      "네트워크 불안정으로 Debezium replication slot이 반복적으로 깨져 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — 인프라 의존성 제거",
+      "라이브러리 도입 시 기존 비즈니스 코드를 수정해야 하는 침투 문제를 Spring 자동설정 + 애노테이션 방식으로 해결 — 코드 변경 없이 기존 서비스에 즉시 적용 가능",
+      "비즈니스 트랜잭션과 이벤트 저장이 분리되어 발생하던 이벤트 유실 가능성을 TransactionSynchronization.beforeCommit()으로 같은 트랜잭션에서 처리하여 해결 — 이벤트 유실 0건 달성",
+    ],
+    resources: [
+      { label: "GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
     ],
   },
   {
@@ -629,191 +649,6 @@ export const projects: Project[] = [
     ],
   },
   {
-    id: "outbox-module",
-    title: "Outbox 패턴 기반 이벤트 캡처 모듈",
-    description: "Debezium CDC slot 불안정 문제를 AOP + MyBatis 인터셉터 기반 아웃박스 패턴으로 대체, 폐쇄망 파일 동기화 구현",
-    tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2026.02 ~ 2026.04",
-    role: "라이브러리 설계 및 개발",
-    longDescription: "외부망과 폐쇄망이 분리된 환경에서 두 망 간 유일한 통신 수단은 파일 기반 중계 서버입니다. 기존에는 Debezium CDC로 변경 이벤트를 캡처했으나, 서버·네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제가 발생했습니다. PostgreSQL WAL은 무제한 저장되지 않으며 replication slot이 읽은 위치까지만 삭제를 지연하는데, slot이 깨져 재생성되면 이전 LSN 위치를 잃어버리고 그 사이 삭제된 WAL은 복구할 수 없어 전체 스냅샷부터 재수행해야 하는 구조적 취약점이 있었습니다. 이를 해결하기 위해 애플리케이션 레벨에서 AOP와 MyBatis 인터셉터로 이벤트를 캡처하는 Spring Boot 자동설정 라이브러리를 직접 개발하고 실무 프로젝트에 적용했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "이벤트 캡처",
-        items: [
-          "MyBatis Executor 인터셉터로 INSERT/UPDATE/DELETE 자동 감지 — 비즈니스 코드 변경 없이 투명하게 이벤트 캡처",
-          "TransactionSynchronization.beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 같은 트랜잭션으로 처리해 이벤트 유실 방지",
-          "@OutboxDomain / @OutboxEvent 애노테이션으로 도메인·메서드 단위 캡처 여부 제어",
-          "DefaultOutboxConverter에서 password·token 등 민감 필드 자동 제외 후 Jackson 직렬화",
-        ],
-      },
-      {
-        role: "배치 & 파일 생성",
-        items: [
-          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링 (check interval 5초), 13개 테이블 변경 자동 감지 (mc_user·mc_survey·mc_auth_grp·mc_menu 등)",
-          "FOR UPDATE SKIP LOCKED로 다중 인스턴스 환경에서 중복 처리 방지",
-          "seq_from ~ seq_to 범위를 JSON Gzip 파일(sync_{seqFrom}_{seqTo}_{timestamp}.json.gz)로 압축 생성 후 중계 서버 경로에 적재",
-          "자정 배치로 7일 이상 된 SENT 레코드 자동 정리",
-        ],
-      },
-      {
-        role: "루프 방지",
-        items: [
-          "ThreadLocal 기반 OutboxContext로 suppress 상태 관리 — 폐쇄망에서 수신한 데이터를 적용할 때 Outbox 재발행 차단",
-          "source 필드로 이벤트 출처 식별, 양방향 동기화 시 무한 루프 방지",
-        ],
-      },
-    ],
-    achievements: [
-      "네트워크 불안정으로 Debezium replication slot이 반복적으로 깨져 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — 인프라 의존성 제거",
-      "라이브러리 도입 시 기존 비즈니스 코드를 수정해야 하는 침투 문제를 Spring 자동설정 + 애노테이션 방식으로 해결 — 코드 변경 없이 기존 서비스에 즉시 적용 가능",
-      "비즈니스 트랜잭션과 이벤트 저장이 분리되어 발생하던 이벤트 유실 가능성을 TransactionSynchronization.beforeCommit()으로 같은 트랜잭션에서 처리하여 해결 — 이벤트 유실 0건 달성",
-    ],
-    resources: [
-      { label: "GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
-    ],
-  },
-  {
-    id: "admin-page",
-    title: "어드민 페이지 고도화",
-    description: "Redis 역인덱스 및 N+1 제거, Spring Cloud Gateway 도입으로 인증 시스템 일원화",
-    tags: ["Spring Boot", "Spring Cloud Gateway", "Redis", "PostgreSQL", "JWT"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2024.04 ~ 2024.12",
-    role: "인증·권한 시스템 설계 및 개발",
-    longDescription: "멀티모듈 WAR 구조에서 모듈별로 세션이 분산되어 있어 Redis로 세션을 단일화했습니다. 이후 사용자 로그인 정보 조회 시 응답 속도 저하와, 특정 사용자의 권한 수정이 일부 서비스에 반영되지 않는 문제가 발생했습니다. Redis에 저장된 전체 세션을 풀스캔해야 하는 구조와, 재귀적 트리 구조 메뉴에서 N+1 쿼리가 원인이었습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "세션 관리 최적화",
-        items: [
-          "Redis 역인덱스 구축으로 풀스캔 제거 — userId → sessionId 목록 구조로 저장하여 권한 변경 시 해당 유저의 세션만 즉시 조회 및 갱신",
-          "Redis DB 3개로 용도 분리 (세션 / 방문자 통계 / 로그인 실패 추적)",
-          "IP + userId 단위 실패 횟수 카운트하여 4회 초과 시 10분간 인증 차단으로 브루트포스 방지",
-        ],
-      },
-      {
-        role: "권한 조회 N+1 제거",
-        items: [
-          "재귀적 트리 구조 메뉴에서 건별 조회 → WITH RECURSIVE CTE + 단일 쿼리 전환",
-          "인증 필터에서 전체 권한 정보를 한 번에 로드 후 메모리에서 매핑하는 방식으로 변경",
-        ],
-      },
-      {
-        role: "Gateway 도입",
-        items: [
-          "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화",
-          "각 서비스별 세션 유지 불필요해져 유지보수성 확보",
-        ],
-      },
-    ],
-    achievements: [
-      "전체 세션을 풀스캔해야 하는 Redis 구조로 권한 변경이 일부 서비스에 즉시 반영되지 않던 문제를 userId→sessionId 역인덱스로 해결 — O(N) 풀스캔→O(1) 조회, 권한 변경 실시간 반영",
-      "매 요청마다 재귀 트리 구조 메뉴 권한을 DB에서 반복 조회하던 N+1 문제를 WITH RECURSIVE CTE + 메모리 매핑으로 해결 — 요청당 DB 쿼리 제거",
-      "서비스별로 분산 관리되던 인증·라우팅·로깅 코드를 Spring Cloud Gateway로 일원화 — 각 서비스별 세션 관리 불필요, 공통 코드 유지보수 범위 단일화",
-    ],
-  },
-  {
-    id: "image-api",
-    title: "영상 타일링 API 서버",
-    description: "WMS → WMTS 전환으로 API 응답 속도 4초 → 0.5초 미만 달성",
-    tags: ["Go", "GDAL", "Redis", "GeoTIFF", "MBTiles", "Nginx", "K8s"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2024.04 ~ 2025.03",
-    role: "영상 타일링 API 설계 및 개발",
-    longDescription: "자사 솔루션 내 영상 표출 API에서 영상 이미지가 증가함에 따라 응답 속도가 저하되는 문제를 해결했습니다. K8s Replica 설정이 Ingress를 타지 않고 매번 재연결되며 리소스가 누출되었고, WMS 특성상 바운더리 요청마다 영상을 겹쳐 쌓는 방식이라 캐싱이 비효율적이었습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "WMS → WMTS 전환",
-        items: [
-          "WMS는 요청마다 해당 바운더리의 영상을 동적으로 겹쳐 합성하므로 영상 수가 늘수록 응답 시간이 선형 증가 — WMTS로 전환해 z/x/y 좌표를 캐시 키로 고정, 영상들을 쌓은 합성 결과를 Redis에 저장하여 동일 타일 재요청 시 합성 연산 완전 스킵",
-          "Go 고루틴으로 타일 생성 단계를 병렬화 — 요청된 좌표 범위의 타일들을 동시에 생성 후 Redis에 적재, 이후 요청은 Redis hit 즉시 반환",
-        ],
-      },
-      {
-        role: "인프라 최적화",
-        items: [
-          "Nginx Ingress upstream keepalive 설정으로 각 Pod에 대한 커넥션 풀 관리 — 매 요청마다 TCP 핸드셰이크가 반복되던 오버헤드 제거",
-          "지도 이동 시 타일 요청이 수십 개씩 동시에 발생하는 GIS 특성 상 단일 인스턴스 스레드 풀 고갈 문제 존재 — HPA로 부하에 따라 레플리카를 여러 노드에 자동 분산하여 동시 처리량 확보",
-          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인 — 좌표 투영 변환 후 지리 범위를 픽셀 경계로 래스터화",
-          "MBTiles 벡터 타일링으로 줌 레벨·타일 좌표 기반 폴리곤 선별 렌더링",
-        ],
-      },
-    ],
-    achievements: [
-      "영상 수가 늘수록 WMS 방식의 바운더리 합성 응답 시간이 선형 증가하던 문제를 WMTS + Redis 타일 캐싱으로 해결 — API 응답 4초→0.5초 미만 달성",
-      "K8s 레플리카가 Ingress를 타지 않고 매 요청 TCP 재연결이 반복되던 문제를 Nginx keepalive 커넥션 풀로 해결 — 재연결 오버헤드 제거 및 세션 경쟁 해소",
-      "지도 이동 시 타일 요청이 수십 개씩 동시에 몰리는 GIS 특성상 단일 인스턴스 스레드 풀이 고갈되던 문제를 HPA 자동 스케일링으로 해결 — 부하에 따라 레플리카 자동 분산",
-    ],
-  },
-  {
-    id: "pipeline",
-    title: "영상 전처리 파이프라인 자동화",
-    description: "폴더 감시 → 이벤트 드리븐 전환으로 장애 파악 시간 하루 → 2시간 이내로 감소",
-    tags: ["RabbitMQ", "Python", "Saga Pattern", "Docker"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2022.03 ~ 2022.12",
-    role: "전처리 파이프라인 설계 및 개발",
-    longDescription: "위성 영상 수집부터 보정까지의 전처리 과정을 자동화하는 파이프라인을 구축했습니다. 영상별로 전처리가 달라 수동 처리가 필요했고, Salt 기반 폴링 구조에서 격리성이 보장되지 않아 정상 데이터도 실패하는 문제가 있었으며, 실행 중 장애 발생 시 복구 시스템이 미비했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "이벤트 드리븐 파이프라인 구축",
-        items: [
-          "폴더 감시 방식을 이벤트 드리븐 파이프라인으로 전환 — 완료 즉시 다음 큐 실행, 대기 시간 제거",
-          "ack/nack 기반 메시지 유실 방지 (RabbitMQ)",
-          "Saga(Choreography) 패턴 적용 — 실패 시 보상 트랜잭션 자동 실행 및 작업 상태 추적으로 장애 시점 명확화, 보상 재시도 초과 시 DLQ로 격리하여 무한 루프 방지 및 수동 처리 가능하도록 구성",
-        ],
-      },
-    ],
-    achievements: [
-      "Salt 폴링 구조의 격리성 미비로 정상 데이터가 실패 데이터에 영향받던 문제를 RabbitMQ 이벤트 드리븐으로 전환하여 해결 — 실제 문제가 있는 데이터만 격리, 정상 데이터 실패율 0건 달성",
-      "파이프라인 중간 장애 발생 시 원인 파악에 하루가 소요되던 문제를 Saga 패턴 보상 트랜잭션 + DLQ 격리로 해결 — 장애 시점 명확화, 파악 시간 하루→2시간 이내",
-      "수동 처리가 필요하던 위성 영상 전처리를 이벤트 드리븐 파이프라인으로 전환 — 처리량에 탄력적으로 확장 가능한 구조 구축",
-    ],
-  },
-  {
-    id: "test-cluster",
-    title: "팀 내 개발 안정화를 위한 테스트 클러스터 분리",
-    description: "K8s 기반 테스트 환경 구축으로 운영 서버 장애 대폭 감소, 서버 5대 → 2대",
-    tags: ["Kubernetes", "Docker", "On-premise"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2023.01 ~ 2023.06",
-    role: "테스트 인프라 구축",
-    longDescription: "테스트 서버가 없어 로컬 환경에서 테스트 후 운영 서버로 바로 배포하면서, 엔지니어마다 로컬 환경의 차이와 운영 서버와의 차이로 인해 운영 서버에서 이슈가 발생하는 문제를 해결했습니다. 하나의 서버에 하나의 서비스만 올리는 비효율도 함께 개선했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "테스트 환경 구축",
-        items: [
-          "운영 클러스터와 테스트 클러스터를 물리적으로 분리 — ETL 로직·AI 모델·DB를 테스트 클러스터에 동일하게 구성하여 운영과 완전히 격리된 검증 환경 구축",
-          "클러스터 분리로 테스트 워크로드가 운영 서비스에 영향을 주지 않으며, K8s Pod 배치로 서버 자원을 필요한 곳에만 할당하여 기존 서버 5대 → 2대로 효율화",
-        ],
-      },
-    ],
-    achievements: [
-      "로컬과 운영 환경 차이로 테스트를 통과해도 운영 배포 후 장애가 반복되던 문제를 운영과 동일한 K8s 테스트 클러스터 구축으로 해결 — 환경 차이로 인한 배포 후 장애 대폭 감소",
-      "서버 1대에 서비스 1개씩 운영하던 비효율을 K8s Pod 배치로 해결 — 서버 5대→2대로 자원 효율화",
-    ],
-  },
-  {
     id: "drone-detection",
     title: "드론 탑재 실시간 객체 탐지 시스템",
     description: "YOLOv5·Faster R-CNN 기반 실시간 탐지, RealSense D435 depth로 2D BBox → 3D 절대좌표 변환 후 GCS 자동 보고",
@@ -853,6 +688,132 @@ export const projects: Project[] = [
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/dronesat", type: "link" },
+    ],
+  },
+  {
+    id: "platform-optimization",
+    title: "플랫폼 성능 최적화",
+    description: "Redis 역인덱스 O(N)→O(1), WMS→WMTS 전환으로 영상 API 응답 4초→0.5초 미만 달성",
+    tags: ["Spring Boot", "Go", "Redis", "GDAL", "Spring Cloud Gateway", "PostgreSQL", "Nginx", "K8s"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2024.04 ~ 2025.03",
+    role: "인증 시스템·영상 API 성능 개선",
+    longDescription: "어드민 인증 시스템과 영상 타일링 API 두 영역의 성능 병목을 해결했습니다. Redis 전체 세션 풀스캔 구조와 재귀 트리 권한 N+1 쿼리로 인증 응답이 저하되는 문제, WMS 방식의 바운더리 합성으로 영상 수가 늘수록 API 응답이 선형 증가하는 문제를 각각 근본 원인부터 해결했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "어드민 인증 시스템 최적화",
+        items: [
+          "Redis 역인덱스 구축으로 풀스캔 제거 — userId → sessionId 목록 구조로 저장하여 권한 변경 시 해당 유저의 세션만 즉시 조회 및 갱신",
+          "Redis DB 3개로 용도 분리 (세션 / 방문자 통계 / 로그인 실패 추적), IP + userId 단위 4회 초과 시 10분 잠금으로 브루트포스 방지",
+          "재귀적 트리 구조 메뉴에서 건별 조회 → WITH RECURSIVE CTE + 단일 쿼리 전환, 인증 필터에서 전체 권한 정보를 한 번에 로드 후 메모리 매핑",
+          "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화",
+        ],
+      },
+      {
+        role: "영상 타일링 API 성능 개선 (Go + GDAL)",
+        items: [
+          "WMS는 요청마다 해당 바운더리의 영상을 동적으로 겹쳐 합성하므로 영상 수가 늘수록 응답 시간이 선형 증가 — WMTS로 전환해 z/x/y 좌표를 캐시 키로 고정, 합성 결과를 Redis에 저장하여 동일 타일 재요청 시 합성 연산 완전 스킵",
+          "Go 고루틴으로 타일 생성 단계를 병렬화 — 요청된 좌표 범위의 타일들을 동시에 생성 후 Redis에 적재, 이후 요청은 Redis hit 즉시 반환",
+          "Nginx Ingress upstream keepalive로 Pod 커넥션 풀 관리 — 매 요청마다 TCP 핸드셰이크가 반복되던 오버헤드 제거",
+          "GDAL 기반 GeoTIFF → PNG/Vector Tile 변환 파이프라인, MBTiles 벡터 타일링으로 줌 레벨·타일 좌표 기반 폴리곤 선별 렌더링",
+        ],
+      },
+    ],
+    achievements: [
+      "전체 세션을 풀스캔해야 하는 Redis 구조로 권한 변경이 일부 서비스에 즉시 반영되지 않던 문제를 userId→sessionId 역인덱스로 해결 — O(N) 풀스캔→O(1) 조회, 권한 변경 실시간 반영",
+      "매 요청마다 재귀 트리 구조 메뉴 권한을 DB에서 반복 조회하던 N+1 문제를 WITH RECURSIVE CTE + 메모리 매핑으로 해결 — 요청당 DB 쿼리 제거",
+      "영상 수가 늘수록 WMS 방식의 바운더리 합성 응답 시간이 선형 증가하던 문제를 WMTS + Redis 타일 캐싱으로 해결 — API 응답 4초→0.5초 미만 달성",
+      "서비스별로 분산 관리되던 인증·라우팅·로깅 코드를 Spring Cloud Gateway로 일원화 — 각 서비스별 세션 관리 불필요",
+    ],
+  },
+  {
+    id: "pipeline",
+    title: "영상 전처리 파이프라인 자동화",
+    description: "폴더 감시 → 이벤트 드리븐 전환으로 장애 파악 시간 하루 → 2시간 이내로 감소",
+    tags: ["RabbitMQ", "Python", "Saga Pattern", "Docker"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2022.03 ~ 2022.12",
+    role: "전처리 파이프라인 설계 및 개발",
+    longDescription: "위성 영상 수집부터 보정까지의 전처리 과정을 자동화하는 파이프라인을 구축했습니다. 영상별로 전처리가 달라 수동 처리가 필요했고, Salt 기반 폴링 구조에서 격리성이 보장되지 않아 정상 데이터도 실패하는 문제가 있었으며, 실행 중 장애 발생 시 복구 시스템이 미비했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "이벤트 드리븐 파이프라인 구축",
+        items: [
+          "폴더 감시 방식을 이벤트 드리븐 파이프라인으로 전환 — 완료 즉시 다음 큐 실행, 대기 시간 제거",
+          "ack/nack 기반 메시지 유실 방지 (RabbitMQ)",
+          "Saga(Choreography) 패턴 적용 — 실패 시 보상 트랜잭션 자동 실행 및 작업 상태 추적으로 장애 시점 명확화, 보상 재시도 초과 시 DLQ로 격리하여 무한 루프 방지 및 수동 처리 가능하도록 구성",
+        ],
+      },
+    ],
+    achievements: [
+      "Salt 폴링 구조의 격리성 미비로 정상 데이터가 실패 데이터에 영향받던 문제를 RabbitMQ 이벤트 드리븐으로 전환하여 해결 — 실제 문제가 있는 데이터만 격리, 정상 데이터 실패율 0건 달성",
+      "파이프라인 중간 장애 발생 시 원인 파악에 하루가 소요되던 문제를 Saga 패턴 보상 트랜잭션 + DLQ 격리로 해결 — 장애 시점 명확화, 파악 시간 하루→2시간 이내",
+      "수동 처리가 필요하던 위성 영상 전처리를 이벤트 드리븐 파이프라인으로 전환 — 처리량에 탄력적으로 확장 가능한 구조 구축",
+    ],
+  },
+  {
+    id: "team-mcp-agent",
+    title: "팀 업무 자동화 MCP 에이전트",
+    description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트 — 팀 10명 실사용 중",
+    tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
+    status: "deployed",
+    type: "company",
+    company: "한컴인스페이스",
+    category: ["backend", "ai"],
+    period: "2026.03 ~ 2026.04",
+    role: "설계 및 개발",
+    longDescription: "주간보고 작성, 일정 관리, 사내 HRWeb 입력 등 반복 업무를 자동화하기 위해 개인적으로 개발하여 팀 전체(10명)에 공유한 MCP 기반 에이전트입니다. FastMCP로 8개 도구를 구현하고 Cursor·Claude Desktop에서 바로 호출할 수 있도록 연동했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "MCP 에이전트 설계 및 개발",
+        items: [
+          "FastMCP 기반 8개 도구 구현 — list_commits·get_trips·create_calendar_event·generate_report·send_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
+          "Git subprocess로 리포별 커밋 로그 수집 → 폴더 단위 그룹핑, Google Calendar OAuth로 출장 일정 조회 → 두 소스를 병합해 주간보고 초안 자동 생성 후 Gmail SMTP로 발송",
+          "엑셀 템플릿을 ZIP 내 XML 레벨로 직접 조작 — 서식·수식 100% 보존하면서 C열 카테고리 자동 감지 후 D/H 셀에 내용 주입",
+          "사내 HRWeb(아마란스) Playwright 자동화 — 로그인 → 월 선택 → 날짜·프로젝트·공수 입력까지 전 흐름 브라우저 자동화, Git 커밋이 없는 날은 주변 커밋 패턴으로 description 추론",
+        ],
+      },
+    ],
+    achievements: [
+      "반복 수작업으로 30분~1시간이 소요되던 주간보고 작성과 HRWeb 공수 입력 업무를 FastMCP 에이전트로 전 과정 자동화 — Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송까지 단일 명령으로 처리",
+      "개인 도구에 그치지 않고 Claude Desktop·Cursor에서 바로 호출 가능하도록 배포해 팀 10명 전원이 실사용하는 도구로 공유",
+    ],
+  },
+  {
+    id: "test-cluster",
+    hidden: true,
+    title: "팀 내 개발 안정화를 위한 테스트 클러스터 분리",
+    description: "K8s 기반 테스트 환경 구축으로 운영 서버 장애 대폭 감소, 서버 5대 → 2대",
+    tags: ["Kubernetes", "Docker", "On-premise"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2023.01 ~ 2023.06",
+    role: "테스트 인프라 구축",
+    longDescription: "테스트 서버가 없어 로컬 환경에서 테스트 후 운영 서버로 바로 배포하면서, 엔지니어마다 로컬 환경의 차이와 운영 서버와의 차이로 인해 운영 서버에서 이슈가 발생하는 문제를 해결했습니다. 하나의 서버에 하나의 서비스만 올리는 비효율도 함께 개선했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "테스트 환경 구축",
+        items: [
+          "운영 클러스터와 테스트 클러스터를 물리적으로 분리 — ETL 로직·AI 모델·DB를 테스트 클러스터에 동일하게 구성하여 운영과 완전히 격리된 검증 환경 구축",
+          "클러스터 분리로 테스트 워크로드가 운영 서비스에 영향을 주지 않으며, K8s Pod 배치로 서버 자원을 필요한 곳에만 할당하여 기존 서버 5대 → 2대로 효율화",
+        ],
+      },
+    ],
+    achievements: [
+      "로컬과 운영 환경 차이로 테스트를 통과해도 운영 배포 후 장애가 반복되던 문제를 운영과 동일한 K8s 테스트 클러스터 구축으로 해결 — 환경 차이로 인한 배포 후 장애 대폭 감소",
+      "서버 1대에 서비스 1개씩 운영하던 비효율을 K8s Pod 배치로 해결 — 서버 5대→2대로 자원 효율화",
     ],
   },
 ];
