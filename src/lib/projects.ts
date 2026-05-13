@@ -472,13 +472,13 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2022.12 ~ 진행중",
     role: "아키텍처 재설계 및 풀스택 개발",
-    longDescription: "자사 위성 영상 분석 플랫폼의 기능 개발 및 고도화 프로젝트입니다. 노후화된 기술 스택과 관리 미비 상태에서 고객 요구사항을 반영할수록 새로운 이슈가 발생하여 개발 속도가 지연되는 문제를 해결하기 위해, 기능별 플로우 정리와 테스트 코드 작성, MSA 및 이벤트 드리븐 아키텍처 도입을 주도했습니다.",
+    longDescription: "자사 위성 영상 분석 플랫폼 전반을 담당했습니다. 모놀리식 구조를 9개 MSA로 전환하고 이벤트 드리븐 파이프라인을 구축하는 한편, AI 모델 서빙 시스템 구성, 레거시 프론트엔드 마이그레이션, 인증 시스템 최적화, Go 기반 영상 타일링 API 개발까지 플랫폼 전 영역에 걸쳐 작업했습니다.",
     details: [],
     roleDetails: [
       {
         role: "MSA & 이벤트 드리븐 아키텍처 전환",
         items: [
-          "서비스 간 영향을 최소화하고 에러 지점을 명확히 파악하기 위해 MSA & 이벤트 드리븐 아키텍처 도입",
+          "모놀리식 서비스를 도메인 경계 기준 9개 MSA로 분리, Spring Cloud Gateway로 인증·로깅·라우팅 일원화 — 재배포 월 10건→1건, 배포 속도 4분→30초",
           "외부망·폐쇄망 간 DB 양방향 동기화 구현 — 네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제를 직접 개발한 Outbox 패턴 라이브러리로 대체",
           "기능별 플로우 차트 정리 및 테스트 로직 추가, 커밋 시 자동 테스트되도록 CI/CD 작성",
           "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 폐쇄망·공개망이 분리된 환경에서 외부 코디네이터(ZooKeeper 등) 접근이 불가하여 기성 라이브러리 사용 불가, worker ID를 망별로 사전 할당하여 양쪽에서 충돌 없는 고유 ID 생성 및 파일 기반으로 전달된 로그에서 발생 서버 즉시 추적 가능",
@@ -490,12 +490,10 @@ export const projects: Project[] = [
       {
         role: "AI 모델 서빙 시스템",
         items: [
-          "ConvNeXt 백본 + UPerNet 디코더 기반 위성 영상 6클래스 시맨틱 세그멘테이션 구현 — ImageNet-22k pretrained ConvNeXt-Tiny 가중치로 전이학습, 위성 도메인에 fine-tuning",
-          "UPerNet 디코더 구조: PPM(1×1·2×2·3×3·6×6 global pooling으로 전역 맥락 포착) → FPN(top-down 업샘플링으로 저수준·고수준 feature 융합) → 4스케일 concat → 픽셀 분류 (forest·water·ground·building·meadow·road)",
-          "ConvNeXt 4단계 멀티스케일 feature(P1~P4, 96→192→384→768ch)가 UPerNet FPN과 자연스럽게 결합 — ViT 대비 메모리 효율 우위, DDP 분산학습 안정적",
-          "관심정보탐지(POI): YOLO25 기반 객체탐지와 세그멘테이션 결합, RINO·ChangeStar 변화탐지 모델 고도화",
-          "J_ECD(형태학적 변화탐지): 3×3 kernel 형태학적 필터링 4회 반복 + 그림자 제거 후 변화 폴리곤 Shapefile 출력, COG 변환 + gdalwarp 멀티스레드 + EPSG:5179 재투영",
-          "J_MCD(딥러닝 변화탐지): MambaCD(State Space Model) 파인튜닝 — MINIMA 특징 정합 + ECDF 히스토그램 매칭으로 다시기 영상 간 방사 보정, 타일 단위 추론 후 결과 병합",
+          "ConvNeXt+UPerNet 기반 6클래스 토지피복 세그멘테이션 — ImageNet-22k pretrained 전이학습, 위성 도메인 fine-tuning, mIoU ~70%",
+          "YOLOv26 기반 객체탐지(20클래스), RINO·ChangeStar 변화탐지 모델 구성",
+          "J_ECD(형태학적 변화탐지): 3×3 kernel 필터링 + 그림자 제거 → Shapefile 출력, COG 변환 + gdalwarp 멀티스레드 + EPSG:5179 재투영",
+          "J_MCD(딥러닝 변화탐지): MambaCD 파인튜닝 — MINIMA 특징 정합 + ECDF 히스토그램 매칭으로 다시기 영상 간 방사 보정",
         ],
       },
       {
@@ -527,7 +525,7 @@ export const projects: Project[] = [
       "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
       "파일 기반 중계만 가능한 분리망 환경에서 UUID는 발생 서버 추적 불가, 외부 코디네이터 기반 라이브러리는 접근 불가 — Snowflake 알고리즘 직접 구현으로 worker ID에 망 정보 인코딩, ID만으로 발생 서버 즉시 추적 가능",
       "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
-      "전체 세션 풀스캔 구조를 Redis 역인덱스로 전환 — O(N)→O(1), WITH RECURSIVE CTE로 인증 필터 N+1 제거",
+      "전체 세션을 풀스캔하던 Redis 구조를 역인덱스로 전환해 권한 변경 O(N)→O(1) 달성, 인증 필터 N+1을 WITH RECURSIVE CTE 단일 쿼리로 제거",
       "WMS→WMTS 전환 + Redis 타일 캐싱으로 위성 영상 타일링 API 응답 4초→0.5초 미만 달성",
     ],
     resources: [
@@ -537,7 +535,7 @@ export const projects: Project[] = [
   {
     id: "satellite-data",
     title: "위성 데이터 수집·처리 인프라",
-    description: "Salt-Stack 워크플로우 엔진으로 10+ 위성 소스 단일 파이프라인 통합, Aliyun GPUShare GPU 분할로 물리 GPU 1장에서 70파드 병렬 추론",
+    description: "10+ 위성 소스 단일 파이프라인 통합, GPU 1장에서 추론 서비스 70파드 병렬 운영",
     tags: ["FastAPI", "ONNX Runtime", "CUDA", "YOLOv26", "Python", "Salt-Stack", "GDAL", "SFTP", "Kubernetes", "Aliyun GPUShare"],
     status: "deployed",
     type: "company",
@@ -568,7 +566,7 @@ export const projects: Project[] = [
       {
         role: "janus 수집 워크플로우 엔진",
         items: [
-          "Salt-Stack 기반 분산 워크플로우 엔진(janus) 구축 — H_BASE(수확 기반)/S_BASE(소스 기반) 추상 클래스로 수집기 인터페이스 표준화",
+          "Salt-Stack 기반 분산 워크플로우 엔진(janus) 구축 — H_BASE(수집 기반)/S_BASE(소스 기반) 추상 클래스로 수집기 인터페이스 표준화",
           "다누리(KPLO)·창천위성·Sentinel·Landsat·Planet·MODIS 등 10+ 소스를 동일 파이프라인 구조로 통합 — geocode(Nominatim 리버스 지오코딩), inharv(다중 소스 수확 스케줄러) 포함",
           "신규 위성 소스 추가 시 H_BASE/S_BASE 상속 클래스 1개만 구현 — 기존 파이프라인 코드 수정 없이 자동 통합",
         ],
@@ -591,7 +589,7 @@ export const projects: Project[] = [
   {
     id: "outbox-module",
     title: "Outbox 패턴 기반 이벤트 캡처 모듈",
-    description: "Debezium CDC slot 불안정 문제를 AOP + MyBatis 인터셉터 기반 아웃박스 패턴으로 대체, 폐쇄망 파일 동기화 구현",
+    description: "Debezium CDC replication slot 반복 파손 문제를 AOP + MyBatis 인터셉터 기반 Outbox 라이브러리로 대체 — 이벤트 유실 0건",
     tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
     status: "deployed",
     type: "company",
@@ -629,7 +627,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "네트워크 불안정으로 Debezium replication slot이 반복적으로 깨져 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — 인프라 의존성 제거",
+      "Debezium replication slot 반복 파손 → 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — CDC 인프라 의존성 제거, 이벤트 유실 0건",
       "라이브러리 도입 시 기존 비즈니스 코드를 수정해야 하는 침투 문제를 Spring 자동설정 + 애노테이션 방식으로 해결 — 코드 변경 없이 기존 서비스에 즉시 적용 가능",
       "비즈니스 트랜잭션과 이벤트 저장이 분리되어 발생하던 이벤트 유실 가능성을 TransactionSynchronization.beforeCommit()으로 같은 트랜잭션에서 처리하여 해결 — 이벤트 유실 0건 달성",
     ],
@@ -723,7 +721,7 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [
       {
-        role: "재난탐지 시스템 고도화 (2024.10 ~ 2025.12)",
+        role: "ROS 기반 재난탐지 · 3D 좌표 산출",
         items: [
           "ROS Noetic + Faster R-CNN ResNet50-FPN — 7클래스(폭발물·화재·부상자·탈출구·석유·사람) 실시간 추론, ~2~3fps",
           "ApproximateTimeSynchronizer로 RGB·Depth 비동기 스트림 동기화(slop=0.5s) — 타임스탬프 불일치로 잘못된 depth가 사용되는 문제 해결",
@@ -732,7 +730,7 @@ export const projects: Project[] = [
         ],
       },
       {
-        role: "YOLOv5 기반 스트리밍 시스템 (2021.12 ~ 2023.12)",
+        role: "YOLOv5 탑재 드론 스트리밍",
         items: [
           "소켓으로 프레임 전달 시 수신 속도 > 추론 속도로 큐 누적 → 메모리 고갈 문제 발생 — 소켓 통신 제거 후 LibTorch로 C++에서 모델 직접 로드하여 해결",
         ],
