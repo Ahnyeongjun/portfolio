@@ -462,7 +462,7 @@ export const projects: Project[] = [
   },
   {
     id: "satellite-platform",
-    title: "위성 영상 분석 플랫폼 고도화",
+    title: "위성 영상 분석 플랫폼 개발",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
     tags: ["Spring Boot", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
     imageUrl: "/gis-platform_thum.png",
@@ -566,21 +566,21 @@ export const projects: Project[] = [
     ],
   },
   {
-    id: "satellite-ai",
-    title: "위성 영상 ML 추론 서비스 플랫폼",
-    description: "Aliyun GPUShare GPU 메모리 분할로 물리 GPU 1장에서 추론 서비스 70파드 병렬 운영",
-    tags: ["FastAPI", "ONNX Runtime", "CUDA", "YOLOv26", "Python", "Kubernetes", "Aliyun GPUShare"],
+    id: "satellite-data",
+    title: "위성 데이터 수집·처리 인프라",
+    description: "Salt-Stack 워크플로우 엔진으로 10+ 위성 소스 단일 파이프라인 통합, Aliyun GPUShare GPU 분할로 물리 GPU 1장에서 70파드 병렬 추론",
+    tags: ["FastAPI", "ONNX Runtime", "CUDA", "YOLOv26", "Python", "Salt-Stack", "GDAL", "SFTP", "Kubernetes", "Aliyun GPUShare"],
     status: "deployed",
     type: "company",
     category: ["backend", "ai"],
     company: "한컴인스페이스",
     period: "2024.10 ~ 진행중",
-    role: "ML 추론 서비스 설계 및 개발",
-    longDescription: "위성 영상 분석 요청이 증가함에 따라 단일 GPU 서버에 모델 하나를 고정 운영하는 방식으로는 동시 추론이 불가능한 구조적 한계가 있었습니다. K8s GPU 할당이 카운트 단위여서 1파드=1GPU가 강제되었고, 추론 서비스가 분리되지 않아 수동 처리가 반복됐습니다. FastAPI + ONNX Runtime 기반 추론 서비스 3종을 독립 배포하고, Aliyun GPUShare 스케줄러 익스텐더를 구성해 GPU 메모리 단위 분할 운영 체계를 구축했습니다.",
+    role: "ML 추론 서비스 개발 · 수집 워크플로우 엔진 설계",
+    longDescription: "위성 영상 분석 파이프라인의 양 끝을 담당했습니다. 수집 쪽에서는 소스별로 난립하던 수집 로직을 Salt-Stack 기반 워크플로우 엔진으로 표준화해 10개 이상의 위성 소스를 단일 파이프라인에 통합했고, 추론 쪽에서는 K8s GPU 카운트 단위 제약을 Aliyun GPUShare 메모리 분할로 우회해 물리 GPU 1장에서 70파드 병렬 추론 체계를 구축했습니다.",
     details: [],
     roleDetails: [
       {
-        role: "추론 서비스 3종 개발",
+        role: "ML 추론 서비스 3종 개발",
         items: [
           "object-detection: YOLOv26 OBB/HBB 듀얼모델 — 20클래스(선박·항공기·차량·교량 등), SMALL_CLASSES(4~7, 17)는 HBB, 나머지는 OBB로 객체 크기 기반 자동 라우팅, letterbox 1024px 전처리, mAP ~70%",
           "segmentation: UPerNet+ConvNeXt 백본 — 6클래스 토지피복(산림/수계/건물/도로/초지/나지), ONNX Runtime CUDAExecutionProvider 직접 세션 구성",
@@ -596,29 +596,8 @@ export const projects: Project[] = [
           "GPU 노드 node selector 분리로 추론 워크로드와 일반 워크로드 격리",
         ],
       },
-    ],
-    achievements: [
-      "K8s GPU 카운트 단위 할당으로 1파드=1GPU가 강제되던 구조를 Aliyun GPUShare 메모리 단위 분할로 해결 — 물리 GPU 1장에서 70파드 병렬 추론 운영",
-      "단일 모델 고정으로 동시 추론이 불가하던 구조를 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포로 전환 — object-detection·segmentation·inferencer 각각 독립 스케일링",
-      "20클래스 객체 탐지에서 OBB와 HBB를 각각 선택하는 복잡한 라우팅을 객체 크기 기반 자동 분기 로직으로 단순화 — 사용자는 단일 엔드포인트(/inference)만 호출",
-    ],
-  },
-  {
-    id: "satellite-collection",
-    title: "위성 데이터 수집 파이프라인",
-    description: "Salt-Stack 기반 워크플로우 엔진으로 다누리·Sentinel·Landsat 등 10+ 소스 단일 파이프라인 통합",
-    tags: ["Python", "Salt-Stack", "GDAL", "SFTP", "Go", "Kubernetes"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2024.12 ~ 진행중",
-    role: "수집 워크플로우 엔진 설계 및 개발",
-    longDescription: "위성 소스가 늘어날수록 소스별 수집 로직이 제각각으로 난립하여 신규 위성 추가 시 파이프라인 전체를 수정해야 하는 문제가 있었습니다. 수집·카탈로그·잡 처리가 강결합되어 있어 한 부분의 변경이 전체에 영향을 줬습니다. Salt-Stack 기반 분산 워크플로우 엔진(janus)을 구축하고 H_BASE/S_BASE 추상 클래스로 수집기 인터페이스를 표준화하여, 10개 이상의 위성 소스를 단일 파이프라인으로 통합했습니다.",
-    details: [],
-    roleDetails: [
       {
-        role: "janus 워크플로우 엔진",
+        role: "janus 수집 워크플로우 엔진",
         items: [
           "Salt-Stack 기반 분산 워크플로우 엔진(janus) 구축 — H_BASE(수확 기반)/S_BASE(소스 기반) 추상 클래스로 수집기 인터페이스 표준화",
           "다누리(KPLO)·창천위성·Sentinel·Landsat·Planet·MODIS 등 10+ 소스를 동일 파이프라인 구조로 통합 — geocode(Nominatim 리버스 지오코딩), inharv(다중 소스 수확 스케줄러) 포함",
@@ -634,9 +613,10 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
+      "K8s GPU 카운트 단위 할당으로 1파드=1GPU가 강제되던 구조를 Aliyun GPUShare 메모리 단위 분할로 해결 — 물리 GPU 1장에서 70파드 병렬 추론 운영",
+      "단일 모델 고정으로 동시 추론이 불가하던 구조를 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포로 전환 — object-detection·segmentation·inferencer 각각 독립 스케일링",
       "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정이 필요하던 구조를 H_BASE/S_BASE 추상 클래스 표준화로 해결 — 신규 소스 추가 시 클래스 1개만 구현, 기존 코드 수정 0건",
-      "외부망↔폐쇄망 단절 환경에서 데이터 전달 수단이 없던 문제를 SFTP 기반 relay 직접 구현으로 해결 — 파일 기반 단방향 중계로 망간 데이터 동기화",
-      "10+ 위성 소스(다누리·창천위성·Sentinel·Landsat·Planet·MODIS 등)를 단일 janus 워크플로우 엔진으로 통합 운영",
+      "외부망↔폐쇄망 단절 환경에서 SFTP 기반 relay 직접 구현 — 파일 기반 단방향 중계로 망간 데이터 동기화",
     ],
   },
   {
@@ -721,6 +701,7 @@ export const projects: Project[] = [
   },
   {
     id: "pipeline",
+    hidden: true,
     title: "영상 전처리 파이프라인 자동화",
     description: "폴더 감시 → 이벤트 드리븐 전환으로 장애 파악 시간 하루 → 2시간 이내로 감소",
     tags: ["RabbitMQ", "Python", "Saga Pattern", "Docker"],
