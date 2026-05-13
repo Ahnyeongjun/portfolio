@@ -462,7 +462,7 @@ export const projects: Project[] = [
   },
   {
     id: "satellite-platform",
-    title: "위성 영상 분석 플랫폼 MSA 전환",
+    title: "위성 영상 분석 플랫폼 MSA 개발",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
     tags: ["Spring Boot", "Go", "Redis", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js"],
     imageUrl: "/gis-platform_thum.png",

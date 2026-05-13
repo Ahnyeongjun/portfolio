@@ -31,7 +31,7 @@ const techStack = [
 const companyProjects = [
   {
     id: "satellite-platform",
-    name: "위성 영상 분석 플랫폼 MSA 전환",
+    name: "위성 영상 분석 플랫폼 MSA 개발",
     period: "2022.12 ~ 현재",
     image: "/gis-platform_thum.png",
     tags: ["Spring Boot", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
