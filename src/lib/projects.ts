@@ -503,14 +503,6 @@ export const projects: Project[] = [
         items: [
           "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js 15 + FSD 아키텍처로 전면 재설계 — features 37개·entities 26개로 기능별 의존성 방향 명확화, 파일 수 146개→209개로 모듈화 완료",
           "CesiumJS + Resium 기반 위성 영상 지도 뷰어 구현 — 3D 지구 위에 위성 영상·벡터 타일(MVT) 레이어 오버레이, SwipeViewer로 시점 동기화 좌우 영상 비교 기능 구현",
-          "동일 코드베이스에서 mgaia·apiss·moon 3개 배포 환경을 cross-env 환경변수 빌드로 분기 — 환경별 API·설정 분리로 단일 레포에서 다중 배포 지원",
-          "Storybook 통합 및 사내 공통 UI 라이브러리 운영 — 공통 컴포넌트 문서화로 팀 내 UI 일관성 확보 및 중복 개발 방지",
-        ],
-      },
-      {
-        role: "폐쇄망 패키지 저장소 통합",
-        items: [
-          "Pulp 도입으로 Maven(Java) 단독 운영에서 PyPI(Python)·npm(JavaScript) 포함 멀티 포맷 내부 미러로 전환 — 폐쇄망 환경에서 pip install·npm install 모두 내부 저장소에서 처리 가능하도록 구성",
         ],
       },
     ],
@@ -637,8 +629,7 @@ export const projects: Project[] = [
         role: "망연계 relay 및 알림",
         items: [
           "SFTP 기반 망연계 relay 직접 구현 — 외부망↔폐쇄망 간 파일 기반 데이터 중계, 네트워크 분리 환경에서 단방향 파일 전달",
-          "이메일 알림 5종 직접 구현 — 분석완료(anlscomplete)·시스템에러(systemerror)·가입(signup)·비밀번호찾기(searchpassword)·보안다운로드(download_security, 서약서 PDF + 이력 CSV ZIP 첨부)",
-          "KARI(한국항공우주연구원) 납품 환경 대응 — neonsat@kari.re.kr 기반 알림 발송 체계 구성",
+          "이메일 알림 5종 직접 구현(분석완료·시스템에러·보안다운로드 등) — 보안다운로드는 서약서 PDF + 이력 CSV ZIP 첨부, KARI 납품 환경 대응",
         ],
       },
     ],
@@ -675,9 +666,7 @@ export const projects: Project[] = [
       {
         role: "YOLOv5 기반 스트리밍 시스템 (2021.12 ~ 2023.12)",
         items: [
-          "커스텀 데이터셋 모델 학습 및 가중치 추출",
           "소켓으로 프레임 전달 시 수신 속도 > 추론 속도로 큐 누적 → 메모리 고갈 문제 발생 — 소켓 통신 제거 후 LibTorch로 C++에서 모델 직접 로드하여 해결",
-          "TCP 소켓 + OpenCV 기반 실시간 추론 및 스트리밍",
         ],
       },
     ],
