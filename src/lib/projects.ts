@@ -31,7 +31,7 @@ export const projects: Project[] = [
     id: "simvex",
     title: "SIMVEX",
     description:
-      "3D 분해/조립 시뮬레이션과 RAG AI 어시스턴트를 결합한 기계공학 학습 웹 서비스",
+      "3D 분해/조립 시뮬레이션과 SSE 스트리밍 AI 어시스턴트를 결합한 기계공학 학습 웹 서비스",
     tags: ["Next.js", "Three.js", "React Three Fiber", "Zustand", "React Query", "Styled Components", "MSW"],
     imageUrl: "/simvex_thum.png",
     link: "https://runtime-simvex.vercel.app/",
@@ -248,19 +248,17 @@ export const projects: Project[] = [
     category: ["backend"],
     period: "2025.04 ~ 2025.07",
     role: "서브 백엔드 개발",
-    longDescription: "매일 수많은 책들이 세상에 태어나고, 그중엔 잊혀지기엔 너무나 특별한 이야기들이 담겨 있습니다. 오늘 처음 세상에 나온 책들을 생일처럼 축하하고, 그 특별한 순간을 함께 나누는 서비스입니다. 6명(프론트엔드 2, 백엔드 2, 디자이너, PM)이 함께 진행했습니다. Kotlin + QueryDSL을 처음 제대로 활용한 프로젝트이자, 대량 초기 데이터 적재 방법을 고민하며 많은 것을 배운 프로젝트입니다.",
+    longDescription: "매일 수많은 책들이 세상에 태어나고, 그중엔 잊혀지기엔 너무나 특별한 이야기들이 담겨 있습니다. 오늘 처음 세상에 나온 책들을 생일처럼 축하하고, 그 특별한 순간을 함께 나누는 서비스입니다. 6명(프론트엔드 2, 백엔드 2, 디자이너, PM)이 함께 진행했습니다. 국립중앙도서관 API 기반 자동 수집 파이프라인과 12만 건 초기 데이터 안정 적재가 핵심 구현 과제였습니다.",
     details: [],
     roleDetails: [
       {
         role: "백엔드",
         items: [
-          "Kotlin + Spring Boot 3.4.4 프로젝트 셋업",
-          "Book, Author, Publisher, Contents, Event 도메인 설계",
-          "QueryDSL 기반 동적 검색 쿼리 구현 (제목·저자·출판사 통합 검색, 동적 정렬)",
+          "QueryDSL 기반 동적 검색 쿼리 구현 — 제목·저자·출판사 통합 검색, 동적 정렬",
           "Spring Batch — 국립중앙도서관 API Reader → 카카오 API Processor → DB Writer 파이프라인",
-          "external 패키지: CSV → 카카오 API 보강 → JdbcTemplate 배치 적재 파이프라인",
+          "external 패키지: CSV → 카카오 API 보강 → JdbcTemplate 배치 적재 파이프라인 (12만 건 초기 데이터 적재)",
           "AOP + Spring Event 기반 검색 로그 수집 및 2차 배치 연동",
-          "MySQL + Oracle 듀얼 DB 연동",
+          "MySQL + Oracle 듀얼 DB 구성 — 신간 수집·검색 이력 저장에 MySQL, 외부 데이터 소스 연동에 Oracle",
         ],
       },
     ],
@@ -290,7 +288,7 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [
       {
-        role: "프론트엔드 (Next.js 15 + Zustand + Storybook 학습)",
+        role: "프론트엔드 (Next.js 15 + Zustand + Storybook)",
         items: [
           "Next.js App Router 기반 페이지 설계 (메인, 감정 입력, 추천, 일정 상세, 마이페이지)",
           "Zustand persist 패턴으로 인증·입력·추천·일정 전역 상태 관리 (7개 Store)",
@@ -340,13 +338,10 @@ export const projects: Project[] = [
       {
         role: "백엔드",
         items: [
-          "Spring Boot 3 + JPA + QueryDSL 기반 REST API 설계 및 구현",
-          "Spring Batch로 공공데이터(Tour API) 축제 정보 자동 수집",
-          "지역/테마/일정별 축제 검색 및 필터링 API",
-          "달력 뷰 일별 축제 수 통계 API",
-          "지도 뷰 좌표 기반 축제 조회 API",
-          "Spring Security + JWT + OAuth(카카오) 인증",
-          "북마크 및 사용자 활동 로그 기능",
+          "Spring Batch로 Tour API 축제 데이터 정기 수집 파이프라인 구성 — 수 시간 주기 자동 갱신",
+          "QueryDSL BooleanBuilder로 지역·테마·날짜·좌표 조건 동적 필터링 — 목록·달력·지도 뷰 API 단일 쿼리 로직으로 통일",
+          "달력 뷰 일별 집계, 지도 뷰 좌표 기반 조회 API 각각 구현",
+          "JWT + 카카오 OAuth 인증, 북마크·활동 로그 도메인 설계",
         ],
       },
     ],
