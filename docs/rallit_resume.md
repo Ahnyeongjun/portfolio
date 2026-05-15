@@ -2,7 +2,9 @@
 
 ## 소개
 
-레거시 모놀리식 구조를 MSA로 전환하며 재배포 월 10건→1건, 배포 속도 4분→30초 달성. 이벤트 드리븐 파이프라인으로 전처리 대기 40분→즉시 처리, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건을 달성했습니다.
+**Backend Engineer** · 5년차 · 한컴인스페이스
+
+모놀리식 → MSA 전환 주도(9개 서비스), 재배포 월 10건→1건·배포 속도 4분→30초. Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건, Go 기반 영상 API 응답 4초→0.5초 미만. K8s 기반 인프라 설계·운영(HPA·OpenSearch+Fluent-bit 중앙 로깅·클러스터 분리) 경험 보유.
 
 FastAPI + ONNX Runtime 기반 ML 추론 서비스 3종 독립 배포, Aliyun GPUShare로 물리 GPU 1장에서 70파드 병렬 운영 체계를 구축했습니다. ROS + Faster R-CNN 기반 드론 재난탐지 시스템에서 핀홀 모델 역투영으로 2D→3D 절대좌표 변환까지 구현했습니다.
 
@@ -23,7 +25,7 @@ Java / Kotlin / Spring Boot / JPA / QueryDSL / Spring Batch / MySQL / Redis / Ra
 서비스 간 직접 호출을 RabbitMQ 비동기 이벤트로 전환. Debezium CDC 대체 Outbox 패턴 라이브러리 직접 개발 — 트랜잭션 원자성 보장, 이벤트 유실 0건.
 
 **Go 기반 위성 이미지 처리 API 개발**
-Go 1.23 + GDAL 바인딩 기반 위성 이미지 REST API 2종(image-api, inias) 구현.
+Go 1.23 + GDAL 바인딩 기반 위성 이미지 REST API 2종(image-api, inias) 구현. image-api LayerInfo TTL 1분 캐시로 캐시 히트 ~20ms, inias sync.Pool 기반 동시 요청 처리 · bbox/EPSG 변환 지원.
 
 **ML 추론 서비스 개발**
 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포, Aliyun GPUShare GPU 메모리 분할로 물리 GPU 1장에서 70파드 병렬 운영.

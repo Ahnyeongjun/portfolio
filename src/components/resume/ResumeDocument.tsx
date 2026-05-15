@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const contact = {
   name: "안영준",
-  title: "Full-Stack Developer",
+  title: "Backend Engineer",
   email: "ahn479512@gmail.com",
   github: "github.com/Ahnyeongjun",
   githubUrl: "https://github.com/Ahnyeongjun",
@@ -10,7 +10,7 @@ const contact = {
 };
 
 const summary =
-  "위성 영상 기반 지도 플랫폼을 처음부터 설계·구현하고, 모놀리식에서 MSA로 전환하며 구조적 문제를 주도적으로 개선해온 백엔드 중심 풀스택 개발자입니다. 하루 수천 건의 위성 영상을 처리하는 대용량 파이프라인 설계, 폐쇄망 환경 문제 해결 등 특수 환경에서의 경험을 쌓았으며, 구현에서 끝내지 않고 서비스 구조와 팀 개발 생산성까지 함께 고민합니다.";
+  "5년차 백엔드 엔지니어. 모놀리식 → 9개 MSA 전환 주도로 재배포 월 10건→1건·배포 속도 4분→30초, Go 기반 영상 API 응답 4초→0.5초 미만, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건. K8s 인프라 설계·운영(HPA·OpenSearch 중앙 로깅·클러스터 분리) 경험 보유. 백엔드 경계 밖이어도 필요하다고 판단하면 직접 움직입니다.";
 
 const experience = {
   company: "한컴인스페이스",
@@ -177,10 +177,10 @@ const sideProjects = [
 ];
 
 const techStack = [
-  { label: "Backend",  items: ["Spring Boot", "Kotlin", "Java", "FastAPI", "Python", "Go"] },
-  { label: "Frontend", items: ["Next.js", "TypeScript", "React", "Tailwind CSS", "Storybook"] },
-  { label: "Database", items: ["PostgreSQL", "MySQL", "Oracle", "Redis", "RabbitMQ"] },
-  { label: "DevOps",   items: ["Kubernetes", "Docker", "Jenkins", "GitHub Actions", "Kafka"] },
+  { label: "Backend",  items: ["Spring Boot", "Java", "Kotlin", "JPA", "QueryDSL", "Spring Batch", "FastAPI", "Go", "Python"] },
+  { label: "Database", items: ["PostgreSQL", "MySQL", "Redis", "Kafka", "RabbitMQ"] },
+  { label: "DevOps",   items: ["Kubernetes", "Docker", "AWS", "Jenkins", "GitHub Actions", "OpenSearch"] },
+  { label: "ML / AI",  items: ["PyTorch", "ONNX Runtime", "ROS", "GDAL"] },
 ];
 
 const education = [
