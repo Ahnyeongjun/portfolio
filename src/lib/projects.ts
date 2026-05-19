@@ -192,7 +192,7 @@ export const projects: Project[] = [
   },
   {
     id: "concert-reservation",
-    title: "콘서트 예약 시스템",
+    title: "동시성 제어 · 이벤트 드리븐 콘서트 예약 시스템 개발",
     description: "항해99 백엔드코스 — 동시성·이벤트 드리븐·부하 테스트까지 백엔드 핵심 문제를 단계적으로 해결한 프로젝트",
     tags: ["Spring Boot", "Java", "MySQL", "Redis", "Kafka", "k6", "InfluxDB", "Grafana", "JUnit5"],
     status: "deployed",
@@ -457,9 +457,9 @@ export const projects: Project[] = [
   },
   {
     id: "satellite-platform",
-    title: "위성 영상 분석 플랫폼 MSA 개발",
+    title: "위성 영상 플랫폼 아키텍처 전환 및 풀스택 개발",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
-    tags: ["Spring Boot", "Go", "Redis", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js"],
+    tags: ["Spring Boot", "Go", "Redis", "K8s", "RabbitMQ", "Next.js"],
     imageUrl: "/gis-platform_thum.png",
     status: "deployed",
     type: "company",
@@ -467,7 +467,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2022.12 ~ 진행중",
     role: "아키텍처 재설계 및 풀스택 개발",
-    longDescription: "자사 위성 영상 분석 플랫폼 전반을 담당했습니다. 모놀리식 구조를 9개 MSA로 전환하고 이벤트 드리븐 파이프라인을 구축하는 한편, AI 모델 서빙 시스템 구성, 레거시 프론트엔드 마이그레이션, 인증 시스템 최적화, Go 기반 영상 타일링 API 개발까지 플랫폼 전 영역에 걸쳐 작업했습니다.",
+    longDescription: "자사 위성 영상 분석 플랫폼의 아키텍처 재설계를 주도했습니다. 모놀리식 구조를 9개 MSA로 전환하고 이벤트 드리븐 파이프라인을 구축하는 한편, 레거시 프론트엔드 마이그레이션, 인증 시스템 최적화, Go 기반 영상 타일링 API 개발까지 플랫폼 전 영역에 걸쳐 작업했습니다.",
     details: [],
     roleDetails: [
       {
@@ -477,15 +477,6 @@ export const projects: Project[] = [
           "외부망·폐쇄망 간 DB 양방향 동기화 구현 — 네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제를 직접 개발한 Outbox 패턴 라이브러리로 대체",
           "기능별 플로우 차트 정리 및 테스트 로직 추가, 커밋 시 자동 테스트되도록 CI/CD 작성",
           "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 폐쇄망·공개망이 분리된 환경에서 외부 코디네이터(ZooKeeper 등) 접근이 불가하여 기성 라이브러리 사용 불가, worker ID를 망별로 사전 할당하여 양쪽에서 충돌 없는 고유 ID 생성 및 파일 기반으로 전달된 로그에서 발생 서버 즉시 추적 가능",
-        ],
-      },
-      {
-        role: "AI 모델 서빙 시스템",
-        items: [
-          "ConvNeXt+UPerNet 기반 6클래스 토지피복 세그멘테이션 — ImageNet-22k pretrained 전이학습, 위성 도메인 fine-tuning, mIoU ~70%",
-          "YOLOv26 기반 객체탐지(20클래스), RINO·ChangeStar 변화탐지 모델 구성",
-          "J_ECD(형태학적 변화탐지): 3×3 kernel 필터링 + 그림자 제거 → Shapefile 출력, COG 변환 + gdalwarp 멀티스레드 + EPSG:5179 재투영",
-          "J_MCD(딥러닝 변화탐지): MambaCD 파인튜닝 — MINIMA 특징 정합 + ECDF 히스토그램 매칭으로 다시기 영상 간 방사 보정",
         ],
       },
       {
@@ -534,19 +525,70 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "cesium-layer-toolkit",
+    title: "CesiumJS 레이어 관리 라이브러리 개발",
+    description: "CesiumJS 원본이 제공하지 않는 레이어 순서 제어·가시성 관리·타입 추상화를 구현한 사내 프론트엔드 라이브러리",
+    tags: ["TypeScript", "CesiumJS", "Resium", "MVT", "MBTiles"],
+    status: "deployed",
+    type: "company",
+    category: ["frontend"],
+    company: "한컴인스페이스",
+    period: "2024.06 ~ 2025.03",
+    role: "라이브러리 설계 및 개발",
+    longDescription: "CesiumJS는 3D 지구 렌더링에는 강력하지만 레이어 순서 제어, 베이스맵 관리, 레이어 가시성 토글 기능이 기본 제공되지 않습니다. 위성 영상 분석 플랫폼 프론트엔드를 Next.js 15로 마이그레이션하면서 MVT·MBTiles·ImageLayer 등 다양한 레이어 타입을 일관된 방식으로 다루기 위해 사내 레이어 관리 라이브러리를 직접 개발했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "레이어 추상화 & 타입 시스템",
+        items: [
+          "MVT(Mapbox Vector Tile)·MBTiles·ImageLayer·BaseMap 등 이종 레이어 타입을 단일 인터페이스로 추상화 — TypeScript 타입 정의 제공으로 레이어 조작 시 타입 안전성 보장",
+          "베이스맵 레이어를 일반 레이어와 명시적으로 분리 관리 — 베이스맵 교체 시 나머지 레이어 스택 및 순서 보존",
+        ],
+      },
+      {
+        role: "레이어 순서 제어",
+        items: [
+          "CesiumJS ImageryLayer는 추가 순서대로만 쌓이며 런타임 재정렬 API 없음 — 레이어 인덱스 기반 재정렬 로직 직접 구현, UI에서 드래그로 레이어 순서 자유롭게 변경 가능",
+          "위성 영상·MVT 벡터 타일·베이스맵 레이어 간 Z-order를 명시적으로 관리하여 레이어 겹침 문제 해결",
+        ],
+      },
+      {
+        role: "메모리 효율화",
+        items: [
+          "레이어 제거 대신 hide/show 가시성 토글 방식 채택 — CesiumJS는 레이어 삭제 시 WebGL 텍스처·타일 캐시 전체 해제, 재표시 시 전체 재로드 필요. 가시성 플래그 전환으로 캐시를 유지해 재표시 응답 속도 개선",
+          "자주 전환되는 레이어는 메모리에 유지, 장기 미사용 레이어만 실제 해제하는 전략으로 메모리와 응답 속도 균형",
+        ],
+      },
+    ],
+    achievements: [
+      "CesiumJS 원본의 레이어 순서 관리 부재를 인덱스 기반 재정렬 로직으로 해결 — 위성 영상·벡터 타일·베이스맵을 UI에서 자유롭게 순서 조정 가능",
+      "레이어 토글마다 삭제·재추가를 반복해 WebGL 리소스가 매번 재로드되던 문제를 hide/show 방식으로 해결 — 타일 캐시 재활용으로 재표시 시 사용자 대기 감소",
+      "MVT·MBTiles·ImageLayer 타입마다 개별 처리 코드가 흩어지던 문제를 단일 추상 인터페이스로 통합 — 신규 레이어 타입 추가 시 기존 코드 수정 0건",
+    ],
+  },
+  {
     id: "satellite-data",
-    title: "위성 데이터 수집·처리 인프라",
-    description: "10+ 위성 소스 단일 파이프라인 통합, GPU 1장에서 추론 서비스 70파드 병렬 운영",
-    tags: ["FastAPI", "ONNX Runtime", "CUDA", "YOLOv26", "Python", "Salt-Stack", "GDAL", "SFTP", "Kubernetes", "Aliyun GPUShare"],
+    title: "위성 영상 AI 모델 개발 및 수집 파이프라인 구축",
+    description: "ML 모델 학습·추론 서비스 배포, 10+ 위성 소스 수집 파이프라인 통합, GPU 1장에서 70파드 병렬 운영",
+    tags: ["PyTorch", "ONNX Runtime", "FastAPI", "CUDA", "YOLOv26", "Python", "Salt-Stack", "GDAL", "SFTP", "Kubernetes", "Aliyun GPUShare"],
     status: "deployed",
     type: "company",
     category: ["backend", "ai"],
     company: "한컴인스페이스",
     period: "2024.10 ~ 진행중",
-    role: "ML 추론 서비스 개발 · 수집 워크플로우 엔진 설계",
-    longDescription: "위성 영상 분석 파이프라인의 양 끝을 담당했습니다. 수집 쪽에서는 소스별로 난립하던 수집 로직을 Salt-Stack 기반 워크플로우 엔진으로 표준화해 10개 이상의 위성 소스를 단일 파이프라인에 통합했고, 추론 쪽에서는 K8s GPU 카운트 단위 제약을 Aliyun GPUShare 메모리 분할로 우회해 물리 GPU 1장에서 70파드 병렬 추론 체계를 구축했습니다.",
+    role: "ML 모델 개발 · 인프라 구축 및 ETL 작성",
+    longDescription: "위성 영상 분석에 필요한 ML 모델 학습부터 추론 서비스 배포, 데이터 수집 파이프라인까지 전반을 담당했습니다. 위성 도메인 특화 세그멘테이션·객체탐지·변화탐지 모델을 직접 학습하고 FastAPI + ONNX Runtime 기반 추론 서비스로 배포했으며, Salt-Stack 기반 워크플로우 엔진으로 10개 이상의 위성 소스를 단일 파이프라인에 통합했습니다. K8s GPU 카운트 단위 제약을 Aliyun GPUShare 메모리 분할로 우회해 물리 GPU 1장에서 70파드 병렬 추론 체계도 구축했습니다.",
     details: [],
     roleDetails: [
+      {
+        role: "모델 학습 및 서비스 개발",
+        items: [
+          "ConvNeXt+UPerNet 기반 6클래스 토지피복 세그멘테이션 — ImageNet-22k pretrained 전이학습, 위성 도메인 fine-tuning, mIoU ~70%",
+          "YOLOv26 기반 객체탐지(20클래스), RINO·ChangeStar 변화탐지 모델 구성",
+          "J_ECD(형태학적 변화탐지): 3×3 kernel 필터링 + 그림자 제거 → Shapefile 출력, COG 변환 + gdalwarp 멀티스레드 + EPSG:5179 재투영",
+          "J_MCD(딥러닝 변화탐지): MambaCD 파인튜닝 — MINIMA 특징 정합 + ECDF 히스토그램 매칭으로 다시기 영상 간 방사 보정",
+        ],
+      },
       {
         role: "ML 추론 서비스 3종 개발",
         items: [
@@ -589,8 +631,8 @@ export const projects: Project[] = [
   },
   {
     id: "outbox-module",
-    title: "Outbox 패턴 기반 이벤트 캡처 모듈",
-    description: "Debezium CDC replication slot 반복 파손 문제를 AOP + MyBatis 인터셉터 기반 Outbox 라이브러리로 대체 — 이벤트 유실 0건",
+    title: "Outbox 패턴 기반 이벤트 동기화 라이브러리 개발",
+    description: "Debezium CDC replication slot 반복 파손 문제를 AOP + MyBatis 인터셉터 기반 Outbox 이벤트 동기화 라이브러리로 대체 — 이벤트 유실 0건",
     tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
     status: "deployed",
     type: "company",
@@ -679,7 +721,7 @@ export const projects: Project[] = [
   },
   {
     id: "team-mcp-agent",
-    title: "팀 업무 자동화 MCP 에이전트",
+    title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트 개발",
     description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트 — 팀 10명 실사용 중",
     tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
     status: "deployed",
@@ -708,9 +750,9 @@ export const projects: Project[] = [
   },
   {
     id: "drone-detection",
-    title: "드론 탑재 실시간 객체 탐지 시스템",
+    title: "드론 탑재 재난탐지 · 3D 좌표 측위 시스템 개발",
     description: "YOLOv5·Faster R-CNN 기반 실시간 탐지, RealSense D435 depth로 2D BBox → 3D 절대좌표 변환 후 GCS 자동 보고",
-    tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "RealSense D435", "C++", "OpenCV", "UDP"],
+    tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "RealSense D435", "C++", "OpenCV", "FFmpeg", "RTSP", "UDP"],
     imageUrl: "/drone-detection_thum.png",
     status: "deployed",
     type: "company",
