@@ -497,9 +497,7 @@ export const projects: Project[] = [
       {
         role: "인증 시스템 최적화",
         items: [
-          "Redis 역인덱스 구축으로 풀스캔 제거 — userId → sessionId 목록 구조로 저장하여 권한 변경 시 해당 유저의 세션만 즉시 조회 및 갱신, O(N)→O(1)",
-          "재귀적 트리 구조 메뉴에서 건별 조회 → WITH RECURSIVE CTE + 단일 쿼리 전환, 인증 필터에서 전체 권한 정보를 한 번에 로드 후 메모리 매핑",
-          "Redis DB 3개로 용도 분리 (세션 / 방문자 통계 / 로그인 실패 추적), IP + userId 단위 4회 초과 시 10분 잠금으로 브루트포스 방지",
+          "Redis 역인덱스 구축으로 세션 풀스캔 제거 — 어드민이 역할 단위로 권한 일괄 변경 시 해당 역할의 일반 유저 전체 세션을 즉시 무효화해야 하는데, 멀티 디바이스 로그인으로 유저당 세션이 여러 개라 전체 세션 풀스캔 후 userId 비교가 필요했음. userId → sessionId Set 역인덱스로 대상 유저 세션만 즉시 조회·무효화, O(N)→O(1)",
         ],
       },
       {
@@ -517,7 +515,7 @@ export const projects: Project[] = [
       "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
       "파일 기반 중계만 가능한 분리망 환경에서 UUID는 발생 서버 추적 불가, 외부 코디네이터 기반 라이브러리는 접근 불가 — Snowflake 알고리즘 직접 구현으로 worker ID에 망 정보 인코딩, ID만으로 발생 서버 즉시 추적 가능",
       "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
-      "전체 세션을 풀스캔하던 Redis 구조를 역인덱스로 전환해 권한 변경 O(N)→O(1) 달성, 인증 필터 N+1을 WITH RECURSIVE CTE 단일 쿼리로 제거",
+      "어드민 역할 단위 권한 일괄 변경 시 멀티 디바이스 일반 유저 전체 세션을 풀스캔하던 구조를 userId→sessionId Set 역인덱스로 전환 — 대상 유저 세션만 즉시 조회·무효화, O(N)→O(1)",
       "WMS→WMTS 전환 + Redis 타일 캐싱으로 위성 영상 타일링 API 응답 4초→0.5초 미만 달성",
     ],
     resources: [
@@ -683,7 +681,7 @@ export const projects: Project[] = [
     hidden: true,
     title: "인증 시스템 최적화 · Go 영상 타일링 API",
     description: "Redis 역인덱스 O(N)→O(1), WMS→WMTS 전환으로 영상 API 응답 4초→0.5초 미만 달성",
-    tags: ["Spring Boot", "Go", "Redis", "GDAL", "Spring Cloud Gateway", "PostgreSQL", "Nginx", "K8s"],
+    tags: ["Java", "Spring Boot", "Go", "Redis", "GDAL", "Spring Cloud Gateway", "PostgreSQL", "Nginx", "K8s"],
     status: "deployed",
     type: "company",
     category: ["backend"],
@@ -697,8 +695,6 @@ export const projects: Project[] = [
         role: "어드민 인증 시스템 최적화",
         items: [
           "Redis 역인덱스 구축으로 풀스캔 제거 — userId → sessionId 목록 구조로 저장하여 권한 변경 시 해당 유저의 세션만 즉시 조회 및 갱신",
-          "Redis DB 3개로 용도 분리 (세션 / 방문자 통계 / 로그인 실패 추적), IP + userId 단위 4회 초과 시 10분 잠금으로 브루트포스 방지",
-          "재귀적 트리 구조 메뉴에서 건별 조회 → WITH RECURSIVE CTE + 단일 쿼리 전환, 인증 필터에서 전체 권한 정보를 한 번에 로드 후 메모리 매핑",
           "Spring Cloud Gateway 도입으로 인증·라우팅·로깅 공통 처리 일원화",
         ],
       },
@@ -713,8 +709,7 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "전체 세션을 풀스캔해야 하는 Redis 구조로 권한 변경이 일부 서비스에 즉시 반영되지 않던 문제를 userId→sessionId 역인덱스로 해결 — O(N) 풀스캔→O(1) 조회, 권한 변경 실시간 반영",
-      "매 요청마다 재귀 트리 구조 메뉴 권한을 DB에서 반복 조회하던 N+1 문제를 WITH RECURSIVE CTE + 메모리 매핑으로 해결 — 요청당 DB 쿼리 제거",
+      "어드민 역할 단위 권한 일괄 변경 시 멀티 디바이스 일반 유저 전체 세션을 풀스캔하던 구조를 userId→sessionId Set 역인덱스로 전환 — 대상 유저 세션만 즉시 조회·무효화, O(N)→O(1)",
       "영상 수가 늘수록 WMS 방식의 바운더리 합성 응답 시간이 선형 증가하던 문제를 WMTS + Redis 타일 캐싱으로 해결 — API 응답 4초→0.5초 미만 달성",
       "서비스별로 분산 관리되던 인증·라우팅·로깅 코드를 Spring Cloud Gateway로 일원화 — 각 서비스별 세션 관리 불필요",
     ],
