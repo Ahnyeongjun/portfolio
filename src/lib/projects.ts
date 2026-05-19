@@ -459,7 +459,7 @@ export const projects: Project[] = [
     id: "satellite-platform",
     title: "위성 영상 플랫폼 아키텍처 전환 및 풀스택 개발",
     description: "MSA & 이벤트 드리븐 전환으로 재배포 월 10건 → 1건, 배포 속도 4분 → 30초 달성",
-    tags: ["Spring Boot", "Go", "Redis", "K8s", "RabbitMQ", "Next.js"],
+    tags: ["Spring Boot", "Go", "Redis", "K8s", "RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "Spring AOP", "MyBatis"],
     imageUrl: "/gis-platform_thum.png",
     status: "deployed",
     type: "company",
@@ -467,14 +467,14 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2022.12 ~ 진행중",
     role: "아키텍처 재설계 및 풀스택 개발",
-    longDescription: "자사 위성 영상 분석 플랫폼의 아키텍처 재설계를 주도했습니다. 모놀리식 구조를 9개 MSA로 전환하고 이벤트 드리븐 파이프라인을 구축하는 한편, 레거시 프론트엔드 마이그레이션, 인증 시스템 최적화, Go 기반 영상 타일링 API 개발까지 플랫폼 전 영역에 걸쳐 작업했습니다.",
+    longDescription: "자사 위성 영상 분석 플랫폼의 아키텍처 재설계를 주도했습니다. 모놀리식 구조를 9개 MSA로 전환하고 이벤트 드리븐 파이프라인을 구축하는 한편, 레거시 프론트엔드 마이그레이션, 인증 시스템 최적화, Go 기반 영상 타일링 API 개발까지 플랫폼 전 영역에 걸쳐 작업했습니다. 플랫폼 개발 과정에서 CesiumJS 레이어 관리 라이브러리와 Outbox 패턴 이벤트 동기화 라이브러리도 직접 설계·개발해 적용했습니다.",
     details: [],
     roleDetails: [
       {
         role: "MSA & 이벤트 드리븐 아키텍처 전환",
         items: [
           "모놀리식 서비스를 도메인 경계 기준 9개 MSA로 분리, Spring Cloud Gateway로 인증·로깅·라우팅 일원화 — 재배포 월 10건→1건, 배포 속도 4분→30초",
-          "외부망·폐쇄망 간 DB 양방향 동기화 구현 — 네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제를 직접 개발한 Outbox 패턴 라이브러리로 대체",
+          "외부망·폐쇄망 간 DB 양방향 동기화 구현 — Debezium replication slot 반복 파손 문제를 직접 개발한 Outbox 패턴 라이브러리로 대체 (상세 내용: Outbox 패턴 라이브러리 섹션)",
           "기능별 플로우 차트 정리 및 테스트 로직 추가, 커밋 시 자동 테스트되도록 CI/CD 작성",
           "분산 ID 생성기 직접 구현 (Snowflake 알고리즘) — 폐쇄망·공개망이 분리된 환경에서 외부 코디네이터(ZooKeeper 등) 접근이 불가하여 기성 라이브러리 사용 불가, worker ID를 망별로 사전 할당하여 양쪽에서 충돌 없는 고유 ID 생성 및 파일 기반으로 전달된 로그에서 발생 서버 즉시 추적 가능",
         ],
@@ -484,6 +484,23 @@ export const projects: Project[] = [
         items: [
           "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js 15 + FSD 아키텍처로 전면 재설계 — features 37개·entities 26개로 기능별 의존성 방향 명확화, 파일 수 146개→209개로 모듈화 완료",
           "CesiumJS + Resium 기반 위성 영상 지도 뷰어 구현 — 3D 지구 위에 위성 영상·벡터 타일(MVT) 레이어 오버레이, SwipeViewer로 시점 동기화 좌우 영상 비교 기능 구현",
+        ],
+      },
+      {
+        role: "CesiumJS 레이어 관리 라이브러리",
+        items: [
+          "MVT·MBTiles·ImageLayer·BaseMap 이종 레이어 타입을 단일 인터페이스로 추상화 — TypeScript 타입 정의로 레이어 조작 타입 안전성 보장, 신규 레이어 타입 추가 시 기존 코드 수정 0건",
+          "CesiumJS ImageryLayer 런타임 재정렬 API 부재 문제 — 인덱스 기반 재정렬 로직 직접 구현, UI 드래그로 위성 영상·벡터 타일·베이스맵 레이어 순서 자유롭게 변경",
+          "레이어 토글 시 삭제 대신 hide/show 가시성 플래그 전환 — CesiumJS 레이어 삭제 시 WebGL 텍스처·타일 캐시 전체 해제되는 문제를 캐시 보존으로 해결, 재표시 응답 속도 개선",
+        ],
+      },
+      {
+        role: "Outbox 패턴 이벤트 동기화 라이브러리",
+        items: [
+          "MyBatis Executor 인터셉터로 INSERT/UPDATE/DELETE 자동 감지 — 비즈니스 코드 변경 없이 투명하게 이벤트 캡처, Spring Boot 자동설정으로 기존 서비스 즉시 적용",
+          "TransactionSynchronization.beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 같은 트랜잭션에서 처리 — 커밋 전 유실 가능성 원천 차단",
+          "FOR UPDATE SKIP LOCKED로 다중 인스턴스 중복 처리 방지, ThreadLocal OutboxContext로 폐쇄망 수신 데이터 적용 시 Outbox 재발행 차단 — 양방향 동기화 무한 루프 방지",
+          "@OutboxDomain / @OutboxEvent 애노테이션으로 도메인·메서드 단위 캡처 여부 제어, 민감 필드 자동 제외 후 Jackson 직렬화",
         ],
       },
       {
@@ -515,53 +532,14 @@ export const projects: Project[] = [
       "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
       "파일 기반 중계만 가능한 분리망 환경에서 UUID는 발생 서버 추적 불가, 외부 코디네이터 기반 라이브러리는 접근 불가 — Snowflake 알고리즘 직접 구현으로 worker ID에 망 정보 인코딩, ID만으로 발생 서버 즉시 추적 가능",
       "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
+      "CesiumJS 레이어 순서·가시성 관리 API 부재를 인덱스 기반 재정렬·hide/show 방식으로 해결 — 레이어 토글 시 WebGL 리소스 재로드 제거, 이종 레이어 타입 단일 인터페이스 추상화",
+      "Debezium replication slot 반복 파손 → 전체 스냅샷 재수행이 필요하던 구조를 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — CDC 인프라 의존성 제거, 이벤트 유실 0건",
       "어드민 역할 단위 권한 일괄 변경 시 멀티 디바이스 일반 유저 전체 세션을 풀스캔하던 구조를 userId→sessionId Set 역인덱스로 전환 — 대상 유저 세션만 즉시 조회·무효화, O(N)→O(1)",
       "WMS→WMTS 전환 + Redis 타일 캐싱으로 위성 영상 타일링 API 응답 4초→0.5초 미만 달성",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
-    ],
-  },
-  {
-    id: "cesium-layer-toolkit",
-    title: "CesiumJS 레이어 관리 라이브러리 개발",
-    description: "CesiumJS 원본이 제공하지 않는 레이어 순서 제어·가시성 관리·타입 추상화를 구현한 사내 프론트엔드 라이브러리",
-    tags: ["TypeScript", "CesiumJS", "Resium", "MVT", "MBTiles"],
-    status: "deployed",
-    type: "company",
-    category: ["frontend"],
-    company: "한컴인스페이스",
-    period: "2024.06 ~ 2025.03",
-    role: "라이브러리 설계 및 개발",
-    longDescription: "CesiumJS는 3D 지구 렌더링에는 강력하지만 레이어 순서 제어, 베이스맵 관리, 레이어 가시성 토글 기능이 기본 제공되지 않습니다. 위성 영상 분석 플랫폼 프론트엔드를 Next.js 15로 마이그레이션하면서 MVT·MBTiles·ImageLayer 등 다양한 레이어 타입을 일관된 방식으로 다루기 위해 사내 레이어 관리 라이브러리를 직접 개발했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "레이어 추상화 & 타입 시스템",
-        items: [
-          "MVT(Mapbox Vector Tile)·MBTiles·ImageLayer·BaseMap 등 이종 레이어 타입을 단일 인터페이스로 추상화 — TypeScript 타입 정의 제공으로 레이어 조작 시 타입 안전성 보장",
-          "베이스맵 레이어를 일반 레이어와 명시적으로 분리 관리 — 베이스맵 교체 시 나머지 레이어 스택 및 순서 보존",
-        ],
-      },
-      {
-        role: "레이어 순서 제어",
-        items: [
-          "CesiumJS ImageryLayer는 추가 순서대로만 쌓이며 런타임 재정렬 API 없음 — 레이어 인덱스 기반 재정렬 로직 직접 구현, UI에서 드래그로 레이어 순서 자유롭게 변경 가능",
-          "위성 영상·MVT 벡터 타일·베이스맵 레이어 간 Z-order를 명시적으로 관리하여 레이어 겹침 문제 해결",
-        ],
-      },
-      {
-        role: "메모리 효율화",
-        items: [
-          "레이어 제거 대신 hide/show 가시성 토글 방식 채택 — CesiumJS는 레이어 삭제 시 WebGL 텍스처·타일 캐시 전체 해제, 재표시 시 전체 재로드 필요. 가시성 플래그 전환으로 캐시를 유지해 재표시 응답 속도 개선",
-          "자주 전환되는 레이어는 메모리에 유지, 장기 미사용 레이어만 실제 해제하는 전략으로 메모리와 응답 속도 균형",
-        ],
-      },
-    ],
-    achievements: [
-      "CesiumJS 원본의 레이어 순서 관리 부재를 인덱스 기반 재정렬 로직으로 해결 — 위성 영상·벡터 타일·베이스맵을 UI에서 자유롭게 순서 조정 가능",
-      "레이어 토글마다 삭제·재추가를 반복해 WebGL 리소스가 매번 재로드되던 문제를 hide/show 방식으로 해결 — 타일 캐시 재활용으로 재표시 시 사용자 대기 감소",
-      "MVT·MBTiles·ImageLayer 타입마다 개별 처리 코드가 흩어지던 문제를 단일 추상 인터페이스로 통합 — 신규 레이어 타입 추가 시 기존 코드 수정 0건",
+      { label: "Outbox GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
     ],
   },
   {
@@ -625,55 +603,6 @@ export const projects: Project[] = [
       "단일 모델 고정으로 동시 추론이 불가하던 구조를 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포로 전환 — object-detection·segmentation·inferencer 각각 독립 스케일링",
       "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정이 필요하던 구조를 H_BASE/S_BASE 추상 클래스 표준화로 해결 — 신규 소스 추가 시 클래스 1개만 구현, 기존 코드 수정 0건",
       "외부망↔폐쇄망 단절 환경에서 SFTP 기반 relay 직접 구현 — 파일 기반 단방향 중계로 망간 데이터 동기화",
-    ],
-  },
-  {
-    id: "outbox-module",
-    title: "Outbox 패턴 기반 이벤트 동기화 라이브러리 개발",
-    description: "Debezium CDC replication slot 반복 파손 문제를 AOP + MyBatis 인터셉터 기반 Outbox 이벤트 동기화 라이브러리로 대체 — 이벤트 유실 0건",
-    tags: ["Java", "Spring Boot", "Spring AOP", "MyBatis", "PostgreSQL", "Jackson"],
-    status: "deployed",
-    type: "company",
-    category: ["backend"],
-    company: "한컴인스페이스",
-    period: "2026.02 ~ 2026.04",
-    role: "라이브러리 설계 및 개발",
-    longDescription: "외부망과 폐쇄망이 분리된 환경에서 두 망 간 유일한 통신 수단은 파일 기반 중계 서버입니다. 기존에는 Debezium CDC로 변경 이벤트를 캡처했으나, 서버·네트워크 불안정으로 Debezium replication slot이 반복적으로 깨지는 문제가 발생했습니다. PostgreSQL WAL은 무제한 저장되지 않으며 replication slot이 읽은 위치까지만 삭제를 지연하는데, slot이 깨져 재생성되면 이전 LSN 위치를 잃어버리고 그 사이 삭제된 WAL은 복구할 수 없어 전체 스냅샷부터 재수행해야 하는 구조적 취약점이 있었습니다. 이를 해결하기 위해 애플리케이션 레벨에서 AOP와 MyBatis 인터셉터로 이벤트를 캡처하는 Spring Boot 자동설정 라이브러리를 직접 개발하고 실무 프로젝트에 적용했습니다.",
-    details: [],
-    roleDetails: [
-      {
-        role: "이벤트 캡처",
-        items: [
-          "MyBatis Executor 인터셉터로 INSERT/UPDATE/DELETE 자동 감지 — 비즈니스 코드 변경 없이 투명하게 이벤트 캡처",
-          "TransactionSynchronization.beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 같은 트랜잭션으로 처리해 이벤트 유실 방지",
-          "@OutboxDomain / @OutboxEvent 애노테이션으로 도메인·메서드 단위 캡처 여부 제어",
-          "DefaultOutboxConverter에서 password·token 등 민감 필드 자동 제외 후 Jackson 직렬화",
-        ],
-      },
-      {
-        role: "배치 & 파일 생성",
-        items: [
-          "시간(60초) + 건수(1000건) 이중 트리거 배치 스케줄러로 Outbox 테이블 폴링 (check interval 5초), 13개 테이블 변경 자동 감지 (mc_user·mc_survey·mc_auth_grp·mc_menu 등)",
-          "FOR UPDATE SKIP LOCKED로 다중 인스턴스 환경에서 중복 처리 방지",
-          "seq_from ~ seq_to 범위를 JSON Gzip 파일(sync_{seqFrom}_{seqTo}_{timestamp}.json.gz)로 압축 생성 후 중계 서버 경로에 적재",
-          "자정 배치로 7일 이상 된 SENT 레코드 자동 정리",
-        ],
-      },
-      {
-        role: "루프 방지",
-        items: [
-          "ThreadLocal 기반 OutboxContext로 suppress 상태 관리 — 폐쇄망에서 수신한 데이터를 적용할 때 Outbox 재발행 차단",
-          "source 필드로 이벤트 출처 식별, 양방향 동기화 시 무한 루프 방지",
-        ],
-      },
-    ],
-    achievements: [
-      "Debezium replication slot 반복 파손 → 전체 스냅샷 재수행이 필요하던 구조적 취약점을 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — CDC 인프라 의존성 제거, 이벤트 유실 0건",
-      "라이브러리 도입 시 기존 비즈니스 코드를 수정해야 하는 침투 문제를 Spring 자동설정 + 애노테이션 방식으로 해결 — 코드 변경 없이 기존 서비스에 즉시 적용 가능",
-      "비즈니스 트랜잭션과 이벤트 저장이 분리되어 발생하던 이벤트 유실 가능성을 TransactionSynchronization.beforeCommit()으로 같은 트랜잭션에서 처리하여 해결 — 이벤트 유실 0건 달성",
-    ],
-    resources: [
-      { label: "GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
     ],
   },
   {
