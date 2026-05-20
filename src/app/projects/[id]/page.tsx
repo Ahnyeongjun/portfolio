@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Calendar, User, Users, CheckCircle, Building2, ExternalLink, FileText, ImageIcon, Link2 } from "lucide-react";
+import { ArrowLeft, Calendar, User, Users, Building2, ExternalLink, FileText, Link2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
+import { ImageSlideshow } from "@/components/ImageSlideshow";
 import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
 import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
 import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
@@ -10,6 +11,11 @@ import { WithingRetrospective } from "@/components/retrospectives/WithingRetrosp
 import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
 import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
 import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
+import { SatellitePlatformRetrospective } from "@/components/retrospectives/SatellitePlatformRetrospective";
+import { SatelliteDataRetrospective } from "@/components/retrospectives/SatelliteDataRetrospective";
+import { KariSatelliteRetrospective } from "@/components/retrospectives/KariSatelliteRetrospective";
+import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSatelliteRetrospective";
+import { SecuritySatelliteRetrospective } from "@/components/retrospectives/SecuritySatelliteRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -77,18 +83,17 @@ export default async function ProjectPage({
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
-            {/* Project Image */}
-            {project.imageUrl && (
-              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8 bg-muted">
-                <Image
-                  src={project.imageUrl}
-                  alt={project.title}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
+            {/* Project Images */}
+            {(() => {
+              const imageResources = project.resources?.filter(r => r.type === "image") ?? [];
+              const allImages = [
+                ...(project.imageUrl && !imageResources.some(r => r.url === project.imageUrl)
+                  ? [{ url: project.imageUrl, label: project.title }]
+                  : []),
+                ...imageResources.map(r => ({ url: r.url, label: r.label })),
+              ];
+              return allImages.length > 0 ? <ImageSlideshow images={allImages} title={project.title} /> : null;
+            })()}
 
             {/* Type Badge */}
             <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full mb-4 ${
@@ -143,11 +148,6 @@ export default async function ProjectPage({
               ))}
             </div>
 
-            {/* Description */}
-            <p className="text-lg text-muted-foreground mb-8">
-              {project.longDescription || project.description}
-            </p>
-
             {/* External Link */}
             {project.link && (
               <div className="mb-12">
@@ -168,60 +168,53 @@ export default async function ProjectPage({
               </div>
             )}
 
-            {/* Role Details or Details */}
-            {project.roleDetails && project.roleDetails.length > 0 ? (
-              <section className="mb-12">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  역할별 수행 내용
-                </h2>
-                <div className="space-y-6">
-                  {project.roleDetails.map((roleDetail, index) => (
-                    <div key={index}>
-                      <h3 className="text-lg font-semibold text-foreground mb-3">
-                        {roleDetail.role}
-                      </h3>
-                      <ul className="space-y-2 pl-4">
-                        {roleDetail.items.map((item, itemIndex) => (
-                          <li key={itemIndex} className="flex items-start gap-3">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
-                            <span className="text-muted-foreground">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : project.details.length > 0 ? (
-              <section className="mb-12">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  주요 구현 내용
-                </h2>
-                <ul className="space-y-3">
-                  {project.details.map((detail, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
-                      <span className="text-muted-foreground">{detail}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            {/* Role Details */}
+            {project.roleDetails && project.roleDetails.length > 0 &&
+            !["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+              <div className="mb-10 space-y-8">
+                {project.roleDetails.map((roleDetail, index) => (
+                  <div key={index}>
+                    <h3 className="text-base font-semibold text-foreground mb-3">
+                      {roleDetail.role}
+                    </h3>
+                    <ul className="space-y-2">
+                      {roleDetail.items.map((item, itemIndex) => (
+                        <li key={itemIndex} className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Details fallback */}
+            {(!project.roleDetails || project.roleDetails.length === 0) && project.details.length > 0 &&
+            !["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+              <ul className="mb-10 space-y-2">
+                {project.details.map((detail, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
+                    <span className="text-muted-foreground">{detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* Achievements */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-foreground mb-6">
-                주요 성과
-              </h2>
-              <ul className="space-y-3">
+            {!["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) &&
+            project.achievements.length > 0 && (
+              <ul className="mb-12 space-y-3">
                 {project.achievements.map((achievement, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
                     <span className="text-muted-foreground">{achievement}</span>
                   </li>
                 ))}
               </ul>
-            </section>
+            )}
 
             {/* Retrospective */}
             {project.id === "simvex" && <SimvexRetrospective />}
@@ -231,17 +224,21 @@ export default async function ProjectPage({
             {project.id === "with-ing" && <WithingRetrospective />}
             {project.id === "mapin" && <MapinRetrospective />}
             {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
+            {project.id === "satellite-platform" && <SatellitePlatformRetrospective />}
+            {project.id === "satellite-data" && <SatelliteDataRetrospective />}
+            {project.id === "kari-satellite" && <KariSatelliteRetrospective />}
+            {project.id === "nipa-satellite" && <NipaSatelliteRetrospective />}
+            {project.id === "security-satellite" && <SecuritySatelliteRetrospective />}
 
             {/* Resources */}
-            {project.resources && project.resources.length > 0 && (
+            {project.resources && project.resources.some(r => r.type !== "image") && (
               <section>
                 <h2 className="text-2xl font-bold text-foreground mb-6">
                   관련 자료
                 </h2>
                 <div className="flex flex-wrap gap-3">
-                  {project.resources.map((resource, index) => {
+                  {project.resources.filter(r => r.type !== "image").map((resource, index) => {
                     const IconComponent =
-                      resource.type === "image" ? ImageIcon :
                       resource.type === "pdf" || resource.type === "html" ? FileText :
                       Link2;
 
