@@ -802,6 +802,7 @@ export const projects: Project[] = [
   },
   {
     id: "drone-detection",
+    hidden: true,
     title: "드론 탑재 재난탐지 · 3D 좌표 측위 시스템 개발",
     description: "YOLOv5·Faster R-CNN 기반 실시간 탐지, RealSense D435 depth로 2D BBox → 3D 절대좌표 변환 후 GCS 자동 보고",
     tags: ["ROS", "YOLOv5", "Faster R-CNN", "PyTorch", "RealSense D435", "C++", "OpenCV", "FFmpeg", "RTSP", "UDP"],
