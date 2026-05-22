@@ -417,7 +417,7 @@ export const projects: Project[] = [
   {
     id: "nipa-satellite",
     title: "NIPA RabbitMQ 기반 변화탐지 AI 처리 플랫폼",
-    description: "RabbitMQ 비동기 파이프라인·CesiumJS 레이어 라이브러리 구축",
+    description: "MSA 전환·RabbitMQ 비동기 파이프라인·CesiumJS 레이어 라이브러리 구축, 재배포 월 10건→1건",
     tags: ["RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "PyTorch", "FastAPI", "Kubernetes"],
     imageUrl: "/gis-platform_thum.png",
     status: "deployed",
@@ -430,6 +430,7 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
+      "멀티모듈 → 9개 MSA 서비스 분리, Spring Cloud Gateway 일원화 — 재배포 월 10건→1건",
       "Salt 폴링 유실 경험을 교훈 삼아 RabbitMQ ack/nack + DLQ 기반 비동기 파이프라인 설계 — 작업 유실 0건",
       "CesiumJS 레이어 재정렬 문제를 인덱스 기반 직접 구현으로 해결, hide/show로 WebGL 리소스 재로드 제거",
     ],
@@ -610,7 +611,7 @@ export const projects: Project[] = [
   {
     id: "kari-satellite",
     title: "항공우주연구원 위성영상 AI 처리 플랫폼 구축",
-    description: "MSA 전환·Outbox 라이브러리·Aliyun GPUShare로 배포 월 10건→1건, GPU 1장에서 70파드 운영",
+    description: "Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우로 Debezium 파손 0건, GPU 1장 70파드 운영",
     tags: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack"],
     imageUrl: "/kari_intro.png",
     status: "deployed",
@@ -623,10 +624,10 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
-      "모놀리식 구조를 9개 MSA로 분리해 재배포 월 10건→1건, 배포 속도 4분→30초 달성",
       "Debezium replication slot 반복 파손 문제를 Outbox 패턴 라이브러리 직접 구현으로 해결 — CDC 인프라 없이 이벤트 유실 0건",
       "Aliyun GPUShare 스케줄러 익스텐더 구성으로 물리 GPU 1장에서 70파드 병렬 추론 운영",
       "janus HarvesterBase/StandardBase 추상화로 10개 이상 이종 위성 소스 단일 파이프라인 통합",
+      "Redis userId→sessionId 역인덱스로 권한 변경 시 세션 풀스캔 제거 — O(N)→O(1)",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -784,8 +785,8 @@ export const projects: Project[] = [
   {
     id: "security-satellite",
     title: "국가보안기관 위성영상 AI 처리 플랫폼 운영 및 기능 개선",
-    description: "분리망 초기 구축·JWT 독립 인증·단방향 파일 중계",
-    tags: ["Spring Boot", "CesiumJS", "Kubernetes", "Redis", "PostgreSQL", "MyBatis"],
+    description: "STS+jQuery 모놀리식 → 멀티모듈 분리·WMS→WMTS 4초→0.5초·K8s 첫 도입·분리망 구축",
+    tags: ["Spring Boot", "Go", "CesiumJS", "Kubernetes", "Redis", "PostgreSQL", "MyBatis"],
     status: "deployed",
     type: "company",
     category: ["backend"],
@@ -796,6 +797,8 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
+      "STS+jQuery 모놀리식을 서비스 경계 단위 멀티모듈로 분리 — 배포 4분→30초, 변경 모듈만 재배포",
+      "WMS→WMTS 전환 + Go 고루틴 + Redis 타일 캐싱으로 위성 영상 API 응답 4초→0.5초 미만",
       "분리망 환경 제약을 단방향 파일 흐름(zst + hash) 기반 망연계 설계로 해결 — JWT 독립 인증 서버 분리로 외부 의존 없는 플랫폼 구축",
     ],
     resources: [],

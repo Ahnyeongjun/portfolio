@@ -23,45 +23,14 @@ export function KariSatelliteRetrospective() {
           항공우주연구원에 납품된 위성영상 AI 처리 플랫폼입니다.
           다누리·창천위성·Sentinel·Landsat 등 10개 이상의 외부 위성 데이터를 수집해
           AI 추론 후 CesiumJS 기반 뷰어로 가시화하는 전 과정을 담당합니다.
-          이 플랫폼은 이후 보안기관·NIPA 프로젝트의 아키텍처 기반이 됐습니다.
+          보안기관 프로젝트에서 시작된 K8s 기반 플랫폼을 이 프로젝트에서 본격적으로 고도화했습니다. 이후 보안기관 고도화·NIPA 프로젝트가 여기서 구축한 구조를 기반으로 발전했습니다.
         </p>
         <p>
           합류 당시 플랫폼은 단일 서버였습니다.
           배포 한 번이 전체 서비스 다운으로 이어졌고,
           위성 소스마다 별도 코드가 존재해 신규 소스 추가마다 파이프라인 전체를 손봐야 했습니다.
-          이 프로젝트에서 MSA 전환, Outbox 라이브러리 구현, GPU 공유 인프라, 위성 워크플로우 추상화를
+          이 프로젝트에서 Outbox 라이브러리 구현, GPU 공유 인프라, 위성 워크플로우 추상화를
           순차적으로 진행했습니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">MSA 전환 — 배포가 두려운 행위에서 일상으로</h3>
-        <p>
-          서비스 경계를 나눌 때 "배포 단위가 달라야 하는가"를 기준으로 잡았습니다.
-          자주 바뀌는 영역과 안정적인 영역을 같은 묶음에 두면 결국 전체 재배포로 돌아왔기 때문입니다.
-          이 기준으로 <Highlight>9개 서비스</Highlight>로 분리하고,
-          Spring Cloud Gateway로 인증·로깅·라우팅을 공통 처리로 올렸습니다.
-        </p>
-        <p>
-          서비스 경계를 나눌 때 "배포 단위가 달라야 하는가"를 기준으로 잡았습니다.
-          자주 바뀌는 영역과 안정적인 영역을 같은 묶음에 두면 결국 전체 재배포로 돌아왔기 때문입니다.
-          이 기준으로 <Highlight>9개 서비스</Highlight>로 분리하고,
-          Spring Cloud Gateway로 인증·로깅·라우팅을 공통 처리로 올렸습니다.
-        </p>
-        <CodeBlock>{`# 전환 전 — 어디 하나 배포해도 전체 재시작
-monolith: auth + image + notify + file + ...
-배포 시간: 4분 / 월 10건 이상 재배포
-
-# 전환 후 — Spring Cloud Gateway + 9개 MSA
-gateway → auth-service
-        → image-service
-        → notify-service
-        → file-service
-        → ...
-배포 시간: 30초 / 변경된 서비스 1개만 재배포`}</CodeBlock>
-        <p>
-          수치보다 더 크게 체감한 것은 팀의 태도 변화였습니다.
-          배포가 "조심해야 하는 행위"에서 "그냥 하는 것"이 됐습니다.
         </p>
       </div>
 
@@ -173,6 +142,51 @@ class Harvester(HarvesterBase):
           추론 단계에서는 객체 크기에 따라 OBB/HBB 모델을 자동 라우팅했습니다.
           소형 클래스(차량·소형 선박)는 방향 정보가 오히려 노이즈가 됐기 때문에
           클래스 ID 기준으로 HBB 모델로 분기하도록 했습니다.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">OBB/HBB 자동 라우팅 — 객체 크기 기반 모델 선택</h3>
+        <p>
+          위성 영상 객체탐지에서 OBB(Oriented Bounding Box)는 방향이 있는 객체를 정밀하게 검출하지만,
+          소형 객체에서는 오히려 노이즈가 됐습니다.
+        </p>
+        <CodeBlock>{`# 클래스별 크기 특성에 따라 모델 자동 라우팅
+SMALL_CLASSES = {4, 5, 6, 7, 17}  # 소형 객체 클래스 (차량·소형선박 등)
+
+def route_inference(image, class_ids):
+    if any(c in SMALL_CLASSES for c in class_ids):
+        return hbb_model.infer(image)   # 소형 → HBB
+    return obb_model.infer(image)       # 일반 → OBB`}</CodeBlock>
+        <p>
+          클래스 ID 기준으로 <Highlight>OBB/HBB를 자동 라우팅</Highlight>하도록 설계했습니다.
+          두 모델을 독립 파드로 배포해 각각 독립적으로 스케일링할 수 있게 했습니다.
+          <Highlight>좌표계(EPSG)</Highlight>, <Highlight>COG 포맷</Highlight>, 다시기 영상 간 방사 차이 같은 도메인 특성을 모르면
+          모델 서빙을 아무리 잘 짜도 전처리에서 결과가 틀어집니다.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">Redis 역인덱스 — 권한 변경 시 세션 풀스캔 제거</h3>
+        <p>
+          어드민이 역할 단위로 권한을 일괄 변경하면 해당 역할의 모든 유저 세션을 즉시 무효화해야 합니다.
+          기존 구조는 전체 세션을 풀스캔한 뒤 userId를 비교하는 방식이었습니다.
+        </p>
+        <CodeBlock>{`// 기존 — 전체 세션 풀스캔 O(N)
+Set<String> allSessionIds = redisTemplate.keys("SESSION:*");
+for (String sessionId : allSessionIds) {
+    if (affectedUserIds.contains(getSession(sessionId).getUserId()))
+        invalidate(sessionId);
+}
+
+// 역인덱스 — userId로 세션 목록 즉시 조회 O(1)
+// 로그인 시: SADD USER_SESSIONS:{userId} {sessionId}
+Set<String> sessionIds = redisTemplate.opsForSet()
+    .members("USER_SESSIONS:" + userId);
+sessionIds.forEach(this::invalidate);`}</CodeBlock>
+        <p>
+          로그인 시 <Highlight>userId → sessionId Set</Highlight> 역인덱스를 함께 저장합니다.
+          <Highlight>O(N) → O(1)</Highlight>로 전환됐고, 세션 수가 늘어도 응답 시간이 변하지 않습니다.
         </p>
       </div>
 

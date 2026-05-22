@@ -11,8 +11,6 @@ import { WithingRetrospective } from "@/components/retrospectives/WithingRetrosp
 import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
 import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
 import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
-import { SatellitePlatformRetrospective } from "@/components/retrospectives/SatellitePlatformRetrospective";
-import { SatelliteDataRetrospective } from "@/components/retrospectives/SatelliteDataRetrospective";
 import { KariSatelliteRetrospective } from "@/components/retrospectives/KariSatelliteRetrospective";
 import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSatelliteRetrospective";
 import { SecuritySatelliteRetrospective } from "@/components/retrospectives/SecuritySatelliteRetrospective";
@@ -170,7 +168,7 @@ export default async function ProjectPage({
 
             {/* Role Details */}
             {project.roleDetails && project.roleDetails.length > 0 &&
-            !["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+            !["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
               <div className="mb-10 space-y-8">
                 {project.roleDetails.map((roleDetail, index) => (
                   <div key={index}>
@@ -192,7 +190,7 @@ export default async function ProjectPage({
 
             {/* Details fallback */}
             {(!project.roleDetails || project.roleDetails.length === 0) && project.details.length > 0 &&
-            !["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+            !["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
               <ul className="mb-10 space-y-2">
                 {project.details.map((detail, index) => (
                   <li key={index} className="flex items-start gap-3">
@@ -204,7 +202,7 @@ export default async function ProjectPage({
             )}
 
             {/* Achievements */}
-            {!["satellite-platform", "satellite-data", "kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) &&
+            {!["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) &&
             project.achievements.length > 0 && (
               <ul className="mb-12 space-y-3">
                 {project.achievements.map((achievement, index) => (
@@ -224,8 +222,6 @@ export default async function ProjectPage({
             {project.id === "with-ing" && <WithingRetrospective />}
             {project.id === "mapin" && <MapinRetrospective />}
             {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
-            {project.id === "satellite-platform" && <SatellitePlatformRetrospective />}
-            {project.id === "satellite-data" && <SatelliteDataRetrospective />}
             {project.id === "kari-satellite" && <KariSatelliteRetrospective />}
             {project.id === "nipa-satellite" && <NipaSatelliteRetrospective />}
             {project.id === "security-satellite" && <SecuritySatelliteRetrospective />}

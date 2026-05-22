@@ -22,9 +22,33 @@ export function NipaSatelliteRetrospective() {
         <p>
           NIPA(정보통신산업진흥원) 지원으로 구축된 다시기 위성영상 변화탐지 AI 처리 플랫폼입니다.
           두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하고 결과를 가시화합니다.
-          이전까지 회사의 모든 파이프라인은 DB 폴링 방식이었는데,
-          이 프로젝트에서 처음으로 RabbitMQ 비동기 큐를 도입했고
-          Next.js 기반 뷰어도 최초로 적용했습니다.
+          항우연 프로젝트에서 멀티모듈 구조로 다듬어온 아키텍처를 이 프로젝트에서 완전한 MSA로 전환했습니다.
+          RabbitMQ 비동기 큐와 Next.js 기반 뷰어도 이 프로젝트에서 처음 도입했습니다.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">MSA 전환 — 멀티모듈에서 독립 배포 단위로</h3>
+        <p>
+          항우연 프로젝트까지는 모듈 단위로 경계를 나눴지만 단일 프로세스로 배포했습니다.
+          NIPA에서는 각 모듈을 <Highlight>독립 프로세스</Highlight>로 분리하고
+          <Highlight>Spring Cloud Gateway</Highlight>로 인증·로깅·라우팅을 공통 처리로 올렸습니다.
+        </p>
+        <CodeBlock>{`# Spring Cloud Gateway — 인증·로깅·라우팅 일원화
+gateway → auth-service       # JWT 발급·검증
+        → image-service       # 위성영상 카탈로그
+        → notify-service      # 알림
+        → file-service        # 파일 관리
+        → analysis-service    # 변화탐지 AI 파이프라인
+        → ...
+
+# Snowflake 알고리즘 직접 구현 — 폐쇄망용 분산 ID
+# 외부 ID 생성 서버 없이 datacenter_id + worker_id로 서버 추적 가능`}</CodeBlock>
+        <p>
+          폐쇄망 환경 특성상 외부 ID 생성 서비스를 사용할 수 없어
+          <Highlight>Snowflake 알고리즘</Highlight>을 직접 구현했습니다.
+          datacenter_id + worker_id 조합으로 어느 서버에서 발급된 ID인지 추적할 수 있도록 했습니다.
+          서비스별 독립 배포가 가능해지면서 재배포 횟수가 <Highlight>월 10건 → 1건</Highlight>으로 줄었습니다.
         </p>
       </div>
 
@@ -35,7 +59,7 @@ export function NipaSatelliteRetrospective() {
           <Highlight>manageJob.sls</Highlight>가 주기적으로 DB를 폴링해 작업을 꺼내고,
           <Highlight>cmd_async</Highlight>로 분석 노드에 던지는 구조였는데 —
           노드가 재시작되면 완료 콜백(<Highlight>reactJob.py</Highlight>)이 호출되지 않아
-          작업이 RUNNING 상태로 고착됐습니다.
+          작업이 <Highlight>RUNNING 상태로 고착</Highlight>됐습니다.
           타임아웃으로 복구되기까지 후속 작업이 쌓이고, 수동 DB 수정이 반복됐습니다.
         </p>
         <p>
@@ -92,7 +116,7 @@ function reorderLayer(viewer, fromIndex, toIndex) {
 // hide/show — 삭제 대신 가시성 플래그 전환
 layer.show = false;  // WebGL 리소스 유지, 재표시 즉시 반환`}</CodeBlock>
         <p>
-          MVT·MBTiles·ImageLayer·BaseMap 등 이종 레이어 타입을 단일 인터페이스로 추상화해
+          <Highlight>MVT·MBTiles·ImageLayer·BaseMap</Highlight> 등 이종 레이어 타입을 단일 인터페이스로 추상화해
           TypeScript 타입 안전성을 보장했습니다.
           신규 레이어 타입을 추가할 때 기존 코드를 수정할 필요가 없어졌습니다.
         </p>
@@ -106,7 +130,7 @@ layer.show = false;  // WebGL 리소스 유지, 재표시 즉시 반환`}</CodeB
           타입 안전성이 없어 런타임에서야 오류를 발견하는 경우가 잦았습니다.
         </p>
         <p>
-          이 프로젝트에서 Next.js를 처음 도입하면서 FSD(Feature-Sliced Design) 아키텍처를 함께 적용했습니다.
+          이 프로젝트에서 Next.js를 처음 도입하면서 <Highlight>FSD(Feature-Sliced Design)</Highlight> 아키텍처를 함께 적용했습니다.
           한 번에 전환하는 대신 기존 코드의 의존 방향을 먼저 분석하고,
           레이어 단위로 순차 전환했습니다.
           기존 코드는 src_backup으로 보존해 롤백 경로를 유지했습니다.
