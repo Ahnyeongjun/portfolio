@@ -223,9 +223,9 @@ export default async function ProjectPage({
             {project.id === "with-ing" && <WithingRetrospective />}
             {project.id === "mapin" && <MapinRetrospective />}
             {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
-            {project.id === "kari-satellite" && <KariSatelliteRetrospective />}
-            {project.id === "nipa-satellite" && <NipaSatelliteRetrospective />}
-            {project.id === "security-satellite" && <SecuritySatelliteRetrospective />}
+            {project.id === "kari-satellite" && <KariSatelliteRetrospective description={project.longDescription} />}
+            {project.id === "nipa-satellite" && <NipaSatelliteRetrospective description={project.longDescription} />}
+            {project.id === "security-satellite" && <SecuritySatelliteRetrospective description={project.longDescription} />}
             {project.id === "pillcare" && <PillCareRetrospective />}
 
             {/* Resources */}

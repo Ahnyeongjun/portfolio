@@ -14,18 +14,15 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function NipaSatelliteRetrospective() {
+export function NipaSatelliteRetrospective({ description }: { description?: string }) {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
 
-      <div className="space-y-4">
-        <p>
-          NIPA(정보통신산업진흥원) 지원으로 구축된 다시기 위성영상 변화탐지 AI 처리 플랫폼입니다.
-          두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하고 결과를 가시화합니다.
-          항우연 프로젝트에서 멀티모듈 구조로 다듬어온 아키텍처를 이 프로젝트에서 완전한 MSA로 전환했습니다.
-          RabbitMQ 비동기 큐와 Next.js 기반 뷰어도 이 프로젝트에서 처음 도입했습니다.
-        </p>
-      </div>
+      {description && (
+        <div className="space-y-4">
+          <p>{description}</p>
+        </div>
+      )}
 
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-foreground">MSA 전환 — 멀티모듈에서 독립 배포 단위로</h3>
@@ -124,9 +121,10 @@ layer.show = false;  // WebGL 리소스 유지, 재표시 즉시 반환`}</CodeB
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">FSD 마이그레이션 — 레거시 프론트엔드 단계적 전환</h3>
+        <h3 className="text-lg font-bold text-foreground">FSD 마이그레이션 — Thymeleaf 레거시에서 Next.js로</h3>
         <p>
-          이전 플랫폼의 레거시 프론트엔드는 페이지와 컴포넌트 경계가 불명확했습니다.
+          이전 플랫폼은 <Highlight>Thymeleaf</Highlight> 기반 서버 사이드 렌더링이었습니다.
+          페이지와 컴포넌트 경계가 불명확했습니다.
           어디를 수정하면 어디가 영향받는지 예측하기 어려웠고,
           타입 안전성이 없어 런타임에서야 오류를 발견하는 경우가 잦았습니다.
         </p>

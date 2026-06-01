@@ -14,17 +14,12 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function KariSatelliteRetrospective() {
+export function KariSatelliteRetrospective({ description }: { description?: string }) {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
 
       <div className="space-y-4">
-        <p>
-          항공우주연구원에 납품된 위성영상 AI 처리 플랫폼입니다.
-          다누리·창천위성·Sentinel·Landsat 등 10개 이상의 외부 위성 데이터를 수집해
-          AI 추론 후 CesiumJS 기반 뷰어로 가시화하는 전 과정을 담당합니다.
-          보안기관 프로젝트에서 시작된 K8s 기반 플랫폼을 이 프로젝트에서 본격적으로 고도화했습니다. 이후 보안기관 고도화·NIPA 프로젝트가 여기서 구축한 구조를 기반으로 발전했습니다.
-        </p>
+        {description && <p>{description}</p>}
         <p>
           합류 당시 플랫폼은 단일 서버였습니다.
           배포 한 번이 전체 서비스 다운으로 이어졌고,

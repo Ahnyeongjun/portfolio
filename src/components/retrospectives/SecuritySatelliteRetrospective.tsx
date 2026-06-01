@@ -14,17 +14,12 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function SecuritySatelliteRetrospective() {
+export function SecuritySatelliteRetrospective({ description }: { description?: string }) {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
 
       <div className="space-y-4">
-        <p>
-          보안기관에 납품된 위성영상 AI 분석 플랫폼입니다.
-          입사 후 처음 맡은 프로젝트이자, 회사에서 <Highlight>K8s를 처음 도입한 프로젝트</Highlight>입니다.
-          합류 당시 플랫폼은 <Highlight>Spring STS + jQuery</Highlight> 기반 모놀리식 웹 서버였습니다.
-          JWT 인증 서버 구현, INNORIX 연동 파일 보안 전송, K8s 운영이 이 프로젝트의 주요 작업이었습니다.
-        </p>
+        {description && <p>{description}</p>}
         <p>
           외부 인터넷과 완전히 차단된 폐쇄망이라는 운영 환경이 모든 설계 결정에 제약으로 작용했습니다.
           외부 서비스 없이 인증 체계를 세우고, 클라우드 없이 K8s 클러스터를 운영하는 것이 이 프로젝트의 핵심이었습니다.
