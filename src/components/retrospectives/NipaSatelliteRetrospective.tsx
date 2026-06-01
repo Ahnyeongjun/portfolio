@@ -31,17 +31,18 @@ export function NipaSatelliteRetrospective() {
         <h3 className="text-lg font-bold text-foreground">MSA 전환 — 멀티모듈에서 독립 배포 단위로</h3>
         <p>
           항우연 프로젝트까지는 모듈 단위로 경계를 나눴지만 단일 프로세스로 배포했습니다.
-          NIPA에서는 각 모듈을 <Highlight>독립 프로세스</Highlight>로 분리하고
-          <Highlight>Spring Cloud Gateway</Highlight>로 인증·로깅·라우팅을 공통 처리로 올렸습니다.
+          NIPA에서는 기존 Spring Boot 서비스를 <Highlight>독립 FastAPI 서비스</Highlight>로 전환하고
+          9개 서비스로 완전히 분리했습니다.
         </p>
-        <CodeBlock>{`# Spring Cloud Gateway — 인증·로깅·라우팅 일원화
-gateway → auth-service       # JWT 발급·검증
-        → image-service       # 위성영상 카탈로그
-        → notify-service      # 알림
-        → file-service        # 파일 관리
-        → analysis-service    # 변화탐지 AI 파이프라인
-        → ...
+        <CodeBlock>{`# 전 서비스 FastAPI 전환 — 독립 배포 단위
+auth-service      (FastAPI)  # JWT 발급·검증
+image-service     (FastAPI)  # 위성영상 카탈로그
+notify-service    (FastAPI)  # 알림
+file-service      (FastAPI)  # 파일 관리
+analysis-service  (FastAPI)  # 변화탐지 AI 파이프라인
+...
 
+# Nginx 리버스 프록시로 서비스 라우팅
 # Snowflake 알고리즘 직접 구현 — 폐쇄망용 분산 ID
 # 외부 ID 생성 서버 없이 datacenter_id + worker_id로 서버 추적 가능`}</CodeBlock>
         <p>

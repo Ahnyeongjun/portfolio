@@ -79,6 +79,57 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "pillcare",
+    title: "PillCare",
+    description: "복약·건강 기록을 한 흐름에 담고, AI가 오늘의 건강 위험을 분석해주는 모바일 헬스케어 앱",
+    tags: ["Next.js", "TypeScript", "Tailwind CSS v4", "Zustand", "FastAPI", "PostgreSQL", "Redis", "OpenAI API"],
+    imageUrl: "/pillcare_thum.png",
+    link: "https://vercel.com/ahnyeongjuns-projects/mfds-2026-frontend-pill-ver",
+    status: "live",
+    type: "team",
+    category: ["fullstack", "ai"],
+    period: "2026.05",
+    role: "프론트엔드 개발 · UI/UX 디자인 · 백엔드 일부",
+    longDescription: "2026 식약처(MFDS) 공모전 출품작입니다. 복약·건강 기록을 하나의 흐름으로 묶고, AI가 복약 순응도·질환 추이·환경 데이터를 종합해 오늘의 건강 위험 지수를 산출해주는 모바일 헬스케어 앱입니다. 2인 팀으로 진행했으며, 프론트엔드 전담 및 UI/UX 디자인, 백엔드 일부를 담당했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "프론트엔드 (Next.js + Zustand)",
+        items: [
+          "Next.js 16 App Router 기반 전체 UI 설계 및 구현 — 랜딩·온보딩·홈 대시보드·건강 일지·분석·병원 예약·알림 10개 페이지",
+          "Zustand 5개 스토어(medications, journals, appointments, health, user)로 전역 상태 관리 — persist 미들웨어로 세션 유지",
+          "Next.js API Route를 백엔드 프록시로 활용 — 인증 헤더 중앙화 및 CORS 처리, 환경변수로 엔드포인트 분리",
+          "카카오·구글 OAuth 연동 및 JWT 토큰 관리",
+          "Recharts 기반 건강 지수 추이·복약 달성률·증상 패턴 시각화 차트 구현",
+        ],
+      },
+      {
+        role: "UI/UX 디자인",
+        items: [
+          "헬스케어 도메인 특성에 맞춘 정보 계층 설계 — AI 건강 브리핑·오늘 복약·건강 습관 3단 구조의 홈 대시보드",
+          "건강 위험 지수(0~100) 시각화 — 수치·색상·아이콘으로 위험도를 직관적으로 전달하는 UI 설계",
+          "Tailwind CSS v4 기반 컴포넌트 디자인 시스템 구성",
+        ],
+      },
+      {
+        role: "백엔드 일부 (FastAPI)",
+        items: [
+          "건강 위험 지수 산출 로직 설계 및 구현 — 복약 순응도(25pts)·질환 추이(25pts)·DUR 안전성(20pts)·증상 추이(15pts)·환경지수(15pts) 5개 도메인 가중합",
+          "기상청·에어코리아·식약처 DUR 외부 API 연동 — 실시간 환경 데이터를 건강 알림 트리거에 결합",
+        ],
+      },
+    ],
+    achievements: [
+      "복약·증상·환경이 분산되어 건강 위험을 한눈에 파악하기 어렵던 문제를 5개 도메인 가중합 건강 위험 지수(Health Index)로 해결 — 복약 순응도·질환 추이·DUR 안전성·증상 추이·환경지수를 0~100 단일 점수로 통합",
+      "기상청·에어코리아·식약처 DUR 3종 외부 API를 스케줄러로 주기 수집, 건강 알림 트리거에 환경 데이터 결합 — 고혈압 환자 + 기온 급변 등 컨텍스트 기반 알림 구현",
+      "프론트엔드에서 백엔드 직접 호출 시 발생하는 CORS·인증 헤더 중복 관리 문제를 Next.js API Route 프록시로 해결 — 인증 토큰 단일 관리 및 API 엔드포인트 추상화",
+      "UI/UX 디자인부터 구현까지 전담 — 헬스케어 도메인에 맞는 3단 정보 계층 구조 설계 및 건강 위험도 직관적 시각화",
+    ],
+    resources: [
+      { label: "배포", url: "https://vercel.com/ahnyeongjuns-projects/mfds-2026-frontend-pill-ver", type: "link" },
+    ],
+  },
+  {
     id: "mapin",
     title: "Mapin",
     description: "URL 입력 시 AI가 콘텐츠 관점을 분석하고 반대 관점 콘텐츠를 자동 추천하는 개인 콘텐츠 관리 서비스",
@@ -430,9 +481,10 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
-      "멀티모듈 → 9개 MSA 서비스 분리, Spring Cloud Gateway 일원화 — 재배포 월 10건→1건",
-      "Salt 폴링 유실 경험을 교훈 삼아 RabbitMQ ack/nack + DLQ 기반 비동기 파이프라인 설계 — 작업 유실 0건",
-      "CesiumJS 레이어 재정렬 문제를 인덱스 기반 직접 구현으로 해결, hide/show로 WebGL 리소스 재로드 제거",
+      "[작업 유실] Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 → RabbitMQ ack/nack + DLQ 비동기 파이프라인 전환 — 작업 유실 0건",
+      "[배포 효율] 모놀리식으로 기능 하나 배포 시 전체 재시작 → 9개 MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅 — 재배포 월 10건→1건, 배포 속도 4분→30초",
+      "[폐쇄망 분산 ID] 분리망 환경에서 외부 코디네이터 접근 불가, UUID로는 발생 서버 추적 불가 → Snowflake 알고리즘 직접 구현, worker ID에 망 정보 인코딩",
+      "[프론트 유지보수] Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 → Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
     ],
     resources: [],
   },
@@ -624,10 +676,11 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
-      "Debezium replication slot 반복 파손 문제를 Outbox 패턴 라이브러리 직접 구현으로 해결 — CDC 인프라 없이 이벤트 유실 0건",
-      "Aliyun GPUShare 스케줄러 익스텐더 구성으로 물리 GPU 1장에서 70파드 병렬 추론 운영",
-      "janus HarvesterBase/StandardBase 추상화로 10개 이상 이종 위성 소스 단일 파이프라인 통합",
-      "Redis userId→sessionId 역인덱스로 권한 변경 시 세션 풀스캔 제거 — O(N)→O(1)",
+      "[이벤트 유실] Debezium replication slot 반복 파손으로 전체 스냅샷 재수행 → AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 제거, 이벤트 유실 0건",
+      "[GPU 활용] 1파드=1GPU 강제로 자원 90% 유휴 → Aliyun GPUShare aliyun.com/gpu-mem 단위 분할 — GPU 1장에서 70파드 병렬 추론",
+      "[추론 파이프라인] 모델 1개 고정으로 동시 추론 불가 → FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포, 객체 크기 기반 OBB/HBB 자동 라우팅",
+      "[위성 소스 통합] 소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 → janus H_BASE/S_BASE 추상화, 10+ 소스 단일 파이프라인 — 신규 소스 추가 코드 수정 0건",
+      "[세션 풀스캔] 권한 변경 시 Redis 전체 세션 풀스캔 → userId→sessionId 역인덱스 구축 — O(N)→O(1)",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -692,8 +745,8 @@ export const projects: Project[] = [
       {
         role: "프론트엔드 마이그레이션 & 아키텍처 설계",
         items: [
-          "Thymeleaf·JSP·jQuery 기반 레거시 프론트엔드를 Next.js 15 + FSD 아키텍처로 전면 재설계 — features 37개·entities 26개로 기능별 의존성 방향 명확화, 파일 수 146개→209개로 모듈화 완료",
-          "CesiumJS + Resium 기반 위성 영상 지도 뷰어 구현 — 3D 지구 위에 위성 영상·벡터 타일(MVT) 레이어 오버레이, SwipeViewer로 시점 동기화 좌우 영상 비교 기능 구현",
+          "Thymeleaf 기반 레거시 프론트엔드를 Next.js 15 + FSD 아키텍처로 전면 재설계 — features 37개·entities 26개로 기능별 의존성 방향 명확화",
+          "CesiumJS 커스텀 ImageryProvider 구현 — MVT·MBTiles·ImageLayer 등 이종 레이어 타입 단일 인터페이스 추상화, .tif 등 다양한 위성 영상 포맷 입력 지원",
         ],
       },
       {
@@ -738,14 +791,11 @@ export const projects: Project[] = [
       },
     ],
     achievements: [
-      "모놀리식 구조로 한 서비스 장애가 전체로 전파되던 문제를 9개 MSA 서비스 분리로 해결 — 장애 격리와 독립 배포로 재배포 월 10건→1건, 고객 오류 문의 대응 1주→하루 이내로 개선",
-      "12개 서비스에 인증·로깅이 각각 내장되어 업데이트 시 전체 재배포가 필요하던 문제를 Spring Cloud Gateway 공통 처리로 해결 — 배포 속도 4분→30초, 배포 범위 12개 서비스→모듈 1개로 축소",
-      "파일 기반 중계만 가능한 분리망 환경에서 UUID는 발생 서버 추적 불가, 외부 코디네이터 기반 라이브러리는 접근 불가 — Snowflake 알고리즘 직접 구현으로 worker ID에 망 정보 인코딩, ID만으로 발생 서버 즉시 추적 가능",
-      "레거시 JSP·jQuery 프론트엔드의 유지보수 한계를 Next.js 15 + FSD 아키텍처 전면 마이그레이션으로 해결 — CesiumJS 기반 위성 영상 지도 뷰어·SwipeViewer 비교 기능 구현, features 37개·entities 26개로 기능 경계 명확화",
-      "CesiumJS 레이어 순서·가시성 관리 API 부재를 인덱스 기반 재정렬·hide/show 방식으로 해결 — 레이어 토글 시 WebGL 리소스 재로드 제거, 이종 레이어 타입 단일 인터페이스 추상화",
+      "K8s GPU 카운트 단위 할당으로 1파드=1GPU가 강제되던 구조를 Aliyun GPUShare 메모리 단위 분할로 해결 — 물리 GPU 1장에서 70파드 병렬 추론 운영",
+      "단일 모델 고정으로 동시 추론이 불가하던 구조를 FastAPI + ONNX Runtime 추론 서비스 3종 독립 배포로 전환 — object-detection·segmentation·inferencer 각각 독립 스케일링",
+      "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정이 필요하던 구조를 janus H_BASE/S_BASE 추상 클래스 표준화로 해결 — 신규 소스 추가 시 클래스 1개만 구현, 기존 코드 수정 0건",
       "Debezium replication slot 반복 파손 → 전체 스냅샷 재수행이 필요하던 구조를 AOP + MyBatis 인터셉터 Outbox 패턴으로 대체 — CDC 인프라 의존성 제거, 이벤트 유실 0건",
       "어드민 역할 단위 권한 일괄 변경 시 멀티 디바이스 일반 유저 전체 세션을 풀스캔하던 구조를 userId→sessionId Set 역인덱스로 전환 — 대상 유저 세션만 즉시 조회·무효화, O(N)→O(1)",
-      "WMS→WMTS 전환 + Redis 타일 캐싱으로 위성 영상 타일링 API 응답 4초→0.5초 미만 달성",
     ],
     resources: [
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
@@ -785,7 +835,7 @@ export const projects: Project[] = [
   {
     id: "security-satellite",
     title: "국가보안기관 위성영상 AI 처리 플랫폼 운영 및 기능 개선",
-    description: "STS+jQuery 모놀리식 → 멀티모듈 분리·WMS→WMTS 4초→0.5초·K8s 첫 도입·분리망 구축",
+    description: "STS+jQuery 모놀리식 → 멀티모듈 분리·K8s 첫 도입·분리망 구축",
     tags: ["Spring Boot", "Go", "CesiumJS", "Kubernetes", "Redis", "PostgreSQL", "MyBatis"],
     status: "deployed",
     type: "company",
@@ -797,9 +847,10 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
-      "STS+jQuery 모놀리식을 서비스 경계 단위 멀티모듈로 분리 — 배포 4분→30초, 변경 모듈만 재배포",
-      "WMS→WMTS 전환 + Go 고루틴 + Redis 타일 캐싱으로 위성 영상 API 응답 4초→0.5초 미만",
-      "분리망 환경 제약을 단방향 파일 흐름(zst + hash) 기반 망연계 설계로 해결 — JWT 독립 인증 서버 분리로 외부 의존 없는 플랫폼 구축",
+      "[인프라 구축] K8s 없이 배포·운영 자동화 불가, 운영/로컬 환경 차이로 배포 후 장애 반복 → 회사 내 K8s 최초 도입, 운영·테스트 클러스터 분리, OpenSearch + Fluent-bit 중앙 로깅",
+      "[배포 효율] 모놀리식으로 변경 모듈 하나 배포 시 전체 재배포 → 서비스 경계 단위 멀티모듈 분리 — 배포 4분→30초, 변경 모듈만 재배포",
+      "[영상 API 성능] WMS 동적 합성으로 영상 수 증가 시 응답 선형 증가 → WMS→WMTS 전환 + Go 고루틴 병렬 생성 + Redis 타일 캐싱 — API 응답 4초→0.5초 미만",
+      "[분리망 운영] 외부 인터넷 완전 차단 폐쇄망 환경에서 외부망 데이터 반입 불가 → 단방향 파일 흐름(zst + hash) 기반 망연계 설계",
     ],
     resources: [],
   },

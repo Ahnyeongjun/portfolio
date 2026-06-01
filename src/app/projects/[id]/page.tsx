@@ -14,6 +14,7 @@ import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineM
 import { KariSatelliteRetrospective } from "@/components/retrospectives/KariSatelliteRetrospective";
 import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSatelliteRetrospective";
 import { SecuritySatelliteRetrospective } from "@/components/retrospectives/SecuritySatelliteRetrospective";
+import { PillCareRetrospective } from "@/components/retrospectives/PillCareRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -225,6 +226,7 @@ export default async function ProjectPage({
             {project.id === "kari-satellite" && <KariSatelliteRetrospective />}
             {project.id === "nipa-satellite" && <NipaSatelliteRetrospective />}
             {project.id === "security-satellite" && <SecuritySatelliteRetrospective />}
+            {project.id === "pillcare" && <PillCareRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.some(r => r.type !== "image") && (
