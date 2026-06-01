@@ -161,7 +161,7 @@ async def recognize_pill(image: UploadFile):
               {[
                 "건강 도메인 데이터 모델링 — 복약·질환·일지·예약·알림 6개 도메인 간 관계 설계",
                 "FastAPI AsyncPG — Python 비동기 ORM으로 I/O 집약적 외부 API 호출 처리",
-                "Next.js API Route 프록시 패턴 — CORS 우회 + 인증 헤더 중앙화 + 백엔드 주소 은닉을 동시에",
+                "AI Hub 추론 파이프라인 — confidence score 기반 폴백으로 낮은 신뢰도 처리, 식약처 DUR 연동으로 병용 금기 등록 시점 표시",
                 "헬스케어 UI 설계 원칙 — 인지 부하 최소화를 위한 정보 계층 구조와 위험도 시각화",
                 "Tailwind CSS v4 — CSS-first 설정 방식과 새 유틸리티 클래스 체계 적응",
               ].map((item, i) => (

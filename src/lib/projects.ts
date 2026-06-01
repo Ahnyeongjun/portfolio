@@ -98,7 +98,6 @@ export const projects: Project[] = [
         items: [
           "Next.js 16 App Router 기반 전체 UI 설계 및 구현 — 랜딩·온보딩·홈 대시보드·건강 일지·분석·병원 예약·알림 10개 페이지",
           "Zustand 5개 스토어(medications, journals, appointments, health, user)로 전역 상태 관리 — persist 미들웨어로 세션 유지",
-          "Next.js API Route를 백엔드 프록시로 활용 — 인증 헤더 중앙화 및 CORS 처리, 환경변수로 엔드포인트 분리",
           "카카오·구글 OAuth 연동 및 JWT 토큰 관리",
           "Recharts 기반 건강 지수 추이·복약 달성률·증상 패턴 시각화 차트 구현",
         ],
