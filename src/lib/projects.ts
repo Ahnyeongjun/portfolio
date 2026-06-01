@@ -82,7 +82,7 @@ export const projects: Project[] = [
     id: "pillcare",
     title: "PillCare",
     description: "복약·건강 기록을 한 흐름에 담고, AI가 오늘의 건강 위험을 분석해주는 모바일 헬스케어 앱",
-    tags: ["Next.js", "TypeScript", "Tailwind CSS v4", "Zustand", "FastAPI", "PostgreSQL", "Redis", "OpenAI API"],
+    tags: ["Next.js", "TypeScript", "Tailwind CSS v4", "Zustand", "FastAPI", "PostgreSQL", "Redis", "OpenAI API", "ResNet"],
     imageUrl: "/pillcare_thum.png",
     link: "https://vercel.com/ahnyeongjuns-projects/mfds-2026-frontend-pill-ver",
     status: "live",
