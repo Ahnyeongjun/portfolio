@@ -468,7 +468,7 @@ export const projects: Project[] = [
   {
     id: "nipa-satellite",
     title: "NIPA RabbitMQ 기반 변화탐지 AI 처리 플랫폼",
-    description: "MSA 전환·RabbitMQ 비동기 파이프라인·CesiumJS 레이어 라이브러리 구축, 재배포 월 10건→1건",
+    description: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 변화탐지 플랫폼. NIPA(정보통신산업진흥원) 지원 사업.",
     tags: ["RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "PyTorch", "FastAPI", "Kubernetes"],
     imageUrl: "/gis-platform_thum.png",
     status: "deployed",
@@ -663,7 +663,7 @@ export const projects: Project[] = [
   {
     id: "kari-satellite",
     title: "항공우주연구원 위성영상 AI 처리 플랫폼 구축",
-    description: "Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우로 Debezium 파손 0건, GPU 1장 70파드 운영",
+    description: "10개 이상 위성 소스를 수집·처리해 AI 추론 결과를 CesiumJS로 가시화하는 위성영상 AI 처리 플랫폼. 한국항공우주연구원 납품.",
     tags: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack"],
     imageUrl: "/kari_intro.png",
     status: "deployed",
@@ -835,7 +835,7 @@ export const projects: Project[] = [
   {
     id: "security-satellite",
     title: "국가보안기관 위성영상 AI 처리 플랫폼 운영 및 기능 개선",
-    description: "STS+jQuery 모놀리식 → 멀티모듈 분리·K8s 첫 도입·분리망 구축",
+    description: "폐쇄망 환경에 납품된 위성영상 AI 분석 플랫폼. 레거시 운영 및 기능 개선 담당. 회사 첫 K8s 도입 프로젝트.",
     tags: ["Spring Boot", "Go", "CesiumJS", "Kubernetes", "Redis", "PostgreSQL", "MyBatis"],
     status: "deployed",
     type: "company",
