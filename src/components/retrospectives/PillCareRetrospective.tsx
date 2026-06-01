@@ -94,34 +94,36 @@ if user.has_disease("respiratory") and air.pm25 > 35:
           </p>
         </Section>
 
-        <Section icon={Layers} title="Next.js API Route 프록시 — 인증 헤더 중앙화">
+        <Section icon={Layers} title="AI Hub ResNet — 알약 이미지로 약품명 추론">
           <p>
-            프론트엔드에서 FastAPI 백엔드를 직접 호출하면 두 가지 문제가 생깁니다.
-            첫째, 브라우저 CORS 정책. 둘째, 모든 요청 함수마다 JWT 토큰을 헤더에
-            직접 첨부해야 하는 중복 코드입니다.
+            복약 등록 시 약품명을 직접 검색하는 것은 번거롭고 오기입 위험이 있습니다.
+            AI Hub에서 제공하는 알약 이미지 분류 ResNet 모델을 활용해
+            사진 한 장으로 약품명을 자동 추론하는 파이프라인을 구성했습니다.
           </p>
-          <CodeBlock>{`// 직접 호출 방식 — 모든 fetch에 Authorization 반복
-const res = await fetch("http://api.pillcare.io/medications", {
-  headers: { Authorization: \`Bearer \${token}\` }
-});
+          <CodeBlock>{`# 알약 인식 파이프라인
+# 1. 프론트: 사용자가 알약 사진 촬영 → multipart/form-data로 업로드
+# 2. 백엔드: AI Hub ResNet 모델로 추론 → 약품 코드 반환
+# 3. 식약처 DUR API에서 약품 코드로 상세 정보 조회 → 복약 등록
 
-// Next.js API Route 프록시 — /api/* → 백엔드로 포워딩
-// app/api/medications/route.ts
-export async function GET(req: Request) {
-  const token = cookies().get("access_token")?.value;
-  return fetch(\`\${process.env.API_URL}/medications\`, {
-    headers: { Authorization: \`Bearer \${token}\` }
-  });
-}`}</CodeBlock>
+# FastAPI 추론 엔드포인트
+@router.post("/drugs/recognize")
+async def recognize_pill(image: UploadFile):
+    img_tensor = preprocess(await image.read())   # 전처리
+    pred = model(img_tensor)                       # ResNet 추론
+    drug_code = label_map[pred.argmax().item()]    # 코드 매핑
+
+    # 식약처 DUR API로 약품 상세 정보 조회
+    drug_info = await mfds_client.get_drug(drug_code)
+    return drug_info`}</CodeBlock>
           <p>
-            프록시 레이어를 두면 클라이언트 코드는 <Highlight>/api/medications</Highlight>만
-            호출하고 토큰 처리는 서버에서 일괄 담당합니다.
-            백엔드 엔드포인트 주소도 환경변수로 숨길 수 있어
-            클라이언트에 API URL이 노출되지 않습니다.
+            파인튜닝 없이 AI Hub 제공 가중치를 그대로 사용했기 때문에
+            인식률은 모델 성능에 의존합니다.
+            대신 추론 결과에 <Highlight>confidence score</Highlight>를 함께 반환해,
+            낮은 신뢰도일 때는 UI에서 "직접 검색"을 권유하는 폴백 흐름을 설계했습니다.
           </p>
           <p>
-            단점은 Next.js API Route가 추가 레이턴시를 만든다는 점인데,
-            헬스케어 앱 특성상 보안과 유지보수 편의가 더 중요하다고 판단했습니다.
+            식약처 DUR 연동 덕분에 약품명뿐 아니라 병용 금기·주의 성분까지
+            등록 시점에 바로 표시할 수 있어 안전성 확인 흐름이 자연스럽게 이어졌습니다.
           </p>
         </Section>
 
