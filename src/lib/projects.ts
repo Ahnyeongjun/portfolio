@@ -477,7 +477,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2025.07 ~ 진행중",
     role: "백엔드 엔지니어",
-    longDescription: "",
+    longDescription: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼. NIPA(정보통신산업진흥원) 지원 사업. 9개 MSA + FastAPI 기반으로 재설계했으며, RabbitMQ 비동기 파이프라인과 Next.js 15 FSD 프론트엔드를 처음 도입했습니다.",
     details: [],
     roleDetails: [],
     achievements: [
@@ -672,7 +672,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2023.10 ~ 2025.07",
     role: "백엔드 엔지니어",
-    longDescription: "",
+    longDescription: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼. 한국항공우주연구원 납품. Outbox 패턴 라이브러리, Aliyun GPUShare, janus 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
     details: [],
     roleDetails: [],
     achievements: [
@@ -843,7 +843,7 @@ export const projects: Project[] = [
     company: "한컴인스페이스",
     period: "2021.10 ~ 2023.12",
     role: "백엔드 엔지니어",
-    longDescription: "",
+    longDescription: "외부 인터넷 차단 폐쇄망 환경에 납품된 위성영상 AI 분석 플랫폼. 입사 후 첫 프로젝트이자 회사 내 K8s를 처음 도입한 프로젝트. 레거시 운영 및 멀티모듈 분리, WMS→WMTS 전환, 분리망 망연계 설계를 담당했습니다.",
     details: [],
     roleDetails: [],
     achievements: [
