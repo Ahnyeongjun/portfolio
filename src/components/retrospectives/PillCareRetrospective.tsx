@@ -163,7 +163,6 @@ async def recognize_pill(image: UploadFile):
                 "FastAPI AsyncPG — Python 비동기 ORM으로 I/O 집약적 외부 API 호출 처리",
                 "AI Hub 추론 파이프라인 — confidence score 기반 폴백으로 낮은 신뢰도 처리, 식약처 DUR 연동으로 병용 금기 등록 시점 표시",
                 "헬스케어 UI 설계 원칙 — 인지 부하 최소화를 위한 정보 계층 구조와 위험도 시각화",
-                "Tailwind CSS v4 — CSS-first 설정 방식과 새 유틸리티 클래스 체계 적응",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
