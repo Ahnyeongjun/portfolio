@@ -14,9 +14,43 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
+  return (
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center shrink-0 ${
+      highlight
+        ? "bg-primary/10 border-primary/30 text-primary"
+        : "bg-background border-border text-foreground"
+    }`}>
+      {children}
+      {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 export function NipaSatelliteRetrospective({ description }: { description?: string }) {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
+
+      {/* System Flow */}
+      <div className="p-5 rounded-xl border border-border bg-muted/20">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">시스템 흐름</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-1.5">
+            <FlowNode sub="기준 시점">위성 영상 T1</FlowNode>
+            <FlowNode sub="비교 시점">위성 영상 T2</FlowNode>
+          </div>
+          <span className="text-muted-foreground text-xs">→</span>
+          <FlowNode sub="히스토그램 매칭">전처리 · 정합</FlowNode>
+          <span className="text-muted-foreground text-xs">→</span>
+          <FlowNode highlight sub="ack/nack · DLQ">RabbitMQ 큐</FlowNode>
+          <span className="text-muted-foreground text-xs">→</span>
+          <FlowNode highlight sub="MSA 9개 · FastAPI">변화탐지 AI</FlowNode>
+          <span className="text-muted-foreground text-xs">→</span>
+          <FlowNode sub="Snowflake ID · PostgreSQL">결과 저장</FlowNode>
+          <span className="text-muted-foreground text-xs">→</span>
+          <FlowNode sub="변화 영역 오버레이">CesiumJS 뷰어</FlowNode>
+        </div>
+      </div>
 
       {description && (
         <div className="space-y-4">

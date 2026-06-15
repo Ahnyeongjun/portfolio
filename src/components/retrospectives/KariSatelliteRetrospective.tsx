@@ -14,9 +14,60 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
+  return (
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center shrink-0 ${
+      highlight
+        ? "bg-primary/10 border-primary/30 text-primary"
+        : "bg-background border-border text-foreground"
+    }`}>
+      {children}
+      {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 export function KariSatelliteRetrospective({ description }: { description?: string }) {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
+
+      {/* System Flow */}
+      <div className="p-5 rounded-xl border border-border bg-muted/20">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">시스템 흐름</p>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-start gap-3">
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground mb-1">위성 소스 (10+)</p>
+              <div className="flex flex-col gap-1">
+                <FlowNode>다누리 · 창천위성</FlowNode>
+                <FlowNode>Sentinel · Landsat</FlowNode>
+                <FlowNode>Planet · MODIS 외</FlowNode>
+              </div>
+            </div>
+            <span className="text-muted-foreground text-xs mt-6">→</span>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground mb-1">수집 · 표준화</p>
+              <FlowNode highlight sub="H_BASE / S_BASE 추상화">janus 워크플로우</FlowNode>
+              <span className="text-xs text-muted-foreground block text-center">↓</span>
+              <FlowNode>표준 메타데이터 변환</FlowNode>
+            </div>
+            <span className="text-muted-foreground text-xs mt-6">→</span>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground mb-1">AI 추론 (K8s)</p>
+              <FlowNode highlight sub="GPUShare 70파드">객체탐지 (OBB/HBB)</FlowNode>
+              <span className="text-xs text-muted-foreground block text-center">+</span>
+              <FlowNode>세그멘테이션 · 초해상도</FlowNode>
+            </div>
+            <span className="text-muted-foreground text-xs mt-6">→</span>
+            <div className="p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 space-y-1.5">
+              <p className="text-xs font-medium text-primary mb-1">결과 제공</p>
+              <FlowNode sub="Outbox 동기화">DB 카탈로그</FlowNode>
+              <span className="text-xs text-muted-foreground block text-center">↓</span>
+              <FlowNode sub="분석 결과 시각화">CesiumJS 뷰어</FlowNode>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {description && <p>{description}</p>}

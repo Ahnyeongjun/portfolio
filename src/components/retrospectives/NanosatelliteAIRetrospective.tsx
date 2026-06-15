@@ -35,9 +35,57 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | React.Rea
   );
 }
 
+function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
+  return (
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center shrink-0 ${
+      highlight
+        ? "bg-primary/10 border-primary/30 text-primary"
+        : "bg-background border-border text-foreground"
+    }`}>
+      {children}
+      {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 export function NanosatelliteAIRetrospective() {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
+
+      {/* Development Pipeline Flow */}
+      <div className="p-5 rounded-xl border border-border bg-muted/20">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">개발 파이프라인</p>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FlowNode sub="KOMPSAT 0.5m 위성영상">입력 데이터</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode sub="증강 · 히스토그램 매칭 · AIHub 통합">전처리</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode highlight sub="4×A4000 DDP">분산 학습</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode sub="mAP / mIoU 측정">실험 검증</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode highlight sub="ONNX Runtime 배포">추론 파이프라인</FlowNode>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">객체탐지 HBB</p>
+              <FlowNode sub="7회 실험">YOLO11m</FlowNode>
+              <p className="text-xs text-center text-primary font-medium">mAP50 = 0.644</p>
+            </div>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">객체탐지 OBB</p>
+              <FlowNode sub="5회 실험">YOLO11m-obb</FlowNode>
+              <p className="text-xs text-center text-primary font-medium">mAP50 = 0.604</p>
+            </div>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">토지피복 세그멘테이션</p>
+              <FlowNode sub="39회 실험">ConvNeXt-B + UPerNet</FlowNode>
+              <p className="text-xs text-center text-primary font-medium">mIoU = 0.7205</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <p>

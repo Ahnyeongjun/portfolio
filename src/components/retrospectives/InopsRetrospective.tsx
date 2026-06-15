@@ -35,9 +35,55 @@ function Table({ headers, rows }: { headers: string[]; rows: (string | React.Rea
   );
 }
 
+function FlowNode({ children, highlight, sub, warn }: { children: React.ReactNode; highlight?: boolean; sub?: string; warn?: boolean }) {
+  return (
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center shrink-0 ${
+      highlight
+        ? "bg-primary/10 border-primary/30 text-primary"
+        : warn
+        ? "bg-red-500/10 border-red-500/30 text-red-600"
+        : "bg-background border-border text-foreground"
+    }`}>
+      {children}
+      {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
 export function InopsRetrospective() {
   return (
     <div className="space-y-10 text-muted-foreground leading-relaxed">
+
+      {/* System Flow */}
+      <div className="p-5 rounded-xl border border-border bg-muted/20">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">API 요청 흐름 (개선 후)</p>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <FlowNode>클라이언트</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode sub="Spring Boot + MyBatis">REST API 서버</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode highlight sub="TTL 30m~24h · DB 1">Redis 캐시</FlowNode>
+            <span className="text-muted-foreground text-xs">캐시 히트 →</span>
+            <FlowNode sub="~20ms">즉시 응답</FlowNode>
+          </div>
+          <div className="flex items-center gap-2 pl-36">
+            <span className="text-muted-foreground text-xs">↓ 캐시 미스</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pl-8">
+            <FlowNode sub="페이징 · 조건부 공간 연산">MyBatis 쿼리</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode sub="PostgreSQL / PostGIS">DB 조회</FlowNode>
+            <span className="text-muted-foreground text-xs">→</span>
+            <FlowNode highlight sub="캐시 저장 후 반환">응답</FlowNode>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <FlowNode warn sub="13,018건 전수 조회">개선 전: 페이징 없음</FlowNode>
+            <FlowNode warn sub="모든 행 ST_INTERSECTION">개선 전: 무조건 공간 연산</FlowNode>
+            <FlowNode warn sub="수십 MB × 목록 쿼리">개선 전: 이진 컬럼 포함</FlowNode>
+          </div>
+        </div>
+      </div>
 
       <div className="space-y-4">
         <p>
