@@ -15,6 +15,8 @@ import { KariSatelliteRetrospective } from "@/components/retrospectives/KariSate
 import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSatelliteRetrospective";
 import { SecuritySatelliteRetrospective } from "@/components/retrospectives/SecuritySatelliteRetrospective";
 import { PillCareRetrospective } from "@/components/retrospectives/PillCareRetrospective";
+import { InopsRetrospective } from "@/components/retrospectives/InopsRetrospective";
+import { NanosatelliteAIRetrospective } from "@/components/retrospectives/NanosatelliteAIRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -169,7 +171,7 @@ export default async function ProjectPage({
 
             {/* Role Details */}
             {project.roleDetails && project.roleDetails.length > 0 &&
-            !["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+            !["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) && (
               <div className="mb-10 space-y-8">
                 {project.roleDetails.map((roleDetail, index) => (
                   <div key={index}>
@@ -191,7 +193,7 @@ export default async function ProjectPage({
 
             {/* Details fallback */}
             {(!project.roleDetails || project.roleDetails.length === 0) && project.details.length > 0 &&
-            !["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) && (
+            !["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) && (
               <ul className="mb-10 space-y-2">
                 {project.details.map((detail, index) => (
                   <li key={index} className="flex items-start gap-3">
@@ -203,7 +205,7 @@ export default async function ProjectPage({
             )}
 
             {/* Achievements */}
-            {!["kari-satellite", "nipa-satellite", "security-satellite"].includes(project.id) &&
+            {!["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) &&
             project.achievements.length > 0 && (
               <ul className="mb-12 space-y-3">
                 {project.achievements.map((achievement, index) => (
@@ -227,6 +229,8 @@ export default async function ProjectPage({
             {project.id === "nipa-satellite" && <NipaSatelliteRetrospective description={project.longDescription} />}
             {project.id === "security-satellite" && <SecuritySatelliteRetrospective description={project.longDescription} />}
             {project.id === "pillcare" && <PillCareRetrospective />}
+            {project.id === "inops-optimization" && <InopsRetrospective />}
+            {project.id === "nanosatellite-ai" && <NanosatelliteAIRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.some(r => r.type !== "image") && (

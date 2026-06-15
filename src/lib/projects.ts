@@ -516,6 +516,103 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: "nanosatellite-ai",
+    title: "초소형군집위성 AI 모델 개발 — 객체탐지 · 토지피복 세그멘테이션",
+    description: "초소형군집위성 영상 기반 20클래스 HBB/OBB 객체탐지(mAP50 0.644/0.604)와 6클래스 토지피복 세그멘테이션(mIoU 0.7205) 모델 개발 — 39회 세그멘테이션 실험",
+    tags: ["PyTorch", "YOLO11", "ConvNeXt-Base", "UPerNet", "KOMPSAT", "Python", "DDP"],
+    status: "deployed",
+    type: "company",
+    category: ["ai"],
+    company: "한컴인스페이스",
+    period: "2026.05 ~ 진행중",
+    role: "AI 모델 학습 및 연구",
+    longDescription: "초소형군집위성 영상을 대상으로 HBB/OBB 객체탐지 모델과 6클래스 토지피복 세그멘테이션 모델을 개발했습니다. 4×A4000 GPU DDP 환경에서 수십 회의 실험을 통해 데이터 증강 전략·손실 함수·디코더 구조를 체계적으로 탐색했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "객체탐지 (HBB / OBB)",
+        items: [
+          "HBB: YOLO11m + 4GPU DDP, imgsz=1024, 20클래스 — mosaic+mixup+copy_paste+randaugment 복합 증강으로 mAP50=0.644(mAP50-95=0.408) 달성, yolo11m이 yolo26m 대비 +2.1%p 우세 확인",
+          "HBB에서 degrees=45 강한 회전 augmentation이 axis-aligned BBox 왜곡으로 mAP -6.7%p 역효과 유발 — degrees=0이 최적임을 실험으로 검증",
+          "OBB: YOLO11m-obb, probiou loss + mosaic 조합 시 GPU 메모리 폭증 원인 분석 — 보수적 augmentation(mosaic만)으로 안정적 학습, mAP50=0.604(mAP50-95=0.407) 달성",
+        ],
+      },
+      {
+        role: "토지피복 세그멘테이션 (6클래스)",
+        items: [
+          "ConvNeXt-Base(ImageNet-22k pretrained) + UPerNet — 위성 영상(0.5m) 기반 forest/water/ground/building/meadow/road 6클래스, 39회 실험으로 체계적 탐색",
+          "손실 함수 조합 비교(CE+Dice / CE+Tversky+Lovász / Focal+Lovász 등) — CE+Tversky+Lovász 조합이 최고 성능",
+          "Skeleton Head 추가로 도로 중심선 형태 학습 강화 — road↔ground RGB 유클리드 거리 8.2(색감 구분 불가 수준)를 형태 정보로 보완, road 경계 정밀도 개선",
+          "AIHub 공개 데이터셋 도메인 분석 및 히스토그램 매칭 기반 색감 보정(v3)으로 외부 데이터 통합 — ground/building 클래스 개선",
+          "TTA(multi-scale [1.0, 1.25, 1.5] × 3 flip) 적용으로 mIoU 추가 향상, 최종 best mIoU=0.7205(TTA 0.7222)",
+        ],
+      },
+    ],
+    achievements: [
+      "7회 HBB 실험으로 augmentation 전략 비교 검증 — mosaic+mixup+copy_paste+randaugment 복합 증강이 단일 증강 대비 +3.4%p 향상, YOLO11m HBB mAP50=0.644 달성",
+      "OBB 학습 시 probiou loss + mosaic 조합의 GPU 메모리 폭증 원인을 분석하고 보수적 augmentation 전략으로 전환하여 안정적 OBB 학습 달성 — mAP50=0.604",
+      "39회 세그멘테이션 실험에서 손실 함수·디코더·외부 데이터·후처리를 체계적으로 탐색 — Skeleton Head + CE+Tversky+Lovász 조합으로 mIoU 0.7039(baseline)→0.7205, TTA 적용 시 0.7222",
+      "ground↔road RGB 거리 8.2로 색감 구분이 불가한 한계를 Skeleton Head(도로 중심선 예측) + Connectivity Loss(8방향 연결성)로 보완 — 형태 기반 도로 분류 정밀도 개선",
+    ],
+    resources: [],
+  },
+  {
+    id: "inops-optimization",
+    title: "위성 정보 관리 플랫폼 API 서버 성능 진단 및 개선",
+    description: "응답 지연 최대 46초가 발생하던 위성 정보 관리 플랫폼 REST API를 진단·개선 — 핵심 4개 API 최대 379배 단축, 50 VU 동시 부하 테스트 에러율 0% 달성",
+    tags: ["Java 17", "Spring Boot 3", "MyBatis", "PostgreSQL", "PostGIS", "Redis", "k6"],
+    status: "deployed",
+    type: "company",
+    category: ["backend"],
+    company: "한컴인스페이스",
+    period: "2026.06",
+    role: "성능 진단 및 개선",
+    longDescription: "공공기관에 납품된 위성 정보 관리 플랫폼에서 특정 API의 극단적 응답 지연(최대 46초, 타임아웃)을 진단하고 개선했습니다. Maven Nexus 미접근 내부망 환경에서 WAR 직접 패치 방식으로 배포하였으며, 주요 4개 API에서 수십~수백 배의 응답시간 단축을 달성했습니다. k6를 활용한 38개 엔드포인트 스모크 테스트와 최대 50 VU 동시 부하 테스트로 개선 효과를 정량 검증했습니다.",
+    details: [],
+    roleDetails: [
+      {
+        role: "병목 진단",
+        items: [
+          "로그 전체 비활성화(root level=off) 환경에서 응답 데이터 분석·바이트코드 디컴파일·AOP 코드 추적으로 근본 원인 식별",
+          "페이징 미적용으로 수만 건 전수 조회, 조건 없이 전체 행에 PostGIS 공간 연산 실행, 목록 조회에 수십 MB 이진 컬럼 포함 — 3가지 구조적 원인 발견",
+          "프레임워크 AOP가 서비스 예외를 삼키는 구조로 타임아웃이 HTTP 200으로 응답되어 디버깅이 어렵던 문제 식별",
+        ],
+      },
+      {
+        role: "쿼리 및 로직 최적화",
+        items: [
+          "컨트롤러 기본 페이징값 추가 — PageHelper 자동 LIMIT 삽입으로 전수 조회 제거, 13,018건→20건",
+          "PostGIS 공간 교집합 연산 조건부 실행 — 대상 파라미터 없을 때 연산 스킵으로 CPU 비용 제거",
+          "CTE 카티션 곱 제거 + 집계 대상 행 수 제한 — 날짜별 집계 API 46,307ms→122ms",
+          "목록 조회에서 수십 MB 이진 컬럼 제외, 상세 조회에서만 반환 — 알림 API 25,000ms→60ms",
+          "사용자 삭제 N+1 루프 → 배치 DELETE 전환, 스칼라 서브쿼리 → LEFT JOIN 변환",
+        ],
+      },
+      {
+        role: "Redis 캐싱 적용",
+        items: [
+          "자주 조회되는 목록 8개 서비스에 @Cacheable 적용 — 세션(DB 0)과 분리된 캐시 전용 커넥션(DB 1), 캐시 히트 시 ~20ms 응답",
+          "TTL 전략: 정적 공통코드 24h, 집계성 1~2h, 목록성 30m — @CacheEvict 연동으로 등록·수정·삭제 시 자동 무효화",
+        ],
+      },
+      {
+        role: "제약 환경 배포 및 정량 검증",
+        items: [
+          "Maven Nexus 미접근 내부망 환경 — .NET ZipArchive API로 실행 중인 WAR 내 .class/.xml 직접 교체하는 방식으로 무중단에 가까운 배포",
+          "k6 스모크 테스트(38 엔드포인트, 1 VU) — p(95) 1,980ms→741ms, 최대 응답 46,307ms→1,743ms",
+          "k6 ramp-up 부하 테스트(0→50 VU, 105초) — 총 처리 요청 392→1,177건(+200%), 에러율 11.22%→0.00%",
+        ],
+      },
+    ],
+    achievements: [
+      "응답 38초·46초·25초였던 핵심 3개 API를 쿼리 구조 개선으로 각각 159ms·122ms·60ms로 단축 — 최대 379배 개선, Redis 캐싱 포함 시 최대 2,315배",
+      "알림 API 25s × 30VU가 HikariCP 커넥션 30개를 전부 점유해 정상 API(7ms)까지 타임아웃되던 장애 패턴을 페이징 + 이진 컬럼 분리로 해결 — 동시 50VU에서 에러율 11.22%→0.00%",
+      "Maven Nexus 미접근 내부망 제약 환경에서 WAR 직접 패치로 배포 — k6 38개 API 스모크 + 50 VU 부하 테스트로 개선 효과 정량 검증",
+      "동시성 이슈 전수 코드 분석 — 로깅 어펜더 단일 커넥션 공유, ID 생성기 Spring 컨텍스트 미주입 등 잠재 위험 식별 및 개선 제안",
+    ],
+    resources: [],
+  },
+  {
     id: "msa-platform",
     hidden: true,
     title: "MSA 통합 플랫폼",

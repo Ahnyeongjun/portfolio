@@ -14,49 +14,94 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
+  return (
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center flex-1 ${
+      highlight
+        ? "bg-primary/10 border-primary/30 text-primary"
+        : "bg-background border-border text-foreground"
+    }`}>
+      {children}
+      {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function DecisionRow({ label, primary, children }: { label: string; primary?: boolean; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 text-sm">
+      <span className={`text-xs font-semibold w-8 shrink-0 pt-0.5 uppercase tracking-wider ${primary ? "text-primary" : "text-muted-foreground"}`}>
+        {label}
+      </span>
+      <span className="text-muted-foreground leading-relaxed">{children}</span>
+    </div>
+  );
+}
+
 export function SecuritySatelliteRetrospective({ description }: { description?: string }) {
   return (
-    <div className="space-y-10 text-muted-foreground leading-relaxed">
+    <div className="space-y-12 text-muted-foreground leading-relaxed">
 
-      <div className="space-y-4">
-        {description && <p>{description}</p>}
-        <p>
-          외부 인터넷과 완전히 차단된 폐쇄망이라는 운영 환경이 모든 설계 결정에 제약으로 작용했습니다.
-          외부 서비스 없이 인증 체계를 세우고, 클라우드 없이 K8s 클러스터를 운영하는 것이 이 프로젝트의 핵심이었습니다.
-        </p>
+      {/* 아키텍처 */}
+      <div>
+        <h3 className="text-base font-bold text-foreground mb-4">아키텍처</h3>
+        <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
+          <div className="flex justify-center">
+            <FlowNode sub="사용자 · 어드민 (Thymeleaf)">웹 프론트엔드</FlowNode>
+          </div>
+          <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Spring Boot</p>
+              <FlowNode highlight sub="CRUD · 인증 · 파일">API 서버</FlowNode>
+            </div>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Go</p>
+              <FlowNode highlight sub="WMS · WMTS · 다운로드">이미지 / 파일 서버</FlowNode>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Salt — Python</p>
+              <div className="flex items-center gap-2">
+                <FlowNode highlight sub="수집 · Salt 디스패치">작업 관리</FlowNode>
+                <span className="text-muted-foreground text-xs shrink-0">→</span>
+                <FlowNode sub="변환 · DB 등록">ETL 처리</FlowNode>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">ONNX Runtime — Python</p>
+              <div className="flex gap-2">
+                <FlowNode sub="OBB / HBB">관심정보 탐지</FlowNode>
+                <FlowNode sub="픽셀 단위 분류">변화탐지</FlowNode>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* 핵심 기술 */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">멀티모듈 구조 개편 — 배포가 두려운 행위에서 일상으로</h3>
-        <p>
-          STS + jQuery 모놀리식에서 서비스 경계 단위로 모듈을 분리했습니다.
-          분리 기준은 하나였습니다. <Highlight>"배포 단위가 달라야 하는가."</Highlight>
-          자주 바뀌는 영역과 안정적인 영역을 같은 묶음에 두면 결국 전체 재배포로 돌아왔기 때문입니다.
-        </p>
-        <CodeBlock>{`# 개편 전 — 어디 하나 수정해도 전체 재배포
-monolith: auth + image + notify + file + ...
-배포 시간: 4분 / 월 10건 이상 재배포
+        <h3 className="text-base font-bold text-foreground">핵심 기술</h3>
 
-# 개편 후 — 멀티모듈 구조
-auth-module
-image-module
-notify-module
-file-module
-배포 시간: 30초 / 변경된 모듈만 재배포`}</CodeBlock>
-        <p>
-          배포가 "조심해야 하는 행위"에서 "그냥 하는 것"이 됐습니다.
-          이 구조는 이후 NIPA 프로젝트에서 <Highlight>완전한 MSA로 전환하는 발판</Highlight>이 됐습니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">WMS → WMTS — 위성 영상 타일링 응답 4초에서 0.5초로</h3>
-        <p>
-          위성 영상 지도를 표시할 때 WMS 방식을 쓰고 있었습니다.
-          WMS는 요청마다 해당 바운더리의 영상을 동적으로 합성하기 때문에,
-          영상 수가 늘수록 응답 시간이 선형으로 증가했습니다.
-        </p>
-        <CodeBlock>{`// WMTS — z/x/y 좌표를 캐시 키로 고정, 합성 결과를 Redis에 저장
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-foreground">WMS 대신 WMTS + Go</h4>
+          <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-4">
+          <div className="space-y-3">
+            <DecisionRow label="상황">
+              영상 수가 늘수록 WMS 응답이 선형으로 증가 — 요청마다 바운더리 전체를 동적 합성해 <Highlight>4초 이상</Highlight> 소요
+            </DecisionRow>
+            <DecisionRow label="대안">
+              Java Spring으로 타일링 처리 → GDAL JNI 오버헤드가 CGO보다 크고, JVM GC 타이밍 예측이 어려워 타일 캐시 효과를 깎아먹음
+            </DecisionRow>
+            <DecisionRow label="선택" primary>
+              Go + GDAL CGO 바인딩 + Redis 타일 캐시 — <Highlight>z/x/y 좌표를 캐시 키로 고정</Highlight>해 동일 타일 재요청 시 합성 연산 완전 스킵, 고루틴으로 타일 생성 병렬화
+            </DecisionRow>
+            <DecisionRow label="단점">
+              Go/Java 두 언어 혼재, 초기 GDAL CGO 바인딩 설정 비용
+            </DecisionRow>
+          </div>
+          <CodeBlock>{`// WMTS — z/x/y 좌표를 캐시 키로 고정, 합성 결과를 Redis에 저장
 func tileHandler(w http.ResponseWriter, r *http.Request) {
     z, x, y := parseTileCoords(r)
     key := fmt.Sprintf("tile:%d:%d:%d", z, x, y)
@@ -70,83 +115,75 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
     redisClient.Set(ctx, key, tile, 24*time.Hour)
     w.Write(tile)
 }`}</CodeBlock>
-        <p>
-          WMTS로 전환하면 <Highlight>z/x/y 좌표</Highlight>가 고정되어 같은 타일을 캐시 키로 재사용할 수 있습니다.
-          <Highlight>Go 고루틴</Highlight>으로 타일 생성 단계를 병렬화하고, 합성 결과를 <Highlight>Redis</Highlight>에 저장했습니다.
-          Go를 선택한 이유는 GeoTIFF 처리에 쓰는 GDAL 라이브러리와의 <Highlight>CGO 바인딩</Highlight>이
-          JVM 위 JNI보다 오버헤드가 적었기 때문입니다.
-          결과적으로 응답이 <Highlight>4초 → 0.5초 미만</Highlight>으로 줄었습니다.
-        </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-foreground">완전 MSA 대신 멀티모듈</h4>
+          <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-4">
+          <div className="space-y-3">
+            <DecisionRow label="상황">
+              STS + jQuery 모놀리식 — 배포 한 번에 전체 서비스 다운, <Highlight>4분 소요</Highlight>, 월 10건 이상 재배포 발생
+            </DecisionRow>
+            <DecisionRow label="대안">
+              바로 완전 MSA로 전환 → 회사 첫 K8s 도입 프로젝트라 서비스 간 네트워크·분산 트랜잭션 복잡성 감당이 현실적으로 어려움
+            </DecisionRow>
+            <DecisionRow label="선택" primary>
+              <Highlight>"배포 단위가 달라야 하는가"</Highlight> 를 분리 기준으로 삼아 auth·image·notify·file 모듈 독립 배포 — 단일 프로세스 내 모듈 분리로 리스크 최소화
+            </DecisionRow>
+            <DecisionRow label="단점">
+              완전한 독립 스케일링 불가 — 이 구조가 이후 NIPA 프로젝트에서 9개 MSA로 전환하는 발판이 됨
+            </DecisionRow>
+          </div>
+          <CodeBlock>{`# 개편 전 — 어디 하나 수정해도 전체 재배포
+monolith: auth + image + notify + file + ...
+배포 시간: 4분 / 월 10건 이상 재배포
+
+# 개편 후 — 멀티모듈 구조
+auth-module / image-module / notify-module / file-module
+배포 시간: 30초 / 변경된 모듈만 재배포`}</CodeBlock>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-foreground">DB 동기화 대신 파일 기반 단방향 흐름</h4>
+          <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-4">
+          <div className="space-y-3">
+            <DecisionRow label="상황">
+              외부망↔폐쇄망 완전 차단 — 위성 영상 데이터 반입 통로 설계 필요
+            </DecisionRow>
+            <DecisionRow label="대안">
+              DB CDC(Debezium) 양방향 동기화 → 양방향 통로가 생겨 망분리 보안 요건 위반, replication slot 파손 시 전체 스냅샷 재수행 필요 (항우연 프로젝트에서 이미 경험)
+            </DecisionRow>
+            <DecisionRow label="선택" primary>
+              파일 단위 단방향 흐름 — <Highlight>zst 압축 + hash 무결성 검증</Highlight> 으로 변조 탐지, 역방향 채널 구조적으로 없음
+            </DecisionRow>
+            <DecisionRow label="단점">
+              실시간 동기화 불가, 배치 단위 반입만 가능 — 위성 영상 분석 특성상 실시간성 요건이 없어 감수 가능
+            </DecisionRow>
+          </div>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">분리망 환경 초기 구축 — 외부 의존 없이 자립하는 플랫폼</h3>
-        <p>
-          인증 서버를 별도 서비스로 분리해 <Highlight>JWT 기반 독립 인증</Highlight>을 구현했습니다.
-          파일 전송은 보안 솔루션(<Highlight>INNORIX</Highlight>)과 연동해 내부망 안에서 암호화 전송이 가능하도록 했습니다.
-          외부망에서 내부망으로 들어오는 데이터는 파일 단위 <Highlight>단방향 흐름</Highlight>으로만 허용했습니다.
-        </p>
-        <CodeBlock>{`# 분리망 데이터 흐름
-외부망 수집 서버
-  → 영상 파일 압축 (zst + hash)
-  → 단방향 파일 전달 (SFTP relay)
-내부망 처리 서버
-  → 압축 해제 + 무결성 검증 (hash)
-  → 카탈로깅 → 분석 파이프라인`}</CodeBlock>
-        <p>
-          제약이 많은 환경일수록 설계 결정이 명확해졌습니다.
-          "어떻게 연결할 것인가"보다 "어디서 끊어야 하는가"를 먼저 정하는 것이
-          분리망 아키텍처의 핵심이었습니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">K8s 운영 — HPA·nginx ingress·레플리카로 서비스 안정성 확보</h3>
-        <p>
-          분리망 환경이라도 K8s 운영 방식 자체는 일반 클러스터와 다르지 않습니다.
-          핵심 과제는 위성영상 분석 요청이 배치성이라는 점이었습니다.
-          낮에는 부하가 집중되고 야간에는 거의 없는데,
-          추론 파드를 항상 최대로 띄우면 자원 낭비고 줄이면 대기 시간이 길어졌습니다.
-        </p>
-        <CodeBlock>{`# HPA — CPU 사용률 기반 추론 파드 자동 스케일링
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-spec:
-  scaleTargetRef:
-    name: gprocessor
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        averageUtilization: 60
-
-# nginx ingress — path 기반 서비스 라우팅
-rules:
-- http:
-    paths:
-    - path: /api
-      backend: { service: { name: api-service } }
-    - path: /tiles
-      backend: { service: { name: tile-service } }
-    - path: /
-      backend: { service: { name: viewer-service } }`}</CodeBlock>
-        <p>
-          <Highlight>HPA</Highlight>로 CPU 60% 기준에서 추론 파드를 2~10개 사이로 자동 조절했습니다.
-          분석 요청이 몰리는 시간대에는 파드가 늘어나고, 야간에는 최소 레플리카만 유지합니다.
-        </p>
-        <p>
-          <Highlight>nginx ingress</Highlight>로 뷰어(Next.js)·API 서버·타일 서버로의 요청을
-          path 기준으로 분기했습니다.
-          upstream 주소를 ingress 레이어에서 통합 관리하니
-          개별 서비스 변경 시 ingress 수정 없이 Service만 교체하면 됐습니다.
-        </p>
-        <p>
-          각 서비스는 <Highlight>minReplicas: 2</Highlight>를 고정해 노드 장애 시에도 서비스가 끊기지 않도록 했고,
-          <Highlight>롤링 업데이트</Highlight>로 배포 중 다운타임도 제거했습니다.
-        </p>
+      {/* 결과 */}
+      <div>
+        <h3 className="text-base font-bold text-foreground mb-4">결과</h3>
+        <div className="space-y-2.5">
+          {[
+            ["영상 타일링 API 응답", "4초", "0.5초 미만"],
+            ["배포 소요 시간", "4분 (전체)", "30초 (변경 모듈만)"],
+            ["K8s 도입", "회사 미도입", "최초 도입 → KARI · NIPA로 확산"],
+          ].map(([label, before, after], i) => (
+            <div key={i} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm">
+              <span className="text-primary shrink-0">✦</span>
+              <span className="text-foreground font-medium">{label}</span>
+              <span className="text-muted-foreground line-through text-xs">{before}</span>
+              <span className="text-muted-foreground text-xs">→</span>
+              <span className="text-foreground">{after}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
     </div>
