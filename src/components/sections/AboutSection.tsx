@@ -1,72 +1,44 @@
-'use client';
+import { SectionHead } from '@/components/SectionHead';
+import { profile } from '@/data/profile';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { MapPin, Mail, Calendar, Sparkles, Building2 } from 'lucide-react';
-import { Button, GlassCard, Section } from '@nuguri03/ui';
-
-interface AboutSectionProps {
-  name: string;
-  initials: string;
-  role: string;
-  location: string;
-  company: string;
-  duration: string;
-  email: string;
-  profileImage?: string;
-  headingLine1: string;
-  headingHighlight: string;
-  introduction: readonly string[];
-}
-
-export function AboutSection({ name, initials, role, location, company, duration, email, profileImage, headingLine1, headingHighlight, introduction }: AboutSectionProps) {
-  const [imgError, setImgError] = useState(false);
-
+export function AboutSection() {
   return (
-    <Section id="about">
-      <div className="max-w-4xl mx-auto">
-        <div className="grid md:grid-cols-[280px_1fr] gap-12 items-start">
-          <GlassCard className="text-center">
-            <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/20 to-accent/20">
-              {imgError || !profileImage ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-4xl font-bold text-gradient">{initials}</span>
-                </div>
-              ) : (
-                <Image src={profileImage} alt={name} width={128} height={128} className="object-cover w-full h-full" priority onError={() => setImgError(true)} />
-              )}
+    <section
+      id="about"
+      className="pf-section-pad"
+      style={{ background: 'var(--pf-bg-soft)', borderTop: '1px solid var(--pf-bdr)', borderBottom: '1px solid var(--pf-bdr)' }}
+    >
+      <div className="pf-wrap pf-about-grid">
+        <div className="reveal">
+          <SectionHead index="02" label="소개" title={'구현에서 끝내지 않고\n구조와 생산성까지 고민합니다'} />
+          <div className="pf-about-side" style={{ marginTop: 28 }}>
+            <div className="pf-about-fact">
+              <span className="af-key">Now</span>
+              <span>
+                <span className="af-val">{profile.company}</span>
+                <span className="af-sub">{profile.period} · {profile.duration}</span>
+              </span>
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-1">{name}</h3>
-            <p className="text-sm text-primary font-medium mb-4">{role}</p>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center justify-center gap-2"><MapPin className="w-4 h-4" /><span>{location}</span></div>
-              <div className="flex items-center justify-center gap-2"><Building2 className="w-4 h-4" /><span>{company}</span></div>
-              <div className="flex items-center justify-center gap-2"><Calendar className="w-4 h-4" /><span>{duration}</span></div>
+            <div className="pf-about-fact">
+              <span className="af-key">Role</span>
+              <span>
+                <span className="af-val">{profile.roleFull}</span>
+                <span className="af-sub">백엔드 중심 · 프론트 · 인프라</span>
+              </span>
             </div>
-            <Button className="w-full mt-6 print:hidden" onClick={() => (window.location.href = `mailto:${email}`)}>
-              <Mail className="w-4 h-4 mr-2" />연락하기
-            </Button>
-            <p className="hidden print:block mt-4 text-sm text-muted-foreground">{email}</p>
-          </GlassCard>
-
-          <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 glass rounded-full mb-6">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm text-muted-foreground">About Me</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              {headingLine1}
-              <br />
-              <span className="text-gradient">{headingHighlight}</span>
-              <br />
-              {name}입니다.
-            </h2>
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              {introduction.map((paragraph, i) => <p key={i}>{paragraph}</p>)}
+            <div className="pf-about-fact">
+              <span className="af-key">Base</span>
+              <span>
+                <span className="af-val">{profile.location}</span>
+              </span>
             </div>
           </div>
         </div>
+
+        <div className="reveal pf-about-body" style={{ transitionDelay: '90ms' }}>
+          {profile.introduction.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
       </div>
-    </Section>
+    </section>
   );
 }

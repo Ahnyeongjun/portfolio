@@ -1,51 +1,73 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { Github } from "lucide-react";
-import { PrintButton } from "./PrintButton";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { profile } from '@/data/profile';
+import { useLang } from '@/context/lang';
+import { strings } from '@/data/strings';
 
 export function Header() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass print:hidden">
-      <div className="container mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="font-semibold text-foreground hover:text-primary transition-colors">
-            안영준
-          </Link>
+  const [scrolled, setScrolled] = useState(false);
+  const { lang, toggleLang } = useLang();
+  const t = strings.nav;
 
-          {/* Nav - Right aligned */}
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              포트폴리오
-            </Link>
-            <Link
-              href="/blog"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              블로그
-            </Link>
-            <Link
-              href="/lab"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Lab
-            </Link>
-            <PrintButton />
-            <a
-              href="https://github.com/Ahnyeongjun"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Github className="w-5 h-5" />
-            </a>
-          </nav>
+  const navLinks = [
+    { href: '#about',      label: t.about[lang] },
+    { href: '#skills',     label: t.skills[lang] },
+    { href: '#career',     label: t.career[lang] },
+    { href: '#projects',   label: t.projects[lang] },
+    { href: '#background', label: t.background[lang] },
+    { href: '/blog',       label: t.blog[lang] },
+  ];
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <nav className={`pf-nav print:hidden${scrolled ? ' scrolled' : ''}`}>
+      <div className="pf-nav-inner">
+        <a href="#top" className="pf-brand">
+          <span className="pf-brand-mark">AYJ</span>
+          <span>
+            <span className="pf-brand-name">{profile.name}</span>
+            <span className="pf-brand-role">{profile.role}</span>
+          </span>
+        </a>
+
+        <div className="pf-nav-links">
+          {navLinks.map(({ href, label }) =>
+            href.startsWith('#') ? (
+              <a key={href} href={href} className="pf-nav-link">{label}</a>
+            ) : (
+              <Link key={href} href={href} className="pf-nav-link">{label}</Link>
+            )
+          )}
+        </div>
+
+        <div className="pf-nav-right">
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="pf-lang-toggle"
+            aria-label="Toggle language"
+          >
+            <span className={lang === 'ko' ? 'active' : ''}>KO</span>
+            <span className="sep">/</span>
+            <span className={lang === 'en' ? 'active' : ''}>EN</span>
+          </button>
+
+          <a href={`mailto:${profile.email}`} className="pf-nav-cta">
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 6h18v12H3z" /><path d="M3 7l9 6 9-6" />
+            </svg>
+            {t.contact[lang]}
+          </a>
         </div>
       </div>
-    </header>
+    </nav>
   );
 }

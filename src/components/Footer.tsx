@@ -1,10 +1,13 @@
+import { profile } from '@/data/profile';
+
 export function Footer() {
   return (
-    <footer className="border-t border-border py-8 print:hidden">
-      <div className="container mx-auto px-6">
-        <p className="text-sm text-muted-foreground text-center">
-          © 2025 안영준. All rights reserved.
-        </p>
+    <footer className="pf-footer print:hidden">
+      <div className="pf-wrap">
+        <div className="pf-footer-inner">
+          <p className="pf-footer-note">이 사이트는 채용 담당자를 위해 제작되었습니다.</p>
+          <span className="pf-footer-meta">{profile.name} · {profile.company} · SEOUL, KR</span>
+        </div>
       </div>
     </footer>
   );

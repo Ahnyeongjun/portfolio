@@ -1,0 +1,58 @@
+import { SectionHead } from '@/components/SectionHead';
+import { education, certifications, activities } from '@/data/experience';
+
+export function BackgroundSection() {
+  return (
+    <section
+      id="background"
+      className="pf-section-pad"
+      style={{ background: 'var(--pf-bg-soft)', borderTop: '1px solid var(--pf-bdr)', borderBottom: '1px solid var(--pf-bdr)' }}
+    >
+      <div className="pf-wrap">
+        <SectionHead index="06" label="학력 · 활동" title="학력 · 자격증 · 활동" />
+
+        <div className="pf-bg-grid-layout reveal">
+          {/* Left: Education + Certifications */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div className="pf-panel">
+              <div className="pf-panel-title">학력</div>
+              {education.map((e) => (
+                <div key={e.school} className="pf-edu-item">
+                  <div className="pf-edu-school">{e.school}</div>
+                  <div className="pf-edu-major">{e.major}</div>
+                  <div className="pf-edu-period">{e.period} · {e.info}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pf-panel">
+              <div className="pf-panel-title">자격증</div>
+              {certifications.map((c) => (
+                <div key={c.title} className="pf-cert-item">
+                  <span className="pf-cert-year">{c.year}</span>
+                  <span className="pf-cert-name">{c.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Activities */}
+          <div className="pf-panel">
+            <div className="pf-panel-title">활동 · 교육</div>
+            <div className="pf-act-list" style={{ gridTemplateColumns: '1fr' }}>
+              {activities.map((act) => (
+                <div key={act.title} className="pf-act-card">
+                  <div className="pf-act-head">
+                    <span className="pf-act-name">{act.title}</span>
+                    <span className="pf-act-period">{act.period}</span>
+                  </div>
+                  <div className="pf-act-desc">{act.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
