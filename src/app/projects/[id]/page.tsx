@@ -11,6 +11,7 @@ import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobR
 import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
 import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
 import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
+import { TeamMcpAgentRetrospective } from "@/components/retrospectives/TeamMcpAgentRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -56,7 +57,7 @@ export default async function ProjectPage({
   }
 
   const backHref = project.type === "company" ? "/#career" : "/#projects";
-  const hasRetrospective = ["kari-satellite", "nipa-satellite", "momentier", "chugjibup", "wedding", "mapin", "simvex"].includes(project.id);
+  const hasRetrospective = ["kari-satellite", "nipa-satellite", "team-mcp-agent", "momentier", "chugjibup", "wedding", "mapin", "simvex"].includes(project.id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -220,6 +221,7 @@ export default async function ProjectPage({
             {project.id === "wedding" && <WithingRetrospective />}
             {project.id === "mapin" && <MapinRetrospective />}
             {project.id === "simvex" && <SimvexRetrospective />}
+            {project.id === "team-mcp-agent" && <TeamMcpAgentRetrospective description={project.longDescription} />}
 
             {/* Resources */}
             {project.resources && project.resources.some(r => r.type !== "image") && (

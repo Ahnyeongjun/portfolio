@@ -1,3 +1,5 @@
+import React from 'react';
+
 function CodeBlock({ children }: { children: string }) {
   return (
     <pre className="bg-muted/50 border border-border rounded-lg p-4 overflow-x-auto text-sm leading-relaxed font-mono text-foreground">
@@ -14,9 +16,53 @@ function Highlight({ children }: { children: React.ReactNode }) {
   );
 }
 
+function CompareTable({
+  headers,
+  rows,
+}: {
+  headers: string[];
+  rows: { cells: (string | React.ReactNode)[]; highlight?: boolean; muted?: boolean }[];
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+        <thead>
+          <tr className="bg-muted/40 border-b border-border">
+            {headers.map((h, i) => (
+              <th key={i} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground/70 tracking-wide whitespace-nowrap">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {rows.map((row, i) => (
+            <tr
+              key={i}
+              className={
+                row.highlight
+                  ? "bg-primary/5"
+                  : row.muted
+                  ? "opacity-50"
+                  : "hover:bg-muted/20 transition-colors"
+              }
+            >
+              {row.cells.map((cell, j) => (
+                <td key={j} className={`px-3 py-2 ${row.highlight ? "text-foreground" : "text-muted-foreground"}`}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
   return (
-    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center shrink-0 ${
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center flex-1 ${
       highlight
         ? "bg-primary/10 border-primary/30 text-primary"
         : "bg-background border-border text-foreground"
@@ -27,215 +73,244 @@ function FlowNode({ children, highlight, sub }: { children: React.ReactNode; hig
   );
 }
 
+function AccordionSection({
+  title,
+  hint,
+  children,
+  defaultOpen,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  return (
+    <details className="group border border-border rounded-xl overflow-hidden" open={defaultOpen}>
+      <summary className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none bg-muted/20 hover:bg-muted/30 transition-colors [list-style:none] [&::-webkit-details-marker]:hidden">
+        <div className="flex-1 min-w-0">
+          <span className="font-semibold text-foreground text-sm">{title}</span>
+          {hint && <span className="ml-2.5 text-xs text-muted-foreground">{hint}</span>}
+        </div>
+        <svg
+          className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-open:rotate-180"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </summary>
+      <div className="px-5 pt-5 pb-4 space-y-4 text-muted-foreground border-t border-border">
+        {children}
+      </div>
+    </details>
+  );
+}
+
 export function KariSatelliteRetrospective({ description }: { description?: string }) {
   return (
-    <div className="space-y-10 text-muted-foreground leading-relaxed">
+    <div className="space-y-8 text-muted-foreground leading-relaxed">
 
-      {/* System Flow */}
-      <div className="p-5 rounded-xl border border-border bg-muted/20">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">시스템 흐름</p>
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-start gap-3">
-            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground mb-1">위성 소스 (10+)</p>
-              <div className="flex flex-col gap-1">
-                <FlowNode>다누리 · 창천위성</FlowNode>
-                <FlowNode>Sentinel · Landsat</FlowNode>
-                <FlowNode>Planet · MODIS 외</FlowNode>
-              </div>
+      {/* 아키텍처 */}
+      <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처</p>
+        <div className="flex justify-center">
+          <FlowNode sub="사용자 · 어드민 (Thymeleaf)">웹 프론트엔드</FlowNode>
+        </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Spring Boot (inops-api-svr)</p>
+            <FlowNode highlight sub="CRUD · 권한 · Outbox · 세션">API 서버</FlowNode>
+          </div>
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Go (inias)</p>
+            <FlowNode highlight sub="WMS · WMTS · MVT · 타일 캐싱">영상 서빙 서버</FlowNode>
+          </div>
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Salt-Stack — Python (janus)</p>
+            <div className="flex items-center gap-2">
+              <FlowNode highlight sub="inharv · 10+ 소스">수집 스케줄러</FlowNode>
+              <span className="text-muted-foreground text-xs shrink-0">→</span>
+              <FlowNode sub="indps · GDAL · DB 등록">ETL 처리</FlowNode>
             </div>
-            <span className="text-muted-foreground text-xs mt-6">→</span>
-            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground mb-1">수집 · 표준화</p>
-              <FlowNode highlight sub="H_BASE / S_BASE 추상화">janus 워크플로우</FlowNode>
-              <span className="text-xs text-muted-foreground block text-center">↓</span>
-              <FlowNode>표준 메타데이터 변환</FlowNode>
-            </div>
-            <span className="text-muted-foreground text-xs mt-6">→</span>
-            <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground mb-1">AI 추론 (K8s)</p>
-              <FlowNode highlight sub="GPUShare 70파드">객체탐지 (OBB/HBB)</FlowNode>
-              <span className="text-xs text-muted-foreground block text-center">+</span>
-              <FlowNode>세그멘테이션 · 초해상도</FlowNode>
-            </div>
-            <span className="text-muted-foreground text-xs mt-6">→</span>
-            <div className="p-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 space-y-1.5">
-              <p className="text-xs font-medium text-primary mb-1">결과 제공</p>
-              <FlowNode sub="Outbox 동기화">DB 카탈로그</FlowNode>
-              <span className="text-xs text-muted-foreground block text-center">↓</span>
-              <FlowNode sub="분석 결과 시각화">CesiumJS 뷰어</FlowNode>
+          </div>
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">FastAPI + ONNX Runtime</p>
+            <div className="flex gap-2">
+              <FlowNode sub="YOLOv11m-obb + YOLOv11m · 20cls">객체탐지</FlowNode>
+              <FlowNode sub="UPerNet+ConvNeXt · 6cls">세그멘테이션</FlowNode>
             </div>
           </div>
         </div>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex-1 border-t border-dashed border-border" />
+          <span className="shrink-0 px-2">망연계 (외부망 ↔ 폐쇄망)</span>
+          <div className="flex-1 border-t border-dashed border-border" />
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {description && <p>{description}</p>}
-        <p>
-          합류 당시 플랫폼은 단일 서버였습니다.
-          배포 한 번이 전체 서비스 다운으로 이어졌고,
-          위성 소스마다 별도 코드가 존재해 신규 소스 추가마다 파이프라인 전체를 손봐야 했습니다.
-          이 프로젝트에서 Outbox 라이브러리 구현, GPU 공유 인프라, 위성 워크플로우 추상화를
-          순차적으로 진행했습니다.
-        </p>
-      </div>
+      {/* 도입부 */}
+      <p>
+        다누리·창천위성·Sentinel·Landsat·Planet·MODIS 등 10개 이상 위성 소스를 수집·처리해
+        객체탐지·세그멘테이션 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼.
+        한국항공우주연구원 납품, 3인 팀, 2년.
+      </p>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">Outbox 패턴 라이브러리 — Debezium replication slot 파손 문제 해결</h3>
-        <p>
-          외부망과 폐쇄망 사이 DB 양방향 동기화를 Debezium CDC로 구성하고 있었는데,
-          <Highlight>replication slot이 반복적으로 파손</Highlight>됐습니다.
-          파손될 때마다 전체 스냅샷을 다시 찍어야 해서 운영 부담이 컸습니다.
-          Debezium 인프라를 걷어내고 애플리케이션 레벨에서 이벤트를 직접 관리하기로 했습니다.
-        </p>
-        <CodeBlock>{`// MyBatis Executor 인터셉터 — 비즈니스 코드 수정 없이 자동 캡처
-@Intercepts({
-  @Signature(type = Executor.class, method = "update", args = {...})
-})
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
+
+        {/* 1. ETL */}
+        <AccordionSection
+          title="위성 수집 · ETL 파이프라인"
+          hint="Salt-Stack · GDAL COG 변환 · 신규 소스 추가 코드 수정 0건"
+        >
+          <p>
+            소스마다 API·인증·파일 포맷이 상이해 신규 위성 추가 시 파이프라인 전체를 수정해야 했습니다.
+            수집 스케줄러가 <Highlight>소스 종류를 모르게</Highlight> 설계해 해결했습니다.
+            공통 추상 클래스가 인터페이스를 고정하고, 소스별 구현체는 달라지는 부분(파라미터·포맷 파싱)만 오버라이드했습니다.
+            수집 후 GDAL COG 변환·재투영(EPSG:4326), 메타 추출, DB 카탈로깅까지 자동화해 <Highlight>신규 소스 추가 코드 수정 0건</Highlight>을 달성했습니다.
+          </p>
+          <CodeBlock>{`수집 스케줄러 → 파라미터 설정 → 검색 → 다운로드
+ETL 모듈     → GDAL COG 변환 · 재투영(EPSG:4326) → 메타 추출 → DB 카탈로깅
+소스별 구현체 — 달라지는 포맷 파싱만 오버라이드`}</CodeBlock>
+        </AccordionSection>
+
+        {/* 2. 망연계 */}
+        <AccordionSection
+          title="파일 기반 양방향 DB 동기화"
+          hint="Debezium slot 반복 파손 → Outbox 직접 구현 · 이벤트 유실 0건"
+        >
+          <p>
+            국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리됐습니다.
+            위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요했습니다.
+          </p>
+          <p>
+            앱 코드 수정 없이 DB 변경 로그를 읽는 Debezium CDC를 초기 도입했습니다.
+            그러나 운영 중 <Highlight>replication slot 반복 파손</Highlight>으로 매번 전체 스냅샷 재수행이 필요했습니다.
+          </p>
+          <p>
+            CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현했습니다.
+            <Highlight>beforeCommit()</Highlight>으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 처리하고,
+            <Highlight>ThreadLocal OutboxContext</Highlight>로 폐쇄망 수신 데이터 재발행 시 무한 루프를 방지했습니다.
+            <Highlight>이벤트 유실 0건</Highlight>.
+          </p>
+          <CodeBlock>{`@Intercepts({ @Signature(type = Executor.class, method = "update", ...) })
 public class OutboxInterceptor implements Interceptor {
-    public Object intercept(Invocation invocation) throws Throwable {
-        Object result = invocation.proceed();
-        if (OutboxContext.isReplay()) return result; // 무한 루프 방지
-        captureOutboxEvent(invocation);
+    public Object intercept(Invocation inv) throws Throwable {
+        Object result = inv.proceed();
+        if (OutboxContext.isReplay()) return result; // 무한루프 방지
+        captureOutboxEvent(inv);
         return result;
     }
 }
 
-// beforeCommit() — 비즈니스 커밋과 Outbox 저장을 같은 트랜잭션으로
 @Override
 public void beforeCommit(boolean readOnly) {
-    outboxRepository.saveAll(OutboxContext.flush());
+    outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
-        <p>
-          핵심은 두 가지입니다.
-          첫째, <Highlight>beforeCommit()</Highlight>으로 비즈니스 트랜잭션과 Outbox 저장을 묶어
-          커밋 전 유실 가능성을 차단했습니다.
-          둘째, 폐쇄망에서 받은 데이터를 적용할 때 이벤트가 재발행되면 무한 루프가 생깁니다.
-          <Highlight>ThreadLocal OutboxContext</Highlight>로 재발행 여부를 추적해 차단했습니다.
-        </p>
-        <p>
-          Spring Boot 자동 설정으로 패키징해 기존 서비스에 의존성만 추가하면 즉시 적용되도록 했습니다.
-          이후 replication slot 파손으로 인한 스냅샷 재수행은 0건입니다.
-        </p>
+        </AccordionSection>
+
+        {/* 3. GPU */}
+        <AccordionSection
+          title="GPU 1장당 1파드 → 10파드"
+          hint="일 처리량 200 → 3,000건"
+        >
+          <p>
+            추론 모델 1개가 GPU 메모리를 1~2 GiB만 사용하지만 K8s 기본 할당은 파드 1개가 GPU 1장을 독점했습니다.
+            A4000은 MIG 미지원이므로 Aliyun GPUShare 스케줄러 익스텐더를 적용해
+            <Highlight>aliyun.com/gpu-mem</Highlight> 단위로 메모리를 분할했습니다.
+            객체탐지·세그멘테이션 추론 서비스를 독립 파드로 분리하고 RabbitMQ 메시지 수 기반 오토스케일링을 적용해
+            <Highlight>일 처리량 200건 → 3,000건 이상</Highlight>.
+          </p>
+          <CompareTable
+            headers={["", "기존", "GPUShare 적용"]}
+            rows={[
+              { cells: ["리소스 키", "nvidia.com/gpu", "aliyun.com/gpu-mem"] },
+              { cells: ["할당 단위", "1장 전체", "1 GiB"] },
+              { cells: ["파드 / GPU", "1파드", "최대 10파드"], highlight: true },
+            ]}
+          />
+        </AccordionSection>
+
+        {/* 4. OD/SEG */}
+        <AccordionSection
+          title="OD mAP50 0.644 · SEG mIoU 0.7205 달성"
+          hint="OBB/HBB 이원화 · 회전 aug 역효과 발견 · DINOv2 실패 → ConvNeXt-22k"
+        >
+          <p>
+            <strong className="text-foreground">객체탐지</strong>는 20클래스를 OBB·HBB로 이원화했습니다.
+            회전 방향이 식별에 중요한 함선·항공기 등 대형 15cls는 OBB(YOLOv11m-obb),
+            위치만 중요한 차량·트럭 소형 5cls는 HBB(YOLOv11m)로 분리했습니다.
+            위성은 나디르(직하방) 고정 촬영이라 객체 방향이 이미 정렬되어 있어
+            45° 회전 augmentation 적용 시 mAP50이 오히려 하락했습니다.
+          </p>
+          <CompareTable
+            headers={["모델", "타입", "augmentation", "mAP50"]}
+            rows={[
+              { cells: ["YOLOv11m", "HBB", "mosaic + mixup + copy_paste", "0.644"], highlight: true },
+              { cells: ["YOLOv11m", "HBB", "+ degrees=45 회전", "0.577 ↓"], muted: true },
+              { cells: ["YOLOv11m-obb", "OBB", "mosaic only (ProBIoU OOM 방지)", "0.604"], highlight: true },
+            ]}
+          />
+          <p>
+            <strong className="text-foreground">세그멘테이션</strong>은 나지(ground)↔도로(road) RGB 유클리드 거리가 8.2로
+            색상만으로는 구분이 어려웠습니다.
+            DINOv2 ViT-B/14를 적용했으나 기준선(0.72) 미달로 조기 종료했습니다.
+            ImageNet-22k ConvNeXt-Base + 도로 중심선 보조 학습(Skeleton Head)으로
+            최종 <Highlight>mIoU 0.7205</Highlight>를 달성했습니다.
+          </p>
+          <CompareTable
+            headers={["backbone", "decoder", "mIoU", "비고"]}
+            rows={[
+              { cells: ["ConvNeXt-Base (ImageNet-22k)", "UPerNet + Skeleton Head", "0.7205", "✓ 최종 채택"], highlight: true },
+              { cells: ["HRNet-W48 (ImageNet-1k)", "UPerNet", "0.6857", ""] },
+              { cells: ["DINOv2 ViT-B/14", "UPerNet", "0.6656", "조기 종료"], muted: true },
+            ]}
+          />
+        </AccordionSection>
+
+        {/* 5. 영상 서빙 */}
+        <AccordionSection
+          title="영상 서빙 속도 개선"
+          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현 · CesiumJS 커스텀 프로바이더"
+        >
+          <p>
+            수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어 렌더링이 불가능합니다.
+            Go로 영상 서빙 서버를 구현하고 WMS·WMTS·MVT 세 프로토콜을 지원했습니다.
+          </p>
+          <CompareTable
+            headers={["프로토콜", "방식", "용도"]}
+            rows={[
+              { cells: ["WMS", "요청마다 동적 렌더링", "임의 영역·해상도 조회"] },
+              { cells: ["WMTS", "사전 분할 타일 디스크 캐싱", "반복 조회 즉시 응답 (2.4s → 0.4s)"], highlight: true },
+              { cells: ["MVT", "객체탐지 결과 벡터 타일화", "줌 레벨별 탐지 결과 오버레이 (신규)"], highlight: true },
+            ]}
+          />
+          <p>
+            CesiumJS 표준 ImageryProvider로는 WMTS 커스텀 파라미터 제어가 불가해
+            <Highlight>커스텀 ImageryProvider</Highlight>를 직접 구현했습니다.
+            소스별 좌표계·타일 URL 패턴 차이를 단일 인터페이스로 추상화했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 6. 테스트 */}
+        <AccordionSection
+          title="테스트 환경 구축"
+          hint="JUnit · k6 50VU · 에러율 11.22% → 0%"
+        >
+          <p>
+            E2E·API 테스트는 실제 위성 메타·추론 데이터가 DB에 있어야 유효했습니다.
+            Mock DB로는 대체 불가하고 부하 테스트는 운영에 영향을 줄 수 없어
+            운영과 동일한 구성의 격리 클러스터를 별도 구축했습니다.
+            JUnit으로 비즈니스 로직·API 통합 테스트를, k6로 엔드포인트 부하 테스트를 수행했으며
+            버전별 배포 검증도 이 환경에서 진행했습니다.
+          </p>
+          <p>
+            PostGIS 쿼리 최적화 검증 결과: k6 50VU 에러율 <Highlight>11.22% → 0%</Highlight>,
+            처리량 <Highlight>392 → 1,177 req/s</Highlight>.
+          </p>
+        </AccordionSection>
+
       </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">GPU 1장에서 70파드 — Aliyun GPUShare 메모리 분할</h3>
-        <p>
-          추론 모델 하나가 GPU 메모리를 1~2GiB밖에 쓰지 않는데도
-          K8s 기본 할당 방식은 파드 하나가 GPU 한 장 전체를 독점하는 구조입니다.
-          자원의 90% 이상이 놀고 있었습니다.
-        </p>
-        <CodeBlock>{`# 기존 — GPU 카운트 단위, 파드 1개 = GPU 1장 점유
-resources:
-  limits:
-    nvidia.com/gpu: 1
-
-# Aliyun GPUShare — 메모리 단위 분할
-resources:
-  limits:
-    aliyun.com/gpu-mem: 1  # 1GiB 단위 할당
-
-# 결과: 물리 GPU 1장에서
-# gprocessor 30파드 × 1GiB + inferencer 40파드 × 1GiB = 70파드 동시 운영`}</CodeBlock>
-        <p>
-          Aliyun GPUShare 스케줄러 익스텐더를 직접 구성해
-          <Highlight>aliyun.com/gpu-mem</Highlight> 단위로 파드별 GPU 메모리를 할당했습니다.
-          GPU 노드에 node selector를 분리해 추론 워크로드와 일반 워크로드도 격리했습니다.
-        </p>
-        <p>
-          자원을 추가 구매하지 않고 스케줄러 확장만으로 70배 더 많은 파드를 운영한 결과,
-          인프라 설계에서 "얼마나 살 것인가"보다 "있는 것을 얼마나 쓸 것인가"가 먼저라는 걸 다시 확인했습니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">janus 워크플로우 — 파이프라인이 위성 소스를 모른다</h3>
-        <p>
-          다루는 위성 소스가 다누리·창천위성·Sentinel·Landsat·Planet·MODIS 등 10개가 넘었고,
-          각각 API·인증·수집 방식이 달랐습니다.
-          소스마다 별도 코드를 짜다 보니 신규 위성 추가 때마다 파이프라인 전체를 손봐야 했습니다.
-        </p>
-        <p>
-          설계 목표는 하나였습니다.
-          <Highlight>watchHarvest.py가 소스 종류를 모르게</Highlight> 만드는 것.
-          수집 스케줄러가 어떤 위성을 처리하는지 알게 되는 순간,
-          신규 소스 추가가 파이프라인 수정으로 번지기 때문입니다.
-        </p>
-        <CodeBlock>{`# watchHarvest.py — 어떤 위성 소스든 같은 순서로 호출
-m = commonUtil.loadModule('harvest.' + modnm, 'harvest')
-harvester = m.Harvester(db, mod, slog)
-
-harvester.set_config()     # 수집 설정 로드
-harvester.set_param()      # 검색 조건 구성
-harvester.search()         # 목록 조회
-harvester.download()       # 파일 수집
-harvester.move_to_input()  # inbox 이동 → 표준화 트리거
-
-# H_API_SENTINEL.py — Sentinel은 set_param만 다르다
-class Harvester(HarvesterBase):
-    def set_param(self):
-        filters.append("Collection/Name eq 'SENTINEL-2'")
-        filters.append(f"ContentDate/Start gt {starttime}")
-    # set_config·search·download·move_to_input은 HarvesterBase 그대로`}</CodeBlock>
-        <p>
-          표준화 단계도 같은 구조입니다.
-          <Highlight>StandardBase</Highlight>가 메타데이터 변환·표준 영상 생성·inbox 이동 순서를 고정하고,
-          소스별 <Highlight>Standardizer</Highlight>는 원본 포맷 파싱 로직만 담습니다.
-          geocode(리버스 지오코딩)와 카탈로그 파이프라인은 소스 추가 시 건드리지 않아도 됩니다.
-        </p>
-        <p>
-          추론 단계에서는 객체 크기에 따라 OBB/HBB 모델을 자동 라우팅했습니다.
-          소형 클래스(차량·소형 선박)는 방향 정보가 오히려 노이즈가 됐기 때문에
-          클래스 ID 기준으로 HBB 모델로 분기하도록 했습니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">OBB/HBB 자동 라우팅 — 객체 크기 기반 모델 선택</h3>
-        <p>
-          위성 영상 객체탐지에서 OBB(Oriented Bounding Box)는 방향이 있는 객체를 정밀하게 검출하지만,
-          소형 객체에서는 오히려 노이즈가 됐습니다.
-        </p>
-        <CodeBlock>{`# 클래스별 크기 특성에 따라 모델 자동 라우팅
-SMALL_CLASSES = {4, 5, 6, 7, 17}  # 소형 객체 클래스 (차량·소형선박 등)
-
-def route_inference(image, class_ids):
-    if any(c in SMALL_CLASSES for c in class_ids):
-        return hbb_model.infer(image)   # 소형 → HBB
-    return obb_model.infer(image)       # 일반 → OBB`}</CodeBlock>
-        <p>
-          클래스 ID 기준으로 <Highlight>OBB/HBB를 자동 라우팅</Highlight>하도록 설계했습니다.
-          두 모델을 독립 파드로 배포해 각각 독립적으로 스케일링할 수 있게 했습니다.
-          <Highlight>좌표계(EPSG)</Highlight>, <Highlight>COG 포맷</Highlight>, 다시기 영상 간 방사 차이 같은 도메인 특성을 모르면
-          모델 서빙을 아무리 잘 짜도 전처리에서 결과가 틀어집니다.
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">Redis 역인덱스 — 권한 변경 시 세션 풀스캔 제거</h3>
-        <p>
-          어드민이 역할 단위로 권한을 일괄 변경하면 해당 역할의 모든 유저 세션을 즉시 무효화해야 합니다.
-          기존 구조는 전체 세션을 풀스캔한 뒤 userId를 비교하는 방식이었습니다.
-        </p>
-        <CodeBlock>{`// 기존 — 전체 세션 풀스캔 O(N)
-Set<String> allSessionIds = redisTemplate.keys("SESSION:*");
-for (String sessionId : allSessionIds) {
-    if (affectedUserIds.contains(getSession(sessionId).getUserId()))
-        invalidate(sessionId);
-}
-
-// 역인덱스 — userId로 세션 목록 즉시 조회 O(1)
-// 로그인 시: SADD USER_SESSIONS:{userId} {sessionId}
-Set<String> sessionIds = redisTemplate.opsForSet()
-    .members("USER_SESSIONS:" + userId);
-sessionIds.forEach(this::invalidate);`}</CodeBlock>
-        <p>
-          로그인 시 <Highlight>userId → sessionId Set</Highlight> 역인덱스를 함께 저장합니다.
-          <Highlight>O(N) → O(1)</Highlight>로 전환됐고, 세션 수가 늘어도 응답 시간이 변하지 않습니다.
-        </p>
-      </div>
-
     </div>
   );
 }
