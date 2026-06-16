@@ -32,7 +32,7 @@ export const projects: Project[] = [
     title: "NIPA RabbitMQ 기반 변화탐지 AI 처리 플랫폼",
     description: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 변화탐지 플랫폼. NIPA(정보통신산업진흥원) 지원 사업.",
     tags: ["RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "PyTorch", "FastAPI", "Kubernetes"],
-    imageUrl: "/gis-platform_thum.png",
+    imageUrl: "/nipa_logo.svg",
     status: "deployed",
     type: "company",
     category: ["backend", "ai"],
@@ -48,7 +48,10 @@ export const projects: Project[] = [
       "[폐쇄망 분산 ID] 분리망 환경에서 외부 코디네이터 접근 불가, UUID로는 발생 서버 추적 불가 → Snowflake 알고리즘 직접 구현, worker ID에 망 정보 인코딩",
       "[프론트 유지보수] Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 → Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
     ],
-    resources: [],
+    resources: [
+      { label: "NIPA 로고", url: "/nipa_logo.svg", type: "image" },
+      { label: "웹 화면", url: "/gis-platform_thum.png", type: "image" },
+    ],
   },
   {
     id: "team-mcp-agent",
@@ -102,10 +105,11 @@ export const projects: Project[] = [
       "[세션 풀스캔] 권한 변경 시 Redis 전체 세션 풀스캔 → userId→sessionId 역인덱스 구축 — O(N)→O(1)",
     ],
     resources: [
+      { label: "로고", url: "/kari_logo.svg", type: "image" },
+      { label: "플랫폼 소개", url: "/kari_intro.png", type: "image" },
+      { label: "웹 화면", url: "/kari_web.png", type: "image" },
       { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
       { label: "Outbox GitHub", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
-      { label: "웹 화면", url: "/kari_web.png", type: "image" },
-      { label: "플랫폼 소개", url: "/kari_intro.png", type: "image" },
     ],
   },
 

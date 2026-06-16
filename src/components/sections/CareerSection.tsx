@@ -71,7 +71,7 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
                       src={proj.imageUrl}
                       alt={proj.title}
                       fill
-                      style={{ objectFit: 'cover' }}
+                      style={{ objectFit: proj.imageUrl.endsWith('.svg') ? 'contain' : 'cover', padding: proj.imageUrl.endsWith('.svg') ? '16px' : undefined }}
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   ) : (

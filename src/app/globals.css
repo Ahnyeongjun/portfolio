@@ -358,6 +358,7 @@ code, pre {
   --pf-maxw: 1120px;
   --pf-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   background: var(--pf-bg);
+  min-height: 100vh;
   color: var(--pf-text);
   font-family: "Pretendard", var(--font-sans), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -482,10 +483,7 @@ code, pre {
   font-size: clamp(40px, 6.6vw, 76px); font-weight: 800; line-height: 1.08;
   letter-spacing: -0.045em; margin-bottom: 26px; word-break: keep-all;
 }
-.pf-hero-h1 .hl {
-  background: linear-gradient(120deg, var(--pf-ac-strong), var(--pf-mint));
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-}
+.pf-hero-h1 .hl { color: var(--pf-ac-strong); }
 .pf-hero-tagline { font-size: clamp(16px, 1.7vw, 19px); color: var(--pf-text-dim); max-width: 540px; line-height: 1.65; }
 .pf-hero-meta {
   display: flex; flex-wrap: wrap; gap: 18px 26px; margin-top: 30px;
@@ -499,8 +497,11 @@ code, pre {
   font-weight: 700; font-size: 15px; padding: 14px 22px; border-radius: 12px;
   transition: transform 0.16s var(--pf-ease), box-shadow 0.22s, background 0.2s;
 }
-.pf-btn-primary { background: var(--pf-ac); color: #fff; box-shadow: 0 8px 26px var(--pf-ac-soft); }
+.pf-btn-primary { background: var(--pf-ac); color: #fff; -webkit-text-fill-color: #fff; box-shadow: 0 8px 26px var(--pf-ac-soft); }
 .pf-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px var(--pf-ac-soft); }
+/* Override #portfolio-page a { color: inherit } specificity (101) for button links */
+#portfolio-page .pf-btn-primary { color: #fff; -webkit-text-fill-color: #fff; }
+#portfolio-page .pf-nav-cta { color: #fff; -webkit-text-fill-color: #fff; }
 .pf-btn-ghost { background: var(--pf-surface-2); color: var(--pf-text); border: 1px solid var(--pf-bdr-strong); }
 .pf-btn-ghost:hover { transform: translateY(-2px); border-color: var(--pf-text-mute); }
 .pf-hero-split { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 56px; align-items: center; }
@@ -587,7 +588,7 @@ code, pre {
 .pf-metric-flow { display: flex; align-items: baseline; gap: 9px; font-family: var(--font-family-mono); }
 .pf-metric-from { font-size: 16px; color: var(--pf-text-mute); text-decoration: line-through; text-decoration-color: var(--pf-text-mute); }
 .pf-metric-arrow { color: var(--pf-ac); font-weight: 700; }
-.pf-metric-to { font-size: 30px; font-weight: 700; color: var(--pf-text); letter-spacing: -0.02em; }
+.pf-metric-to { font-size: 38px; font-weight: 800; color: var(--pf-ac); letter-spacing: -0.04em; line-height: 1; margin-top: 4px; }
 .pf-metric-label { font-size: 15px; font-weight: 600; margin-top: 14px; }
 .pf-metric-note { font-size: 12.5px; color: var(--pf-text-mute); margin-top: 4px; }
 
@@ -733,8 +734,8 @@ code, pre {
 .pf-contact-link:hover { transform: translateY(-3px); border-color: var(--pf-ac-line); background: var(--pf-surface-2); }
 .pf-contact-link .cl-key { font-family: var(--font-family-mono); font-size: 11px; color: var(--pf-text-mute); text-transform: uppercase; letter-spacing: 0.08em; display: block; }
 .pf-contact-link .cl-val { color: var(--pf-text); display: block; }
-.pf-footer { margin-top: 80px; padding: 30px 0; border-top: 1px solid var(--pf-bdr); }
-.pf-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pf-footer { background: var(--pf-bg); padding: 36px 0 52px; text-align: center; }
+.pf-footer-inner { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .pf-footer-note { font-size: 13px; color: var(--pf-text-mute); }
 .pf-footer-meta { font-family: var(--font-family-mono); font-size: 12px; color: var(--pf-text-mute); }
 
