@@ -31,7 +31,6 @@ export function Header() {
     <nav className={`pf-nav print:hidden${scrolled ? ' scrolled' : ''}`}>
       <div className="pf-nav-inner">
         <a href="#top" className="pf-brand">
-          <span className="pf-brand-mark">AYJ</span>
           <span>
             <span className="pf-brand-name">{profile.name}</span>
             <span className="pf-brand-role">{profile.role}</span>
@@ -49,17 +48,18 @@ export function Header() {
         </div>
 
         <div className="pf-nav-right">
-          <button
-            type="button"
-            onClick={toggleLang}
-            className="pf-lang-toggle"
-            aria-label="Toggle language"
-          >
-            <span className={lang === 'ko' ? 'active' : ''}>KO</span>
-            <span className="sep">/</span>
-            <span className={lang === 'en' ? 'active' : ''}>EN</span>
-          </button>
-
+          <div className="pf-lang-toggle">
+            <button
+              type="button"
+              className={`pf-lang-btn${lang === 'ko' ? ' active' : ''}`}
+              onClick={() => lang !== 'ko' && toggleLang()}
+            >KO</button>
+            <button
+              type="button"
+              className={`pf-lang-btn${lang === 'en' ? ' active' : ''}`}
+              onClick={() => lang !== 'en' && toggleLang()}
+            >EN</button>
+          </div>
           <a href={`mailto:${profile.email}`} className="pf-nav-cta">
             <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M3 6h18v12H3z" /><path d="M3 7l9 6 9-6" />

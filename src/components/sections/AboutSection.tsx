@@ -1,4 +1,3 @@
-import { SectionHead } from '@/components/SectionHead';
 import { profile } from '@/data/profile';
 
 export function AboutSection() {
@@ -10,7 +9,13 @@ export function AboutSection() {
     >
       <div className="pf-wrap pf-about-grid">
         <div className="reveal">
-          <SectionHead index="02" label="소개" title={'구현에서 끝내지 않고\n구조와 생산성까지 고민합니다'} />
+          <div className="pf-register">
+            <span className="pf-reg-index">§ 02</span>
+            <span className="pf-reg-rule" />
+            <span className="pf-reg-label">소개</span>
+            <span className="pf-reg-fig">FIG.02</span>
+          </div>
+          <h2 className="pf-section-title">구현에서 끝내지 않고{'\n'}구조와 생산성까지 고민합니다</h2>
           <div className="pf-about-side" style={{ marginTop: 28 }}>
             <div className="pf-about-fact">
               <span className="af-key">Now</span>
