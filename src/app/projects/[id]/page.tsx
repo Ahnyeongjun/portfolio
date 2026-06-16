@@ -4,19 +4,13 @@ import Image from "next/image";
 import { ArrowLeft, Calendar, User, Users, Building2, ExternalLink, FileText, Link2 } from "lucide-react";
 import { projects, getProjectById } from "@/lib/projects";
 import { ImageSlideshow } from "@/components/ImageSlideshow";
-import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
-import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
-import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
-import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
-import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
-import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
-import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
 import { KariSatelliteRetrospective } from "@/components/retrospectives/KariSatelliteRetrospective";
 import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSatelliteRetrospective";
-import { SecuritySatelliteRetrospective } from "@/components/retrospectives/SecuritySatelliteRetrospective";
-import { PillCareRetrospective } from "@/components/retrospectives/PillCareRetrospective";
-import { InopsRetrospective } from "@/components/retrospectives/InopsRetrospective";
-import { NanosatelliteAIRetrospective } from "@/components/retrospectives/NanosatelliteAIRetrospective";
+import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
+import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
+import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
+import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
+import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -61,7 +55,8 @@ export default async function ProjectPage({
     notFound();
   }
 
-  const backHref = project.type === "company" ? "/#career" : "/#side-projects";
+  const backHref = project.type === "company" ? "/#career" : "/#projects";
+  const hasRetrospective = ["kari-satellite", "nipa-satellite", "momentier", "chugjibup", "wedding", "mapin", "simvex"].includes(project.id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +83,7 @@ export default async function ProjectPage({
             {(() => {
               const imageResources = project.resources?.filter(r => r.type === "image") ?? [];
               const allImages = [
-                ...(project.imageUrl && !imageResources.some(r => r.url === project.imageUrl)
+                ...(project.imageUrl && !project.imageUrl.endsWith(".svg") && !imageResources.some(r => r.url === project.imageUrl)
                   ? [{ url: project.imageUrl, label: project.title }]
                   : []),
                 ...imageResources.map(r => ({ url: r.url, label: r.label })),
@@ -171,7 +166,7 @@ export default async function ProjectPage({
 
             {/* Role Details */}
             {project.roleDetails && project.roleDetails.length > 0 &&
-            !["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) && (
+            !hasRetrospective && (
               <div className="mb-10 space-y-8">
                 {project.roleDetails.map((roleDetail, index) => (
                   <div key={index}>
@@ -193,7 +188,7 @@ export default async function ProjectPage({
 
             {/* Details fallback */}
             {(!project.roleDetails || project.roleDetails.length === 0) && project.details.length > 0 &&
-            !["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) && (
+            !hasRetrospective && (
               <ul className="mb-10 space-y-2">
                 {project.details.map((detail, index) => (
                   <li key={index} className="flex items-start gap-3">
@@ -205,7 +200,7 @@ export default async function ProjectPage({
             )}
 
             {/* Achievements */}
-            {!["kari-satellite", "nipa-satellite", "security-satellite", "inops-optimization", "nanosatellite-ai"].includes(project.id) &&
+            {!hasRetrospective &&
             project.achievements.length > 0 && (
               <ul className="mb-12 space-y-3">
                 {project.achievements.map((achievement, index) => (
@@ -218,23 +213,17 @@ export default async function ProjectPage({
             )}
 
             {/* Retrospective */}
-            {project.id === "simvex" && <SimvexRetrospective />}
-            {project.id === "momentier" && <MomentierRetrospective />}
-            {project.id === "booksight" && <BooksightRetrospective />}
-            {project.id === "chukjibeob" && <ChukjibeobRetrospective />}
-            {project.id === "with-ing" && <WithingRetrospective />}
-            {project.id === "mapin" && <MapinRetrospective />}
-            {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
             {project.id === "kari-satellite" && <KariSatelliteRetrospective description={project.longDescription} />}
             {project.id === "nipa-satellite" && <NipaSatelliteRetrospective description={project.longDescription} />}
-            {project.id === "security-satellite" && <SecuritySatelliteRetrospective description={project.longDescription} />}
-            {project.id === "pillcare" && <PillCareRetrospective />}
-            {project.id === "inops-optimization" && <InopsRetrospective />}
-            {project.id === "nanosatellite-ai" && <NanosatelliteAIRetrospective />}
+            {project.id === "momentier" && <MomentierRetrospective />}
+            {project.id === "chugjibup" && <ChukjibeobRetrospective />}
+            {project.id === "wedding" && <WithingRetrospective />}
+            {project.id === "mapin" && <MapinRetrospective />}
+            {project.id === "simvex" && <SimvexRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.some(r => r.type !== "image") && (
-              <section>
+              <section className="mt-12">
                 <h2 className="text-2xl font-bold text-foreground mb-6">
                   관련 자료
                 </h2>
