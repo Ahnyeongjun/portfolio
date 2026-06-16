@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { SectionHead } from '@/components/SectionHead';
 import type { Project } from '@/lib/projects';
 
 interface CareerSectionProps {
@@ -35,7 +34,11 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
       style={{ background: 'var(--pf-bg-soft)', borderTop: '1px solid var(--pf-bdr)', borderBottom: '1px solid var(--pf-bdr)' }}
     >
       <div className="pf-wrap">
-        <SectionHead index="04" label="경력" title="한컴인스페이스 · 연구원" sub="위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환" />
+        <div className="reveal" style={{ marginBottom: 34 }}>
+          <span className="pf-kicker">경력</span>
+          <h2 className="pf-h-sec">한컴인스페이스 · 연구원</h2>
+          <p className="pf-p-sec">위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환</p>
+        </div>
 
         <div className="pf-career-head reveal">
           <span className="pf-career-logo">한컴</span>

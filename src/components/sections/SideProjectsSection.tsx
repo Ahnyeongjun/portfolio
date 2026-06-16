@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { SectionHead } from '@/components/SectionHead';
 import type { Project } from '@/lib/projects';
 
 interface SideProjectsSectionProps {
@@ -31,7 +30,10 @@ export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
   return (
     <section id="projects" className="pf-section-pad">
       <div className="pf-wrap">
-        <SectionHead index="05" label="사이드 프로젝트" title="팀과 함께, 새로운 기술을 직접 도입하며" />
+        <div className="reveal" style={{ marginBottom: 34 }}>
+          <span className="pf-kicker">사이드 프로젝트</span>
+          <h2 className="pf-h-sec">팀과 함께, 새로운 기술을 직접 도입하며</h2>
+        </div>
 
         <div className="pf-proj-grid" style={{ marginTop: 32 }}>
           {projects.map((proj, i) => {

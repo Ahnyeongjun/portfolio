@@ -8,15 +8,8 @@ export function BackgroundSection() {
       style={{ background: 'var(--pf-bg-soft)', borderTop: '1px solid var(--pf-bdr)', borderBottom: '1px solid var(--pf-bdr)' }}
     >
       <div className="pf-wrap">
-        {/* Header: ghost index + register only (no h2 title, matches reference) */}
-        <div className="reveal pf-sec-head" style={{ marginBottom: 36 }}>
-          <span className="pf-ghost-index">06</span>
-          <div className="pf-register">
-            <span className="pf-reg-index">§ 06</span>
-            <span className="pf-reg-rule" />
-            <span className="pf-reg-label">학력 · 활동</span>
-            <span className="pf-reg-fig">FIG.06</span>
-          </div>
+        <div className="reveal" style={{ marginBottom: 36 }}>
+          <span className="pf-kicker">학력 · 활동</span>
         </div>
 
         {/* Education | Certifications — 2 columns */}

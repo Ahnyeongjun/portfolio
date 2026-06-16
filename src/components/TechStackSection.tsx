@@ -1,39 +1,34 @@
-import { SectionHead } from '@/components/SectionHead';
-
 const techStack = [
-  { label: 'Backend', items: ['Spring Boot', 'Kotlin', 'Java', 'FastAPI', 'Python', 'Go'] },
-  { label: 'Frontend', items: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'Storybook'] },
-  { label: 'Database', items: ['PostgreSQL', 'MySQL', 'Oracle', 'Redis', 'RabbitMQ'] },
-  { label: 'DevOps', items: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'Kafka', 'Nginx'] },
-  { label: 'AI / ML', items: ['PyTorch', 'YOLOv5', 'ONNX Runtime', 'OpenAI API', 'MCP'] },
-  { label: 'Geospatial', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles', 'PostGIS'] },
+  { label: 'Backend', sub: 'server-side', items: ['Spring Boot', 'Kotlin', 'Java', 'FastAPI', 'Python', 'Go'] },
+  { label: 'Frontend', sub: 'client-side', items: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'Storybook'] },
+  { label: 'Database', sub: 'data-layer', items: ['PostgreSQL', 'MySQL', 'Oracle', 'Redis', 'RabbitMQ'] },
+  { label: 'DevOps', sub: 'infra-ops', items: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'Kafka', 'Nginx'] },
+  { label: 'AI / ML', sub: 'ai-ml', items: ['PyTorch', 'YOLOv5', 'ONNX Runtime', 'OpenAI API', 'MCP'] },
+  { label: 'Geospatial', sub: 'geo-data', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles', 'PostGIS'] },
 ];
-
-const allTech = techStack.flatMap((c) => c.items);
 
 export function TechStackSection() {
   return (
     <section id="skills" className="pf-section-pad">
       <div className="pf-wrap">
-        <SectionHead index="03" label="기술 스택" title="백엔드를 중심으로, 프론트엔드와 인프라까지" />
-        <div className="pf-stack-list reveal">
+        <div className="reveal" style={{ marginBottom: 34 }}>
+          <span className="pf-kicker">기술 스택</span>
+          <h2 className="pf-h-sec">함께 일한 기술들</h2>
+        </div>
+        <div className="pf-stack-wrap reveal">
           {techStack.map((cat) => (
-            <div key={cat.label} className="pf-stack-row">
-              <div className="pf-stack-cat">{cat.label}</div>
-              <div className="pf-stack-tags">
-                {cat.items.map((item) => (
-                  <span key={item} className="pf-tech-chip">{item}</span>
+            <div key={cat.label} className="pf-stack-card">
+              <div className="pf-stack-cat">
+                {cat.label}
+                <span className="pf-stack-cat-sub">{cat.sub}</span>
+              </div>
+              <div className="pf-chips">
+                {cat.items.map((it) => (
+                  <span key={it} className="pf-chip">{it}</span>
                 ))}
               </div>
             </div>
           ))}
-        </div>
-        <div className="pf-marquee reveal">
-          <span className="pf-marquee-track">
-            {[...allTech, ...allTech].map((x, i) => (
-              <span key={i} className="pf-tech-chip">{x}</span>
-            ))}
-          </span>
         </div>
       </div>
     </section>

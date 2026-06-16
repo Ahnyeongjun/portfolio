@@ -1,7 +1,6 @@
 import { LangProvider } from "@/context/lang";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { HudFrame } from "@/components/HudFrame";
 import { RevealObserver } from "@/components/RevealObserver";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { ImpactSection } from "@/components/ImpactSection";
@@ -36,9 +35,6 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="pf-bg-field" />
-      <div className="pf-bg-grid" />
-      <HudFrame />
       <RevealObserver />
       <Header />
       <main style={{ paddingTop: 68 }}>
