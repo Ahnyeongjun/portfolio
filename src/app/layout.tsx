@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { LangProvider } from "@/context/lang";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -92,7 +93,9 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
       </head>
       <body className="antialiased font-sans">
-        {children}
+        <LangProvider>
+          {children}
+        </LangProvider>
         <Analytics />
       </body>
     </html>

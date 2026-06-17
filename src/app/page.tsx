@@ -1,4 +1,3 @@
-import { LangProvider } from "@/context/lang";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
@@ -44,7 +43,6 @@ export default function Home() {
     .filter((p) => !p.slug.startsWith('interview-'))
     .slice(0, 4);
   return (
-    <LangProvider>
     <div id="portfolio-page">
       <script
         type="application/ld+json"
@@ -65,6 +63,5 @@ export default function Home() {
       </main>
       <Footer />
     </div>
-    </LangProvider>
   );
 }
