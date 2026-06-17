@@ -13,8 +13,18 @@ import { ContactSection } from "@/components/sections/ContactSection";
 import { projects } from "@/lib/projects";
 import { profile } from "@/data/profile";
 
-const companyProjects = projects.filter((p) => p.type === "company" && !p.hidden);
-const sideProjects = projects.filter((p) => (p.type === "team" || p.type === "personal") && !p.hidden);
+function parsePeriodStart(period: string): number {
+  const m = period.match(/(\d{4})\.(\d{2})/);
+  return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 0;
+}
+
+const companyProjects = projects
+  .filter((p) => p.type === "company" && !p.hidden)
+  .sort((a, b) => parsePeriodStart(b.period) - parsePeriodStart(a.period));
+
+const sideProjects = projects
+  .filter((p) => (p.type === "team" || p.type === "personal") && !p.hidden)
+  .sort((a, b) => parsePeriodStart(b.period) - parsePeriodStart(a.period));
 
 const jsonLd = {
   "@context": "https://schema.org",
