@@ -76,11 +76,13 @@ function FlowNode({ children, highlight, sub }: { children: React.ReactNode; hig
 function AccordionSection({
   title,
   hint,
+  module: moduleName,
   children,
   defaultOpen,
 }: {
   title: string;
   hint?: string;
+  module?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
@@ -88,8 +90,13 @@ function AccordionSection({
     <details className="group border border-border rounded-xl overflow-hidden" open={defaultOpen}>
       <summary className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none bg-muted/20 hover:bg-muted/30 transition-colors [list-style:none] [&::-webkit-details-marker]:hidden">
         <div className="flex-1 min-w-0">
+          {moduleName && (
+            <span className="inline-block mb-1 px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/10 text-primary mr-2 align-middle">
+              {moduleName}
+            </span>
+          )}
           <span className="font-semibold text-foreground text-sm">{title}</span>
-          {hint && <span className="ml-2.5 text-xs text-muted-foreground">{hint}</span>}
+          {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
         </div>
         <svg
           className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-open:rotate-180"
@@ -111,48 +118,77 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
 
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처</p>
-        <div className="flex justify-center">
-          <FlowNode sub="사용자 · 어드민 (Thymeleaf)">웹 프론트엔드</FlowNode>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — 6개 모듈</p>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary/40" />
+              단독 설계·구현
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-background border border-border" />
+              일부 기여·고도화
+            </span>
+          </div>
         </div>
+
+        {/* 프론트엔드 3개 */}
+        <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">프론트엔드 (Thymeleaf · Spring MVC)</p>
+          <div className="grid grid-cols-3 gap-2">
+            <FlowNode highlight sub="AI 분석 신청 · 지구본 가시화">사용자 페이지</FlowNode>
+            <FlowNode highlight sub="수집·분석 현황 어드민">관리자 페이지</FlowNode>
+            <FlowNode highlight sub="서비스 소개">인트로 페이지</FlowNode>
+          </div>
+        </div>
+
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+
+        {/* 백엔드 3개 */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Spring Boot</p>
+            <FlowNode highlight sub="API 200여 개 · 테이블 35개 · Outbox">API 서버</FlowNode>
+          </div>
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Spring Boot</p>
+            <FlowNode highlight sub="세션 · 권한 · SSO">Auth 서버</FlowNode>
+          </div>
+          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Go</p>
+            <FlowNode highlight sub="WMS · WMTS · MVT · 파일 다운로드">타일 / 파일 서버</FlowNode>
+          </div>
+        </div>
+
+        {/* ETL + AI */}
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Spring Boot (inops-api-svr)</p>
-            <FlowNode highlight sub="CRUD · 권한 · Outbox · 세션">API 서버</FlowNode>
-          </div>
-          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Go (inias)</p>
-            <FlowNode highlight sub="WMS · WMTS · MVT · 타일 캐싱">영상 서빙 서버</FlowNode>
-          </div>
-          <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Salt-Stack — Python (janus)</p>
-            <div className="flex items-center gap-2">
-              <FlowNode highlight sub="inharv · 10+ 소스">수집 스케줄러</FlowNode>
-              <span className="text-muted-foreground text-xs shrink-0">→</span>
-              <FlowNode sub="indps · GDAL · DB 등록">ETL 처리</FlowNode>
-            </div>
+            <p className="text-xs font-medium text-muted-foreground">Salt-Stack · Python</p>
+            <FlowNode sub="10+ 소스 · GDAL COG">수집 · ETL</FlowNode>
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">FastAPI + ONNX Runtime</p>
-            <div className="flex gap-2">
-              <FlowNode sub="YOLOv11m-obb + YOLOv11m · 20cls">객체탐지</FlowNode>
-              <FlowNode sub="UPerNet+ConvNeXt · 6cls">세그멘테이션</FlowNode>
-            </div>
+            <FlowNode highlight sub="OD · SEG · SR">AI 추론</FlowNode>
           </div>
         </div>
+
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex-1 border-t border-dashed border-border" />
-          <span className="shrink-0 px-2">망연계 (외부망 ↔ 폐쇄망)</span>
+          <span className="shrink-0 px-2">망연계 (외부망 ↔ 폐쇄망) · Kubernetes · PostgreSQL</span>
           <div className="flex-1 border-t border-dashed border-border" />
         </div>
       </div>
 
       {/* 도입부 */}
       <p>
-        다누리·창천위성·Sentinel·Landsat·Planet·MODIS 등 10개 이상 위성 소스를 수집·처리해
-        객체탐지·세그멘테이션 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼.
-        한국항공우주연구원 납품, 3인 팀, 2년.
+        항공우주연구원이 발사한 초소형위성 20기의 군집위성 데이터를 수집·처리·가시화하는 통합 플랫폼입니다.
+        사용자는 객체탐지·변화탐지·영상분할 등 AI 분석을 신청하고, CesiumJS 지구본 위에서
+        시계열 비교와 분할화면으로 결과를 직접 확인할 수 있습니다.
+      </p>
+      <p>
+        어드민 페이지에서는 위성별 수집 현황과 분석 진행 상황을 한눈에 모니터링합니다.
+        API 200여 개·테이블 35개 규모의 시스템을 6개 서비스 모듈로 구성했으며,
+        ETL 파이프라인을 제외한 나머지 모듈 전체를 처음부터 설계·구현했습니다. 3인 팀, 2년.
       </p>
 
       <div className="space-y-2">
@@ -162,6 +198,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
         <AccordionSection
           title="위성 수집 · ETL 파이프라인"
           hint="Salt-Stack · GDAL COG 변환 · 신규 소스 추가 코드 수정 0건"
+          module="수집·ETL"
         >
           <p>
             소스마다 API·인증·파일 포맷이 상이해 신규 위성 추가 시 파이프라인 전체를 수정해야 했습니다.
@@ -178,6 +215,7 @@ ETL 모듈     → GDAL COG 변환 · 재투영(EPSG:4326) → 메타 추출 →
         <AccordionSection
           title="파일 기반 양방향 DB 동기화"
           hint="Debezium slot 반복 파손 → Outbox 직접 구현 · 이벤트 유실 0건"
+          module="API 서버 · 망연계"
         >
           <p>
             국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리됐습니다.
@@ -213,6 +251,7 @@ public void beforeCommit(boolean readOnly) {
         <AccordionSection
           title="GPU 1장당 1파드 → 10파드"
           hint="일 처리량 200 → 3,000건"
+          module="AI 추론"
         >
           <p>
             추론 모델 1개가 GPU 메모리를 1~2 GiB만 사용하지만 K8s 기본 할당은 파드 1개가 GPU 1장을 독점했습니다.
@@ -235,6 +274,7 @@ public void beforeCommit(boolean readOnly) {
         <AccordionSection
           title="OD mAP50 0.644 · SEG mIoU 0.7205 달성"
           hint="OBB/HBB 이원화 · 회전 aug 역효과 발견 · DINOv2 실패 → ConvNeXt-22k"
+          module="AI 추론"
         >
           <p>
             <strong className="text-foreground">객체탐지</strong>는 20클래스를 OBB·HBB로 이원화했습니다.
@@ -272,6 +312,7 @@ public void beforeCommit(boolean readOnly) {
         <AccordionSection
           title="영상 서빙 속도 개선"
           hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현 · CesiumJS 커스텀 프로바이더"
+          module="타일 / 파일 서버"
         >
           <p>
             수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어 렌더링이 불가능합니다.
@@ -296,6 +337,7 @@ public void beforeCommit(boolean readOnly) {
         <AccordionSection
           title="테스트 환경 구축"
           hint="JUnit · k6 50VU · 에러율 11.22% → 0%"
+          module="API 서버"
         >
           <p>
             E2E·API 테스트는 실제 위성 메타·추론 데이터가 DB에 있어야 유효했습니다.
