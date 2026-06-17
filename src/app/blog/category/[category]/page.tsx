@@ -1,29 +1,19 @@
 import { notFound } from "next/navigation";
-import {
-  getCategories,
-  getPostsByCategory,
-  getBlogListItemsByCategory,
-} from "@/lib/blog";
-import { BlogCard, CategoryFilter } from "@nuguri03/ui";
-import { SeriesCard } from "@nuguri03/ui";
-import { Header } from "@/components/Header";
+import Link from "next/link";
 import { FileText } from "lucide-react";
+import { getCategories, getPostsByCategory, getBlogListItemsByCategory } from "@/lib/blog";
+import { BlogCard } from "@/components/blog/BlogCard";
+import { SeriesCard } from "@/components/blog/SeriesCard";
+import { Header } from "@/components/Header";
 
 export function generateStaticParams() {
   const categories = getCategories();
-  return categories.map((category) => ({
-    category,
-  }));
+  return categories.map((category) => ({ category }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ category: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }) {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
-
   return {
     title: `${decodedCategory} - 블로그`,
     description: `${decodedCategory} 카테고리의 블로그 글 목록입니다.`,
@@ -34,68 +24,58 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({
-  params,
-}: {
-  params: Promise<{ category: string }>;
-}) {
+export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
   const categories = getCategories();
 
-  if (!categories.includes(decodedCategory)) {
-    notFound();
-  }
+  if (!categories.includes(decodedCategory)) notFound();
 
   const posts = getPostsByCategory(decodedCategory);
   const items = getBlogListItemsByCategory(decodedCategory);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div id="portfolio-page">
       <Header />
+      <main style={{ paddingTop: 68 }}>
+        <div className="pf-wrap" style={{ paddingTop: 56, paddingBottom: 96 }}>
 
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-6">
-          {/* Header */}
-          <div className="max-w-2xl mx-auto text-center mb-12">
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              {decodedCategory}
-            </h1>
-            <p className="text-muted-foreground">
-              {decodedCategory} 카테고리의 글 {posts.length}개
-            </p>
+          <div style={{ marginBottom: 36 }}>
+            <span className="pf-kicker">블로그</span>
+            <h1 className="pf-h-sec">{decodedCategory}</h1>
+            <p className="pf-p-sec">{decodedCategory} 카테고리 글 {posts.length}개</p>
           </div>
 
-          {/* Category Filter */}
-          <div className="flex justify-center mb-8">
-            <CategoryFilter
-              categories={categories}
-              currentCategory={decodedCategory}
-            />
+          <div className="pf-blog-cats">
+            <Link href="/blog" className="pf-blog-cat-pill">전체</Link>
+            {categories.map((cat) => (
+              <Link
+                key={cat}
+                href={`/blog/category/${encodeURIComponent(cat)}`}
+                className={`pf-blog-cat-pill${cat === decodedCategory ? " active" : ""}`}
+              >
+                {cat}
+              </Link>
+            ))}
           </div>
 
-          {/* Posts List */}
           {items.length > 0 ? (
-            <div className="flex flex-col gap-3 max-w-4xl mx-auto">
+            <div className="pf-blog-list">
               {items.map((item) =>
                 item.type === "series" ? (
-                  <SeriesCard
-                    key={`series-${item.series.name}`}
-                    series={item.series}
-                  />
+                  <SeriesCard key={`series-${item.series.name}`} series={item.series} />
                 ) : (
                   <BlogCard key={item.post.slug} {...item.post} />
                 )
               )}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                이 카테고리에는 아직 작성된 글이 없습니다.
-              </p>
+            <div className="pf-blog-empty">
+              <FileText size={36} />
+              <p>이 카테고리에는 아직 작성된 글이 없습니다.</p>
             </div>
           )}
+
         </div>
       </main>
     </div>

@@ -1,112 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#080c14"/>
-      <stop offset="100%" stop-color="#0c1220"/>
+    <linearGradient id="win" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e2235"/>
+      <stop offset="100%" stop-color="#161929"/>
     </linearGradient>
-    <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1"/>
-      <stop offset="100%" stop-color="#06b6d4"/>
-    </linearGradient>
-    <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e2540"/>
-      <stop offset="100%" stop-color="#131c35"/>
-    </linearGradient>
-    <radialGradient id="aura" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="9" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="16" flood-color="#000" flood-opacity="0.4"/>
     </filter>
-    <filter id="sg">
-      <feGaussianBlur stdDeviation="3" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-      <path d="M0,0.5 L5,3 L0,5.5" fill="none" stroke="#6366f1" stroke-width="1" opacity="0.6"/>
-    </marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="400" height="300" fill="url(#bg)" rx="16"/>
+  <!-- Terminal window -->
+  <rect x="16" y="16" width="368" height="268" rx="12" fill="url(#win)" filter="url(#shadow)"/>
 
-  <!-- Aura -->
-  <ellipse cx="200" cy="150" rx="120" ry="95" fill="url(#aura)"/>
+  <!-- Title bar -->
+  <rect x="16" y="16" width="368" height="44" rx="12" fill="#252a3d"/>
+  <rect x="16" y="42" width="368" height="18" fill="#252a3d"/>
 
-  <!-- Outer ring -->
-  <circle cx="200" cy="150" r="88" fill="none" stroke="#6366f1" stroke-width="0.6" opacity="0.18" stroke-dasharray="4 6"/>
+  <!-- Traffic lights -->
+  <circle cx="44" cy="38" r="8" fill="#ff5f57"/>
+  <circle cx="68" cy="38" r="8" fill="#febc2e"/>
+  <circle cx="92" cy="38" r="8" fill="#28c840"/>
 
-  <!-- Connection lines -->
-  <line x1="200" y1="150" x2="80" y2="72"  stroke="#6366f1" stroke-width="1.4" opacity="0.45" marker-end="url(#arr)"/>
-  <line x1="200" y1="150" x2="320" y2="72"  stroke="#6366f1" stroke-width="1.4" opacity="0.45" marker-end="url(#arr)"/>
-  <line x1="200" y1="150" x2="80" y2="228" stroke="#06b6d4" stroke-width="1.4" opacity="0.45" marker-end="url(#arr)"/>
-  <line x1="200" y1="150" x2="320" y2="228" stroke="#06b6d4" stroke-width="1.4" opacity="0.45" marker-end="url(#arr)"/>
+  <!-- Title -->
+  <text x="200" y="44" text-anchor="middle"
+        font-family="ui-monospace,monospace" font-size="15" fill="rgba(255,255,255,0.4)">mcp-agent</text>
 
-  <!-- Mid-point pulses -->
-  <circle cx="140" cy="111" r="2.8" fill="#818cf8" opacity="0.75" filter="url(#sg)"/>
-  <circle cx="260" cy="111" r="2.8" fill="#818cf8" opacity="0.75" filter="url(#sg)"/>
-  <circle cx="140" cy="189" r="2.8" fill="#22d3ee" opacity="0.75" filter="url(#sg)"/>
-  <circle cx="260" cy="189" r="2.8" fill="#22d3ee" opacity="0.75" filter="url(#sg)"/>
+  <!-- Divider -->
+  <line x1="16" y1="60" x2="384" y2="60" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
 
-  <!-- ── Nodes (rounded-rect) ── -->
+  <!-- Prompt line -->
+  <text x="36" y="115" font-family="ui-monospace,monospace" font-size="26" fill="rgba(255,255,255,0.3)">$</text>
+  <text x="60" y="115" font-family="ui-monospace,monospace" font-size="26" fill="rgba(255,255,255,0.9)">fastmcp run</text>
 
-  <!-- Git (top-left) -->
-  <rect x="34" y="36" width="92" height="72" rx="12" fill="url(#ng)" stroke="#6366f1" stroke-width="1.4" filter="url(#sg)"/>
-  <g transform="translate(80,63)" stroke-linecap="round" fill="none">
-    <circle cx="-9" cy="-9" r="4.5" fill="#818cf8" stroke="none"/>
-    <circle cx="-9" cy=" 9" r="4.5" fill="#818cf8" stroke="none"/>
-    <circle cx=" 9" cy="-2" r="4.5" fill="#818cf8" stroke="none"/>
-    <line x1="-9" y1="-4.5" x2="-9" y2="4.5" stroke="#c7d2fe" stroke-width="2.2"/>
-    <path d="M -9 -5 C -9 -14 9 -14 9 -6.5" stroke="#c7d2fe" stroke-width="2.2" fill="none"/>
-  </g>
-  <text x="80" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#a5b4fc" letter-spacing="0.8">Git</text>
+  <!-- Output line 1 -->
+  <text x="36" y="158" font-family="ui-monospace,monospace" font-size="22" fill="#4ade80">✓</text>
+  <text x="64" y="158" font-family="ui-monospace,monospace" font-size="22" fill="rgba(255,255,255,0.6)">8 tools · 10 users</text>
 
-  <!-- Calendar (top-right) -->
-  <rect x="274" y="36" width="92" height="72" rx="12" fill="url(#ng)" stroke="#6366f1" stroke-width="1.4" filter="url(#sg)"/>
-  <g transform="translate(320,63)">
-    <rect x="-12" y="-10" width="24" height="20" rx="3" fill="none" stroke="#818cf8" stroke-width="2"/>
-    <line x1="-12" y1="-2.5" x2="12" y2="-2.5" stroke="#818cf8" stroke-width="2"/>
-    <line x1="-6" y1="-15" x2="-6" y2="-7" stroke="#c7d2fe" stroke-width="2.2" stroke-linecap="round"/>
-    <line x1=" 6" y1="-15" x2=" 6" y2="-7" stroke="#c7d2fe" stroke-width="2.2" stroke-linecap="round"/>
-    <circle cx="-5.5" cy="4" r="2.2" fill="#818cf8"/>
-    <circle cx=" 5.5" cy="4" r="2.2" fill="#818cf8"/>
-  </g>
-  <text x="320" y="95" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#a5b4fc" letter-spacing="0.8">Calendar</text>
+  <!-- Output line 2 -->
+  <text x="36" y="200" font-family="ui-monospace,monospace" font-size="22" fill="#4ade80">✓</text>
+  <text x="64" y="200" font-family="ui-monospace,monospace" font-size="22" fill="rgba(255,255,255,0.6)">Cursor · Claude</text>
 
-  <!-- HRWeb (bottom-left) -->
-  <rect x="34" y="192" width="92" height="72" rx="12" fill="url(#ng)" stroke="#06b6d4" stroke-width="1.4" filter="url(#sg)"/>
-  <g transform="translate(80,219)">
-    <circle cx="0" cy="-9" r="7" fill="#22d3ee"/>
-    <path d="M -12 10 C -12 1 12 1 12 10 Z" fill="#22d3ee"/>
-  </g>
-  <text x="80" y="251" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#67e8f9" letter-spacing="0.8">HRWeb</text>
-
-  <!-- Cursor (bottom-right) -->
-  <rect x="274" y="192" width="92" height="72" rx="12" fill="url(#ng)" stroke="#06b6d4" stroke-width="1.4" filter="url(#sg)"/>
-  <g transform="translate(320,219)" fill="none" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="-14" y="-11" width="28" height="22" rx="4"/>
-    <polyline points="-9,-3.5 -3.5,1 -9,5.5" stroke="#67e8f9"/>
-    <line x1="-1.5" y1="5.5" x2="9" y2="5.5" stroke="#67e8f9"/>
-  </g>
-  <text x="320" y="251" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" font-weight="700" fill="#67e8f9" letter-spacing="0.8">Cursor</text>
-
-  <!-- ── Center ── -->
-  <circle cx="200" cy="150" r="52" fill="url(#cg)" filter="url(#glow)" opacity="0.93"/>
-  <circle cx="200" cy="150" r="48" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
-
-  <g transform="translate(200,143)">
-    <rect x="-15" y="-15" width="30" height="24" rx="5.5" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.55)" stroke-width="1.8"/>
-    <rect x="-8.5" y="-8.5" width="5.5" height="5.5" rx="1.5" fill="white"/>
-    <rect x=" 3"   y="-8.5" width="5.5" height="5.5" rx="1.5" fill="white"/>
-    <rect x="-6"   y="2"    width="2.5" height="4.5" rx="1"   fill="rgba(255,255,255,0.38)"/>
-    <rect x="-1.5" y="0.5"  width="2.5" height="6"   rx="1"   fill="rgba(255,255,255,0.65)"/>
-    <rect x=" 3.5" y="-1"   width="2.5" height="7.5" rx="1"   fill="white"/>
-    <line x1="0" y1="-15" x2="0" y2="-22" stroke="white" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="0" cy="-26" r="3.2" fill="white" filter="url(#sg)"/>
-  </g>
-
-  <text x="200" y="212" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10.5" font-weight="700" fill="rgba(255,255,255,0.92)" letter-spacing="2.5">MCP AGENT</text>
-  <text x="200" y="224" text-anchor="middle" font-family="ui-monospace,monospace" font-size="8" font-weight="500" fill="rgba(255,255,255,0.45)" letter-spacing="1.5">FastMCP · Python</text>
+  <!-- Cursor blink -->
+  <rect x="36" y="222" width="14" height="22" rx="2" fill="rgba(255,255,255,0.5)"/>
 </svg>
