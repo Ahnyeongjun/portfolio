@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type { BlogPostMeta } from '@/lib/blog';
 
 interface Props {
@@ -14,13 +17,14 @@ const categoryColor: Record<string, string> = {
 };
 
 export function BlogPreviewSection({ posts }: Props) {
+  const t = useTranslations('blog');
   return (
     <section id="blog" className="pf-section-pad" style={{ borderTop: '1px solid var(--pf-bdr)' }}>
       <div className="pf-wrap">
         <div className="reveal" style={{ marginBottom: 34, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <span className="pf-kicker">기술 블로그</span>
-            <h2 className="pf-h-sec">직접 부딪히며 정리한 기록들</h2>
+            <span className="pf-kicker">{t('kicker')}</span>
+            <h2 className="pf-h-sec">{t('heading')}</h2>
           </div>
           <Link
             href="/blog"
@@ -34,7 +38,7 @@ export function BlogPreviewSection({ posts }: Props) {
               paddingBottom: 4,
             }}
           >
-            전체 글 보기
+            {t('viewAll')}
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>

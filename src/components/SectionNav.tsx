@@ -1,25 +1,29 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 
-const sections = [
-  { id: 'top',        label: '홈' },
-  { id: 'about',      label: '소개' },
-  { id: 'skills',     label: '기술' },
-  { id: 'career',     label: '경력' },
-  { id: 'projects',   label: '프로젝트' },
-  { id: 'background', label: '학력' },
-  { id: 'blog',       label: '블로그' },
-  { id: 'contact',    label: '연락' },
-];
+const sectionIds = ['top', 'about', 'skills', 'career', 'projects', 'background', 'blog', 'contact'];
 
 export function SectionNav() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const t = useTranslations('nav');
+
+  const labels: Record<string, string> = {
+    top: t('portfolio'),
+    about: t('about'),
+    skills: t('skills'),
+    career: t('career'),
+    projects: t('projects'),
+    background: t('background'),
+    blog: t('blog'),
+    contact: t('contact'),
+  };
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
-    sections.forEach((section, index) => {
-      const el = document.getElementById(section.id);
+    sectionIds.forEach((id, index) => {
+      const el = document.getElementById(id);
       if (!el) return;
       const observer = new IntersectionObserver(
         ([entry]) => { if (entry.isIntersecting) setActiveIndex(index); },
@@ -39,7 +43,7 @@ export function SectionNav() {
   return (
     <nav className="pf-snav print:hidden" aria-label="섹션 이동">
       <button
-        onClick={() => scrollTo(sections[Math.max(0, activeIndex - 1)].id)}
+        onClick={() => scrollTo(sectionIds[Math.max(0, activeIndex - 1)])}
         className="pf-snav-arrow"
         aria-label="이전 섹션"
         disabled={activeIndex === 0}
@@ -50,23 +54,23 @@ export function SectionNav() {
       </button>
 
       <div className="pf-snav-items">
-        {sections.map((s, i) => (
+        {sectionIds.map((id, i) => (
           <button
-            key={s.id}
+            key={id}
             className={`pf-snav-item${activeIndex === i ? ' active' : ''}`}
-            onClick={() => scrollTo(s.id)}
-            aria-label={s.label}
+            onClick={() => scrollTo(id)}
+            aria-label={labels[id]}
           >
-            <span className="pf-snav-label">{s.label}</span>
+            <span className="pf-snav-label">{labels[id]}</span>
           </button>
         ))}
       </div>
 
       <button
-        onClick={() => scrollTo(sections[Math.min(sections.length - 1, activeIndex + 1)].id)}
+        onClick={() => scrollTo(sectionIds[Math.min(sectionIds.length - 1, activeIndex + 1)])}
         className="pf-snav-arrow"
         aria-label="다음 섹션"
-        disabled={activeIndex === sections.length - 1}
+        disabled={activeIndex === sectionIds.length - 1}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="6 9 12 15 18 9"/>

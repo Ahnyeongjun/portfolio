@@ -1,5 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useLang } from '@/context/lang';
 import type { Project } from '@/lib/projects';
 
 interface SideProjectsSectionProps {
@@ -27,12 +31,14 @@ function getWatermark(proj: Project) {
 }
 
 export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
+  const t = useTranslations('projects');
+  const { lang } = useLang();
   return (
     <section id="projects" className="pf-section-pad">
       <div className="pf-wrap">
         <div className="reveal" style={{ marginBottom: 34 }}>
-          <span className="pf-kicker">사이드 프로젝트</span>
-          <h2 className="pf-h-sec">팀과 함께, 새로운 기술을 직접 도입하며</h2>
+          <span className="pf-kicker">{t('kicker')}</span>
+          <h2 className="pf-h-sec">{t('heading')}</h2>
         </div>
 
         <div className="pf-proj-grid" style={{ marginTop: 32 }}>
@@ -67,13 +73,13 @@ export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
                 <div className="pf-proj-body">
                   <div className="pf-proj-head">
                     <div>
-                      <div className="pf-proj-name">{proj.title}</div>
-                      {proj.role && <div className="pf-proj-subtitle">{proj.role}</div>}
+                      <div className="pf-proj-name">{lang === 'en' && proj.titleEn ? proj.titleEn : proj.title}</div>
+                      {proj.role && <div className="pf-proj-subtitle">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>}
                     </div>
                     <span className="pf-proj-period">{proj.period}</span>
                   </div>
-                  <p className="pf-proj-desc">{proj.description}</p>
-                  <div className="pf-proj-role">{proj.role}</div>
+                  <p className="pf-proj-desc">{lang === 'en' && proj.descriptionEn ? proj.descriptionEn : proj.description}</p>
+                  <div className="pf-proj-role">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>
                   <div className="pf-proj-tags">
                     {shownTags.map((tag) => (
                       <span key={tag} className="pf-proj-tag">{tag}</span>
@@ -82,14 +88,15 @@ export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
                   </div>
                   <div className="pf-proj-foot">
                     <span className="pf-proj-achieve">
-                      {topAchieve ? (
-                        <><SparkIcon /> {topAchieve.slice(0, 30)}{topAchieve.length > 30 ? '…' : ''}</>
-                      ) : (
-                        <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{proj.role}</span>
+                      {topAchieve ? (() => {
+                        const achieve = lang === 'en' && proj.achievementsEn?.[0] ? proj.achievementsEn[0] : topAchieve;
+                        return <><SparkIcon /> {achieve.slice(0, 30)}{achieve.length > 30 ? '…' : ''}</>;
+                      })() : (
+                        <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</span>
                       )}
                     </span>
                     <span className="pf-proj-view">
-                      자세히 보기 <span className="arr"><ArrowIcon /></span>
+                      {t('detailBtn')} <span className="arr"><ArrowIcon /></span>
                     </span>
                   </div>
                 </div>

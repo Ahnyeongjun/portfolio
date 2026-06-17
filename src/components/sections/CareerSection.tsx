@@ -1,5 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useLang } from '@/context/lang';
 import type { Project } from '@/lib/projects';
 
 interface CareerSectionProps {
@@ -8,7 +12,6 @@ interface CareerSectionProps {
   period: string;
 }
 
-const watermarks = ['MSA', 'API', 'AUTH', 'AI', 'MQ', 'K8S'];
 
 function ArrowIcon() {
   return (
@@ -27,6 +30,8 @@ function SparkIcon() {
 }
 
 export function CareerSection({ projects, company, period }: CareerSectionProps) {
+  const t = useTranslations('career');
+  const { lang } = useLang();
   return (
     <section
       id="career"
@@ -35,26 +40,27 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
     >
       <div className="pf-wrap">
         <div className="reveal" style={{ marginBottom: 34 }}>
-          <span className="pf-kicker">경력</span>
-          <h2 className="pf-h-sec">한컴인스페이스 · 연구원</h2>
-          <p className="pf-p-sec">위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환</p>
+          <span className="pf-kicker">{t('kicker')}</span>
+          <h2 className="pf-h-sec">{t('heading')}</h2>
+          <p className="pf-p-sec">{t('sub')}</p>
         </div>
 
         <div className="pf-career-head reveal">
-          <span className="pf-career-logo">한컴</span>
+          <span className="pf-career-logo">
+            <Image src="/hancom_logo.png" alt="한컴인스페이스" width={56} height={56} style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+          </span>
           <div>
             <div className="pf-career-co">{company}</div>
             <div className="pf-career-period">{period}</div>
           </div>
           <div className="pf-career-tenure">
-            5년차<br />
-            <span style={{ color: 'var(--pf-text-mute)' }}>연구원</span>
+            {t('tenureYears')}<br />
+            <span style={{ color: 'var(--pf-text-mute)' }}>{t('tenureRole')}</span>
           </div>
         </div>
 
         <div className="pf-proj-grid">
           {projects.map((proj, i) => {
-            const watermark = watermarks[i] || '';
             const maxTags = 5;
             const shownTags = proj.tags.slice(0, maxTags);
             const extraTags = proj.tags.length - maxTags;
@@ -78,19 +84,29 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   ) : (
-                    <span className="ph-watermark">{watermark}</span>
+                    <span style={{
+                      fontFamily: 'var(--font-family-mono)',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: 'var(--pf-text-mute)',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      textAlign: 'center',
+                      padding: '0 16px',
+                      opacity: 0.7,
+                    }}>{proj.thumbLabel ?? proj.title}</span>
                   )}
                 </div>
                 <div className="pf-proj-body">
                   <div className="pf-proj-head">
                     <div>
-                      <div className="pf-proj-name">{proj.title}</div>
-                      {proj.role && <div className="pf-proj-subtitle">{proj.role}</div>}
+                      <div className="pf-proj-name">{lang === 'en' && proj.titleEn ? proj.titleEn : proj.title}</div>
+                      {proj.role && <div className="pf-proj-subtitle">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>}
                     </div>
                     <span className="pf-proj-period">{proj.period}</span>
                   </div>
-                  <p className="pf-proj-desc">{proj.description}</p>
-                  <div className="pf-proj-role">{proj.role}{proj.company ? ' · ' + proj.company : ''}</div>
+                  <p className="pf-proj-desc">{lang === 'en' && proj.descriptionEn ? proj.descriptionEn : proj.description}</p>
+                  <div className="pf-proj-role">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}{proj.company ? ' · ' + proj.company : ''}</div>
                   <div className="pf-proj-tags">
                     {shownTags.map((tag) => (
                       <span key={tag} className="pf-proj-tag">{tag}</span>
@@ -99,14 +115,15 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
                   </div>
                   <div className="pf-proj-foot">
                     <span className="pf-proj-achieve">
-                      {topAchieve ? (
-                        <><SparkIcon /> {topAchieve.slice(0, 30)}{topAchieve.length > 30 ? '…' : ''}</>
-                      ) : (
+                      {topAchieve ? (() => {
+                        const achieve = lang === 'en' && proj.achievementsEn?.[0] ? proj.achievementsEn[0] : topAchieve;
+                        return <><SparkIcon /> {achieve.slice(0, 30)}{achieve.length > 30 ? '…' : ''}</>;
+                      })() : (
                         <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{proj.company}</span>
                       )}
                     </span>
                     <span className="pf-proj-view">
-                      자세히 보기 <span className="arr"><ArrowIcon /></span>
+                      {t('detailBtn')} <span className="arr"><ArrowIcon /></span>
                     </span>
                   </div>
                 </div>

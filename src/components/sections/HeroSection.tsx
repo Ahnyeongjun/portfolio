@@ -2,26 +2,28 @@
 
 import { profile } from '@/data/profile';
 import { useLang } from '@/context/lang';
+import { useTranslations } from 'next-intl';
 
-function SpotCards({ lang }: { lang: 'ko' | 'en' }) {
+function SpotCards() {
+  const t = useTranslations('hero');
   return (
     <div className="pf-hero-visual">
       {/* Blue top card — 대표 성과 */}
       <div className="pf-spot-card blue">
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 12, fontFamily: 'var(--font-family-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {lang === 'ko' ? '평균 API 응답속도' : 'Avg. API Response'}
+          {t('apiLabel')}
         </div>
         <div className="pf-spot-row">
           <div>
             <div className="pf-spot-num">159ms</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 8 }}>
-              {lang === 'ko' ? 'PostGIS + Redis 캐싱' : 'PostGIS + Redis cache'}
+              {t('apiSub')}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-family-mono)', textDecoration: 'line-through' }}>38s</div>
             <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-family-mono)', letterSpacing: '-0.04em', color: '#fff' }}>239×</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{lang === 'ko' ? '개선' : 'faster'}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{t('apiFaster')}</div>
           </div>
         </div>
       </div>
@@ -29,25 +31,25 @@ function SpotCards({ lang }: { lang: 'ko' | 'en' }) {
       {/* Mini row */}
       <div className="pf-spot-mini">
         <div className="mini">
-          <div className="mv">3,000건</div>
-          <div className="ml">{lang === 'ko' ? '일 AI 추론 처리량' : 'AI inferences/day'}</div>
+          <div className="mv">{t('aiValue')}</div>
+          <div className="ml">{t('aiLabel')}</div>
         </div>
         <div className="mini">
-          <div className="mv">30초</div>
-          <div className="ml">{lang === 'ko' ? '서비스 배포 속도' : 'deploy time'}</div>
+          <div className="mv">{t('deployValue')}</div>
+          <div className="ml">{t('deployLabel')}</div>
         </div>
       </div>
 
       {/* Bottom card */}
       <div className="pf-spot-card">
         <div style={{ fontFamily: 'var(--font-family-mono)', fontSize: 12, color: 'var(--pf-text-mute)', marginBottom: 8 }}>
-          {lang === 'ko' ? '주간보고 자동화' : 'Report automation'}
+          {t('reportLabel')}
         </div>
         <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.02em' }}>
-          {lang === 'ko' ? '1시간 → 자동화' : '1h → automated'}
+          {t('reportValue')}
         </div>
         <div style={{ fontSize: 13, color: 'var(--pf-text-mute)', marginTop: 6 }}>
-          {lang === 'ko' ? 'Git · 캘린더 병합 MCP — 팀 10명 실사용' : 'Git · Calendar MCP — 10-member team'}
+          {t('reportSub')}
         </div>
       </div>
     </div>
@@ -56,6 +58,7 @@ function SpotCards({ lang }: { lang: 'ko' | 'en' }) {
 
 export function HeroSection() {
   const { lang } = useLang();
+  const t = useTranslations('hero');
 
   return (
     <header id="top" className="pf-hero">
@@ -66,7 +69,7 @@ export function HeroSection() {
           <div>
             <div className="pf-status">
               <span className="dot" />
-              {lang === 'ko' ? '이직 준비 중' : 'Open to work'}
+              {t('status')}
             </div>
             <h1 className="pf-hero-h1">
               {lang === 'ko' ? profile.headingLine1 : profile.headingLine1En}
@@ -85,7 +88,7 @@ export function HeroSection() {
                 <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 6h18v12H3z" /><path d="M3 7l9 6 9-6" />
                 </svg>
-                {lang === 'ko' ? '이력서 / 연락하기' : 'Resume / Contact'}
+                {t('ctaContact')}
               </a>
               <a href={profile.githubUrl} target="_blank" rel="noreferrer" className="pf-btn pf-btn-ghost">
                 <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -97,7 +100,7 @@ export function HeroSection() {
           </div>
 
           {/* Right: Spot Cards */}
-          <SpotCards lang={lang} />
+          <SpotCards />
         </div>
       </div>
     </header>

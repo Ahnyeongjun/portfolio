@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 const techStack = [
   { label: 'Backend', sub: 'server-side', items: ['Spring Boot', 'Java', 'FastAPI', 'Python', 'Go'] },
   { label: 'Frontend', sub: 'client-side', items: ['Next.js', 'TypeScript', 'Storybook'] },
@@ -8,12 +12,13 @@ const techStack = [
 ];
 
 export function TechStackSection() {
+  const t = useTranslations('skills');
   return (
     <section id="skills" className="pf-section-pad">
       <div className="pf-wrap">
         <div className="reveal" style={{ marginBottom: 34 }}>
-          <span className="pf-kicker">기술 스택</span>
-          <h2 className="pf-h-sec">함께 일한 기술들</h2>
+          <span className="pf-kicker">{t('kicker')}</span>
+          <h2 className="pf-h-sec">{t('heading')}</h2>
         </div>
         <div className="pf-stack-wrap reveal">
           {techStack.map((cat) => (

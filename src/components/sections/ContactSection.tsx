@@ -1,12 +1,10 @@
 'use client';
 
 import { profile } from '@/data/profile';
-import { useLang } from '@/context/lang';
-import { strings } from '@/data/strings';
+import { useTranslations } from 'next-intl';
 
 export function ContactSection() {
-  const { lang } = useLang();
-  const t = strings.contact;
+  const t = useTranslations('contact');
 
   const links = [
     { key: 'Email', val: profile.email, href: `mailto:${profile.email}` },
@@ -19,10 +17,10 @@ export function ContactSection() {
     <section id="contact">
       <div className="pf-contact reveal">
         <span className="pf-kicker" style={{ background: 'rgba(255,255,255,0.12)', color: '#9ec3ff' }}>
-          연락하기
+          {t('kicker')}
         </span>
-        <h2 className="pf-contact-title" style={{ whiteSpace: 'pre-line' }}>{t.title[lang]}</h2>
-        <p className="pf-contact-sub">{t.sub[lang]}</p>
+        <h2 className="pf-contact-title" style={{ whiteSpace: 'pre-line' }}>{t('heading')}</h2>
+        <p className="pf-contact-sub">{t('sub')}</p>
         <div className="pf-contact-links">
           {links.map(({ key, val, href }) => (
             <a

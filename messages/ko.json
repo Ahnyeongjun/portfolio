@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "portfolio": "포트폴리오",
+    "blog": "블로그",
+    "about": "소개",
+    "skills": "기술 스택",
+    "career": "경력",
+    "projects": "프로젝트",
+    "background": "학력 · 활동",
+    "contact": "연락하기"
+  },
+  "hero": {
+    "status": "이직 준비 중",
+    "headingLine1": "운영 서비스의 문제를",
+    "headingHighlight": "구조로 해결하는 개발자",
+    "tagline": "운영 중인 서비스의 구조적 한계를 직접 진단하고, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자입니다.",
+    "duration": "5년차 (2021.07~)",
+    "ctaContact": "이력서 / 연락하기",
+    "apiLabel": "평균 API 응답속도",
+    "apiSub": "PostGIS + Redis 캐싱",
+    "apiFaster": "개선",
+    "aiValue": "3,000건",
+    "aiLabel": "일 AI 추론 처리량",
+    "deployValue": "30초",
+    "deployLabel": "서비스 배포 속도",
+    "reportLabel": "주간보고 자동화",
+    "reportValue": "1시간 → 자동화",
+    "reportSub": "Git · 캘린더 병합 MCP — 팀 10명 실사용"
+  },
+  "about": {
+    "kicker": "소개",
+    "heading": "구현에서 끝내지 않고\n구조와 생산성까지 고민합니다",
+    "factNow": "Now",
+    "factRole": "Role",
+    "factBase": "Base",
+    "roleSub": "백엔드 중심 · 프론트 · 인프라",
+    "periodSub": "2021.07 ~ 현재 · 5년차"
+  },
+  "skills": {
+    "kicker": "기술 스택",
+    "heading": "함께 일한 기술들"
+  },
+  "career": {
+    "kicker": "경력",
+    "heading": "한컴인스페이스 · 연구원",
+    "sub": "위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환",
+    "tenureYears": "5년차",
+    "tenureRole": "연구원",
+    "detailBtn": "자세히 보기"
+  },
+  "projects": {
+    "kicker": "사이드 프로젝트",
+    "heading": "팀과 함께, 새로운 기술을 직접 도입하며",
+    "detailBtn": "자세히 보기"
+  },
+  "background": {
+    "kicker": "학력 · 활동",
+    "heading": "성장의 발판이 된 학업과 경험들",
+    "education": "학력",
+    "certificates": "자격증",
+    "activities": "활동 · 교육"
+  },
+  "blog": {
+    "kicker": "기술 블로그",
+    "heading": "직접 부딪히며 정리한 기록들",
+    "viewAll": "전체 글 보기"
+  },
+  "contact": {
+    "kicker": "연락하기",
+    "heading": "함께 만들 기회를\n기다리고 있습니다",
+    "sub": "프로젝트 제안, 채용 문의 모두 환영합니다."
+  },
+  "project": {
+    "visitBtn": "프로젝트 방문하기",
+    "backBtn": "돌아가기",
+    "mockNote": "* 현재 백엔드 서버가 중단되어 MSW(Mock)로 동작 중입니다."
+  }
+}
