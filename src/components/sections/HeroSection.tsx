@@ -27,12 +27,12 @@ function SpotCards({ lang }: { lang: 'ko' | 'en' }) {
       {/* Mini row */}
       <div className="pf-spot-mini">
         <div className="mini">
-          <div className="mv">0.5s</div>
+          <div className="mv">159ms</div>
           <div className="ml">{lang === 'ko' ? 'API 응답속도' : 'API response'}</div>
         </div>
         <div className="mini">
-          <div className="mv">1건</div>
-          <div className="ml">{lang === 'ko' ? '월 재배포' : 'monthly deploy'}</div>
+          <div className="mv">15×</div>
+          <div className="ml">{lang === 'ko' ? 'AI 추론 처리량' : 'AI throughput'}</div>
         </div>
       </div>
 

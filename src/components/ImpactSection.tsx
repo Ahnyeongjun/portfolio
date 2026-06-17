@@ -1,8 +1,8 @@
 const impact = [
-  { from: '4분', to: '30초', label: '공통 모듈 배포 속도', note: 'Storybook 컴포넌트 라이브러리 구축' },
-  { from: '1건', to: '70건', label: '물리 GPU 1장 동시 분석', note: 'Aliyun GPUShare 메모리 분할' },
-  { from: '월 10건', to: '1건', label: '재배포 건수', note: '모놀리식 → 9개 MSA 전환' },
-  { from: '1주', to: '당일', label: '고객 오류 대응', note: 'CI/CD · 플로우 문서화' },
+  { from: '38초', to: '159ms', label: 'API 응답속도', note: 'PostGIS 조건부 실행 + 페이징 + Redis 캐싱 — 239배' },
+  { from: '200건', to: '3,000건', label: '일 AI 추론 처리량', note: 'Aliyun GPUShare — GPU당 10파드 병렬 분할' },
+  { from: '4분', to: '30초', label: '서비스 배포 속도', note: '모놀리식 → 9개 MSA 분리' },
+  { from: '1시간', to: '즉시', label: '주간보고 작성', note: 'Git·캘린더 병합 MCP 에이전트 — 팀 10명 실사용' },
 ];
 
 export function ImpactSection() {
