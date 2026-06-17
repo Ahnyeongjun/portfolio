@@ -257,9 +257,9 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           </p>
           <p>
             CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현했습니다.
-            <Highlight>beforeCommit()</Highlight>으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 처리하고,
-            <Highlight>ThreadLocal OutboxContext</Highlight>로 폐쇄망 수신 데이터 재발행 시 무한 루프를 방지했습니다.
-            <Highlight>이벤트 유실 0건</Highlight>.
+            <Highlight>beforeCommit()</Highlight>으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 묶고,
+            <Highlight>ThreadLocal OutboxContext</Highlight>로 폐쇄망 수신 데이터 재발행 시 무한 루프를 방지해
+            이벤트 유실 없이 안정적으로 운영할 수 있었습니다.
           </p>
           <CodeBlock>{`@Intercepts({ @Signature(type = Executor.class, method = "update", ...) })
 public class OutboxInterceptor implements Interceptor {
