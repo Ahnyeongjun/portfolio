@@ -9,6 +9,19 @@ interface ImageSlideshowProps {
   title: string;
 }
 
+function SlideshowImage({ url, label, priority }: { url: string; label: string; priority?: boolean }) {
+  const isSvg = url.endsWith(".svg");
+  return (
+    <Image
+      src={url}
+      alt={label}
+      fill
+      className={isSvg ? "object-contain p-6" : "object-cover"}
+      priority={priority}
+    />
+  );
+}
+
 export function ImageSlideshow({ images, title }: ImageSlideshowProps) {
   const [current, setCurrent] = useState(0);
 
@@ -17,14 +30,14 @@ export function ImageSlideshow({ images, title }: ImageSlideshowProps) {
   if (images.length === 1) {
     return (
       <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8 bg-muted">
-        <Image src={images[0].url} alt={title} fill className="object-cover" priority />
+        <SlideshowImage url={images[0].url} label={title} priority />
       </div>
     );
   }
 
   return (
     <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-8 bg-muted group">
-      <Image src={images[current].url} alt={images[current].label} fill className="object-cover" priority />
+      <SlideshowImage url={images[current].url} label={images[current].label} priority />
 
       <button
         onClick={() => setCurrent((current - 1 + images.length) % images.length)}

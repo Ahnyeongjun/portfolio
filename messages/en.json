@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "portfolio": "Portfolio",
+    "blog": "Blog",
+    "about": "About",
+    "skills": "Tech Stack",
+    "career": "Career",
+    "projects": "Projects",
+    "background": "Background",
+    "contact": "Contact"
+  },
+  "hero": {
+    "status": "Open to work",
+    "headingLine1": "Solving production problems",
+    "headingHighlight": "through architecture",
+    "tagline": "Backend engineer who diagnoses structural bottlenecks in production systems and proves improvements with measurable numbers.",
+    "duration": "5 yrs (Jul 2021~)",
+    "ctaContact": "Resume / Contact",
+    "apiLabel": "Avg. API Response",
+    "apiSub": "PostGIS + Redis cache",
+    "apiFaster": "faster",
+    "aiValue": "3,000",
+    "aiLabel": "AI inferences/day",
+    "deployValue": "30s",
+    "deployLabel": "Deploy time",
+    "reportLabel": "Report automation",
+    "reportValue": "1h → automated",
+    "reportSub": "Git · Calendar MCP — 10-member team"
+  },
+  "about": {
+    "kicker": "About",
+    "heading": "Not just shipping features —\nthinking about structure and impact",
+    "factNow": "Now",
+    "factRole": "Role",
+    "factBase": "Base",
+    "roleSub": "Backend-focused · Frontend · Infra",
+    "periodSub": "Jul 2021 ~ present · 5 yrs"
+  },
+  "skills": {
+    "kicker": "Tech Stack",
+    "heading": "Technologies I've worked with"
+  },
+  "career": {
+    "kicker": "Career",
+    "heading": "Hancom InSpace · Researcher",
+    "sub": "Designed and built a satellite imagery analysis platform from scratch, then migrated to MSA",
+    "tenureYears": "5 yrs",
+    "tenureRole": "Researcher",
+    "detailBtn": "View Details"
+  },
+  "projects": {
+    "kicker": "Side Projects",
+    "heading": "Building with teams, adopting new tech hands-on",
+    "detailBtn": "View Details"
+  },
+  "background": {
+    "kicker": "Background",
+    "heading": "The studies and experiences that shaped me",
+    "education": "Education",
+    "certificates": "Certificates",
+    "activities": "Activities & Training"
+  },
+  "blog": {
+    "kicker": "Tech Blog",
+    "heading": "Notes from hands-on experience",
+    "viewAll": "View all posts"
+  },
+  "contact": {
+    "kicker": "Contact",
+    "heading": "I'm open to\nnew opportunities",
+    "sub": "Project proposals and job inquiries are welcome."
+  },
+  "project": {
+    "visitBtn": "Visit Project",
+    "backBtn": "Back",
+    "mockNote": "* Backend server is currently offline — running on MSW (Mock)."
+  }
+}

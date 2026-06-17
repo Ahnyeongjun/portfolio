@@ -1,10 +1,10 @@
+import { profile } from '@/data/profile';
+
 export function Footer() {
   return (
-    <footer className="border-t border-border py-8 print:hidden">
-      <div className="container mx-auto px-6">
-        <p className="text-sm text-muted-foreground text-center">
-          © 2025 안영준. All rights reserved.
-        </p>
+    <footer className="pf-footer print:hidden">
+      <div className="pf-footer-inner">
+        <span className="pf-footer-meta">© 2026 {profile.name} · {profile.role} · SEOUL, KR</span>
       </div>
     </footer>
   );

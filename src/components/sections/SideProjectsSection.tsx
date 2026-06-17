@@ -1,89 +1,110 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { Server, Layout, Brain } from 'lucide-react';
-import { Section, SectionHeader, ProjectCard } from '@nuguri03/ui';
-import type { Project } from '@nuguri03/ui';
-
-type CategoryFilter = 'all' | 'backend' | 'frontend' | 'ai';
-
-const categoryOptions = [
-  { value: 'all' as const, label: '전체', icon: null },
-  { value: 'backend' as const, label: '백엔드', icon: Server },
-  { value: 'frontend' as const, label: '프론트엔드', icon: Layout },
-  { value: 'ai' as const, label: 'AI', icon: Brain },
-];
-
-function getStartDate(period: string): number {
-  const match = period.match(/^(\d{4})\.(\d{1,2})/);
-  return match ? parseInt(match[1]) * 100 + parseInt(match[2]) : 0;
-}
+import Image from 'next/image';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useLang } from '@/context/lang';
+import type { Project } from '@/lib/projects';
 
 interface SideProjectsSectionProps {
   projects: Project[];
 }
 
-export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-
-  const filteredProjects = useMemo(() => {
-    const filtered = projects.filter((p) => {
-      if (categoryFilter === 'all') return true;
-      return p.category.includes(categoryFilter) || (p.category.includes('fullstack') && (categoryFilter === 'frontend' || categoryFilter === 'backend'));
-    });
-    return filtered.sort((a, b) => {
-      const aOngoing = a.period.includes('진행중');
-      const bOngoing = b.period.includes('진행중');
-      if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
-      return getStartDate(b.period) - getStartDate(a.period);
-    });
-  }, [categoryFilter, projects]);
-
+function ArrowIcon() {
   return (
-    <Section id="side-projects">
-      <SectionHeader title="사이드" titleHighlight="프로젝트" subtitle="팀/개인 사이드 프로젝트 경험입니다." />
+    <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
 
-      <div className="flex items-center justify-center gap-2 mb-8">
-        <span className="text-sm text-muted-foreground whitespace-nowrap">분야:</span>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-          className="sm:hidden px-3 py-1.5 text-sm rounded-full border border-border bg-secondary/50 text-foreground"
-        >
-          {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <div className="hidden sm:flex gap-1">
-          {categoryOptions.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setCategoryFilter(option.value)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm whitespace-nowrap rounded-full border transition-all ${
-                categoryFilter === option.value
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-secondary/50 text-muted-foreground border-border hover:border-primary hover:text-primary'
-              }`}
-            >
-              {option.icon && <option.icon className="w-3.5 h-3.5" />}
-              {option.label}
-            </button>
-          ))}
+function SparkIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
+      <path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z" />
+    </svg>
+  );
+}
+
+function getWatermark(proj: Project) {
+  return proj.title.replace(/[^A-Za-z가-힣]/g, '').slice(0, 4).toUpperCase() || 'PRJ';
+}
+
+export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
+  const t = useTranslations('projects');
+  const { lang } = useLang();
+  return (
+    <section id="projects" className="pf-section-pad">
+      <div className="pf-wrap">
+        <div className="reveal" style={{ marginBottom: 34 }}>
+          <span className="pf-kicker">{t('kicker')}</span>
+          <h2 className="pf-h-sec">{t('heading')}</h2>
+        </div>
+
+        <div className="pf-proj-grid" style={{ marginTop: 32 }}>
+          {projects.map((proj, i) => {
+            const watermark = getWatermark(proj);
+            const maxTags = 5;
+            const shownTags = proj.tags.slice(0, maxTags);
+            const extraTags = proj.tags.length - maxTags;
+            const topAchieve = proj.achievements?.[0];
+
+            return (
+              <Link
+                key={proj.id}
+                href={`/projects/${proj.id}`}
+                className="pf-proj-card reveal"
+                style={{ transitionDelay: `${(i % 2) * 80}ms` }}
+              >
+                <div className="pf-proj-thumb">
+                  <span className="pf-proj-num">{String(i + 1).padStart(2, '0')}</span>
+                  {proj.imageUrl ? (
+                    <Image
+                      src={proj.imageUrl}
+                      alt={proj.title}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                  ) : (
+                    <span className="ph-watermark">{watermark}</span>
+                  )}
+                </div>
+                <div className="pf-proj-body">
+                  <div className="pf-proj-head">
+                    <div>
+                      <div className="pf-proj-name">{lang === 'en' && proj.titleEn ? proj.titleEn : proj.title}</div>
+                      {proj.role && <div className="pf-proj-subtitle">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>}
+                    </div>
+                    <span className="pf-proj-period">{proj.period}</span>
+                  </div>
+                  <p className="pf-proj-desc">{lang === 'en' && proj.descriptionEn ? proj.descriptionEn : proj.description}</p>
+                  <div className="pf-proj-role">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>
+                  <div className="pf-proj-tags">
+                    {shownTags.map((tag) => (
+                      <span key={tag} className="pf-proj-tag">{tag}</span>
+                    ))}
+                    {extraTags > 0 && <span className="pf-proj-tag more">+{extraTags}</span>}
+                  </div>
+                  <div className="pf-proj-foot">
+                    <span className="pf-proj-achieve">
+                      {topAchieve ? (() => {
+                        const achieve = lang === 'en' && proj.achievementsEn?.[0] ? proj.achievementsEn[0] : topAchieve;
+                        return <><SparkIcon /> {achieve.slice(0, 30)}{achieve.length > 30 ? '…' : ''}</>;
+                      })() : (
+                        <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</span>
+                      )}
+                    </span>
+                    <span className="pf-proj-view">
+                      {t('detailBtn')} <span className="arr"><ArrowIcon /></span>
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredProjects.map((project, index) => (
-          <div key={project.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-            <ProjectCard {...project} href={`/projects/${project.id}`} />
-          </div>
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">선택한 필터와 일치하는 프로젝트가 없습니다.</p>
-          <button onClick={() => setCategoryFilter('all')} className="mt-4 text-primary hover:underline">필터 초기화</button>
-        </div>
-      )}
-    </Section>
+    </section>
   );
 }
