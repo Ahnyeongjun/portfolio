@@ -31,7 +31,7 @@ export const projects: Project[] = [
     id: "nipa-satellite",
     title: "NIPA RabbitMQ 기반 변화탐지 AI 처리 플랫폼",
     description: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 변화탐지 플랫폼. NIPA(정보통신산업진흥원) 지원 사업.",
-    tags: ["RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "PyTorch", "FastAPI", "Kubernetes"],
+    tags: ["RabbitMQ", "Next.js", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes"],
     imageUrl: "/nipa_logo.svg",
     status: "deployed",
     type: "company",
