@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { RevealObserver } from "@/components/RevealObserver";
 import { HeroSection } from "@/components/sections/HeroSection";
-import { ImpactSection } from "@/components/ImpactSection";
 import { AboutSection } from "@/components/sections/AboutSection";
 import { TechStackSection } from "@/components/TechStackSection";
 import { CareerSection } from "@/components/sections/CareerSection";
@@ -51,7 +50,6 @@ export default function Home() {
       <Header />
       <main style={{ paddingTop: 68 }}>
         <HeroSection />
-        <ImpactSection />
         <AboutSection />
         <TechStackSection />
         <CareerSection projects={companyProjects} company={profile.company} period={profile.period} />
