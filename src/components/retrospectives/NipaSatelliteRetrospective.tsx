@@ -162,7 +162,21 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼.
         NIPA(정보통신산업진흥원) 지원 사업. 기존 모놀리식 구조를 9개 MSA로 분리하고
         RabbitMQ 비동기 파이프라인과 Next.js 15 FSD를 처음 도입했습니다.
+        지역별 변화 통계 시각화, 달지도(아폴로 탐사 경로·크레이터) 등
+        도메인 특화 뷰어 기능도 직접 구현했습니다.
       </p>
+
+      {/* 주요 성과 */}
+      <CompareTable
+        headers={["지표", "이전", "개선 후"]}
+        rows={[
+          { cells: ["배포 속도", "4분", "30초"], highlight: true },
+          { cells: ["월 재배포 횟수", "10건", "1건"], highlight: true },
+          { cells: ["작업 유실", "반복 발생 (RUNNING 고착)", "0건"], highlight: true },
+          { cells: ["아키텍처", "모놀리식", "9개 MSA · 독립 배포"] },
+          { cells: ["프론트엔드", "Thymeleaf SSR", "Next.js 15 FSD"] },
+        ]}
+      />
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
@@ -216,26 +230,126 @@ def callback(ch, method, properties, body):
             Nginx 리버스 프록시로 라우팅했습니다.
           </p>
           <CompareTable
-            headers={["서비스", "역할"]}
+            headers={["서비스", "기술", "역할", "API"]}
             rows={[
-              { cells: ["db-api", "CRUD · 인증 · 작업 관리"] },
-              { cells: ["image-api (Go)", "위성 영상 서빙 · 타일 캐싱"] },
-              { cells: ["gprocessor", "변화탐지 AI 추론 (RabbitMQ consumer)"] },
-              { cells: ["collector", "위성 영상 수집"] },
-              { cells: ["cataloger", "전처리 · DB 카탈로깅"] },
-              { cells: ["cprocessor", "변화탐지 후처리 · 결과 저장"] },
-              { cells: ["viewer", "Next.js 15 + CesiumJS 웹 UI"] },
-              { cells: ["broker", "RabbitMQ StatefulSet"] },
-              { cells: ["database", "PostgreSQL"] },
+              { cells: ["db-api", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
+              { cells: ["image-api", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
+              { cells: ["gprocessor", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
+              { cells: ["collector", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
+              { cells: ["cataloger", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
+              { cells: ["cprocessor", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
+              { cells: ["viewer", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
+              { cells: ["broker", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
+              { cells: ["database", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
             ]}
           />
+          <p className="text-xs text-muted-foreground/60">REST API 합계: 약 49개 (db-api 28 · image-api 8 · worker 서비스 13)</p>
           <p>
             서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
             월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
           </p>
         </AccordionSection>
 
-        {/* 3. 프론트엔드 */}
+        {/* 3. 지역별 변화 통계 */}
+        <AccordionSection
+          title="지역별 변화 탐지 통계 시각화"
+          hint="PostGIS 공간 집계 · 행정구역 단위 변화량 대시보드"
+        >
+          <p>
+            변화탐지 결과를 픽셀 단위로만 보여주면 운영자가 전체적인 변화 추이를 파악하기 어렵습니다.
+            <Highlight>PostGIS</Highlight>의 공간 집계 함수를 활용해 변화 폴리곤과
+            행정구역 레이어를 조인하고, 지역별 변화 면적·건수를 집계했습니다.
+          </p>
+          <CompareTable
+            headers={["집계 단위", "활용 데이터", "제공 지표"]}
+            rows={[
+              { cells: ["시·도", "행정구역 폴리곤 + 변화탐지 결과", "변화 면적(㎢) · 변화 건수"], highlight: true },
+              { cells: ["시·군·구", "세분화 행정구역 + 탐지 결과", "변화율(%) · 기간별 추이"] },
+              { cells: ["사용자 AOI", "직접 그린 폴리곤", "관심 구역 내 변화 요약"] },
+            ]}
+          />
+          <p>
+            CesiumJS 뷰어에서 지역을 클릭하면 해당 행정구역의 시계열 변화 차트가
+            사이드 패널에 표시됩니다. 변화량이 임계값을 초과한 지역은
+            <Highlight>히트맵 레이어</Highlight>로 강조해 이상 지역을 빠르게 식별할 수 있습니다.
+          </p>
+          <CodeBlock>{`-- PostGIS: 행정구역별 변화 면적 집계
+SELECT
+    r.region_name,
+    r.region_code,
+    COUNT(c.id)                                             AS change_count,
+    ROUND(SUM(ST_Area(c.geom::geography)) / 1e6, 2)        AS change_area_km2,
+    ROUND(SUM(ST_Area(c.geom::geography)) /
+          ST_Area(r.geom::geography) * 100, 2)             AS change_rate_pct
+FROM regions r
+LEFT JOIN change_results c
+    ON ST_Intersects(c.geom, r.geom)
+   AND c.detected_at BETWEEN :start AND :end
+GROUP BY r.region_name, r.region_code, r.geom
+ORDER BY change_area_km2 DESC;`}</CodeBlock>
+        </AccordionSection>
+
+        {/* 4. 달지도 */}
+        <AccordionSection
+          title="달지도 — 아폴로 탐사 경로 · 크레이터 레이어"
+          hint="CesiumJS 달 지형 타일 · 아폴로 11~17호 이동 경로 시각화"
+        >
+          <p>
+            지구 위성 영상 외에 달 지형 데이터를 뷰어에 통합했습니다.
+            CesiumJS는 커스텀 <Highlight>ImageryProvider</Highlight>를 통해
+            지구 외 천체도 렌더링할 수 있습니다.
+            JAXA SELENE / NASA LRO 기반의 달 지형 타일을 이미지 레이어로 연동했습니다.
+          </p>
+          <CompareTable
+            headers={["레이어", "데이터 출처", "표현 방식"]}
+            rows={[
+              { cells: ["달 기본 지형", "JAXA SELENE / NASA LRO 타일", "CesiumJS ImageryLayer"], highlight: true },
+              { cells: ["아폴로 탐사 경로", "NASA 아폴로 11 ~ 17호 EVA 좌표", "Polyline Entity (임무별 색상 구분)"], highlight: true },
+              { cells: ["크레이터", "IAU 크레이터 카탈로그 GeoJSON", "Point + Label Entity (직경별 크기 스케일)"] },
+              { cells: ["착륙 지점", "아폴로 착륙 좌표", "Billboard Entity (임무 아이콘)"] },
+            ]}
+          />
+          <CodeBlock>{`// 달 지형 + 아폴로 경로 레이어 초기화
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  imageryProvider: new Cesium.UrlTemplateImageryProvider({
+    url: MOON_TILE_URL + "/{z}/{x}/{y}.png",
+    credit: "JAXA SELENE / NASA LRO",
+  }),
+  terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+});
+
+// 아폴로 임무별 탐사 경로 — Polyline
+APOLLO_MISSIONS.forEach(({ name, color, coordinates }) => {
+  viewer.entities.add({
+    name,
+    polyline: {
+      positions: Cesium.Cartesian3.fromDegreesArray(coordinates.flat()),
+      width: 2,
+      material: Cesium.Color.fromCssColorString(color),
+    },
+  });
+});
+
+// 크레이터 — 직경에 따라 Point 크기 스케일
+craters.forEach(({ name, lon, lat, diameter_km }) => {
+  viewer.entities.add({
+    position: Cesium.Cartesian3.fromDegrees(lon, lat),
+    point: {
+      pixelSize: Math.min(4 + diameter_km * 0.3, 20),
+      color: Cesium.Color.GRAY.withAlpha(0.7),
+    },
+    label: { text: name, font: "11px sans-serif", show: diameter_km > 50 },
+  });
+});`}</CodeBlock>
+          <p>
+            아폴로 11~17호의 EVA(달 표면 활동) 경로를 임무별 색상으로 구분해 표시하고,
+            착륙 지점에는 임무 아이콘 빌보드를 배치했습니다.
+            크레이터는 IAU 카탈로그 기준 직경에 따라 포인트 크기를 스케일해
+            지형과 함께 직관적으로 확인할 수 있습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 5. 프론트엔드 */}
         <AccordionSection
           title="Next.js 15 FSD · CesiumJS 레이어 추상화"
           hint="Thymeleaf 레거시 → FSD 마이그레이션 · 이종 레이어 단일 인터페이스"
@@ -262,7 +376,7 @@ function reorderLayer(viewer, fromIndex, toIndex) {
 // 토글 — 삭제 대신 가시성 플래그 전환 (WebGL 리소스 보존)
 layer.show = false;`}</CodeBlock>
           <p>
-            MVT·MBTiles·ImageLayer·BaseMap 등 이종 레이어 타입을
+            MVT·MBTiles·ImageLayer·BaseMap·달지도 등 이종 레이어 타입을
             <Highlight>단일 인터페이스</Highlight>로 추상화해 신규 레이어 타입 추가 시 기존 코드 수정 없이 확장 가능했습니다.
           </p>
         </AccordionSection>
