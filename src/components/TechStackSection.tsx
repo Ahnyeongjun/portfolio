@@ -1,10 +1,10 @@
 const techStack = [
-  { label: 'Backend', sub: 'server-side', items: ['Spring Boot', 'Kotlin', 'Java', 'FastAPI', 'Python', 'Go'] },
-  { label: 'Frontend', sub: 'client-side', items: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'Storybook'] },
-  { label: 'Database', sub: 'data-layer', items: ['PostgreSQL', 'MySQL', 'Oracle', 'Redis', 'RabbitMQ'] },
-  { label: 'DevOps', sub: 'infra-ops', items: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'Kafka', 'Nginx'] },
-  { label: 'AI / ML', sub: 'ai-ml', items: ['PyTorch', 'YOLOv5', 'ONNX Runtime', 'OpenAI API', 'MCP'] },
-  { label: 'Geospatial', sub: 'geo-data', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles', 'PostGIS', 'Nominatim'] },
+  { label: 'Backend', sub: 'server-side', items: ['Spring Boot', 'Java', 'FastAPI', 'Python', 'Go'] },
+  { label: 'Frontend', sub: 'client-side', items: ['Next.js', 'TypeScript', 'Storybook'] },
+  { label: 'Database', sub: 'data-layer', items: ['PostgreSQL', 'Redis', 'RabbitMQ'] },
+  { label: 'DevOps', sub: 'infra-ops', items: ['Kubernetes', 'Docker', 'Jenkins', 'Nginx'] },
+  { label: 'AI / ML', sub: 'ai-ml', items: ['YOLO', 'ConvNeXt', 'SAM', 'DINO', 'ONNX Runtime', 'FastMCP'] },
+  { label: 'Geospatial', sub: 'geo-data', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles'] },
 ];
 
 export function TechStackSection() {
