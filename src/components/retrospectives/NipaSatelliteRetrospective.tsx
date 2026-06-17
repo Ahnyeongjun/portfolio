@@ -118,15 +118,15 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">FastAPI (db-api)</p>
+            <p className="text-xs font-medium text-muted-foreground">FastAPI</p>
             <FlowNode highlight sub="CRUD · 인증 · 작업 관리 · Snowflake ID">API 서버</FlowNode>
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Go (image-api)</p>
+            <p className="text-xs font-medium text-muted-foreground">Go</p>
             <FlowNode highlight sub="WMS · WMTS · 타일 캐싱">영상 서빙 서버</FlowNode>
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Python (collector · cataloger)</p>
+            <p className="text-xs font-medium text-muted-foreground">Python</p>
             <div className="flex items-center gap-2">
               <FlowNode highlight sub="위성 영상 수집">수집</FlowNode>
               <span className="text-muted-foreground text-xs shrink-0">→</span>
@@ -134,7 +134,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             </div>
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Python + ONNX (gprocessor)</p>
+            <p className="text-xs font-medium text-muted-foreground">Python + ONNX</p>
             <FlowNode highlight sub="ECT · MambaCD · MINIMA · ack/nack · DLQ">변화탐지 AI</FlowNode>
           </div>
         </div>
