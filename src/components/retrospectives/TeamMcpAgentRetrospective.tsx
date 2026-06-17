@@ -214,7 +214,7 @@ def inject_cells(template_path, out_path, cell_map: dict):
           <p>
             사내 HRWeb(아마란스)은 <Highlight>Blazor Server</Highlight> 앱입니다.
             일반 웹과 달리 폼 값이 SignalR을 통해 서버에서 바인딩되므로
-            Playwright가 클릭 직후 바로 다음 요소를 조작하면 아직 렌더링이 끝나지 않아 입력이 씹혔습니다.
+            Playwright가 클릭 직후 바로 다음 요소를 조작하면 아직 렌더링이 끝나지 않아 입력이 무시됐습니다.
           </p>
           <p>
             각 인터랙션 후 <Highlight>time.sleep</Highlight>으로 짧은 대기를 끼워
