@@ -108,7 +108,6 @@ export const projects: Project[] = [
       { label: "로고", url: "/kari_logo.svg", type: "image" },
       { label: "플랫폼 소개", url: "/kari_intro.png", type: "image" },
       { label: "웹 화면", url: "/kari_web.png", type: "image" },
-      { label: "서비스 소개", url: "https://www.inspace.co.kr/instation-platform", type: "link" },
       { label: "샘플 Outbox", url: "https://github.com/Ahnyeongjun/outbox_module", type: "link" },
     ],
   },
