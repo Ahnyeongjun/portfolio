@@ -296,8 +296,8 @@ public void beforeCommit(boolean readOnly) {
             ]}
           />
           <p>
-            CesiumJS 기본 ImageryProvider는 WMTS 파라미터를 직접 제어할 수 없어
-            <Highlight>커스텀 ImageryProvider</Highlight>를 구현했습니다.
+            CesiumJS 기본 ImageryProvider는 WMTS 커스텀 파라미터 제어, MVT 벡터 타일, GeoTIFF 직접 서빙을 지원하지 않습니다.
+            세 가지 모두 <Highlight>커스텀 ImageryProvider</Highlight>를 직접 구현해 대응했습니다.
             위성 소스마다 좌표계와 타일 URL 패턴이 달라 단일 인터페이스로 추상화해,
             소스가 추가돼도 기존 코드 수정 없이 확장할 수 있게 했습니다.
           </p>
