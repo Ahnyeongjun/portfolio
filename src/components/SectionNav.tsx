@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 
 const sections = [
   { id: 'top',        label: 'Hero' },
-  { id: 'impact',     label: '성과' },
   { id: 'about',      label: '소개' },
   { id: 'skills',     label: '기술' },
   { id: 'career',     label: '경력' },
@@ -50,6 +49,8 @@ export function SectionNav() {
         </svg>
       </button>
 
+      <div className="pf-snav-rule" aria-hidden="true" />
+
       {/* Section items */}
       <div className="pf-snav-items">
         {sections.map((s, i) => (
@@ -64,6 +65,8 @@ export function SectionNav() {
           </button>
         ))}
       </div>
+
+      <div className="pf-snav-rule" aria-hidden="true" />
 
       {/* Down */}
       <button
