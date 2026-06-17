@@ -126,7 +126,7 @@ export function TeamMcpAgentRetrospective({ description }: { description?: strin
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <FlowNode sub="Git 리포 로컬 클론">Git 커밋 로그</FlowNode>
+          <FlowNode highlight sub="Git 리포 로컬 클론">Git 커밋 로그</FlowNode>
           <FlowNode sub="OAuth2 token.json">Google Calendar</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓ &nbsp; ↓</div>

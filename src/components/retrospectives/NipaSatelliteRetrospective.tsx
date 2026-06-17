@@ -125,7 +125,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           </div>
         </div>
         <div className="flex justify-center">
-          <FlowNode sub="사용자 · 어드민 (Next.js 15 + FSD)">웹 뷰어</FlowNode>
+          <FlowNode highlight sub="사용자 · 어드민 (Next.js 15 + FSD)">웹 뷰어</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="grid grid-cols-2 gap-3">
