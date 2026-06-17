@@ -58,6 +58,7 @@ export const projects: Project[] = [
     title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트 개발",
     description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트 — 팀 10명 실사용 중",
     tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
+    imageUrl: "/mcp-agent_logo.svg",
     status: "deployed",
     type: "company",
     company: "한컴인스페이스",

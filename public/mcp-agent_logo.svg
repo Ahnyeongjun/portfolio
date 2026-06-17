@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="centerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="nodeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#1e2d4a"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bg)" rx="12"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.06" stroke="#60a5fa" stroke-width="0.5">
+    <line x1="0" y1="60" x2="400" y2="60"/>
+    <line x1="0" y1="120" x2="400" y2="120"/>
+    <line x1="0" y1="180" x2="400" y2="180"/>
+    <line x1="0" y1="240" x2="400" y2="240"/>
+    <line x1="80" y1="0" x2="80" y2="300"/>
+    <line x1="160" y1="0" x2="160" y2="300"/>
+    <line x1="240" y1="0" x2="240" y2="300"/>
+    <line x1="320" y1="0" x2="320" y2="300"/>
+  </g>
+
+  <!-- Connection lines (center → nodes) -->
+  <g stroke="#3b82f6" stroke-width="1.5" opacity="0.5" stroke-dasharray="4,3">
+    <!-- center to git (top-left) -->
+    <line x1="200" y1="150" x2="88" y2="82"/>
+    <!-- center to calendar (top-right) -->
+    <line x1="200" y1="150" x2="312" y2="82"/>
+    <!-- center to hrweb (bottom-left) -->
+    <line x1="200" y1="150" x2="88" y2="218"/>
+    <!-- center to cursor (bottom-right) -->
+    <line x1="200" y1="150" x2="312" y2="218"/>
+  </g>
+
+  <!-- Pulse rings on center -->
+  <circle cx="200" cy="150" r="52" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.15"/>
+  <circle cx="200" cy="150" r="68" fill="none" stroke="#3b82f6" stroke-width="0.5" opacity="0.08"/>
+
+  <!-- ── Satellite nodes ── -->
+
+  <!-- Git node (top-left) -->
+  <circle cx="88" cy="82" r="28" fill="url(#nodeGrad)" stroke="#3b82f6" stroke-width="1.5" opacity="0.9"/>
+  <!-- Git icon: branch -->
+  <g transform="translate(88,82)" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round">
+    <circle cx="-7" cy="-8" r="3.5" fill="#60a5fa" stroke="none"/>
+    <circle cx="-7" cy="8" r="3.5" fill="#60a5fa" stroke="none"/>
+    <circle cx="7" cy="-2" r="3.5" fill="#60a5fa" stroke="none"/>
+    <line x1="-7" y1="-4.5" x2="-7" y2="4.5"/>
+    <path d="M -7 -4.5 Q -7 -10 0 -10 Q 7 -10 7 -5.5" fill="none"/>
+  </g>
+
+  <!-- Calendar node (top-right) -->
+  <circle cx="312" cy="82" r="28" fill="url(#nodeGrad)" stroke="#3b82f6" stroke-width="1.5" opacity="0.9"/>
+  <!-- Calendar icon -->
+  <g transform="translate(312,82)">
+    <rect x="-10" y="-9" width="20" height="18" rx="2" fill="none" stroke="#60a5fa" stroke-width="1.8"/>
+    <line x1="-10" y1="-3" x2="10" y2="-3" stroke="#60a5fa" stroke-width="1.5"/>
+    <line x1="-5" y1="-12" x2="-5" y2="-6" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="5" y1="-12" x2="5" y2="-6" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="-6" y="1" width="4" height="3" rx="0.5" fill="#60a5fa"/>
+    <rect x="2" y="1" width="4" height="3" rx="0.5" fill="#60a5fa"/>
+  </g>
+
+  <!-- HRWeb node (bottom-left) -->
+  <circle cx="88" cy="218" r="28" fill="url(#nodeGrad)" stroke="#3b82f6" stroke-width="1.5" opacity="0.9"/>
+  <!-- HRWeb icon: person + web -->
+  <g transform="translate(88,218)" fill="#60a5fa" stroke="none">
+    <circle cx="0" cy="-8" r="5"/>
+    <path d="M -9 9 C -9 2 9 2 9 9 Z"/>
+  </g>
+
+  <!-- Claude/Cursor node (bottom-right) -->
+  <circle cx="312" cy="218" r="28" fill="url(#nodeGrad)" stroke="#3b82f6" stroke-width="1.5" opacity="0.9"/>
+  <!-- Terminal / prompt icon -->
+  <g transform="translate(312,218)" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round">
+    <rect x="-11" y="-9" width="22" height="18" rx="2.5"/>
+    <polyline points="-7,-3 -2,1 -7,5" stroke-width="2"/>
+    <line x1="0" y1="5" x2="8" y2="5"/>
+  </g>
+
+  <!-- ── Center node (MCP Agent) ── -->
+  <circle cx="200" cy="150" r="40" fill="url(#centerGrad)" filter="url(#softGlow)"/>
+  <!-- Inner lighter circle -->
+  <circle cx="200" cy="150" r="36" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+
+  <!-- Bot/Agent face icon -->
+  <g transform="translate(200,150)" fill="white">
+    <!-- Head outline -->
+    <rect x="-14" y="-14" width="28" height="24" rx="5" fill="rgba(255,255,255,0.15)" stroke="white" stroke-width="1.5"/>
+    <!-- Eyes -->
+    <rect x="-8" y="-7" width="5" height="5" rx="1.5" fill="white"/>
+    <rect x="3" y="-7" width="5" height="5" rx="1.5" fill="white"/>
+    <!-- Mouth / signal bars -->
+    <rect x="-6" y="2" width="3" height="4" rx="0.5" fill="rgba(255,255,255,0.5)"/>
+    <rect x="-1.5" y="0" width="3" height="6" rx="0.5" fill="rgba(255,255,255,0.75)"/>
+    <rect x="3" y="-1" width="3" height="7" rx="0.5" fill="white"/>
+    <!-- Antenna -->
+    <line x1="0" y1="-14" x2="0" y2="-20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="0" cy="-22" r="2.5" fill="white"/>
+  </g>
+
+  <!-- Labels -->
+  <text x="88" y="121" text-anchor="middle" font-family="monospace" font-size="9" fill="#93c5fd" opacity="0.9">Git</text>
+  <text x="312" y="121" text-anchor="middle" font-family="monospace" font-size="9" fill="#93c5fd" opacity="0.9">Calendar</text>
+  <text x="88" y="257" text-anchor="middle" font-family="monospace" font-size="9" fill="#93c5fd" opacity="0.9">HRWeb</text>
+  <text x="312" y="257" text-anchor="middle" font-family="monospace" font-size="9" fill="#93c5fd" opacity="0.9">Claude</text>
+
+  <!-- MCP label on center -->
+  <text x="200" y="204" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="white" opacity="0.9" letter-spacing="2">MCP</text>
+</svg>
