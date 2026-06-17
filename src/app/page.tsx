@@ -10,8 +10,10 @@ import { SideProjectsSection } from "@/components/sections/SideProjectsSection";
 import { BackgroundSection } from "@/components/sections/BackgroundSection";
 import { ContactSection } from "@/components/sections/ContactSection";
 import { SectionNav } from "@/components/SectionNav";
+import { BlogPreviewSection } from "@/components/sections/BlogPreviewSection";
 import { projects } from "@/lib/projects";
 import { profile } from "@/data/profile";
+import { getAllPosts } from "@/lib/blog";
 
 function parsePeriodStart(period: string): number {
   const m = period.match(/(\d{4})\.(\d{2})/);
@@ -38,6 +40,9 @@ const jsonLd = {
 };
 
 export default function Home() {
+  const recentPosts = getAllPosts()
+    .filter((p) => !p.slug.startsWith('interview-'))
+    .slice(0, 4);
   return (
     <LangProvider>
     <div id="portfolio-page">
@@ -55,6 +60,7 @@ export default function Home() {
         <CareerSection projects={companyProjects} company={profile.company} period={profile.period} />
         <SideProjectsSection projects={sideProjects} />
         <BackgroundSection />
+        <BlogPreviewSection posts={recentPosts} />
         <ContactSection />
       </main>
       <Footer />

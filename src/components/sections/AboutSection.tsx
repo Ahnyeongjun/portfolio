@@ -1,12 +1,19 @@
-import { profile } from '@/data/profile';
+'use client';
 
-const facts = [
-  { key: 'Now',  val: profile.company,    sub: `${profile.period} · ${profile.duration}` },
-  { key: 'Role', val: profile.roleFull,   sub: '백엔드 중심 · 프론트 · 인프라' },
-  { key: 'Base', val: profile.location,   sub: null },
-];
+import { profile } from '@/data/profile';
+import { useLang } from '@/context/lang';
 
 export function AboutSection() {
+  const { lang } = useLang();
+
+  const facts = [
+    { key: 'Now',  val: profile.company,  sub: lang === 'ko' ? `${profile.period} · ${profile.duration}` : `Jul 2021 ~ present · ${profile.durationEn}` },
+    { key: 'Role', val: profile.roleFull, sub: lang === 'ko' ? '백엔드 중심 · 프론트 · 인프라' : 'Backend-focused · Frontend · Infra' },
+    { key: 'Base', val: profile.location, sub: null },
+  ];
+
+  const intro = lang === 'ko' ? profile.introduction : profile.introductionEn;
+
   return (
     <section
       id="about"
@@ -19,7 +26,7 @@ export function AboutSection() {
         <div className="reveal">
           <span className="pf-kicker">소개</span>
           <h2 className="pf-h-sec" style={{ marginBottom: 32 }}>
-            {'구현에서 끝내지 않고\n구조와 생산성까지 고민합니다'}
+            {lang === 'ko' ? '구현에서 끝내지 않고\n구조와 생산성까지 고민합니다' : 'Not just shipping features —\nthinking about structure and impact'}
           </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderTop: '1px solid var(--pf-bdr)' }}>
@@ -57,7 +64,7 @@ export function AboutSection() {
 
         {/* Right — intro text, padded down to align with body */}
         <div className="reveal pf-about-body" style={{ transitionDelay: '90ms', paddingTop: 56 }}>
-          {profile.introduction.map((p, i) => <p key={i}>{p}</p>)}
+          {intro.map((p, i) => <p key={i}>{p}</p>)}
         </div>
 
       </div>

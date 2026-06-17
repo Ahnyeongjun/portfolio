@@ -69,13 +69,13 @@ export function HeroSection() {
               {lang === 'ko' ? '이직 준비 중' : 'Open to work'}
             </div>
             <h1 className="pf-hero-h1">
-              {profile.headingLine1}
+              {lang === 'ko' ? profile.headingLine1 : profile.headingLine1En}
               <br />
-              <span className="hl">{profile.headingHighlight}</span>
+              <span className="hl">{lang === 'ko' ? profile.headingHighlight : profile.headingHighlightEn}</span>
             </h1>
-            <p className="pf-hero-tagline">{profile.tagline}</p>
+            <p className="pf-hero-tagline">{lang === 'ko' ? profile.tagline : profile.taglineEn}</p>
             <div className="pf-hero-meta">
-              <span className="pf-hero-meta-item">{profile.company} · {profile.duration}</span>
+              <span className="pf-hero-meta-item">{profile.company} · {lang === 'ko' ? profile.duration : profile.durationEn}</span>
               <a className="pf-hero-meta-item" href={profile.githubUrl} target="_blank" rel="noreferrer">
                 @{profile.github}
               </a>

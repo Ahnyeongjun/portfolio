@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const sections = [
-  { id: 'top',        label: 'Hero' },
+  { id: 'top',        label: '홈' },
   { id: 'about',      label: '소개' },
   { id: 'skills',     label: '기술' },
   { id: 'career',     label: '경력' },
   { id: 'projects',   label: '프로젝트' },
   { id: 'background', label: '학력' },
+  { id: 'blog',       label: '블로그' },
   { id: 'contact',    label: '연락' },
 ];
 
@@ -37,7 +38,6 @@ export function SectionNav() {
 
   return (
     <nav className="pf-snav print:hidden" aria-label="섹션 이동">
-      {/* Up */}
       <button
         onClick={() => scrollTo(sections[Math.max(0, activeIndex - 1)].id)}
         className="pf-snav-arrow"
@@ -49,9 +49,6 @@ export function SectionNav() {
         </svg>
       </button>
 
-      <div className="pf-snav-rule" aria-hidden="true" />
-
-      {/* Section items */}
       <div className="pf-snav-items">
         {sections.map((s, i) => (
           <button
@@ -60,15 +57,11 @@ export function SectionNav() {
             onClick={() => scrollTo(s.id)}
             aria-label={s.label}
           >
-            <span className="pf-snav-dot-mark" />
             <span className="pf-snav-label">{s.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="pf-snav-rule" aria-hidden="true" />
-
-      {/* Down */}
       <button
         onClick={() => scrollTo(sections[Math.min(sections.length - 1, activeIndex + 1)].id)}
         className="pf-snav-arrow"
