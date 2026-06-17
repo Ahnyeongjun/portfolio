@@ -4,21 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { profile } from '@/data/profile';
 import { useLang } from '@/context/lang';
-import { strings } from '@/data/strings';
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const { lang, toggleLang } = useLang();
-  const t = strings.nav;
-
-  const navLinks = [
-    { href: '#about',      label: t.about[lang] },
-    { href: '#skills',     label: t.skills[lang] },
-    { href: '#career',     label: t.career[lang] },
-    { href: '#projects',   label: t.projects[lang] },
-    { href: '#background', label: t.background[lang] },
-    { href: '/blog',       label: t.blog[lang] },
-  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -30,24 +19,28 @@ export function Header() {
   return (
     <nav className={`pf-nav print:hidden${scrolled ? ' scrolled' : ''}`}>
       <div className="pf-nav-inner">
+        {/* Brand — left */}
         <a href="#top" className="pf-brand">
-          <span>
+          <span className="pf-brand-avatar" aria-hidden="true">
+            <span className="pf-brand-initials">AY</span>
+          </span>
+          <span className="pf-brand-info">
             <span className="pf-brand-name">{profile.name}</span>
             <span className="pf-brand-role">{profile.role}</span>
           </span>
         </a>
 
-        <div className="pf-nav-links">
-          {navLinks.map(({ href, label }) =>
-            href.startsWith('#') ? (
-              <a key={href} href={href} className="pf-nav-link">{label}</a>
-            ) : (
-              <Link key={href} href={href} className="pf-nav-link">{label}</Link>
-            )
-          )}
-        </div>
-
+        {/* Right controls */}
         <div className="pf-nav-right">
+          {/* Page links */}
+          <div className="pf-nav-links">
+            <a href="#top" className="pf-nav-link">포트폴리오</a>
+            <Link href="/blog" className="pf-nav-link">블로그</Link>
+          </div>
+
+          <div className="pf-nav-divider" aria-hidden="true"/>
+
+          {/* Language toggle */}
           <div className="pf-lang-toggle">
             <button
               type="button"
@@ -60,12 +53,6 @@ export function Header() {
               onClick={() => lang !== 'en' && toggleLang()}
             >EN</button>
           </div>
-          <a href={`mailto:${profile.email}`} className="pf-nav-cta">
-            <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 6h18v12H3z" /><path d="M3 7l9 6 9-6" />
-            </svg>
-            {t.contact[lang]}
-          </a>
         </div>
       </div>
     </nav>

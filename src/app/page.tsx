@@ -10,6 +10,7 @@ import { CareerSection } from "@/components/sections/CareerSection";
 import { SideProjectsSection } from "@/components/sections/SideProjectsSection";
 import { BackgroundSection } from "@/components/sections/BackgroundSection";
 import { ContactSection } from "@/components/sections/ContactSection";
+import { SectionNav } from "@/components/SectionNav";
 import { projects } from "@/lib/projects";
 import { profile } from "@/data/profile";
 
@@ -46,6 +47,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <RevealObserver />
+      <SectionNav />
       <Header />
       <main style={{ paddingTop: 68 }}>
         <HeroSection />

@@ -4,7 +4,7 @@ const techStack = [
   { label: 'Database', sub: 'data-layer', items: ['PostgreSQL', 'MySQL', 'Oracle', 'Redis', 'RabbitMQ'] },
   { label: 'DevOps', sub: 'infra-ops', items: ['Kubernetes', 'Docker', 'Jenkins', 'GitHub Actions', 'Kafka', 'Nginx'] },
   { label: 'AI / ML', sub: 'ai-ml', items: ['PyTorch', 'YOLOv5', 'ONNX Runtime', 'OpenAI API', 'MCP'] },
-  { label: 'Geospatial', sub: 'geo-data', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles', 'PostGIS'] },
+  { label: 'Geospatial', sub: 'geo-data', items: ['CesiumJS', 'GDAL', 'GeoTIFF', 'MBTiles', 'PostGIS', 'Nominatim'] },
 ];
 
 export function TechStackSection() {
