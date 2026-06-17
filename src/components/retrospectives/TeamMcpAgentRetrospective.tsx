@@ -147,7 +147,6 @@ export function TeamMcpAgentRetrospective({ description }: { description?: strin
         <AccordionSection
           title="엑셀 서식 100% 보존 — zipfile + XML 직접 조작"
           hint="openpyxl 서식 손실 → ElementTree로 셀 직접 주입"
-          defaultOpen
         >
           <p>
             주간보고 템플릿에는 병합 셀, 조건부 서식, 드롭다운 유효성 검사가 들어 있었습니다.
