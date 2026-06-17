@@ -223,41 +223,7 @@ def callback(ch, method, properties, body):
           </p>
         </AccordionSection>
 
-        {/* 3. Snowflake ID */}
-        <AccordionSection
-          title="폐쇄망 분산 ID — Snowflake 직접 구현"
-          hint="외부 코디네이터 접근 불가 · worker ID에 망 정보 인코딩"
-        >
-          <p>
-            폐쇄망 환경에서는 외부 ID 생성 서비스에 접근할 수 없었습니다.
-            UUID는 발급 서버를 추적할 수 없어 장애 발생 시 원인 서버 특정이 불가했습니다.
-            <Highlight>Snowflake 알고리즘</Highlight>을 직접 구현해 두 문제를 동시에 해결했습니다.
-          </p>
-          <CodeBlock>{`# Snowflake ID 구조 — 64비트
-# [timestamp 41bit] [datacenter_id 5bit] [worker_id 5bit] [sequence 12bit]
-#
-# worker_id에 망 정보 인코딩
-# → ID만으로 발급 서버(외부망/폐쇄망, 서비스 번호) 추적 가능
-
-class SnowflakeIDGenerator:
-    def __init__(self, datacenter_id: int, worker_id: int):
-        self.datacenter_id = datacenter_id  # 망 구분
-        self.worker_id = worker_id          # 서비스 구분
-        self.sequence = 0
-        self.last_timestamp = -1
-
-    def generate(self) -> int:
-        timestamp = self._current_ms()
-        if timestamp == self.last_timestamp:
-            self.sequence = (self.sequence + 1) & MAX_SEQUENCE
-        else:
-            self.sequence = 0
-        self.last_timestamp = timestamp
-        return (timestamp << 22) | (self.datacenter_id << 17) | \
-               (self.worker_id << 12) | self.sequence`}</CodeBlock>
-        </AccordionSection>
-
-        {/* 4. 프론트엔드 */}
+        {/* 3. 프론트엔드 */}
         <AccordionSection
           title="Next.js 15 FSD · CesiumJS 레이어 추상화"
           hint="Thymeleaf 레거시 → FSD 마이그레이션 · 이종 레이어 단일 인터페이스"
