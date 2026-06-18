@@ -233,13 +233,13 @@ def callback(ch, method, properties, body):
             headers={["역할", "기술", "담당", "API"]}
             rows={[
               { cells: ["게이트웨이", "K8s Ingress · Nginx", "경로 라우팅 · 타임아웃 · 업로드 제한", "—"] },
+              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
               { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
               { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
-              { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
               { cells: ["수집", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
               { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
+              { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
               { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
-              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
               { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
               { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
             ]}
