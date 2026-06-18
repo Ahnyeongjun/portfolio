@@ -306,7 +306,7 @@ public void beforeCommit(boolean readOnly) {
         {/* 4. OD/SEG */}
         <AccordionSection
           title="관심정보 객체탐지 · 변화탐지 세그멘테이션 성능 향상"
-          hint="OBB/HBB 이원화 · 회전 aug 역효과 발견 · DINOv2 실패 → ConvNeXt-22k · mAP50 0.644 · mIoU 0.7205"
+          hint="객체탐지 mAP50 0.644 · 세그멘테이션 mIoU 0.7205"
           module="AI 추론"
         >
           <p>
