@@ -201,28 +201,6 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
               { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
             ]}
           />
-          <CodeBlock>{`# Envoy Gateway — HTTPRoute + SecurityPolicy OIDC 인증
-# 1) 경로별 라우팅
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-spec:
-  rules:
-  - matches: [{ path: { value: /viewer } }]
-    backendRefs: [{ name: viewer, port: 8080 }]
-  - matches: [{ path: { value: /api } }]    # 뷰어가 서버사이드 프록시로 중계
-    backendRefs: [{ name: viewer, port: 8080 }]
-  - matches: [{ path: { value: /geosrv } }] # 지도 타일 서버
-    backendRefs: [{ name: tiler, port: 9101 }]
-
-# 2) OIDC 인증 — SecurityPolicy로 HTTPRoute 단위 적용
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-spec:
-  oidc:
-    provider:
-      issuer: "https://[도메인]/authn/realms/instationx"
-    scopes: ["openid", "profile", "email"]
-    forwardAccessToken: true   # ← 백엔드 서비스로 Access Token 전달`}</CodeBlock>
           <p>
             서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
             월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
@@ -254,27 +232,6 @@ spec:
               { cells: ["SSO", "직접 구현 불가", "Keycloak 세션 공유 기본 제공"] },
             ]}
           />
-          <CodeBlock>{`# SecurityPolicy — dispatcher 서비스에 OIDC 인증 적용
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: SecurityPolicy
-metadata:
-  name: dispatcher-oidc
-spec:
-  targetRefs:
-    - kind: HTTPRoute
-      name: dispatcher-client-route   # 이 라우트에만 인증 강제
-  oidc:
-    provider:
-      issuer: "https://[도메인]/authn/realms/instationx"
-      # auth / token / logout 엔드포인트 자동 디스커버리
-    clientID: dispatcher-client
-    clientSecret:
-      name: oidc-client-secret        # K8s Secret (SealedSecret으로 암호화)
-    scopes: ["openid", "profile", "email"]
-    forwardAccessToken: true          # 백엔드에 Access Token 전달
-    cookieNames:
-      idToken: dispatcher-id-token
-      accessToken: dispatcher-access-token`}</CodeBlock>
           <p>
             Keycloak 클라이언트를 서비스별로 분리해 권한 범위를 세밀하게 제어하고,
             SealedSecret으로 클라이언트 시크릿을 암호화해 Git에 커밋할 수 있게 했습니다.
@@ -333,40 +290,23 @@ def callback(ch, method, properties, body):
             64비트 ID 구조에서 worker ID 비트 영역에 <Highlight>망(network) 정보를 인코딩</Highlight>해
             외부 코디네이터 없이도 서버 식별과 단조 증가 ID를 보장했습니다.
           </p>
-          <CodeBlock>{`# Snowflake ID — worker_id에 망 정보 인코딩
-# 구조: [timestamp 41bit][datacenter 5bit][worker 5bit][sequence 12bit]
-import time, threading
-
-EPOCH = 1700000000000  # 커스텀 epoch (ms)
-DATACENTER_BITS = 5
-WORKER_BITS = 5
-SEQUENCE_BITS = 12
-
-class SnowflakeIDGenerator:
-    def __init__(self, datacenter_id: int, worker_id: int):
-        # datacenter_id: 망 식별 (0=외부망, 1=내부망, 2=분리망 ...)
-        # worker_id: 서비스 인스턴스 식별
-        self.datacenter_id = datacenter_id
-        self.worker_id = worker_id
-        self.sequence = 0
-        self.last_timestamp = -1
-        self._lock = threading.Lock()
-
-    def generate(self) -> int:
-        with self._lock:
-            ts = int(time.time() * 1000) - EPOCH
-            if ts == self.last_timestamp:
-                self.sequence = (self.sequence + 1) & ((1 << SEQUENCE_BITS) - 1)
-                if self.sequence == 0:           # sequence 소진 → 다음 ms 대기
-                    while ts <= self.last_timestamp:
-                        ts = int(time.time() * 1000) - EPOCH
-            else:
-                self.sequence = 0
-            self.last_timestamp = ts
-            return (ts << (DATACENTER_BITS + WORKER_BITS + SEQUENCE_BITS)
-                    | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
-                    | self.worker_id << SEQUENCE_BITS
-                    | self.sequence)`}</CodeBlock>
+          <CodeBlock>{`# 구조: [timestamp 41bit][datacenter 5bit][worker 5bit][sequence 12bit]
+# datacenter_id: 망 식별 (0=외부망, 1=내부망, 2=분리망)
+def generate(self) -> int:
+    with self._lock:
+        ts = int(time.time() * 1000) - EPOCH
+        if ts == self.last_timestamp:
+            self.sequence = (self.sequence + 1) & ((1 << SEQUENCE_BITS) - 1)
+            if self.sequence == 0:       # sequence 소진 → 다음 ms 대기
+                while ts <= self.last_timestamp:
+                    ts = int(time.time() * 1000) - EPOCH
+        else:
+            self.sequence = 0
+        self.last_timestamp = ts
+        return (ts << (DATACENTER_BITS + WORKER_BITS + SEQUENCE_BITS)
+                | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
+                | self.worker_id << SEQUENCE_BITS
+                | self.sequence)`}</CodeBlock>
           <p>
             생성된 ID에서 비트 마스크로 datacenter_id를 추출하면 어느 망의 어느 인스턴스가
             발행했는지 즉시 확인할 수 있습니다. 외부 인프라 의존 없이 단조 증가 · 전역 유일성 · 망 추적을 동시에 확보했습니다.
@@ -417,19 +357,6 @@ export function ViewerWidget({ mapType }: { mapType: string }) {
             시·도 / 시·군·구 / 사용자 AOI 단위 변화 면적·변화율을 집계합니다.
             지역 클릭 시 시계열 차트, 임계값 초과 지역은 히트맵으로 강조됩니다.
           </p>
-          <CodeBlock>{`-- PostGIS: 행정구역별 변화 면적 집계
-SELECT
-    r.region_name,
-    COUNT(c.id)                                             AS change_count,
-    ROUND(SUM(ST_Area(c.geom::geography)) / 1e6, 2)        AS change_area_km2,
-    ROUND(SUM(ST_Area(c.geom::geography)) /
-          ST_Area(r.geom::geography) * 100, 2)             AS change_rate_pct
-FROM regions r
-LEFT JOIN change_results c
-    ON ST_Intersects(c.geom, r.geom)
-   AND c.detected_at BETWEEN :start AND :end
-GROUP BY r.region_name, r.region_code, r.geom
-ORDER BY change_area_km2 DESC;`}</CodeBlock>
           <p className="font-medium text-foreground">달 모드 — 아폴로 경로 · 크레이터</p>
           <CompareTable
             headers={["레이어", "데이터 출처", "표현 방식"]}
