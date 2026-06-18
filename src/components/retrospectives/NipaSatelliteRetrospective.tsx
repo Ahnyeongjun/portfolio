@@ -305,24 +305,31 @@ class SnowflakeIDGenerator:
           </p>
         </AccordionSection>
 
-        {/* 4. 달지도 + 지역 통계 */}
+        {/* 4. FSD + YAML 조합 뷰어 */}
         <AccordionSection
-          title="달지도 · 지역별 변화 통계 — YAML 조합 뷰어"
-          hint="지구 변화탐지 + 달 지형을 단일 viewer 서비스에서 YAML로 레이어 조합"
+          title="Next.js 15 FSD · YAML 조합 뷰어 · 달지도 · 지역 통계"
+          hint="Thymeleaf → FSD 마이그레이션 · YAML 레이어 설정으로 지구/달 모드 조합"
         >
           <p>
-            지구 변화탐지 통계 뷰어와 달지도는 별도 서비스가 아닙니다.
-            하나의 CesiumJS viewer 서비스 안에서 <Highlight>YAML 레이어 설정</Highlight>으로
-            어떤 천체·데이터를 보여줄지 조합합니다.
-            지구 모드에서는 PostGIS 집계 결과를 행정구역별로 시각화하고,
-            달 모드로 전환하면 JAXA/NASA 타일 + 아폴로 탐사 경로·크레이터 레이어가 올라옵니다.
+            기존 Thymeleaf 기반 SSR은 페이지·컴포넌트 경계가 불명확해
+            수정 범위 예측이 어렵고 타입 안전성이 없었습니다.
+            Next.js 15를 처음 도입하면서 <Highlight>FSD(Feature-Sliced Design)</Highlight>를 함께 적용해
+            지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리했습니다.
           </p>
-          <CodeBlock>{`# viewer-config.yml — 레이어 조합 예시
+          <p>
+            피처를 분리해두면 <Highlight>YAML 레이어 설정</Highlight> 한 줄로
+            어떤 천체·데이터를 조합할지 결정하고,
+            Next.js <Highlight>Server Component</Highlight>가 서버에서 YAML을 읽어
+            사용자 권한에 맞게 필터링한 뒤 props로만 내려줍니다.
+            클라이언트에 설정이 노출되거나 레이어가 임의로 주입되는 위험이 없고,
+            <Highlight>dynamic import</Highlight>로 모드 전환 시점에 필요한 청크만 로드해 번들을 최소화합니다.
+          </p>
+          <CodeBlock>{`# viewer-config.yml — 서버에서만 접근, 레이어 조합 설정
 viewer:
   mode: earth   # earth | moon
 
   earth:
-    basemap: wmts          # 위성 영상 타일 서버
+    basemap: wmts
     layers:
       - type: change_result   # 변화탐지 결과 폴리곤
         source: api
@@ -331,18 +338,36 @@ viewer:
         aggregation: sido     # sido | sigungu | aoi
 
   moon:
-    basemap: jaxa_selene   # JAXA SELENE / NASA LRO 타일
+    basemap: jaxa_selene      # JAXA SELENE / NASA LRO 타일
     layers:
       - type: apollo_path     # 아폴로 탐사 경로 Polyline
         missions: [11, 12, 14, 15, 16, 17]
       - type: crater          # IAU 크레이터 카탈로그
         min_diameter_km: 1
       - type: landing_site    # 착륙 지점 Billboard`}</CodeBlock>
-          <p className="font-medium text-foreground">지구 모드 — 지역별 변화 통계</p>
+          <CodeBlock>{`// Server Component — 권한 필터링 후 props 전달
+export default async function ViewerPage({ user }) {
+  const config = await readViewerConfig();          // 서버에서만 YAML 접근
+  const permitted = config.layers.filter(
+    (l) => user.permissions.includes(l.permission)
+  );
+  return <ViewerWidget config={{ ...config, layers: permitted }} />;
+}
+
+// Client — 모드에 따라 피처 청크를 필요 시점에 동적 로드
+const EarthViewer = dynamic(() => import("@/features/earth-viewer"));
+const MoonViewer  = dynamic(() => import("@/features/moon-viewer"));
+
+export function ViewerWidget({ config }) {
+  return config.mode === "moon"
+    ? <MoonViewer layers={config.layers} />
+    : <EarthViewer layers={config.layers} />;
+}`}</CodeBlock>
+          <p className="font-medium text-foreground">지구 모드 — PostGIS 지역별 변화 통계</p>
           <p>
-            <Highlight>PostGIS</Highlight> 공간 집계로 변화 폴리곤과 행정구역을 조인해
+            변화 폴리곤과 행정구역을 공간 조인해
             시·도 / 시·군·구 / 사용자 AOI 단위 변화 면적·변화율을 집계합니다.
-            지역 클릭 시 시계열 차트가 표시되고, 임계값 초과 지역은 히트맵으로 강조됩니다.
+            지역 클릭 시 시계열 차트, 임계값 초과 지역은 히트맵으로 강조됩니다.
           </p>
           <CodeBlock>{`-- PostGIS: 행정구역별 변화 면적 집계
 SELECT
@@ -367,67 +392,12 @@ ORDER BY change_area_km2 DESC;`}</CodeBlock>
               { cells: ["착륙 지점", "아폴로 착륙 좌표", "Billboard (임무 아이콘)"] },
             ]}
           />
-        </AccordionSection>
-
-        {/* 5. 프론트엔드 */}
-        <AccordionSection
-          title="Next.js 15 FSD · CesiumJS 레이어 추상화"
-          hint="Thymeleaf 레거시 → FSD 마이그레이션 · 이종 레이어 단일 인터페이스"
-        >
           <p>
-            기존 Thymeleaf 기반 SSR은 페이지·컴포넌트 경계가 불명확했습니다.
-            수정 범위 예측이 어렵고 타입 안전성이 없어 런타임에서야 오류가 발견됐습니다.
-            이 프로젝트에서 Next.js 15를 처음 도입하면서 <Highlight>FSD(Feature-Sliced Design)</Highlight>를 함께 적용했습니다.
-            기존 코드 의존 방향을 분석한 뒤 레이어 단위로 순차 전환했습니다.
+            CesiumJS는 레이어 재정렬을 지원하지 않아 내부 <Highlight>imageryLayers</Highlight>를 직접 조작했고,
+            토글 시 삭제 대신 <code>layer.show = false</code>로 WebGL 텍스처를 보존했습니다.
+            MVT·MBTiles·ImageLayer·달지도 등 이종 레이어를 <Highlight>단일 인터페이스</Highlight>로 추상화해
+            신규 레이어 타입 추가 시 기존 코드 수정 없이 확장 가능했습니다.
           </p>
-          <p>
-            CesiumJS는 레이어 재정렬을 지원하지 않습니다.
-            드래그로 레이어 순서를 바꾸려면 내부 <Highlight>imageryLayers</Highlight>를 직접 조작해야 했습니다.
-            또한 레이어 토글 시 삭제 방식을 쓰면 WebGL 텍스처가 전부 해제되어 재로드 비용이 발생했습니다.
-          </p>
-          <CodeBlock>{`// 레이어 재정렬 — imageryLayers 직접 조작
-function reorderLayer(viewer, fromIndex, toIndex) {
-  const layers = viewer.imageryLayers;
-  const layer = layers.get(fromIndex);
-  layers.remove(layer, false);   // destroy=false, 리소스 유지
-  layers.add(layer, toIndex);
-}
-
-// 토글 — 삭제 대신 가시성 플래그 전환 (WebGL 리소스 보존)
-layer.show = false;`}</CodeBlock>
-          <p>
-            MVT·MBTiles·ImageLayer·BaseMap·달지도 등 이종 레이어 타입을
-            <Highlight>단일 인터페이스</Highlight>로 추상화해 신규 레이어 타입 추가 시 기존 코드 수정 없이 확장 가능했습니다.
-          </p>
-          <p>
-            FSD로 피처를 분리해두면 달지도·지역통계처럼 무거운 피처를
-            <Highlight>동적 임포트</Highlight>로 필요 시점에만 로드할 수 있습니다.
-            viewer-config는 서버에만 존재하고 Next.js Server Component가
-            사용자 권한에 맞게 필터링한 뒤 props로만 내려주므로
-            클라이언트에 설정이 노출되거나 레이어가 임의로 주입되는 위험이 없습니다.
-          </p>
-          <CodeBlock>{`// Server Component — YAML 읽어 권한 필터링 후 props 전달
-import { readViewerConfig } from "@/shared/lib/config";
-
-export default async function ViewerPage({ user }) {
-  const config = await readViewerConfig();          // 서버에서만 YAML 접근
-  const permitted = config.layers.filter(
-    (l) => user.permissions.includes(l.permission)  // 권한 없는 레이어 제거
-  );
-  return <ViewerWidget config={{ ...config, layers: permitted }} />;
-}
-
-// Client — 모드에 따라 피처 청크를 필요 시점에 동적 로드
-const EarthViewer = dynamic(() => import("@/features/earth-viewer"));
-const MoonViewer  = dynamic(() => import("@/features/moon-viewer"));
-
-export function ViewerWidget({ config }) {
-  return config.mode === "moon" ? (
-    <MoonViewer layers={config.layers} />   // 달지도 청크는 여기서만 로드
-  ) : (
-    <EarthViewer layers={config.layers} />
-  );
-}`}</CodeBlock>
         </AccordionSection>
 
       </div>
