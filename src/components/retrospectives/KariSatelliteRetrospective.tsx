@@ -280,7 +280,7 @@ public void beforeCommit(boolean readOnly) {
         {/* 3. 영상 서빙 */}
         <AccordionSection
           title="영상 서빙 속도 개선"
-          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현 · CesiumJS 커스텀 프로바이더"
+          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현"
           module="타일 / 파일 서버"
         >
           <p>
@@ -292,15 +292,30 @@ public void beforeCommit(boolean readOnly) {
             rows={[
               { cells: ["WMS", "요청마다 동적 렌더링", "임의 영역·해상도 조회"] },
               { cells: ["WMTS", "사전 분할 타일 디스크 캐싱", "반복 조회 즉시 응답 (2.4s → 0.4s)"], highlight: true },
-              { cells: ["MVT", "객체탐지 결과 벡터 타일화", "줌 레벨별 탐지 결과 오버레이 (신규)"], highlight: true },
+              { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
             ]}
           />
+          <p className="font-medium text-foreground">GeoJSON → MVT 전환</p>
           <p>
-            CesiumJS 기본 ImageryProvider는 WMTS 커스텀 파라미터 제어, MVT 벡터 타일, GeoTIFF 직접 서빙을 지원하지 않습니다.
-            세 가지 모두 <Highlight>커스텀 ImageryProvider</Highlight>를 직접 구현해 대응했습니다.
-            위성 소스마다 좌표계와 타일 URL 패턴이 달라 단일 인터페이스로 추상화해,
-            소스가 추가돼도 기존 코드 수정 없이 확장할 수 있게 했습니다.
+            기존에는 객체탐지 결과를 <Highlight>GeoJSON으로 요청마다 동적 생성</Highlight>해 내려줬습니다.
+            영역 기반 조회 특성상 캐시 히트율이 낮아 캐싱 효과도 없었고,
+            GeoJSON은 줌 레벨과 무관하게 항상 풀 디테일로 직렬화되기 때문에
+            멀리서 볼 때도 수십만 개 좌표를 전부 전송했습니다.
           </p>
+          <p>
+            ETL 파이프라인에서 탐지 결과를 <Highlight>MVT(Mapbox Vector Tile)로 사전 생성</Highlight>하도록 바꿨습니다.
+            MVT는 줌 레벨별로 형상을 자동 단순화해 멀리서는 적은 데이터만, 확대할수록 정밀한 형상을 전송합니다.
+            요청 시 생성 없이 미리 만들어진 타일을 바로 서빙하므로 체감 속도가 완전히 달라졌습니다.
+          </p>
+          <CompareTable
+            headers={["구분", "GeoJSON 동적 생성", "MVT 사전 생성"]}
+            rows={[
+              { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
+              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화"], highlight: true },
+              { cells: ["캐시 효율", "영역 기반 — 히트율 낮음", "타일 단위 — 재사용 가능"] },
+              { cells: ["생성 시점", "요청마다 실시간", "ETL 완료 시 자동"] },
+            ]}
+          />
         </AccordionSection>
 
         {/* 4. OD/SEG */}
