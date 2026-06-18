@@ -170,17 +170,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         도메인 특화 뷰어 기능도 직접 구현했습니다.
       </p>
 
-      {/* 주요 성과 */}
-      <CompareTable
-        headers={["지표", "이전", "개선 후"]}
-        rows={[
-          { cells: ["배포 속도", "4분", "30초"], highlight: true },
-          { cells: ["월 재배포 횟수", "10건", "1건"], highlight: true },
-          { cells: ["작업 유실", "반복 발생 (RUNNING 고착)", "0건"], highlight: true },
-          { cells: ["아키텍처", "모놀리식", "9개 MSA · 독립 배포"] },
-          { cells: ["프론트엔드", "Thymeleaf SSR", "Next.js 15 FSD"] },
-        ]}
-      />
+
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
