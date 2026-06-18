@@ -226,12 +226,13 @@ def callback(ch, method, properties, body):
           <p>
             기존 구조는 기능 하나를 배포하려면 전체 서비스를 재시작해야 했습니다.
             영상 처리 로직 수정이 인증 서비스 다운타임으로 이어졌습니다.
-            전 서비스를 <Highlight>독립 FastAPI 서비스</Highlight>로 분리하고
-            Nginx 리버스 프록시로 라우팅했습니다.
+            전 서비스를 <Highlight>독립 서비스</Highlight>로 분리하고
+            <Highlight>Kubernetes Ingress (Nginx Ingress Controller)</Highlight>를 게이트웨이로 두어 경로별로 라우팅했습니다.
           </p>
           <CompareTable
             headers={["역할", "기술", "담당", "API"]}
             rows={[
+              { cells: ["게이트웨이", "K8s Ingress · Nginx", "경로 라우팅 · 타임아웃 · 업로드 제한", "—"] },
               { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
               { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
               { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
@@ -243,7 +244,21 @@ def callback(ch, method, properties, body):
               { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
             ]}
           />
-          <p className="text-xs text-muted-foreground/60">REST API 합계: 약 49개 (API 서버 28 · 영상 서빙 8 · worker 서비스 13)</p>
+          <CodeBlock>{`# ingress-service.yaml — 경로별 서비스 라우팅
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 4096m   # 위성 영상 대용량 업로드
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "99999"  # AI 추론 장시간 대기
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /viewer   # 웹 뷰어 (Next.js)
+        backend: { service: { name: viewer, port: 8080 } }
+      - path: /api      # API 서버 — 뷰어가 서버사이드 프록시로 중계
+        backend: { service: { name: viewer, port: 8080 } }
+      - path: /geosrv   # 지도 타일 서버
+        backend: { service: { name: tiler, port: 9101 } }`}</CodeBlock>
           <p>
             서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
             월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
@@ -307,8 +322,8 @@ class SnowflakeIDGenerator:
 
         {/* 4. FSD + YAML 조합 뷰어 */}
         <AccordionSection
-          title="Next.js 15 FSD · YAML 조합 뷰어 · 달지도 · 지역 통계"
-          hint="Thymeleaf → FSD 마이그레이션 · YAML 레이어 설정으로 지구/달 모드 조합"
+          title="Next.js 15 FSD · 멀티 배포 뷰어 · 달지도 · 지역 통계"
+          hint="Thymeleaf → FSD 마이그레이션 · 동일 이미지를 K8s env로 지구/달 모드 분리 배포"
         >
           <p>
             기존 Thymeleaf 기반 SSR은 페이지·컴포넌트 경계가 불명확해
@@ -317,51 +332,31 @@ class SnowflakeIDGenerator:
             지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리했습니다.
           </p>
           <p>
-            피처를 분리해두면 <Highlight>YAML 레이어 설정</Highlight> 한 줄로
-            어떤 천체·데이터를 조합할지 결정하고,
-            Next.js <Highlight>Server Component</Highlight>가 서버에서 YAML을 읽어
-            사용자 권한에 맞게 필터링한 뒤 props로만 내려줍니다.
-            클라이언트에 설정이 노출되거나 레이어가 임의로 주입되는 위험이 없고,
-            <Highlight>dynamic import</Highlight>로 모드 전환 시점에 필요한 청크만 로드해 번들을 최소화합니다.
+            피처를 분리해두면 <Highlight>동일한 Docker 이미지</Highlight>를
+            K8s pod의 환경변수만 바꿔 여러 배포판으로 나눌 수 있습니다.
+            <code>MAP_TYPE: EARTH|MOON</code> 하나로 뷰어 모드가 결정되고,
+            백엔드 URL은 <code>BACKEND_API_URL</code>로만 주입돼 클라이언트에 노출되지 않습니다.
+            <Highlight>dynamic import</Highlight>로 달지도 청크는 MOON 모드 진입 시점에만 로드됩니다.
           </p>
-          <CodeBlock>{`# viewer-config.yml — 서버에서만 접근, 레이어 조합 설정
-viewer:
-  mode: earth   # earth | moon
-
-  earth:
-    basemap: wmts
-    layers:
-      - type: change_result   # 변화탐지 결과 폴리곤
-        source: api
-      - type: region_stat     # 행정구역별 변화 집계 히트맵
-        source: api
-        aggregation: sido     # sido | sigungu | aoi
-
-  moon:
-    basemap: jaxa_selene      # JAXA SELENE / NASA LRO 타일
-    layers:
-      - type: apollo_path     # 아폴로 탐사 경로 Polyline
-        missions: [11, 12, 14, 15, 16, 17]
-      - type: crater          # IAU 크레이터 카탈로그
-        min_diameter_km: 1
-      - type: landing_site    # 착륙 지점 Billboard`}</CodeBlock>
-          <CodeBlock>{`// Server Component — 권한 필터링 후 props 전달
-export default async function ViewerPage({ user }) {
-  const config = await readViewerConfig();          // 서버에서만 YAML 접근
-  const permitted = config.layers.filter(
-    (l) => user.permissions.includes(l.permission)
-  );
-  return <ViewerWidget config={{ ...config, layers: permitted }} />;
-}
-
-// Client — 모드에 따라 피처 청크를 필요 시점에 동적 로드
+          <CodeBlock>{`# viewer-nipa.pod.yaml (지구 변화탐지)   /   viewer-moon.pod.yaml (달지도)
+# 동일 이미지, env만 다름
+env:
+  - name: MAP_TYPE
+    value: "EARTH"          # ← MOON으로 바꾸면 달지도 모드
+  - name: VIEWER_TITLE
+    value: "국토 변화 정보 서비스"
+  - name: BACKEND_API_URL   # 서버사이드 프록시 — 클라이언트에 백엔드 URL 미노출
+    value: "http://[내부IP]:16103"
+  - name: UI_MAP_INDEX_VISIBLE
+    value: "true"           # MOON 배포에서는 false — 변화 인덱스 위젯 숨김`}</CodeBlock>
+          <CodeBlock>{`// Client — MAP_TYPE env에 따라 피처 청크를 필요 시점에 동적 로드
 const EarthViewer = dynamic(() => import("@/features/earth-viewer"));
 const MoonViewer  = dynamic(() => import("@/features/moon-viewer"));
 
-export function ViewerWidget({ config }) {
-  return config.mode === "moon"
-    ? <MoonViewer layers={config.layers} />
-    : <EarthViewer layers={config.layers} />;
+export function ViewerWidget({ mapType }: { mapType: string }) {
+  return mapType === "MOON"
+    ? <MoonViewer />    // 달지도 청크 — MOON 배포에서만 로드
+    : <EarthViewer />;  // 지구 변화탐지 청크
 }`}</CodeBlock>
           <p className="font-medium text-foreground">지구 모드 — PostGIS 지역별 변화 통계</p>
           <p>
