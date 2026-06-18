@@ -250,7 +250,62 @@ def callback(ch, method, properties, body):
           </p>
         </AccordionSection>
 
-        {/* 3. 지역별 변화 통계 */}
+        {/* 3. Snowflake ID */}
+        <AccordionSection
+          title="폐쇄망 분산 ID — Snowflake 알고리즘 직접 구현"
+          hint="외부 코디네이터 접근 불가 · UUID 서버 추적 한계 → worker ID에 망 정보 인코딩"
+        >
+          <p>
+            분리망 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
+            UUID v4는 완전 랜덤이라 ID만으로 어느 서버에서 생성됐는지 역추적이 불가능했습니다.
+            worker 재시작 시 ID 중복 가능성도 있었습니다.
+          </p>
+          <p>
+            <Highlight>Snowflake 알고리즘</Highlight>을 직접 구현해 이 문제를 해결했습니다.
+            64비트 ID 구조에서 worker ID 비트 영역에 <Highlight>망(network) 정보를 인코딩</Highlight>해
+            외부 코디네이터 없이도 서버 식별과 단조 증가 ID를 보장했습니다.
+          </p>
+          <CodeBlock>{`# Snowflake ID — worker_id에 망 정보 인코딩
+# 구조: [timestamp 41bit][datacenter 5bit][worker 5bit][sequence 12bit]
+import time, threading
+
+EPOCH = 1700000000000  # 커스텀 epoch (ms)
+DATACENTER_BITS = 5
+WORKER_BITS = 5
+SEQUENCE_BITS = 12
+
+class SnowflakeIDGenerator:
+    def __init__(self, datacenter_id: int, worker_id: int):
+        # datacenter_id: 망 식별 (0=외부망, 1=내부망, 2=분리망 ...)
+        # worker_id: 서비스 인스턴스 식별
+        self.datacenter_id = datacenter_id
+        self.worker_id = worker_id
+        self.sequence = 0
+        self.last_timestamp = -1
+        self._lock = threading.Lock()
+
+    def generate(self) -> int:
+        with self._lock:
+            ts = int(time.time() * 1000) - EPOCH
+            if ts == self.last_timestamp:
+                self.sequence = (self.sequence + 1) & ((1 << SEQUENCE_BITS) - 1)
+                if self.sequence == 0:           # sequence 소진 → 다음 ms 대기
+                    while ts <= self.last_timestamp:
+                        ts = int(time.time() * 1000) - EPOCH
+            else:
+                self.sequence = 0
+            self.last_timestamp = ts
+            return (ts << (DATACENTER_BITS + WORKER_BITS + SEQUENCE_BITS)
+                    | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
+                    | self.worker_id << SEQUENCE_BITS
+                    | self.sequence)`}</CodeBlock>
+          <p>
+            생성된 ID에서 비트 마스크로 datacenter_id를 추출하면 어느 망의 어느 인스턴스가
+            발행했는지 즉시 확인할 수 있습니다. 외부 인프라 의존 없이 단조 증가 · 전역 유일성 · 망 추적을 동시에 확보했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 4. 지역별 변화 통계 */}
         <AccordionSection
           title="지역별 변화 탐지 통계 시각화"
           hint="PostGIS 공간 집계 · 행정구역 단위 변화량 대시보드"
@@ -289,7 +344,7 @@ GROUP BY r.region_name, r.region_code, r.geom
 ORDER BY change_area_km2 DESC;`}</CodeBlock>
         </AccordionSection>
 
-        {/* 4. 달지도 */}
+        {/* 5. 달지도 */}
         <AccordionSection
           title="달지도 — 아폴로 탐사 경로 · 크레이터 레이어"
           hint="CesiumJS 달 지형 타일 · 아폴로 11~17호 이동 경로 시각화"
@@ -349,7 +404,7 @@ craters.forEach(({ name, lon, lat, diameter_km }) => {
           </p>
         </AccordionSection>
 
-        {/* 5. 프론트엔드 */}
+        {/* 6. 프론트엔드 */}
         <AccordionSection
           title="Next.js 15 FSD · CesiumJS 레이어 추상화"
           hint="Thymeleaf 레거시 → FSD 마이그레이션 · 이종 레이어 단일 인터페이스"
