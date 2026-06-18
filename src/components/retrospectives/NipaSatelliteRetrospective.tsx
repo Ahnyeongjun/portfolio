@@ -185,44 +185,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
 
-        {/* 1. RabbitMQ */}
-        <AccordionSection
-          title="RabbitMQ ack/nack · DLQ 비동기 파이프라인"
-          hint="Salt 폴링 작업 고착 → 작업 유실 0건"
-        >
-          <p>
-            이전 프로젝트에서 Salt 스케줄러로 작업을 디스패치했을 때 노드가 재시작되면
-            완료 콜백이 호출되지 않아 <Highlight>작업이 RUNNING 상태로 고착</Highlight>됐습니다.
-            타임아웃 복구 전까지 후속 작업이 쌓이고 수동 DB 수정이 반복됐습니다.
-          </p>
-          <p>
-            변화탐지 작업은 수 분~수십 분이 소요됩니다.
-            처음부터 <Highlight>ack/nack</Highlight> 기반 큐로 설계해 이 문제를 원천 차단했습니다.
-            worker는 처리를 완전히 마친 뒤에만 ack를 보내고, 처리 중 노드가 죽으면
-            RabbitMQ가 자동으로 메시지를 재투입합니다.
-            3회 초과 실패 시 <Highlight>DLQ</Highlight>로 격리해 운영자가 원인을 파악한 뒤 수동 republish합니다.
-          </p>
-          <CodeBlock>{`# DLX 설정 — 재시도 3회 초과 시 DLQ 격리
-channel.exchange_declare(exchange='gprocessor.dlx', exchange_type='direct', durable=True)
-channel.queue_declare(queue='gprocessor.dlq', durable=True)
-channel.queue_declare(
-    queue='gprocessor', durable=True,
-    arguments={'x-dead-letter-exchange': 'gprocessor.dlx'}
-)
-
-def callback(ch, method, properties, body):
-    death_count = len((properties.headers or {}).get('x-death', []))
-    try:
-        process(body)
-        ch.basic_ack(delivery_tag=method.delivery_tag)       # 성공: 큐에서 제거
-    except Exception:
-        if death_count >= 3:
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # DLQ 격리
-        else:
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)   # 재시도`}</CodeBlock>
-        </AccordionSection>
-
-        {/* 2. MSA */}
+        {/* 1. MSA */}
         <AccordionSection
           title="모놀리식 → 9개 MSA · FastAPI 전환"
           hint="재배포 월 10건 → 1건 · 배포 속도 4분 → 30초"
@@ -326,6 +289,43 @@ spec:
             Keycloak 클라이언트를 서비스별로 분리해 권한 범위를 세밀하게 제어하고,
             SealedSecret으로 클라이언트 시크릿을 암호화해 Git에 커밋할 수 있게 했습니다.
           </p>
+        </AccordionSection>
+
+        {/* 3. RabbitMQ */}
+        <AccordionSection
+          title="RabbitMQ ack/nack · DLQ 비동기 파이프라인"
+          hint="Salt 폴링 작업 고착 → 작업 유실 0건"
+        >
+          <p>
+            이전 프로젝트에서 Salt 스케줄러로 작업을 디스패치했을 때 노드가 재시작되면
+            완료 콜백이 호출되지 않아 <Highlight>작업이 RUNNING 상태로 고착</Highlight>됐습니다.
+            타임아웃 복구 전까지 후속 작업이 쌓이고 수동 DB 수정이 반복됐습니다.
+          </p>
+          <p>
+            변화탐지 작업은 수 분~수십 분이 소요됩니다.
+            처음부터 <Highlight>ack/nack</Highlight> 기반 큐로 설계해 이 문제를 원천 차단했습니다.
+            worker는 처리를 완전히 마친 뒤에만 ack를 보내고, 처리 중 노드가 죽으면
+            RabbitMQ가 자동으로 메시지를 재투입합니다.
+            3회 초과 실패 시 <Highlight>DLQ</Highlight>로 격리해 운영자가 원인을 파악한 뒤 수동 republish합니다.
+          </p>
+          <CodeBlock>{`# DLX 설정 — 재시도 3회 초과 시 DLQ 격리
+channel.exchange_declare(exchange='gprocessor.dlx', exchange_type='direct', durable=True)
+channel.queue_declare(queue='gprocessor.dlq', durable=True)
+channel.queue_declare(
+    queue='gprocessor', durable=True,
+    arguments={'x-dead-letter-exchange': 'gprocessor.dlx'}
+)
+
+def callback(ch, method, properties, body):
+    death_count = len((properties.headers or {}).get('x-death', []))
+    try:
+        process(body)
+        ch.basic_ack(delivery_tag=method.delivery_tag)       # 성공: 큐에서 제거
+    except Exception:
+        if death_count >= 3:
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # DLQ 격리
+        else:
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)   # 재시도`}</CodeBlock>
         </AccordionSection>
 
         {/* 4. Snowflake ID */}
