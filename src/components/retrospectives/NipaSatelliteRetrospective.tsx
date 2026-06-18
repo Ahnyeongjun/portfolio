@@ -230,20 +230,20 @@ def callback(ch, method, properties, body):
             Nginx 리버스 프록시로 라우팅했습니다.
           </p>
           <CompareTable
-            headers={["서비스", "기술", "역할", "API"]}
+            headers={["역할", "기술", "담당", "API"]}
             rows={[
-              { cells: ["db-api", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
-              { cells: ["image-api", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
-              { cells: ["gprocessor", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
-              { cells: ["collector", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
-              { cells: ["cataloger", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
-              { cells: ["cprocessor", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
-              { cells: ["viewer", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
-              { cells: ["broker", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
-              { cells: ["database", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
+              { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
+              { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
+              { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
+              { cells: ["수집", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
+              { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
+              { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
+              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
+              { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
+              { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
             ]}
           />
-          <p className="text-xs text-muted-foreground/60">REST API 합계: 약 49개 (db-api 28 · image-api 8 · worker 서비스 13)</p>
+          <p className="text-xs text-muted-foreground/60">REST API 합계: 약 49개 (API 서버 28 · 영상 서빙 8 · worker 서비스 13)</p>
           <p>
             서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
             월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
