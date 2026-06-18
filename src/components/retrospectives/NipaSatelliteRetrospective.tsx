@@ -399,6 +399,35 @@ layer.show = false;`}</CodeBlock>
             MVT·MBTiles·ImageLayer·BaseMap·달지도 등 이종 레이어 타입을
             <Highlight>단일 인터페이스</Highlight>로 추상화해 신규 레이어 타입 추가 시 기존 코드 수정 없이 확장 가능했습니다.
           </p>
+          <p>
+            FSD로 피처를 분리해두면 달지도·지역통계처럼 무거운 피처를
+            <Highlight>동적 임포트</Highlight>로 필요 시점에만 로드할 수 있습니다.
+            viewer-config는 서버에만 존재하고 Next.js Server Component가
+            사용자 권한에 맞게 필터링한 뒤 props로만 내려주므로
+            클라이언트에 설정이 노출되거나 레이어가 임의로 주입되는 위험이 없습니다.
+          </p>
+          <CodeBlock>{`// Server Component — YAML 읽어 권한 필터링 후 props 전달
+import { readViewerConfig } from "@/shared/lib/config";
+
+export default async function ViewerPage({ user }) {
+  const config = await readViewerConfig();          // 서버에서만 YAML 접근
+  const permitted = config.layers.filter(
+    (l) => user.permissions.includes(l.permission)  // 권한 없는 레이어 제거
+  );
+  return <ViewerWidget config={{ ...config, layers: permitted }} />;
+}
+
+// Client — 모드에 따라 피처 청크를 필요 시점에 동적 로드
+const EarthViewer = dynamic(() => import("@/features/earth-viewer"));
+const MoonViewer  = dynamic(() => import("@/features/moon-viewer"));
+
+export function ViewerWidget({ config }) {
+  return config.mode === "moon" ? (
+    <MoonViewer layers={config.layers} />   // 달지도 청크는 여기서만 로드
+  ) : (
+    <EarthViewer layers={config.layers} />
+  );
+}`}</CodeBlock>
         </AccordionSection>
 
       </div>
