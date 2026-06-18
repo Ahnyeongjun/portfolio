@@ -322,12 +322,12 @@ viewer:
   mode: earth   # earth | moon
 
   earth:
-    basemap: wmts          # Go image-api 타일 서버
+    basemap: wmts          # 위성 영상 타일 서버
     layers:
       - type: change_result   # 변화탐지 결과 폴리곤
-        source: db-api
+        source: api
       - type: region_stat     # 행정구역별 변화 집계 히트맵
-        source: db-api
+        source: api
         aggregation: sido     # sido | sigungu | aoi
 
   moon:
