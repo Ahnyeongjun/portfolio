@@ -305,33 +305,48 @@ class SnowflakeIDGenerator:
           </p>
         </AccordionSection>
 
-        {/* 4. 지역별 변화 통계 */}
+        {/* 4. 달지도 + 지역 통계 */}
         <AccordionSection
-          title="지역별 변화 탐지 통계 시각화"
-          hint="PostGIS 공간 집계 · 행정구역 단위 변화량 대시보드"
+          title="달지도 · 지역별 변화 통계 — YAML 조합 뷰어"
+          hint="지구 변화탐지 + 달 지형을 단일 viewer 서비스에서 YAML로 레이어 조합"
         >
           <p>
-            변화탐지 결과를 픽셀 단위로만 보여주면 운영자가 전체적인 변화 추이를 파악하기 어렵습니다.
-            <Highlight>PostGIS</Highlight>의 공간 집계 함수를 활용해 변화 폴리곤과
-            행정구역 레이어를 조인하고, 지역별 변화 면적·건수를 집계했습니다.
+            지구 변화탐지 통계 뷰어와 달지도는 별도 서비스가 아닙니다.
+            하나의 CesiumJS viewer 서비스 안에서 <Highlight>YAML 레이어 설정</Highlight>으로
+            어떤 천체·데이터를 보여줄지 조합합니다.
+            지구 모드에서는 PostGIS 집계 결과를 행정구역별로 시각화하고,
+            달 모드로 전환하면 JAXA/NASA 타일 + 아폴로 탐사 경로·크레이터 레이어가 올라옵니다.
           </p>
-          <CompareTable
-            headers={["집계 단위", "활용 데이터", "제공 지표"]}
-            rows={[
-              { cells: ["시·도", "행정구역 폴리곤 + 변화탐지 결과", "변화 면적(㎢) · 변화 건수"], highlight: true },
-              { cells: ["시·군·구", "세분화 행정구역 + 탐지 결과", "변화율(%) · 기간별 추이"] },
-              { cells: ["사용자 AOI", "직접 그린 폴리곤", "관심 구역 내 변화 요약"] },
-            ]}
-          />
+          <CodeBlock>{`# viewer-config.yml — 레이어 조합 예시
+viewer:
+  mode: earth   # earth | moon
+
+  earth:
+    basemap: wmts          # Go image-api 타일 서버
+    layers:
+      - type: change_result   # 변화탐지 결과 폴리곤
+        source: db-api
+      - type: region_stat     # 행정구역별 변화 집계 히트맵
+        source: db-api
+        aggregation: sido     # sido | sigungu | aoi
+
+  moon:
+    basemap: jaxa_selene   # JAXA SELENE / NASA LRO 타일
+    layers:
+      - type: apollo_path     # 아폴로 탐사 경로 Polyline
+        missions: [11, 12, 14, 15, 16, 17]
+      - type: crater          # IAU 크레이터 카탈로그
+        min_diameter_km: 1
+      - type: landing_site    # 착륙 지점 Billboard`}</CodeBlock>
+          <p className="font-medium text-foreground">지구 모드 — 지역별 변화 통계</p>
           <p>
-            CesiumJS 뷰어에서 지역을 클릭하면 해당 행정구역의 시계열 변화 차트가
-            사이드 패널에 표시됩니다. 변화량이 임계값을 초과한 지역은
-            <Highlight>히트맵 레이어</Highlight>로 강조해 이상 지역을 빠르게 식별할 수 있습니다.
+            <Highlight>PostGIS</Highlight> 공간 집계로 변화 폴리곤과 행정구역을 조인해
+            시·도 / 시·군·구 / 사용자 AOI 단위 변화 면적·변화율을 집계합니다.
+            지역 클릭 시 시계열 차트가 표시되고, 임계값 초과 지역은 히트맵으로 강조됩니다.
           </p>
           <CodeBlock>{`-- PostGIS: 행정구역별 변화 면적 집계
 SELECT
     r.region_name,
-    r.region_code,
     COUNT(c.id)                                             AS change_count,
     ROUND(SUM(ST_Area(c.geom::geography)) / 1e6, 2)        AS change_area_km2,
     ROUND(SUM(ST_Area(c.geom::geography)) /
@@ -342,69 +357,19 @@ LEFT JOIN change_results c
    AND c.detected_at BETWEEN :start AND :end
 GROUP BY r.region_name, r.region_code, r.geom
 ORDER BY change_area_km2 DESC;`}</CodeBlock>
-        </AccordionSection>
-
-        {/* 5. 달지도 */}
-        <AccordionSection
-          title="달지도 — 아폴로 탐사 경로 · 크레이터 레이어"
-          hint="CesiumJS 달 지형 타일 · 아폴로 11~17호 이동 경로 시각화"
-        >
-          <p>
-            지구 위성 영상 외에 달 지형 데이터를 뷰어에 통합했습니다.
-            CesiumJS는 커스텀 <Highlight>ImageryProvider</Highlight>를 통해
-            지구 외 천체도 렌더링할 수 있습니다.
-            JAXA SELENE / NASA LRO 기반의 달 지형 타일을 이미지 레이어로 연동했습니다.
-          </p>
+          <p className="font-medium text-foreground">달 모드 — 아폴로 경로 · 크레이터</p>
           <CompareTable
             headers={["레이어", "데이터 출처", "표현 방식"]}
             rows={[
               { cells: ["달 기본 지형", "JAXA SELENE / NASA LRO 타일", "CesiumJS ImageryLayer"], highlight: true },
-              { cells: ["아폴로 탐사 경로", "NASA 아폴로 11 ~ 17호 EVA 좌표", "Polyline Entity (임무별 색상 구분)"], highlight: true },
-              { cells: ["크레이터", "IAU 크레이터 카탈로그 GeoJSON", "Point + Label Entity (직경별 크기 스케일)"] },
-              { cells: ["착륙 지점", "아폴로 착륙 좌표", "Billboard Entity (임무 아이콘)"] },
+              { cells: ["아폴로 탐사 경로", "NASA 아폴로 11 ~ 17호 EVA 좌표", "Polyline (임무별 색상)"], highlight: true },
+              { cells: ["크레이터", "IAU 크레이터 카탈로그 GeoJSON", "Point · 직경 비례 크기 스케일"] },
+              { cells: ["착륙 지점", "아폴로 착륙 좌표", "Billboard (임무 아이콘)"] },
             ]}
           />
-          <CodeBlock>{`// 달 지형 + 아폴로 경로 레이어 초기화
-const viewer = new Cesium.Viewer("cesiumContainer", {
-  imageryProvider: new Cesium.UrlTemplateImageryProvider({
-    url: MOON_TILE_URL + "/{z}/{x}/{y}.png",
-    credit: "JAXA SELENE / NASA LRO",
-  }),
-  terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-});
-
-// 아폴로 임무별 탐사 경로 — Polyline
-APOLLO_MISSIONS.forEach(({ name, color, coordinates }) => {
-  viewer.entities.add({
-    name,
-    polyline: {
-      positions: Cesium.Cartesian3.fromDegreesArray(coordinates.flat()),
-      width: 2,
-      material: Cesium.Color.fromCssColorString(color),
-    },
-  });
-});
-
-// 크레이터 — 직경에 따라 Point 크기 스케일
-craters.forEach(({ name, lon, lat, diameter_km }) => {
-  viewer.entities.add({
-    position: Cesium.Cartesian3.fromDegrees(lon, lat),
-    point: {
-      pixelSize: Math.min(4 + diameter_km * 0.3, 20),
-      color: Cesium.Color.GRAY.withAlpha(0.7),
-    },
-    label: { text: name, font: "11px sans-serif", show: diameter_km > 50 },
-  });
-});`}</CodeBlock>
-          <p>
-            아폴로 11~17호의 EVA(달 표면 활동) 경로를 임무별 색상으로 구분해 표시하고,
-            착륙 지점에는 임무 아이콘 빌보드를 배치했습니다.
-            크레이터는 IAU 카탈로그 기준 직경에 따라 포인트 크기를 스케일해
-            지형과 함께 직관적으로 확인할 수 있습니다.
-          </p>
         </AccordionSection>
 
-        {/* 6. 프론트엔드 */}
+        {/* 5. 프론트엔드 */}
         <AccordionSection
           title="Next.js 15 FSD · CesiumJS 레이어 추상화"
           hint="Thymeleaf 레거시 → FSD 마이그레이션 · 이종 레이어 단일 인터페이스"
