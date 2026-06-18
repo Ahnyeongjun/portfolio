@@ -290,7 +290,7 @@ public void beforeCommit(boolean readOnly) {
           <CompareTable
             headers={["프로토콜", "방식", "용도"]}
             rows={[
-              { cells: ["WMS", "요청마다 동적 렌더링 · 캐싱 없음", "고정 단일 영역 조회 — 타일 경계 분할 계산 불필요, 지정 영역 그대로 렌더링"] },
+              { cells: ["WMS", "요청마다 동적 렌더링 · 좌표 기반 캐싱 불가", "고정 단일 영역에만 사용 — 좌표가 매번 달라 캐시 히트율 0%에 수렴"] },
               { cells: ["WMTS", "사전 분할 타일 디스크 캐싱", "반복 조회 즉시 응답 (2.4s → 0.4s)"], highlight: true },
               { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
             ]}
