@@ -76,11 +76,13 @@ function FlowNode({ children, highlight, sub }: { children: React.ReactNode; hig
 function AccordionSection({
   title,
   hint,
+  module: moduleName,
   children,
   defaultOpen,
 }: {
   title: string;
   hint?: string;
+  module?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
@@ -89,8 +91,13 @@ function AccordionSection({
       <summary className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none bg-muted/20 hover:bg-muted/30 transition-colors [list-style:none] [&::-webkit-details-marker]:hidden">
         <div className="flex-1 min-w-0">
           <span className="font-semibold text-foreground text-sm">{title}</span>
-          {hint && <span className="ml-2.5 text-xs text-muted-foreground">{hint}</span>}
+          {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
         </div>
+        {moduleName && (
+          <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary/10 text-primary">
+            {moduleName}
+          </span>
+        )}
         <svg
           className="w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200 group-open:rotate-180"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -112,7 +119,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — 9개 MSA</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — MSA</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary/40" />
@@ -151,7 +158,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Python + ONNX</p>
-            <FlowNode highlight sub="ECT · MambaCD · MINIMA · ack/nack · DLQ">변화탐지 AI</FlowNode>
+            <FlowNode highlight sub="ECT · MambaCD · MINIMA — 모델 선정 진행 중">변화탐지 AI</FlowNode>
           </div>
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -163,11 +170,15 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
 
       {/* 도입부 */}
       <p>
-        두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼.
-        NIPA(정보통신산업진흥원) 지원 사업. 기존 모놀리식 구조를 9개 MSA로 분리하고
-        RabbitMQ 비동기 파이프라인과 Next.js 15 FSD를 처음 도입했습니다.
-        지역별 변화 통계 시각화, 달지도(아폴로 탐사 경로·크레이터) 등
-        도메인 특화 뷰어 기능도 직접 구현했습니다.
+        NIPA(정보통신산업진흥원) 지원으로 구축한, 두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 변화탐지 플랫폼입니다.
+      </p>
+      <p>
+        기능 하나를 수정해도 전체를 재배포해야 했던 모놀리식 구조를 MSA로 분리했습니다.
+        백엔드는 서비스별 독립 배포가 가능해졌지만, 프론트엔드는 굳이 서비스를 나눌 필요가 없었습니다.
+        대신 동일한 이미지를 환경변수(<code>MAP_TYPE: EARTH | MOON</code>)만 바꿔
+        지구 변화탐지 / 달지도 모드로 분기하는 구조를 택했습니다.
+        RabbitMQ 비동기 파이프라인과 Next.js 15 FSD도 처음 도입해
+        지역별 변화 통계·달지도(아폴로 탐사 경로·크레이터) 등 도메인 특화 뷰어 기능을 구현했습니다.
       </p>
 
 
@@ -175,42 +186,11 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
 
-        {/* 1. MSA */}
-        <AccordionSection
-          title="모놀리식 → 9개 MSA · FastAPI 전환"
-          hint="재배포 월 10건 → 1건 · 배포 속도 4분 → 30초"
-        >
-          <p>
-            기존 구조는 기능 하나를 배포하려면 전체 서비스를 재시작해야 했습니다.
-            영상 처리 로직 수정이 인증 서비스 다운타임으로 이어졌습니다.
-            전 서비스를 <Highlight>독립 서비스</Highlight>로 분리하고
-            <Highlight>Envoy Gateway</Highlight>를 게이트웨이로 두어 경로별 라우팅과 OIDC 인증을 처리했습니다.
-          </p>
-          <CompareTable
-            headers={["역할", "기술", "담당", "API"]}
-            rows={[
-              { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
-              { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
-              { cells: ["수집", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
-              { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
-              { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
-              { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
-              { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
-              { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
-              { cells: ["게이트웨이", "Envoy Gateway · Keycloak", "OIDC 인증 · 경로 라우팅 · TLS · 업로드 제한", "—"] },
-              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
-            ]}
-          />
-          <p>
-            서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
-            월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
-          </p>
-        </AccordionSection>
-
-        {/* 3. Keycloak OIDC */}
+        {/* 1. Keycloak OIDC */}
         <AccordionSection
           title="Envoy Gateway + Keycloak OIDC — 게이트웨이 레벨 인증"
           hint="각 서비스 인증 코드 제거 · SecurityPolicy로 HTTPRoute 단위 적용"
+          module="백엔드 공통"
         >
           <p>
             초기에는 각 FastAPI 서비스가 JWT 검증 로직을 직접 처리했습니다.
@@ -242,6 +222,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         <AccordionSection
           title="RabbitMQ ack/nack · DLQ 비동기 파이프라인"
           hint="Salt 폴링 작업 고착 → 작업 유실 0건"
+          module="백엔드 공통"
         >
           <p>
             이전 프로젝트에서 Salt 스케줄러로 작업을 디스패치했을 때 노드가 재시작되면
@@ -275,41 +256,41 @@ def callback(ch, method, properties, body):
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)   # 재시도`}</CodeBlock>
         </AccordionSection>
 
-        {/* 4. Snowflake ID */}
+        {/* 4. MSA */}
         <AccordionSection
-          title="폐쇄망 분산 ID — Snowflake 알고리즘 직접 구현"
-          hint="외부 코디네이터 접근 불가 · UUID 서버 추적 한계 → worker ID에 망 정보 인코딩"
+          title="모놀리식 → MSA · FastAPI 전환"
+          hint="재배포 월 10건 → 1건 · 배포 속도 4분 → 30초"
+          module="전체 시스템"
         >
           <p>
-            분리망 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
-            UUID v4는 완전 랜덤이라 ID만으로 어느 서버에서 생성됐는지 역추적이 불가능했습니다.
-            worker 재시작 시 ID 중복 가능성도 있었습니다.
+            기존 구조는 기능 하나를 배포하려면 전체 서비스를 재시작해야 했습니다.
+            영상 처리 로직 수정이 인증 서비스 다운타임으로 이어졌습니다.
+            전 서비스를 <Highlight>독립 서비스</Highlight>로 분리하고
+            <Highlight>Envoy Gateway</Highlight>를 게이트웨이로 두어 경로별 라우팅과 OIDC 인증을 처리했습니다.
           </p>
           <p>
-            <Highlight>Snowflake 알고리즘</Highlight>을 직접 구현해 이 문제를 해결했습니다.
-            64비트 ID 구조에서 worker ID 비트 영역에 <Highlight>망(network) 정보를 인코딩</Highlight>해
-            외부 코디네이터 없이도 서버 식별과 단조 증가 ID를 보장했습니다.
+            ETL·AI 추론 워커들은 Python 스크립트·셸로 운영되던 것을 전부 <Highlight>FastAPI</Highlight>로 전환했습니다.
+            표준화된 인터페이스 덕분에 Envoy Gateway 라우팅에 그대로 편입할 수 있었고,
+            헬스체크·메트릭 엔드포인트도 일관되게 붙일 수 있었습니다.
           </p>
-          <CodeBlock>{`# 구조: [timestamp 41bit][datacenter 5bit][worker 5bit][sequence 12bit]
-# datacenter_id: 망 식별 (0=외부망, 1=내부망, 2=분리망)
-def generate(self) -> int:
-    with self._lock:
-        ts = int(time.time() * 1000) - EPOCH
-        if ts == self.last_timestamp:
-            self.sequence = (self.sequence + 1) & ((1 << SEQUENCE_BITS) - 1)
-            if self.sequence == 0:       # sequence 소진 → 다음 ms 대기
-                while ts <= self.last_timestamp:
-                    ts = int(time.time() * 1000) - EPOCH
-        else:
-            self.sequence = 0
-        self.last_timestamp = ts
-        return (ts << (DATACENTER_BITS + WORKER_BITS + SEQUENCE_BITS)
-                | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
-                | self.worker_id << SEQUENCE_BITS
-                | self.sequence)`}</CodeBlock>
+          <CompareTable
+            headers={["역할", "기술", "담당", "API"]}
+            rows={[
+              { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
+              { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
+              { cells: ["수집", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
+              { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
+              { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
+              { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
+              { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
+              { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
+              { cells: ["게이트웨이", "Envoy Gateway · Keycloak", "OIDC 인증 · 경로 라우팅 · TLS · 업로드 제한", "—"] },
+              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
+            ]}
+          />
           <p>
-            생성된 ID에서 비트 마스크로 datacenter_id를 추출하면 어느 망의 어느 인스턴스가
-            발행했는지 즉시 확인할 수 있습니다. 외부 인프라 의존 없이 단조 증가 · 전역 유일성 · 망 추적을 동시에 확보했습니다.
+            서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
+            월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
           </p>
         </AccordionSection>
 
@@ -317,6 +298,7 @@ def generate(self) -> int:
         <AccordionSection
           title="Next.js 15 FSD · 멀티 배포 뷰어 · 달지도 · 지역 통계"
           hint="Thymeleaf → FSD 마이그레이션 · 동일 이미지를 K8s env로 지구/달 모드 분리 배포"
+          module="웹 뷰어"
         >
           <p>
             기존 Thymeleaf 기반 SSR은 페이지·컴포넌트 경계가 불명확해

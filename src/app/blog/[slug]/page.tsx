@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Clock, Tag, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Tag, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { getAllPosts, getPostBySlug, getSeriesPosts } from "@/lib/blog";
+import { BlogShell } from "@/components/blog/BlogShell";
 import { Header } from "@/components/Header";
 
 export function generateStaticParams() {
@@ -45,52 +46,49 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const nextPost = currentIndex < seriesPosts.length - 1 ? seriesPosts[currentIndex + 1] : null;
 
   return (
-    <div id="portfolio-page">
+    <BlogShell>
       <Header />
       <main style={{ paddingTop: 68 }}>
         <div className="pf-wrap">
           <div className="pf-blog-article">
 
-            <Link href="/blog" className="pf-blog-back">
-              <ArrowLeft size={14} />
-              블로그로 돌아가기
-            </Link>
-
-            {post.series && (
-              <div style={{ marginBottom: 8 }}>
-                <span className="pf-blog-series-badge">
-                  <BookOpen size={13} />
-                  {post.series} · {post.seriesOrder}/{seriesPosts.length}편
-                </span>
+            {/* 헤더 메타 영역 */}
+            <div className="pf-blog-art-header">
+              {/* 시리즈 + 카테고리 배지 행 */}
+              <div className="pf-blog-art-badges">
+                <Link
+                  href={`/blog/category/${encodeURIComponent(post.category)}`}
+                  className="pf-blog-cat-badge"
+                >
+                  <Tag size={11} />
+                  {post.category}
+                </Link>
+                {post.series && (
+                  <span className="pf-blog-series-badge">
+                    <BookOpen size={13} />
+                    {post.series} · {post.seriesOrder}/{seriesPosts.length}편
+                  </span>
+                )}
               </div>
-            )}
 
-            <div style={{ marginBottom: 18 }}>
-              <Link
-                href={`/blog/category/${encodeURIComponent(post.category)}`}
-                className="pf-blog-cat-badge"
-              >
-                <Tag size={11} />
-                {post.category}
-              </Link>
+              <h1 className="pf-blog-h1">{post.title}</h1>
+              <p className="pf-blog-lead">{post.description}</p>
+
+              <div className="pf-blog-meta">
+                <span className="pf-blog-meta-item"><Calendar size={13} />{post.date}</span>
+                <span className="pf-blog-meta-item"><Clock size={13} />{post.readingTime}</span>
+              </div>
+
+              {post.tags.length > 0 && (
+                <div className="pf-blog-taglist">
+                  {post.tags.map((tag) => (
+                    <span key={tag} className="pf-blog-art-tag">#{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <h1 className="pf-blog-h1">{post.title}</h1>
-            <p className="pf-blog-lead">{post.description}</p>
-
-            <div className="pf-blog-meta">
-              <span className="pf-blog-meta-item"><Calendar size={13} />{post.date}</span>
-              <span className="pf-blog-meta-item"><Clock size={13} />{post.readingTime}</span>
-            </div>
-
-            {post.tags.length > 0 && (
-              <div className="pf-blog-taglist">
-                {post.tags.map((tag) => (
-                  <span key={tag} className="pf-blog-art-tag">#{tag}</span>
-                ))}
-              </div>
-            )}
-
+            {/* 시리즈 목차 */}
             {seriesPosts.length > 0 && (
               <div className="pf-blog-toc">
                 <div className="pf-blog-toc-head">
@@ -113,6 +111,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
             <hr className="pf-blog-divider" />
 
+            {/* 본문 */}
             <div className="prose-custom">
               <MDXRemote
                 source={post.content}
@@ -120,6 +119,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               />
             </div>
 
+            {/* 이전/다음 글 */}
             {(prevPost || nextPost) && (
               <div className="pf-blog-nav">
                 {prevPost ? (
@@ -144,6 +144,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
         </div>
       </main>
-    </div>
+    </BlogShell>
   );
 }

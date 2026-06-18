@@ -1,6 +1,7 @@
 import { getBlogListItems, getCategories } from "@/lib/blog";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { SeriesCard } from "@/components/blog/SeriesCard";
+import { BlogShell } from "@/components/blog/BlogShell";
 import { Header } from "@/components/Header";
 import { FileText } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +20,7 @@ export default function BlogPage() {
   const categories = getCategories();
 
   return (
-    <div id="portfolio-page">
+    <BlogShell>
       <Header />
       <main style={{ paddingTop: 68 }}>
         <div className="pf-wrap" style={{ paddingTop: 56, paddingBottom: 96 }}>
@@ -58,6 +59,6 @@ export default function BlogPage() {
 
         </div>
       </main>
-    </div>
+    </BlogShell>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { profile } from '@/data/profile';
 import { useLang } from '@/context/lang';
 import { useTranslations } from 'next-intl';
@@ -10,6 +12,10 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const { lang, toggleLang } = useLang();
   const t = useTranslations('nav');
+  const pathname = usePathname();
+
+  const portfolioHref = pathname === '/' ? '#top' : '/';
+  const isBlogPost = pathname.startsWith('/blog/') && !pathname.startsWith('/blog/category');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -21,25 +27,32 @@ export function Header() {
   return (
     <nav className={`pf-nav print:hidden${scrolled ? ' scrolled' : ''}`}>
       <div className="pf-nav-inner">
-        {/* Brand — left */}
-        <a href="#top" className="pf-brand">
-          <span className="pf-brand-info">
-            <span className="pf-brand-name">{profile.name}</span>
-            <span className="pf-brand-role">{profile.role}</span>
-          </span>
-        </a>
 
-        {/* Right controls */}
+        {isBlogPost ? (
+          <Link href="/blog" className="pf-nav-back">
+            <ArrowLeft size={15} />
+            {t('blog')}
+          </Link>
+        ) : (
+          <Link href={portfolioHref} className="pf-brand">
+            <span className="pf-brand-info">
+              <span className="pf-brand-name">{profile.name}</span>
+              <span className="pf-brand-role">{profile.role}</span>
+            </span>
+          </Link>
+        )}
+
         <div className="pf-nav-right">
-          {/* Page links */}
-          <div className="pf-nav-links">
-            <a href="#top" className="pf-nav-link">{t('portfolio')}</a>
-            <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
-          </div>
+          {!isBlogPost && (
+            <>
+              <div className="pf-nav-links">
+                <Link href={portfolioHref} className="pf-nav-link">{t('portfolio')}</Link>
+                <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
+              </div>
+              <div className="pf-nav-divider" aria-hidden="true" />
+            </>
+          )}
 
-          <div className="pf-nav-divider" aria-hidden="true"/>
-
-          {/* Language toggle */}
           <div className="pf-lang-toggle">
             <button
               type="button"
@@ -53,6 +66,7 @@ export function Header() {
             >EN</button>
           </div>
         </div>
+
       </div>
     </nav>
   );

@@ -189,7 +189,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
       <p>
         어드민 페이지에서는 위성별 수집 현황과 분석 진행 상황을 한눈에 모니터링합니다.
         API 200여 개·테이블 35개 규모의 시스템을 6개 서비스 모듈로 구성했으며,
-        ETL 파이프라인을 제외한 나머지 모듈 전체를 처음부터 설계·구현했습니다. 3인 팀, 2년.
+        ETL 파이프라인을 제외한 나머지 모듈 전체를 처음부터 설계·구현했습니다.
       </p>
 
       <div className="space-y-2">
@@ -275,6 +275,30 @@ public class OutboxInterceptor implements Interceptor {
 public void beforeCommit(boolean readOnly) {
     outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
+          <p className="font-medium text-foreground">폐쇄망 분산 ID — Snowflake 알고리즘 직접 구현</p>
+          <p>
+            외부망↔폐쇄망 물리 분리 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
+            UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.
+            <Highlight>Snowflake 알고리즘</Highlight>을 직접 구현해 worker ID 비트 영역에 <Highlight>망 정보를 인코딩</Highlight>하고,
+            외부 코디네이터 없이 단조 증가 · 전역 유일성 · 망 추적을 동시에 확보했습니다.
+          </p>
+          <CodeBlock>{`# 구조: [timestamp 41bit][datacenter 5bit][worker 5bit][sequence 12bit]
+# datacenter_id: 망 식별 (0=외부망, 1=내부망, 2=분리망)
+def generate(self) -> int:
+    with self._lock:
+        ts = int(time.time() * 1000) - EPOCH
+        if ts == self.last_timestamp:
+            self.sequence = (self.sequence + 1) & ((1 << SEQUENCE_BITS) - 1)
+            if self.sequence == 0:
+                while ts <= self.last_timestamp:
+                    ts = int(time.time() * 1000) - EPOCH
+        else:
+            self.sequence = 0
+        self.last_timestamp = ts
+        return (ts << (DATACENTER_BITS + WORKER_BITS + SEQUENCE_BITS)
+                | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
+                | self.worker_id << SEQUENCE_BITS
+                | self.sequence)`}</CodeBlock>
         </AccordionSection>
 
         {/* 3. 영상 서빙 */}

@@ -10,7 +10,7 @@ const contact = {
 };
 
 const summary =
-  "5년차 백엔드 엔지니어. 모놀리식 → 9개 MSA 전환 주도로 재배포 월 10건→1건·배포 속도 4분→30초, Go 기반 영상 API 응답 4초→0.5초 미만, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건. K8s 인프라 설계·운영(HPA·OpenSearch 중앙 로깅·클러스터 분리) 경험 보유. 백엔드 경계 밖이어도 필요하다고 판단하면 직접 움직입니다.";
+  "5년차 백엔드 엔지니어. 모놀리식 → MSA 전환 주도로 재배포 월 10건→1건·배포 속도 4분→30초, Go 기반 영상 API 응답 4초→0.5초 미만, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건. K8s 인프라 설계·운영(HPA·OpenSearch 중앙 로깅·클러스터 분리) 경험 보유. 백엔드 경계 밖이어도 필요하다고 판단하면 직접 움직입니다.";
 
 const experience = {
   company: "한컴인스페이스",
@@ -23,7 +23,7 @@ const experience = {
       period: "2022.12 ~ 현재",
       tags: ["Spring Boot", "FastAPI", "K8s", "RabbitMQ", "PyTorch", "Next.js", "Storybook"],
       points: [
-        "모놀리식 → MSA·이벤트 드리븐 아키텍처 전환 주도 — 9개 서비스 분리, 레플리카 10개 이상 운영",
+        "모놀리식 → MSA·이벤트 드리븐 아키텍처 전환 주도 — 서비스별 독립 배포, 레플리카 10개 이상 운영",
         "Snowflake 알고리즘 기반 분산 ID 생성기 직접 구현 — 동시 요청 시 ID 중복 방지 및 발생 서버 추적",
         "기능별 플로우 차트·테스트 로직 추가, CI/CD 자동화로 커밋 시 자동 검증 체계 구축",
         "PyTorch 기반 AI 모델 서빙 — SwinTransformer·ConvNeXt 분류, YOLO 탐지, UPerNet 분할, ChangeStar 변화탐지",

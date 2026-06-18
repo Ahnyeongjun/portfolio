@@ -25,7 +25,7 @@
     "deployLabel": "서비스 배포 속도",
     "reportLabel": "주간보고 자동화",
     "reportValue": "1시간 → 자동화",
-    "reportSub": "Git · 캘린더 병합 MCP — 팀 10명 실사용"
+    "reportSub": "Git · 캘린더 병합 MCP"
   },
   "about": {
     "kicker": "소개",

@@ -43,8 +43,8 @@ function CompareTable({
                 row.highlight
                   ? "bg-primary/5"
                   : row.muted
-                  ? "opacity-50"
-                  : "hover:bg-muted/20 transition-colors"
+                    ? "opacity-50"
+                    : "hover:bg-muted/20 transition-colors"
               }
             >
               {row.cells.map((cell, j) => (
@@ -62,11 +62,10 @@ function CompareTable({
 
 function FlowNode({ children, highlight, sub }: { children: React.ReactNode; highlight?: boolean; sub?: string }) {
   return (
-    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center flex-1 ${
-      highlight
-        ? "bg-primary/10 border-primary/30 text-primary"
-        : "bg-background border-border text-foreground"
-    }`}>
+    <div className={`px-3 py-1.5 rounded-md border text-xs font-medium text-center flex-1 ${highlight
+      ? "bg-primary/10 border-primary/30 text-primary"
+      : "bg-background border-border text-foreground"
+      }`}>
       {children}
       {sub && <div className="font-normal text-muted-foreground mt-0.5">{sub}</div>}
     </div>
@@ -135,8 +134,7 @@ export function TeamMcpAgentRetrospective({ description }: { description?: strin
 
       {/* 도입부 */}
       <p>
-        주간보고 작성, HRWeb 공수 입력, 한컴 공수 등 반복 업무를 자동화하기 위해 개인적으로 개발 후
-        팀 전체(10명)에 공유한 MCP 기반 에이전트입니다.
+        주간보고 작성, HRWeb 공수 입력, 한컴 공수 등 반복 업무를 자동화하기 위해 개인적으로 개발 후 공유한 MCP 기반 에이전트입니다.
         FastMCP로 8개 도구를 구현하고 Cursor·Claude Desktop에서 바로 호출할 수 있도록 배포했습니다.
       </p>
 
@@ -280,7 +278,7 @@ def generate_report(start_date: str, end_date: str) -> str:
         {/* 4. FastMCP 8 tools */}
         <AccordionSection
           title="FastMCP 8개 도구 구성 · 팀 배포"
-          hint="Cursor · Claude Desktop 바로 호출 · 팀 10명 실사용"
+          hint="Cursor · Claude Desktop 바로 호출"
         >
           <p>
             FastMCP를 사용하면 Python 함수에 <Highlight>@mcp.tool()</Highlight> 데코레이터만 붙이면

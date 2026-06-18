@@ -3,8 +3,8 @@ export const profile = {
   initials: 'AYJ',
   role: 'Backend Developer',
   roleFull: 'Full-Stack Developer',
-  tagline: '운영 중인 서비스의 구조적 한계를 직접 진단하고, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자입니다.',
-  taglineEn: 'Backend engineer who diagnoses structural bottlenecks in production systems and proves improvements with measurable numbers.',
+  tagline: '구조적 병목을 직접 파고들어, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자입니다.',
+  taglineEn: 'Backend engineer who digs into production bottlenecks and proves every architectural fix with measurable numbers.',
   location: '서울, Korea',
   company: '한컴인스페이스',
   duration: '5년차 (2021.07~)',
@@ -21,13 +21,11 @@ export const profile = {
   headingLine1En: 'Solving production problems',
   headingHighlightEn: 'through architecture',
   introduction: [
-    '운영 서비스의 구조적 한계를 마주하면 피하지 않고 직접 파고들어, 측정 가능한 개선을 만들어온 개발자입니다. 병목이 생기면 현상이 아닌 근본 원인부터 짚었고 — 아키텍처를 바꿔 수치로 증명했습니다.',
-    '모놀리식 → 9개 서비스 MSA 전환으로 재배포 월 10건→1건·배포 속도 4분→30초, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건. 이벤트 드리븐 설계(Saga·Outbox), 3-layer 테스트 피라미드 구축, K8s HPA 운영까지 — 추상적인 \'개선\'이 아니라 측정 가능한 수치로 설계의 타당성을 증명해왔습니다.',
+    '모놀리식 → MSA 전환으로 재배포 월 10건→1건·배포 4분→30초, Outbox 패턴 직접 구현으로 이벤트 유실 0건, k6 부하테스트 에러율 11.22% → 0%. 이벤트 드리븐 설계(Saga·Outbox)·3-layer 테스트 피라미드·K8s HPA까지 직접 운영했습니다.',
     'Next.js FSD 마이그레이션 주도, FastMCP 기반 AI 에이전트 개발 — 필요한 곳이라면 스택을 가리지 않고 직접 만들어왔습니다.',
   ],
   introductionEn: [
-    'When I hit structural limits in production systems, I dig into root causes rather than patching symptoms — then prove the fix with measurable numbers.',
-    'Migrated a monolith to 9-service MSA: monthly redeployments dropped from 10 to 1, deploy time from 4 min to 30 sec. Built an Outbox pattern library from scratch — zero event loss. Event-driven design (Saga · Outbox), 3-layer test pyramid, K8s HPA operations — abstract "improvements" proved with concrete metrics.',
+    'Migrated a monolith to 9-service MSA (10→1 monthly redeployments, deploy time 4 min→30 sec), built Outbox from scratch (zero event loss), drove k6 load-test error rate from 11.22% to 0%. Shipped event-driven design (Saga · Outbox), 3-layer test pyramid, and K8s HPA in production.',
     'Led a Next.js FSD migration, built a FastMCP-based AI agent — when something needs to be built, I build it regardless of the stack.',
   ],
 } as const;
