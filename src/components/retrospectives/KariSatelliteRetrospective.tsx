@@ -311,11 +311,18 @@ public void beforeCommit(boolean readOnly) {
             headers={["구분", "GeoJSON 동적 생성", "MVT 사전 생성"]}
             rows={[
               { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
-              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화"], highlight: true },
+              { cells: ["클라이언트 사양", "i5 이상 필요", "펜티엄급에서도 동작"], highlight: true },
+              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화 — 확대해도 보이는 영역만"], highlight: true },
               { cells: ["캐시 효율", "영역 기반 — 히트율 낮음", "타일 단위 — 재사용 가능"] },
               { cells: ["생성 시점", "요청마다 실시간", "ETL 완료 시 자동"] },
             ]}
           />
+          <p>
+            MVT는 확대할수록 디테일이 올라가지만 <Highlight>가시 영역 자체가 좁아지기 때문에</Highlight>
+            전송·렌더링해야 할 데이터량은 오히려 일정하게 유지됩니다.
+            GeoJSON처럼 전체 탐지 결과를 한 번에 내려주지 않아 클라이언트 메모리 부담이 크게 줄었고,
+            사양 제약이 있는 현장 운용 환경에서도 원활하게 동작하게 됐습니다.
+          </p>
         </AccordionSection>
 
         {/* 4. OD/SEG */}
