@@ -23,11 +23,11 @@ export const profile = {
   introduction: [
     '운영 서비스의 구조적 한계를 마주하면 피하지 않고 직접 파고들어, 측정 가능한 개선을 만들어온 개발자입니다. 병목이 생기면 현상이 아닌 근본 원인부터 짚었고 — 아키텍처를 바꿔 수치로 증명했습니다.',
     '모놀리식 → 9개 서비스 MSA 전환으로 재배포 월 10건→1건·배포 속도 4분→30초, Outbox 패턴 라이브러리 직접 개발로 이벤트 유실 0건. 이벤트 드리븐 설계(Saga·Outbox), 3-layer 테스트 피라미드 구축, K8s HPA 운영까지 — 추상적인 \'개선\'이 아니라 측정 가능한 수치로 설계의 타당성을 증명해왔습니다.',
-    '백엔드에 그치지 않고, Next.js FSD 아키텍처 마이그레이션 주도와 FastMCP 기반 AI 에이전트 개발(팀 10명 실사용)까지 경험했습니다. 설계부터 운영까지 — 합류하면 바로 기여할 수 있습니다.',
+    'Next.js FSD 마이그레이션 주도, FastMCP 기반 AI 에이전트 개발 — 필요한 곳이라면 스택을 가리지 않고 직접 만들어왔습니다.',
   ],
   introductionEn: [
     'When I hit structural limits in production systems, I dig into root causes rather than patching symptoms — then prove the fix with measurable numbers.',
     'Migrated a monolith to 9-service MSA: monthly redeployments dropped from 10 to 1, deploy time from 4 min to 30 sec. Built an Outbox pattern library from scratch — zero event loss. Event-driven design (Saga · Outbox), 3-layer test pyramid, K8s HPA operations — abstract "improvements" proved with concrete metrics.',
-    'Beyond backend: led a Next.js FSD architecture migration, and built a FastMCP-based AI agent now actively used by 10 teammates. Ready to contribute from day one.',
+    'Led a Next.js FSD migration, built a FastMCP-based AI agent — when something needs to be built, I build it regardless of the stack.',
   ],
 } as const;
