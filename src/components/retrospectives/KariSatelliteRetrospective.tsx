@@ -290,8 +290,8 @@ public void beforeCommit(boolean readOnly) {
           <CompareTable
             headers={["프로토콜", "방식", "용도"]}
             rows={[
-              { cells: ["WMS", "요청마다 동적 렌더링", "고정 단일 영역에만 사용 — 좌표가 매번 달라 캐시 히트율 0%에 수렴"] },
-              { cells: ["WMTS", "사전 분할 타일 디스크 캐싱", "반복 조회 즉시 응답 (2.4s → 0.4s)"], highlight: true },
+              { cells: ["WMS", "임의 BBOX 단일 이미지 렌더링", "고정 단일 영역 조회 — BBOX가 매번 달라 캐시 히트율 0%에 수렴, 인터랙티브 탐색 불적합"] },
+              { cells: ["WMTS", "256×256 고정 격자 타일 사전 생성 · 디스크 캐싱", "베이스맵 전체 영역 · 줌 레벨별 점진적 로드 (2.4s → 0.4s) — tile URL 고정으로 캐시 히트율 높음"], highlight: true },
               { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
             ]}
           />
