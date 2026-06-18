@@ -128,6 +128,10 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           <FlowNode highlight sub="사용자 · 어드민 (Next.js 15 + FSD)">웹 뷰어</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+        <div className="flex justify-center">
+          <FlowNode sub="OIDC 인증 · 경로 라우팅 · TLS (Keycloak)">Envoy Gateway</FlowNode>
+        </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">FastAPI</p>
@@ -227,7 +231,7 @@ def callback(ch, method, properties, body):
             기존 구조는 기능 하나를 배포하려면 전체 서비스를 재시작해야 했습니다.
             영상 처리 로직 수정이 인증 서비스 다운타임으로 이어졌습니다.
             전 서비스를 <Highlight>독립 서비스</Highlight>로 분리하고
-            <Highlight>Kubernetes Ingress (Nginx Ingress Controller)</Highlight>를 게이트웨이로 두어 경로별로 라우팅했습니다.
+            <Highlight>Envoy Gateway</Highlight>를 게이트웨이로 두어 경로별 라우팅과 OIDC 인증을 처리했습니다.
           </p>
           <CompareTable
             headers={["역할", "기술", "담당", "API"]}
@@ -240,32 +244,91 @@ def callback(ch, method, properties, body):
               { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
               { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
               { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
-              { cells: ["게이트웨이", "K8s Ingress · Nginx", "경로 라우팅 · 타임아웃 · 업로드 제한", "—"] },
+              { cells: ["게이트웨이", "Envoy Gateway · Keycloak", "OIDC 인증 · 경로 라우팅 · TLS · 업로드 제한", "—"] },
               { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
             ]}
           />
-          <CodeBlock>{`# ingress-service.yaml — 경로별 서비스 라우팅
-metadata:
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: 4096m   # 위성 영상 대용량 업로드
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "99999"  # AI 추론 장시간 대기
+          <CodeBlock>{`# Envoy Gateway — HTTPRoute + SecurityPolicy OIDC 인증
+# 1) 경로별 라우팅
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 spec:
   rules:
-  - http:
-      paths:
-      - path: /viewer   # 웹 뷰어 (Next.js)
-        backend: { service: { name: viewer, port: 8080 } }
-      - path: /api      # API 서버 — 뷰어가 서버사이드 프록시로 중계
-        backend: { service: { name: viewer, port: 8080 } }
-      - path: /geosrv   # 지도 타일 서버
-        backend: { service: { name: tiler, port: 9101 } }`}</CodeBlock>
+  - matches: [{ path: { value: /viewer } }]
+    backendRefs: [{ name: viewer, port: 8080 }]
+  - matches: [{ path: { value: /api } }]    # 뷰어가 서버사이드 프록시로 중계
+    backendRefs: [{ name: viewer, port: 8080 }]
+  - matches: [{ path: { value: /geosrv } }] # 지도 타일 서버
+    backendRefs: [{ name: tiler, port: 9101 }]
+
+# 2) OIDC 인증 — SecurityPolicy로 HTTPRoute 단위 적용
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+spec:
+  oidc:
+    provider:
+      issuer: "https://[도메인]/authn/realms/instationx"
+    scopes: ["openid", "profile", "email"]
+    forwardAccessToken: true   # ← 백엔드 서비스로 Access Token 전달`}</CodeBlock>
           <p>
             서비스 분리로 배포 속도 <Highlight>4분 → 30초</Highlight>,
             월 재배포 횟수 <Highlight>10건 → 1건</Highlight>으로 줄었습니다.
           </p>
         </AccordionSection>
 
-        {/* 3. Snowflake ID */}
+        {/* 3. Keycloak OIDC */}
+        <AccordionSection
+          title="Envoy Gateway + Keycloak OIDC — 게이트웨이 레벨 인증"
+          hint="각 서비스 인증 코드 제거 · SecurityPolicy로 HTTPRoute 단위 적용"
+        >
+          <p>
+            초기에는 각 FastAPI 서비스가 JWT 검증 로직을 직접 처리했습니다.
+            서비스가 늘어날수록 인증 코드가 중복되고, 인증 정책 변경 시 전 서비스를 동시에 수정해야 했습니다.
+          </p>
+          <p>
+            <Highlight>Keycloak</Highlight>을 OIDC Provider로 도입하고
+            <Highlight>Envoy Gateway SecurityPolicy</Highlight>를 HTTPRoute 단위로 적용해
+            인증을 게이트웨이 레벨로 끌어올렸습니다.
+            인증된 요청에만 <code>forwardAccessToken: true</code>로 Access Token을 헤더에 실어 백엔드로 전달하고,
+            백엔드 서비스는 토큰 검증 코드 없이 헤더의 사용자 정보만 사용합니다.
+          </p>
+          <CompareTable
+            headers={["구분", "이전 (서비스 내 JWT)", "이후 (게이트웨이 OIDC)"]}
+            rows={[
+              { cells: ["인증 위치", "각 FastAPI 서비스", "Envoy Gateway SecurityPolicy"], highlight: true },
+              { cells: ["정책 변경", "전 서비스 동시 수정", "SecurityPolicy 1개만 수정"], highlight: true },
+              { cells: ["신규 서비스", "JWT 미들웨어 직접 추가", "HTTPRoute에 Policy 연결만"], highlight: true },
+              { cells: ["SSO", "직접 구현 불가", "Keycloak 세션 공유 기본 제공"] },
+            ]}
+          />
+          <CodeBlock>{`# SecurityPolicy — dispatcher 서비스에 OIDC 인증 적용
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: dispatcher-oidc
+spec:
+  targetRefs:
+    - kind: HTTPRoute
+      name: dispatcher-client-route   # 이 라우트에만 인증 강제
+  oidc:
+    provider:
+      issuer: "https://[도메인]/authn/realms/instationx"
+      # auth / token / logout 엔드포인트 자동 디스커버리
+    clientID: dispatcher-client
+    clientSecret:
+      name: oidc-client-secret        # K8s Secret (SealedSecret으로 암호화)
+    scopes: ["openid", "profile", "email"]
+    forwardAccessToken: true          # 백엔드에 Access Token 전달
+    cookieNames:
+      idToken: dispatcher-id-token
+      accessToken: dispatcher-access-token`}</CodeBlock>
+          <p>
+            Keycloak 클라이언트를 서비스별로 분리해 권한 범위를 세밀하게 제어하고,
+            SealedSecret으로 클라이언트 시크릿을 암호화해 Git에 커밋할 수 있게 했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 4. Snowflake ID */}
         <AccordionSection
           title="폐쇄망 분산 ID — Snowflake 알고리즘 직접 구현"
           hint="외부 코디네이터 접근 불가 · UUID 서버 추적 한계 → worker ID에 망 정보 인코딩"
