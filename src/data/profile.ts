@@ -21,11 +21,11 @@ export const profile = {
   headingLine1En: 'Solving production problems',
   headingHighlightEn: 'through architecture',
   introduction: [
-    '모놀리식 → MSA 전환으로 재배포 월 10건→1건·배포 4분→30초, Outbox 패턴 직접 구현으로 이벤트 유실 0건, k6 부하테스트 에러율 11.22% → 0%. 이벤트 드리븐 설계(Saga·Outbox)·3-layer 테스트 피라미드·K8s HPA까지 직접 운영했습니다.',
-    'Next.js FSD 마이그레이션 주도, FastMCP 기반 AI 에이전트 개발 — 필요한 곳이라면 스택을 가리지 않고 직접 만들어왔습니다.',
+    '한컴인스페이스에서 정보통신산업진흥원(NIPA)·항공우주연구원(KARI) 위성영상 AI 플랫폼을 만들며 구조적 병목을 직접 풀어왔습니다. 모놀리식 → MSA 전환으로 재배포 월 10건→1건·배포 4분→30초, Aliyun GPUShare로 GPU 4장에 70파드 병렬 추론해 일 처리량 200건→3,000건, PostGIS 위성 메타 API는 38초→159ms(239배)로 개선했습니다.',
+    'Outbox 패턴 직접 구현으로 이벤트 유실 0건, k6 부하테스트 에러율 11.22%→0%. 이벤트 드리븐 설계(Saga·Outbox)·3-layer 테스트 피라미드·K8s HPA를 직접 운영했고, Next.js 15 FSD 마이그레이션과 FastMCP 기반 AI 에이전트까지 — 필요한 곳이라면 스택을 가리지 않고 직접 만들어왔습니다.',
   ],
   introductionEn: [
-    'Migrated a monolith to 9-service MSA (10→1 monthly redeployments, deploy time 4 min→30 sec), built Outbox from scratch (zero event loss), drove k6 load-test error rate from 11.22% to 0%. Shipped event-driven design (Saga · Outbox), 3-layer test pyramid, and K8s HPA in production.',
-    'Led a Next.js FSD migration, built a FastMCP-based AI agent — when something needs to be built, I build it regardless of the stack.',
+    'At Hancom InSpace I build satellite-imagery AI platforms for NIPA and KARI, untangling structural bottlenecks firsthand. Migrated a monolith to 9-service MSA (10→1 monthly redeployments, deploy time 4 min→30 sec), ran 70 pods in parallel on 4 GPUs via Aliyun GPUShare (daily throughput 200→3,000 jobs), and cut a PostGIS satellite-metadata API from 38 s to 159 ms (239×).',
+    'Built Outbox from scratch (zero event loss), drove k6 load-test error rate from 11.22% to 0%, and ran event-driven design (Saga · Outbox), a 3-layer test pyramid, and K8s HPA in production. Led a Next.js 15 FSD migration and built a FastMCP-based AI agent — when something needs building, I build it regardless of the stack.',
   ],
 } as const;
