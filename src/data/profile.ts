@@ -21,11 +21,13 @@ export const profile = {
   headingLine1En: 'Solving production problems',
   headingHighlightEn: 'through architecture',
   introduction: [
-    '한컴인스페이스에서 정보통신산업진흥원(NIPA)·항공우주연구원(KARI) 위성영상 AI 플랫폼을 만들며 구조적 병목을 직접 풀어왔습니다. 모놀리식 → MSA 전환으로 재배포 월 10건→1건·배포 4분→30초, Aliyun GPUShare로 GPU 4장에 70파드 병렬 추론해 일 처리량 200건→3,000건, PostGIS 위성 메타 API는 38초→159ms(239배)로 개선했습니다.',
-    'Outbox 패턴 직접 구현으로 이벤트 유실 0건, k6 부하테스트 에러율 11.22%→0%. 이벤트 드리븐 설계(Saga·Outbox)·3-layer 테스트 피라미드·K8s HPA를 직접 운영했고, Next.js 15 FSD 마이그레이션과 FastMCP 기반 AI 에이전트까지 — 필요한 곳이라면 스택을 가리지 않고 직접 만들어왔습니다.',
+    '안녕하세요. 한컴인스페이스에서 5년간 위성영상 AI 플랫폼을 만들어 온 백엔드 개발자입니다. 운영에서 부딪힌 병목을 구조적으로 풀어, 같은 문제가 다시 나오지 않게 만드는 데 집중해 왔습니다.',
+    '모놀리식을 MSA로 분리해 재배포는 월 1건, 배포는 30초 수준으로 운영하고 있습니다. GPU 4장에 70개 파드를 병렬로 띄워 하루 3,000건 규모의 추론을 처리하고, 메타데이터 API는 159ms로 응답합니다. Outbox 패턴을 직접 구현해 이벤트 유실 없는 파이프라인을 만들고, 부하 테스트에서 에러율 0%를 검증했습니다.',
+    '이벤트 드리븐 설계와 Kubernetes 운영까지 영역을 넓혀왔고, "왜 느린가, 왜 터지는가"를 끝까지 파고들어 문제를 정확히 정의하는 것이 제 가장 큰 강점입니다.',
   ],
   introductionEn: [
-    'At Hancom InSpace I build satellite-imagery AI platforms for NIPA and KARI, untangling structural bottlenecks firsthand. Migrated a monolith to 9-service MSA (10→1 monthly redeployments, deploy time 4 min→30 sec), ran 70 pods in parallel on 4 GPUs via Aliyun GPUShare (daily throughput 200→3,000 jobs), and cut a PostGIS satellite-metadata API from 38 s to 159 ms (239×).',
-    'Built Outbox from scratch (zero event loss), drove k6 load-test error rate from 11.22% to 0%, and ran event-driven design (Saga · Outbox), a 3-layer test pyramid, and K8s HPA in production. Led a Next.js 15 FSD migration and built a FastMCP-based AI agent — when something needs building, I build it regardless of the stack.',
+    "Hi — I'm a backend developer who has spent five years building satellite-imagery AI platforms at Hancom InSpace. I focus on solving production bottlenecks at the structural level, so the same problem doesn't come back.",
+    'I run the platform on a 9-service MSA, with redeployments at once a month and deploys in about 30 seconds. 70 pods run in parallel across 4 GPUs to handle around 3,000 inference jobs a day, and the metadata API responds in 159 ms. I built Outbox from scratch for an event-loss-free pipeline and verified a 0% error rate under load testing.',
+    'I\'ve grown into event-driven design and Kubernetes along the way, and my biggest strength is digging into "why is this slow, why does this break" until I can define the problem precisely.',
   ],
 } as const;
