@@ -99,9 +99,9 @@ export const PROFILE = {
         },
         {
           label: "GPU 자원 활용",
-          situation: "GPU 1파드=1GPU 강제로 자원의 90%가 유휴 상태였습니다.",
-          cause: "단일 모델이 GPU 1장을 통째로 점유해 메모리 대부분이 낭비됐습니다.",
-          actions: ["Aliyun GPUShare로 gpu-mem 단위 분할·분배", "ONNX Runtime 추론 서비스 독립 배포"],
+          situation: "AI 추론 처리량이 한계에 부딪혀 작업이 적체됐는데, 정작 GPU 자원의 90%는 유휴 상태였습니다.",
+          cause: "스케줄러가 파드 하나에 GPU 한 장을 통째로 할당해, 모델 하나가 메모리 대부분을 비워둔 채 점유하고 있었습니다.",
+          actions: ["Aliyun GPUShare로 gpu-mem 단위 분할·분배", "ONNX Runtime 추론 서비스 독립 배포로 모델별 스케일링"],
           result: "GPU 4장에서 70개 파드 병렬 추론으로 일 처리량을 200건에서 3,000건까지 끌어올렸습니다.",
         },
         {
