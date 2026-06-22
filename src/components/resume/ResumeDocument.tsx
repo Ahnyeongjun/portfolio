@@ -73,11 +73,7 @@ const CSS = `
 .rallit-root .pf-label { display:flex; align-items:center; gap:9px; font-size:13px; font-weight:800; letter-spacing:-0.02em; margin-bottom:12px; color:var(--ink); }
 .rallit-root .pf-label::before { content:""; width:4px; height:15px; background:var(--ink); border-radius:2px; }
 .rallit-root .star-row { display:grid; grid-template-columns:48px 1fr; gap:13px; padding:5px 0; align-items:start; }
-.rallit-root .star-k { font-size:10px; font-weight:800; letter-spacing:0.02em; padding:3px 0; text-align:center; border-radius:5px; }
-.rallit-root .star-k.sit { color:#d4495f; background:#fdeef0; }
-.rallit-root .star-k.cause { color:#b9760a; background:#fcf3e4; }
-.rallit-root .star-k.act { color:#3a5bd0; background:#ebf0fd; }
-.rallit-root .star-k.res { color:#0c8f63; background:#e6f6ef; }
+.rallit-root .star-k { font-size:10px; font-weight:800; letter-spacing:0.02em; padding:3px 0; text-align:center; border-radius:5px; color:var(--ink-2); background:#eceef1; }
 .rallit-root .star-v { font-size:11.5px; color:var(--ink); line-height:1.62; }
 .rallit-root .star-v.muted { color:var(--ink-2); }
 .rallit-root .star-list { display:flex; flex-direction:column; gap:4px; }
