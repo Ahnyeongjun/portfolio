@@ -4,12 +4,12 @@ import { ResumePrintButton } from "@/components/resume/ResumePrintButton";
 
 export const metadata: Metadata = {
   title: "이력서 | 안영준",
-  description: "안영준 이력서 — Full-Stack Developer",
+  description: "안영준 이력서 — Backend Developer",
 };
 
 export default function ResumePage() {
   return (
-    <div className="min-h-screen bg-gray-100 py-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-gray-100 py-8 print:bg-white print:py-0 print:min-h-0">
       {/* Print button — hidden when printing */}
       <div className="flex justify-center mb-6 print:hidden">
         <ResumePrintButton />
