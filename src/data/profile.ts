@@ -21,13 +21,13 @@ export const profile = {
   headingLine1En: 'Solving production problems',
   headingHighlightEn: 'through architecture',
   introduction: [
-    '안녕하세요. 한컴인스페이스에서 5년간 위성영상 AI 플랫폼의 백엔드를 설계하고 운영해 온 개발자입니다. 수 GB짜리 위성영상이 끊김 없이 수집·추론·서빙되도록 분산 아키텍처와 데이터 파이프라인을 만들고, 트래픽이 몰려도 무너지지 않는 구조를 고민해 왔습니다.',
-    '예를 들어 모놀리식이던 플랫폼을 9개 서비스의 MSA로 분리해 기능마다 독립 배포가 가능하게 했고, GPU 한 장을 여러 추론 파드가 나눠 쓰도록 GPUShare를 적용해 유휴 자원을 끌어 썼습니다. 이벤트 발행은 CDC 인프라 의존을 걷어내고 Outbox 패턴을 직접 구현해, 유실 없이 처리되도록 만들었습니다.',
-    '이벤트 드리븐 설계와 Kubernetes 운영까지 영역을 넓혀왔고, "왜 느린가, 왜 터지는가"를 끝까지 파고들어 문제를 정확히 정의하는 것이 제 가장 큰 강점입니다.',
+    '안녕하세요. 한컴인스페이스에서 5년간 위성영상 AI 플랫폼의 백엔드를 맡아 온 개발자입니다. 한국항공우주연구원(KARI)에 납품한 위성영상 처리 플랫폼과 정보통신산업진흥원(NIPA) 지원으로 구축한 위성 변화탐지 플랫폼을 설계·운영하며, 국가기관이 실제 업무에 쓰는 시스템을 안정적으로 굴려 왔습니다.',
+    '운영을 맡으면서 까다로운 백엔드 문제들을 직접 풀어 왔습니다. PostGIS 전수 연산으로 38초씩 걸리던 조회 API는 조건부 실행과 Redis 캐싱으로 159ms까지 줄였고, Debezium CDC가 자꾸 깨져 이벤트가 유실되던 건 그 의존을 걷어내고 Outbox 패턴을 직접 구현해 해결했습니다. 외부 인터넷이 막힌 폐쇄망이라 분산 ID를 발급할 코디네이터조차 둘 수 없어, 장애 시 발생 서버까지 추적되는 Snowflake ID를 직접 구현하기도 했습니다.',
+    '이 일들의 공통점은 하나입니다. "왜 이런가"를 끝까지 파고들어, 다시 터지지 않는 구조로 바꿨다는 것. 화면 뒤에서 시스템이 조용히, 안정적으로 돌아가게 만드는 일이 제가 가장 잘하고 또 좋아하는 일입니다.',
   ],
   introductionEn: [
-    "Hi — I'm a developer who has spent five years designing and running the backend of satellite-imagery AI platforms at Hancom InSpace. I build the distributed architecture and data pipelines that keep multi-gigabyte imagery flowing through collection, inference, and serving without a hitch, and that hold up when traffic spikes.",
-    'For instance, I split the monolithic platform into a 9-service MSA so each capability could deploy on its own, and applied GPUShare so multiple inference pods could share a single GPU and reclaim idle capacity. For event publishing, I dropped the dependency on CDC infrastructure and built the Outbox pattern from scratch, so events flow through without loss.',
-    'I\'ve grown into event-driven design and Kubernetes along the way, and my biggest strength is digging into "why is this slow, why does this break" until I can define the problem precisely.',
+    "Hi — I'm a developer who has spent five years on the backend of satellite-imagery AI platforms at Hancom InSpace. I designed and ran the imagery-processing platform we delivered to the Korea Aerospace Research Institute (KARI) and the satellite change-detection platform built under NIPA funding — systems national institutions actually run in their daily work.",
+    "As I took over operations, I worked through the harder backend problems myself. I brought a list API that took 38 seconds on full PostGIS scans down to 159 ms with conditional execution and Redis caching; when Debezium CDC kept breaking and losing events, I cut the dependency and solved it by building the Outbox pattern myself; and because the air-gapped network left no room for an external coordinator to hand out distributed IDs, I implemented Snowflake IDs from scratch, encoding enough to trace which server issued each one.",
+    'There\'s one thread through all of it: I dig into why something breaks, then rebuild it so it won\'t break again. Keeping a system running quietly and reliably behind the screen is what I do best — and what I enjoy most.',
   ],
 } as const;
