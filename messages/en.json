@@ -11,10 +11,6 @@
   },
   "hero": {
     "status": "Open to work",
-    "headingLine1": "Solving production problems",
-    "headingHighlight": "through architecture",
-    "tagline": "Backend engineer who diagnoses structural bottlenecks in production systems and proves improvements with measurable numbers.",
-    "duration": "5 yrs (Jul 2021~)",
     "ctaContact": "Resume / Contact",
     "apiLabel": "Avg. API Response",
     "apiSub": "PostGIS + Redis cache",
@@ -29,7 +25,7 @@
   },
   "about": {
     "kicker": "About",
-    "heading": "Not just shipping features —\nthinking about structure and impact",
+    "heading": "Not just shipping features —\ndigging into structure and performance",
     "factNow": "Now",
     "factRole": "Role",
     "factBase": "Base",

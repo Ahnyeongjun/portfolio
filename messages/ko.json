@@ -11,10 +11,6 @@
   },
   "hero": {
     "status": "이직 준비 중",
-    "headingLine1": "운영 서비스의 문제를",
-    "headingHighlight": "구조로 해결하는 개발자",
-    "tagline": "운영 중인 서비스의 구조적 한계를 직접 진단하고, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자입니다.",
-    "duration": "5년차 (2021.07~)",
     "ctaContact": "이력서 / 연락하기",
     "apiLabel": "평균 API 응답속도",
     "apiSub": "PostGIS + Redis 캐싱",
@@ -29,7 +25,7 @@
   },
   "about": {
     "kicker": "소개",
-    "heading": "구현에서 끝내지 않고\n구조와 생산성까지 고민합니다",
+    "heading": "구현에서 끝내지 않고\n구조와 성능까지 파고듭니다",
     "factNow": "Now",
     "factRole": "Role",
     "factBase": "Base",
