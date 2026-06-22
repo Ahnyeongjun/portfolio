@@ -46,9 +46,35 @@ export const PROFILE = {
     position: "연구원 · 소프트웨어플랫폼 · 재직 중",
     period: "2021.07. ~ 재직 중 (5년)",
     groups: [
-      { title: "NIPA 위성 변화탐지 AI 플랫폼", items: ["모놀리식 → 9개 MSA 전환 및 FastAPI 통일", "RabbitMQ 비동기 처리 파이프라인 재설계", "Next.js 15 + FSD 레거시 프론트엔드 전면 재설계"] },
-      { title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼", items: ["Outbox 패턴 라이브러리 직접 개발", "Aliyun GPUShare 기반 GPU 자원 분할 추론", "PostGIS 메타데이터 API 성능 최적화"] },
-      { title: "FastMCP 기반 사내 AI 에이전트", items: ["Git·캘린더·HRWeb·Gmail 통합 자동화 도구 8종 구현", "주간보고·공수 입력 반복 업무 자동화"] },
+      {
+        title: "NIPA 위성 변화탐지 AI 플랫폼",
+        items: [
+          "모놀리식 → 9개 서비스 MSA 전환, 전 서비스 FastAPI 통일 및 Nginx 라우팅",
+          "Salt 폴링 → RabbitMQ ack/nack + DLQ 비동기 처리 파이프라인 재설계",
+          "폐쇄망 분산 ID를 위한 Snowflake 알고리즘 직접 구현 (worker ID에 망 정보 인코딩)",
+          "Envoy Gateway · Keycloak OIDC 게이트웨이 레벨 인증 구현",
+          "Next.js 15 + FSD 레거시 프론트엔드 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider",
+        ],
+      },
+      {
+        title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼",
+        items: [
+          "AOP + MyBatis 기반 Outbox 패턴 라이브러리 직접 개발 (CDC 인프라 의존 제거)",
+          "Aliyun GPUShare로 GPU 자원 분할 — 4장에서 70개 파드 병렬 추론",
+          "PostGIS 메타데이터 조회 API 성능 최적화 (38초 → 159ms)",
+          "YOLOv11m 객체탐지 · UPerNet+ConvNeXt 세그멘테이션 AI 모델 서빙",
+          "janus 워크플로우 추상화로 10개 이상 위성 소스를 단일 파이프라인으로 통합",
+        ],
+      },
+      {
+        title: "FastMCP 기반 사내 AI 에이전트",
+        items: [
+          "FastMCP 기반 8개 도구 구현 (Git·캘린더·HRWeb·Gmail 연동)",
+          "Git 커밋 + 캘린더 병합으로 주간보고 자동 생성 후 Gmail 발송",
+          "엑셀 템플릿을 ZIP/XML 레벨에서 직접 조작 — 서식·수식 보존하며 내용 주입",
+          "사내 HRWeb(아마란스) Playwright 전 흐름 브라우저 자동화",
+        ],
+      },
     ],
   },
 
