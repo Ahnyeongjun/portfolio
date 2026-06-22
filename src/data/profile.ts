@@ -2,7 +2,7 @@ export const profile = {
   name: '안영준',
   initials: 'AYJ',
   role: 'Backend Developer',
-  roleFull: 'Full-Stack Developer',
+  roleFull: 'Backend Developer',
   tagline: '구조적 병목을 직접 파고들어, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자입니다.',
   taglineEn: 'Backend engineer who digs into production bottlenecks and proves every architectural fix with measurable numbers.',
   location: '서울, Korea',
@@ -22,12 +22,12 @@ export const profile = {
   headingHighlightEn: 'through architecture',
   introduction: [
     '안녕하세요. 한컴인스페이스에서 5년간 위성영상 AI 플랫폼의 백엔드를 설계하고 운영해 온 개발자입니다. 수 GB짜리 위성영상이 끊김 없이 수집·추론·서빙되도록 분산 아키텍처와 데이터 파이프라인을 만들고, 트래픽이 몰려도 무너지지 않는 구조를 고민해 왔습니다.',
-    '모놀리식을 MSA로 분리해 재배포는 월 1건, 배포는 30초 수준으로 운영하고 있습니다. GPU 4장에 70개 파드를 병렬로 띄워 하루 3,000건 규모의 추론을 처리하고, 메타데이터 API는 159ms로 응답합니다. Outbox 패턴을 직접 구현해 이벤트 유실 없는 파이프라인을 만들고, 부하 테스트에서 에러율 0%를 검증했습니다.',
+    '예를 들어 모놀리식이던 플랫폼을 9개 서비스의 MSA로 분리해 기능마다 독립 배포가 가능하게 했고, GPU 한 장을 여러 추론 파드가 나눠 쓰도록 GPUShare를 적용해 유휴 자원을 끌어 썼습니다. 이벤트 발행은 CDC 인프라 의존을 걷어내고 Outbox 패턴을 직접 구현해, 유실 없이 처리되도록 만들었습니다.',
     '이벤트 드리븐 설계와 Kubernetes 운영까지 영역을 넓혀왔고, "왜 느린가, 왜 터지는가"를 끝까지 파고들어 문제를 정확히 정의하는 것이 제 가장 큰 강점입니다.',
   ],
   introductionEn: [
     "Hi — I'm a developer who has spent five years designing and running the backend of satellite-imagery AI platforms at Hancom InSpace. I build the distributed architecture and data pipelines that keep multi-gigabyte imagery flowing through collection, inference, and serving without a hitch, and that hold up when traffic spikes.",
-    'I run the platform on a 9-service MSA, with redeployments at once a month and deploys in about 30 seconds. 70 pods run in parallel across 4 GPUs to handle around 3,000 inference jobs a day, and the metadata API responds in 159 ms. I built Outbox from scratch for an event-loss-free pipeline and verified a 0% error rate under load testing.',
+    'For instance, I split the monolithic platform into a 9-service MSA so each capability could deploy on its own, and applied GPUShare so multiple inference pods could share a single GPU and reclaim idle capacity. For event publishing, I dropped the dependency on CDC infrastructure and built the Outbox pattern from scratch, so events flow through without loss.',
     'I\'ve grown into event-driven design and Kubernetes along the way, and my biggest strength is digging into "why is this slow, why does this break" until I can define the problem precisely.',
   ],
 } as const;
