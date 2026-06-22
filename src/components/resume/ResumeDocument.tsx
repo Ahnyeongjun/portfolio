@@ -2,6 +2,7 @@ import Image from "next/image";
 import { profile } from "@/data/profile";
 import { projects, type Project } from "@/lib/projects";
 import { career, activities, education, certifications } from "@/data/experience";
+import { techStack } from "@/data/skills";
 
 /* ── Derived content (synced with the portfolio data) ── */
 
@@ -15,13 +16,6 @@ const sideProjects = FEATURED_SIDE_IDS
   .map((id) => projects.find((p) => p.id === id))
   .filter((p): p is Project => Boolean(p));
 
-const techStack: { label: string; items: string[] }[] = [
-  { label: "Backend", items: ["Spring Boot", "Java", "Kotlin", "FastAPI", "Go", "Python", "JPA", "QueryDSL"] },
-  { label: "Messaging · Data", items: ["RabbitMQ", "Kafka", "Redis", "PostgreSQL", "MySQL", "PostGIS"] },
-  { label: "Infra · DevOps", items: ["Kubernetes", "Docker", "AWS", "GitHub Actions", "Nginx", "OpenSearch"] },
-  { label: "AI · 기타", items: ["PyTorch", "ONNX Runtime", "FastMCP", "Next.js"] },
-];
-
 /** Splits "[label] body" into a bold label and the rest. */
 function splitLabel(text: string): [string | null, string] {
   const m = text.match(/^\[([^\]]+)\]\s*(.*)$/);
@@ -32,8 +26,8 @@ function splitLabel(text: string): [string | null, string] {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-slate-300 pt-7 mt-8">
-      <h2 className="text-[15px] font-bold text-slate-900 mb-5">{title}</h2>
+    <div className="border-t border-slate-300 pt-6 mt-6">
+      <h2 className="text-[15px] font-bold text-slate-900 mb-4">{title}</h2>
       {children}
     </div>
   );
@@ -67,7 +61,8 @@ function AchievementList({ items }: { items: readonly string[] }) {
   );
 }
 
-function ProjectBlock({ proj, meta }: { proj: Project; meta: string }) {
+function ProjectBlock({ proj, meta, maxAchievements }: { proj: Project; meta: string; maxAchievements?: number }) {
+  const shown = maxAchievements ? proj.achievements.slice(0, maxAchievements) : proj.achievements;
   return (
     <div className="break-inside-avoid">
       <div className="flex items-baseline justify-between gap-3">
@@ -79,7 +74,7 @@ function ProjectBlock({ proj, meta }: { proj: Project; meta: string }) {
         {proj.tags.map((t) => <Chip key={t} label={t} />)}
       </div>
       <p className="text-[11px] text-slate-600 leading-relaxed">{proj.description}</p>
-      <AchievementList items={proj.achievements} />
+      <AchievementList items={shown} />
     </div>
   );
 }
@@ -122,7 +117,7 @@ export function ResumeDocument() {
         </p>
         <div className="space-y-6">
           {companyProjects.map((proj) => (
-            <ProjectBlock key={proj.id} proj={proj} meta={proj.role} />
+            <ProjectBlock key={proj.id} proj={proj} meta={proj.role} maxAchievements={3} />
           ))}
         </div>
       </Section>
@@ -131,7 +126,7 @@ export function ResumeDocument() {
       <Section title="사이드 프로젝트">
         <div className="space-y-6">
           {sideProjects.map((proj) => (
-            <ProjectBlock key={proj.id} proj={proj} meta={`${proj.role}${proj.company ? ` · ${proj.company}` : ""}`} />
+            <ProjectBlock key={proj.id} proj={proj} meta={`${proj.role}${proj.company ? ` · ${proj.company}` : ""}`} maxAchievements={2} />
           ))}
         </div>
       </Section>
@@ -189,7 +184,7 @@ export function ResumeDocument() {
         </div>
       </Section>
 
-      <p className="text-center text-[9px] text-slate-300 mt-12">{profile.name} · {profile.email}</p>
+      <p className="text-center text-[9px] text-slate-300 mt-8">{profile.name} · {profile.email}</p>
     </article>
   );
 }
