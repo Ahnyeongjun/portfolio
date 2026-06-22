@@ -141,7 +141,7 @@ export function ResumeDocument() {
               <div className="row"><span className="ck">BASE</span><span className="v">{P.location}</span></div>
             </div>
           </div>
-          <div className="hd-photo"><img src="/profile.jpg" alt={P.name} /></div>
+          <div className="hd-photo"><img src="/profile-photo.jpg" alt={P.name} /></div>
         </div>
         <div className="hd-rule" />
 
