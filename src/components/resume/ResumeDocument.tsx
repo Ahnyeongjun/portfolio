@@ -71,6 +71,10 @@ const CSS = `
 .rallit-root .proj-company { font-size:12px; color:var(--ink-2); font-weight:600; margin-top:3px; }
 .rallit-root .proj-desc { font-size:12px; color:var(--ink-2); line-height:1.62; margin-top:9px; }
 .rallit-root .proj-stack { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.rallit-root .proj-achievements { margin-top:12px; display:flex; flex-direction:column; gap:5px; }
+.rallit-root .proj-ach { font-size:11.5px; color:var(--ink); line-height:1.6; padding-left:14px; position:relative; }
+.rallit-root .proj-ach::before { content:""; position:absolute; left:0; top:8px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
+.rallit-root .proj-ach strong { color:var(--ink); font-weight:700; }
 .rallit-root .tag { font-size:11px; font-weight:600; color:var(--ink-2); background:var(--bg-soft); border-radius:999px; padding:5px 12px; }
 .rallit-root .pf-block { margin-top:14px; padding:14px 16px; background:var(--bg-soft); border-radius:13px; }
 .rallit-root .pf-block:first-of-type { margin-top:0; }
@@ -168,6 +172,15 @@ export function ResumeDocument() {
                 <div className="proj-desc">{pr.desc}</div>
                 <div className="proj-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
               </div>
+              {pr.blocks.some(b => b.oneliner) && (
+                <div className="proj-achievements">
+                  {pr.blocks.filter(b => b.oneliner).map((b, j) => (
+                    <div key={j} className="proj-ach">
+                      <strong>{b.label}</strong>: {b.oneliner}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
