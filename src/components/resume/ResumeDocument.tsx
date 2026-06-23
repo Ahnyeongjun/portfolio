@@ -152,13 +152,9 @@ export function ResumeDocument() {
             <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
             <div className="career-period">{P.career.period}</div>
           </div>
-          <div className="career-groups">
-            {P.career.groups.map((g, i) => (
-              <div key={i} className="cg">
-                <div className="cg-t">{g.title}</div>
-                {g.items.map((it, j) => <div key={j} className="cg-item">{it}</div>)}
-              </div>
-            ))}
+          <div className="career-overview">{P.career.overview}</div>
+          <div className="proj-stack" style={{ marginTop: 10 }}>
+            {P.career.metrics.map((m) => <span key={m} className="tag">{m}</span>)}
           </div>
         </div>
 
