@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText, Download, ChevronDown } from 'lucide-react';
 import { profile } from '@/data/profile';
 import { useLang } from '@/context/lang';
 import { useTranslations } from 'next-intl';
@@ -44,14 +44,33 @@ export function Header() {
 
         <div className="pf-nav-right">
           {!isBlogPost && (
-            <>
-              <div className="pf-nav-links">
-                <Link href={portfolioHref} className="pf-nav-link">{t('portfolio')}</Link>
-                <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
-              </div>
-              <div className="pf-nav-divider" aria-hidden="true" />
-            </>
+            <div className="pf-nav-links">
+              <Link href={portfolioHref} className="pf-nav-link">{t('portfolio')}</Link>
+              <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
+            </div>
           )}
+
+          <div className="pf-nav-divider" aria-hidden="true" />
+
+          <div className="pf-pdf-dropdown">
+            <button type="button" className="pf-nav-link pf-pdf-trigger" aria-haspopup="true">
+              <FileText size={14} aria-hidden="true" />
+              PDF
+              <ChevronDown size={13} className="pf-pdf-caret" aria-hidden="true" />
+            </button>
+            <div className="pf-pdf-menu" role="menu">
+              <Link href="/resume" role="menuitem">
+                <FileText size={15} aria-hidden="true" />
+                {lang === 'ko' ? '이력서' : 'Resume'}
+              </Link>
+              <Link href="/portfolio-pdf" role="menuitem">
+                <Download size={15} aria-hidden="true" />
+                {lang === 'ko' ? '포트폴리오' : 'Portfolio'}
+              </Link>
+            </div>
+          </div>
+
+          <div className="pf-nav-divider" aria-hidden="true" />
 
           <div className="pf-lang-toggle">
             <button

@@ -12,8 +12,11 @@ const CSS = `
 .rallit-root .sheet { width:210mm; background:#fff; margin:22px auto; box-shadow:0 1px 2px rgba(20,22,28,0.05),0 18px 50px rgba(20,22,28,0.12); }
 .rallit-root .sheet-inner { padding:22mm 21mm 24mm; }
 .rallit-toolbar { position:fixed; top:16px; right:16px; z-index:100; display:flex; gap:8px; align-items:center; }
-.rallit-toolbar .tb-btn { background:var(--ink); color:#fff; font-weight:700; font-size:13px; padding:11px 18px; border:none; border-radius:10px; cursor:pointer; font-family:var(--font-sans); box-shadow:0 6px 18px rgba(20,22,28,0.18); }
-.rallit-toolbar .tb-btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+.rallit-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--ink-2); border:1px solid var(--line); border-radius:50%; box-shadow:0 4px 16px rgba(20,22,28,0.1); cursor:pointer; transition:transform .15s, box-shadow .2s, color .15s, background .15s; }
+.rallit-iconbtn:hover { box-shadow:0 8px 22px rgba(20,22,28,0.16); background:#fff; color:var(--ink); }
+.rallit-iconbtn svg { transition:transform .15s; }
+.rallit-back:hover svg { transform:translateX(-2px); }
+.rallit-print:hover svg { transform:translateY(1px); }
 @media print {
   .rallit-root { background:#fff; padding:0; }
   .rallit-toolbar { display:none !important; }
@@ -58,6 +61,7 @@ const CSS = `
 .rallit-root .cg-t { font-size:13px; font-weight:700; margin-bottom:6px; }
 .rallit-root .cg-item { font-size:12px; color:var(--ink-2); line-height:1.6; padding-left:12px; position:relative; margin-top:3px; }
 .rallit-root .cg-item::before { content:""; position:absolute; left:0; top:9px; width:4px; height:4px; border-radius:50%; background:var(--ink-3); }
+.rallit-root .career-overview { font-size:12.5px; color:var(--ink-2); line-height:1.75; margin-top:14px; }
 .rallit-root .proj { margin-bottom:26px; }
 .rallit-root .proj:last-child { margin-bottom:0; }
 .rallit-root .proj-head { padding-bottom:12px; border-bottom:1px solid var(--line); margin-bottom:14px; }
@@ -107,23 +111,18 @@ const CSS = `
 @media (max-width:760px) { .rallit-root .sheet { width:auto; margin:0; } .rallit-root .highlights { flex-wrap:wrap; } .rallit-root .hl { min-width:50%; } }
 `;
 
-function StarRow({ k, cls, val, muted, res }: { k: string; cls: string; val: string; muted?: boolean; res?: boolean }) {
-  return (
-    <div className="star-row">
-      <span className={`star-k ${cls}`}>{k}</span>
-      <div className={`star-v${muted ? " muted" : ""}${res ? " res-text" : ""}`}>{val}</div>
-    </div>
-  );
-}
-
 export function ResumeDocument() {
   const P = PROFILE;
   return (
     <div className="rallit-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="rallit-toolbar">
-        <Link href="/portfolio-pdf" className="tb-btn ghost">원티드 스타일</Link>
-        <button className="tb-btn" onClick={() => window.print()}>PDF로 저장 / 인쇄</button>
+        <Link href="/" className="rallit-iconbtn rallit-back" aria-label="포트폴리오로 돌아가기" title="포트폴리오로 돌아가기">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+        </Link>
+        <button className="rallit-iconbtn rallit-print" onClick={() => window.print()} aria-label="PDF로 저장 / 인쇄" title="PDF로 저장 / 인쇄">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>
+        </button>
       </div>
 
       <div className="sheet"><div className="sheet-inner">
@@ -142,12 +141,6 @@ export function ResumeDocument() {
         <div className="hd-rule" />
 
         <div className="summary">{P.summary.map((s, i) => <p key={i}>{s}</p>)}</div>
-
-        <div className="highlights">
-          {P.highlights.map((h, i) => (
-            <div key={i} className="hl"><div className="v">{h.v}</div><div className="l">{h.l}</div></div>
-          ))}
-        </div>
 
         <div className="sec">
           <div className="sec-h"><span className="no">01</span><span className="t">경력</span></div>
@@ -175,18 +168,6 @@ export function ResumeDocument() {
                 <div className="proj-desc">{pr.desc}</div>
                 <div className="proj-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
               </div>
-              {pr.blocks.map((b, j) => (
-                <div key={j} className="pf-block">
-                  <span className="pf-label">{b.label}</span>
-                  <StarRow k="현상" cls="sit" val={b.situation} />
-                  <StarRow k="원인" cls="cause" val={b.cause} muted />
-                  <div className="star-row">
-                    <span className="star-k act">대응</span>
-                    <div className="star-list">{b.actions.map((a, k) => <div key={k} className="li">{a}</div>)}</div>
-                  </div>
-                  <StarRow k="성과" cls="res" val={b.result} res />
-                </div>
-              ))}
             </div>
           ))}
         </div>
