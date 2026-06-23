@@ -14,8 +14,11 @@ const CSS = `
 .wanted-root .sheet { width:210mm; background:#fff; margin:22px auto; box-shadow:0 1px 2px rgba(20,22,28,0.05),0 18px 50px rgba(20,22,28,0.12); }
 .wanted-root .sheet-inner { padding:22mm 20mm 24mm; }
 .wanted-toolbar { position:fixed; top:16px; right:16px; z-index:100; display:flex; gap:8px; align-items:center; }
-.wanted-toolbar .tb-btn { background:var(--ink); color:#fff; font-weight:700; font-size:13px; padding:11px 18px; border:none; border-radius:10px; cursor:pointer; font-family:var(--font-sans); box-shadow:0 6px 18px rgba(20,22,28,0.18); }
-.wanted-toolbar .tb-btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+.wanted-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--ink-2); border:1px solid var(--line); border-radius:50%; box-shadow:0 4px 16px rgba(20,22,28,0.1); cursor:pointer; transition:transform .15s, box-shadow .2s, color .15s, background .15s; }
+.wanted-iconbtn:hover { box-shadow:0 8px 22px rgba(20,22,28,0.16); background:#fff; color:var(--ink); }
+.wanted-iconbtn svg { transition:transform .15s; }
+.wanted-back:hover svg { transform:translateX(-2px); }
+.wanted-print:hover svg { transform:translateY(1px); }
 @media print {
   .wanted-root { background:#fff; padding:0; }
   .wanted-toolbar { display:none !important; }
@@ -132,8 +135,12 @@ export function PortfolioDocument() {
     <div className="wanted-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="wanted-toolbar">
-        <Link href="/resume" className="tb-btn ghost">랠릿 스타일</Link>
-        <button className="tb-btn" onClick={() => window.print()}>PDF로 저장 / 인쇄</button>
+        <Link href="/" className="wanted-iconbtn wanted-back" aria-label="포트폴리오로 돌아가기" title="포트폴리오로 돌아가기">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+        </Link>
+        <button className="wanted-iconbtn wanted-print" onClick={() => window.print()} aria-label="PDF로 저장 / 인쇄" title="PDF로 저장 / 인쇄">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" /></svg>
+        </button>
       </div>
 
       <div className="sheet"><div className="sheet-inner">

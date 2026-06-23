@@ -487,6 +487,41 @@ code, pre {
 }
 .pf-nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(15,23,42,0.2); background: #1e293b; }
 
+/* PDF dropdown (resume / portfolio) */
+.pf-pdf-dropdown { position: relative; display: flex; align-items: center; }
+.pf-pdf-trigger {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.pf-pdf-trigger svg { color: var(--pf-text-mute); transition: color 0.16s; }
+.pf-pdf-caret { transition: transform 0.18s var(--pf-ease), color 0.16s; }
+.pf-pdf-dropdown:hover .pf-pdf-trigger,
+.pf-pdf-dropdown:focus-within .pf-pdf-trigger { color: var(--pf-text); background: rgba(15,23,42,0.05); }
+.pf-pdf-dropdown:hover .pf-pdf-trigger svg,
+.pf-pdf-dropdown:focus-within .pf-pdf-trigger svg { color: var(--pf-ac); }
+.pf-pdf-dropdown:hover .pf-pdf-caret,
+.pf-pdf-dropdown:focus-within .pf-pdf-caret { transform: rotate(180deg); }
+/* invisible bridge so the gap between trigger and menu keeps :hover alive */
+.pf-pdf-dropdown::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px; }
+.pf-pdf-menu {
+  position: absolute; top: calc(100% + 9px); right: 0; min-width: 168px;
+  background: #fff; border: 1px solid rgba(15,23,42,0.1); border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(23,30,40,0.16); padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; z-index: 120;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity 0.16s, transform 0.16s var(--pf-ease), visibility 0.16s;
+}
+.pf-pdf-dropdown:hover .pf-pdf-menu,
+.pf-pdf-dropdown:focus-within .pf-pdf-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.pf-pdf-menu a {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13.5px; font-weight: 600; color: var(--pf-text-dim);
+  padding: 9px 12px; border-radius: 8px; white-space: nowrap;
+  transition: background 0.14s, color 0.14s;
+}
+.pf-pdf-menu a svg { color: var(--pf-text-mute); transition: color 0.14s; }
+.pf-pdf-menu a:hover { background: rgba(15,23,42,0.05); color: var(--pf-ac); }
+.pf-pdf-menu a:hover svg { color: var(--pf-ac); }
+
 /* ============================================================ SECTION NAV (right side) */
 .pf-snav {
   position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
@@ -1242,6 +1277,19 @@ code, pre {
 #portfolio-page[data-blog-theme="dark"] .pf-nav-link:hover {
   background: rgba(255,255,255,0.06);
   color: var(--pf-text);
+}
+#portfolio-page[data-blog-theme="dark"] .pf-pdf-dropdown:hover .pf-pdf-trigger,
+#portfolio-page[data-blog-theme="dark"] .pf-pdf-dropdown:focus-within .pf-pdf-trigger {
+  background: rgba(255,255,255,0.06);
+  color: var(--pf-text);
+}
+#portfolio-page[data-blog-theme="dark"] .pf-pdf-menu {
+  background: #1b2230;
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+}
+#portfolio-page[data-blog-theme="dark"] .pf-pdf-menu a:hover {
+  background: rgba(255,255,255,0.07);
 }
 
 /* ---- Rose theme ---- */
