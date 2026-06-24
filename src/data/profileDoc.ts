@@ -10,6 +10,7 @@ export interface DocBlock {
   result: string;
   oneliner?: string; // 이력서용 한 줄 요약 (단순한 항목)
   lines?: string[];  // 이력서용 다중 줄: [문제, 해결·선택근거, 결과]
+  brief?: [string, string]; // 이력서용 2줄: [현상·원인, 해결·결과]
 }
 export interface DocProject {
   title: string;
@@ -82,7 +83,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       stack: ["FastAPI", "RabbitMQ", "Next.js 15", "CesiumJS", "Go", "ONNX Runtime", "Kubernetes", "Nginx"],
-      desc: "NIPA 지원으로 구축한 위성 변화탐지 플랫폼. 수 GB 규모의 고해상도 위성 영상 두 장을 AI로 픽셀 단위 비교해 도로·건물·토지 변화를 자동 탐지하고 지도에 가시화한다. 모놀리식 구조를 MSA + FastAPI로 전면 재설계해 운영 안정성을 끌어올렸다.",
+      desc: "NIPA 지원으로 구축한 위성 변화탐지 플랫폼입니다. 수 GB 규모의 고해상도 위성 영상 두 장을 AI로 픽셀 단위 비교해 도로·건물·토지 변화를 자동 탐지하고 지도에 가시화합니다. 모놀리식 구조를 MSA + FastAPI로 전면 재설계해 운영 안정성을 끌어올렸습니다.",
       blocks: [
         {
           label: "비동기 처리 파이프라인",
@@ -93,6 +94,10 @@ export const PROFILE = {
             "처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
           ],
           result: "작업 유실 0건",
+          brief: [
+            "Salt 폴링은 ack/nack가 없어 노드 재시작 시 콜백이 유실되면 작업이 RUNNING에 고착돼 수동 DB 복구를 반복했습니다.",
+            "RabbitMQ ack/nack + DLQ로 전환해 처리 완료 전 연결이 끊기면 자동 재투입하고 3회 초과 시 격리하는 구조를 만들어, 작업 유실 0건을 달성했습니다.",
+          ],
           lines: [
             "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 — 수동 DB 복구 반복",
             "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환 — 처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
@@ -107,6 +112,10 @@ export const PROFILE = {
             "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅",
           ],
           result: "재배포 월 10건→1건, 배포 속도 4분→30초",
+          brief: [
+            "모든 기능이 단일 프로세스로 결합돼 도메인 경계가 없다 보니, 기능 하나를 배포해도 전체 서비스가 재시작되며 잦은 배포마다 운영이 중단됐습니다.",
+            "도메인 기준으로 MSA를 분리하고 전 서비스를 FastAPI로 통일해 Nginx로 라우팅한 결과, 재배포는 월 10건에서 1건으로, 배포 속도는 4분에서 30초로 줄었습니다.",
+          ],
           lines: [
             "모놀리식으로 기능 하나 배포 시 전체 재시작 — 잦은 배포마다 운영 중단 발생",
             "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅 — 서비스별 독립 배포·장애 격리 확보",
@@ -122,6 +131,10 @@ export const PROFILE = {
             "worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
           ],
           result: "외부 의존 없는 분산 ID 발급, 장애 서버 추적 가능",
+          brief: [
+            "분리망이라 외부 ID 코디네이터에 접근할 수 없었고, UUID로는 장애가 났을 때 어느 서버에서 발생했는지 추적할 수 없었습니다.",
+            "Snowflake 알고리즘을 직접 구현하고 worker ID 비트에 망 정보(서브넷·서버)를 인코딩해, 외부 의존 없이 ID만으로 발생 서버를 특정할 수 있게 했습니다.",
+          ],
           lines: [
             "분리망 환경으로 외부 ID 코디네이터 접근 불가 — UUID로는 장애 시 발생 서버 추적 불가",
             "Snowflake 알고리즘 직접 구현 — worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
@@ -137,6 +150,10 @@ export const PROFILE = {
             "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
           ],
           result: "신규 레이어 추가 시 기존 코드 수정 0건",
+          brief: [
+            "컴포넌트 추상화가 없는 Thymeleaf SSR 구조라 기능 경계가 없어, 작은 수정에도 회귀 위험 탓에 영향 범위를 예측할 수 없었습니다.",
+            "Next.js 15 + FSD로 전면 마이그레이션하고 CesiumJS 커스텀 ImageryProvider로 MVT·MBTiles·ImageLayer를 단일 인터페이스로 추상화해, 신규 레이어 추가 시 기존 코드 수정 0건을 달성했습니다.",
+          ],
           lines: [
             "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 — 회귀 위험으로 작은 수정도 전체 수동 검증",
             "Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
@@ -150,7 +167,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Aliyun GPUShare", "Kubernetes", "MyBatis", "Redis"],
-      desc: "한국항공우주연구원(KARI)에 납품한 위성영상 AI 처리 플랫폼. 사내 K8s 기반 AI 플랫폼의 출발점으로, 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했다. 다누리·Sentinel·Landsat 등 10종 이상의 위성에서 수집한 영상을 자동으로 AI 추론(객체탐지·세그멘테이션·초해상도)하고 3D 지도 위에 실시간 가시화한다.",
+      desc: "한국항공우주연구원(KARI)에 납품한 위성영상 AI 처리 플랫폼입니다. 사내 K8s 기반 AI 플랫폼의 출발점으로, 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했습니다. 다누리·Sentinel·Landsat 등 10종 이상의 위성에서 수집한 영상을 자동으로 AI 추론(객체탐지·세그멘테이션·초해상도)하고 3D 지도 위에 실시간 가시화합니다.",
       blocks: [
         {
           label: "이벤트 유실 해결",
@@ -161,6 +178,10 @@ export const PROFILE = {
             "비즈니스 코드 수정 없이 투명하게 적용",
           ],
           result: "CDC 인프라 의존 제거, 이벤트 유실 0건",
+          brief: [
+            "CDC 방식은 DB 로그에 의존해, Debezium replication slot이 반복 파손될 때마다 전체 스냅샷을 다시 수행하느라 수 시간씩 운영이 중단됐습니다.",
+            "AOP + MyBatis 기반 Outbox 라이브러리를 직접 개발해 비즈니스 코드 수정 없이 투명하게 적용함으로써, CDC 인프라 의존을 걷어내고 이벤트 유실 0건을 달성했습니다.",
+          ],
           lines: [
             "Debezium replication slot 반복 파손 — 전체 스냅샷 재수행마다 수 시간 운영 중단",
             "AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 없이 애플리케이션 레벨 이벤트 보장, 비즈니스 코드 수정 없이 적용",
@@ -176,6 +197,10 @@ export const PROFILE = {
             "ONNX Runtime으로 모델별 추론 서비스 독립 배포",
           ],
           result: "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
+          brief: [
+            "스케줄러가 GPU를 한 장씩 통째로 할당해, 모델이 VRAM 일부만 써도 GPU를 독점하면서 처리량은 한계인데 자원의 90%가 유휴 상태였습니다.",
+            "Aliyun GPUShare로 gpu-mem 단위로 분할하고 ONNX Runtime으로 모델별 추론 서비스를 독립 배포해, GPU 4장에서 70파드를 병렬 추론하며 일 처리량을 200건에서 3,000건으로 끌어올렸습니다.",
+          ],
           lines: [
             "1파드=1GPU 강제로 자원 90% 유휴 — AI 처리량 한계인데 GPU 대부분이 유휴 상태",
             "Aliyun GPUShare gpu-mem 단위 분할 — ONNX Runtime으로 모델별 추론 서비스 분리해 독립 스케일링 확보",
@@ -192,6 +217,10 @@ export const PROFILE = {
             "다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
           ],
           result: "HBB mAP50 0.644 / OBB 0.604, UPerNet+ConvNeXt mIoU 0.7205",
+          brief: [
+            "위성영상은 특성상 회전 augmentation이 역효과를 냈고 다종 센서 간 색감 도메인 차이가 있어, 범용 augmentation이 오히려 성능을 떨어뜨렸습니다.",
+            "YOLOv11m으로 OBB/HBB 20클래스를 서빙하면서 회전 augmentation을 실험으로 제거하고 색감 차이를 도메인 매칭 전처리로 보정해, HBB mAP50 0.644·OBB 0.604, 세그멘테이션 mIoU 0.7205를 확보했습니다.",
+          ],
           lines: [
             "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 서빙",
             "회전 augmentation 역효과 실험으로 확인·제거, 다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
@@ -208,6 +237,10 @@ export const PROFILE = {
             "Redis 캐싱으로 반복 연산 제거",
           ],
           result: "159ms (239배 단축), 50VU 에러율 11.22%→0%",
+          brief: [
+            "필터 없이 전체 레코드에 매 요청마다 PostGIS 공간연산을 수행하다 보니, 위성 메타데이터 API 응답이 38초까지 걸리고 50VU 부하에서 에러율이 11.22%에 달했습니다.",
+            "조건부 실행으로 연산 대상을 줄이고 커서 페이징과 Redis 캐싱을 계층별로 적용해, 응답을 159ms로 239배 단축하고 에러율을 0%로 잡았습니다.",
+          ],
           lines: [
             "PostGIS 전수 연산으로 위성 메타 API 38초 소요 — 50VU 에러율 11.22%",
             "조건부 실행 + 커서 페이징 + Redis 캐싱 — 계층별로 효과 독립 검증",
@@ -222,7 +255,7 @@ export const PROFILE = {
       period: "2026.03. ~ 2026.04.",
       badge: "사내 개인",
       stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
-      desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유.",
+      desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트입니다. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유했습니다.",
       blocks: [
         {
           label: "반복 수작업 자동화",
@@ -234,6 +267,10 @@ export const PROFILE = {
             "HRWeb(아마란스) Playwright 전 흐름 자동화",
           ],
           result: "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
+          brief: [
+            "Git·캘린더·HR 시스템이 분리돼 있어 주간보고 작성과 HRWeb 공수 입력을 매주 30~60분씩 수동으로 처리했습니다.",
+            "FastMCP로 8개 도구를 구현해 Git 커밋과 캘린더를 병합·엑셀 생성·Gmail 발송까지 단일 명령으로 자동화하고, 팀 전체가 Claude Desktop·Cursor에서 호출할 수 있게 했습니다.",
+          ],
           lines: [
             "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 — Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
             "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
@@ -248,7 +285,7 @@ export const PROFILE = {
       period: "2026.05. ~ 2026.06.",
       badge: "사내 개인",
       stack: ["Claude Code", "Python", "Shell Script", "Slack API"],
-      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임. Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영.",
+      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임했습니다. Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영합니다.",
       blocks: [
         {
           label: "ML 실험 자율 루프",
@@ -261,6 +298,10 @@ export const PROFILE = {
             "Slack WebHook으로 완료·에러 실시간 알림",
           ],
           result: "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
+          brief: [
+            "ML 실험 루프의 각 단계마다 사람이 결과를 보고 다음 실험을 결정해야 해서, 자리를 비우면 실험이 멈추고 재개할 때 맥락을 다시 파악해야 했습니다.",
+            "Claude Code Skill이 work_history를 읽어 다음 실험을 판단하고 Hook으로 학습을 자동 실행·기록·재투입하는 자율 루프를 구성해, 엔지니어 개입 없는 연속 실험을 가능하게 했습니다.",
+          ],
           lines: [
             "ML 실험 루프를 엔지니어가 수동 순환 — 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
             "Skill이 work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 — Slack 완료·에러 실시간 알림",

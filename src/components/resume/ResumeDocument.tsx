@@ -26,8 +26,8 @@ const CSS = `
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0; }
   .rallit-root .sheet-inner { padding:14mm 14mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .proj, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item { break-inside:avoid; }
-  .rallit-root .sec-force-page { break-before:page; }
+  .rallit-root .sec, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
+  .rallit-root .sec-h { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
@@ -78,9 +78,12 @@ const CSS = `
 .rallit-root .proj-achievements { margin-top:14px; display:flex; flex-direction:column; gap:0; }
 .rallit-root .proj-ach-row { padding:9px 0 9px 12px; border-top:1px solid var(--line-2); border-left:2px solid var(--line); }
 .rallit-root .proj-ach-row:first-child { border-top:none; padding-top:0; }
-.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:4px; }
+.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; }
 .rallit-root .proj-ach-action { display:block; font-size:11.5px; color:var(--ink-2); line-height:1.6; margin-bottom:3px; }
 .rallit-root .proj-ach-result { display:block; font-size:11.5px; color:var(--ink); font-weight:700; line-height:1.55; }
+.rallit-root .ach-brief { display:flex; flex-direction:column; gap:4px; }
+.rallit-root .ach-brief .b1 { font-size:11.5px; color:var(--ink-2); line-height:1.62; }
+.rallit-root .ach-brief .b2 { font-size:11.5px; color:var(--ink); font-weight:600; line-height:1.62; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
 .rallit-root .act-item:first-child { padding-top:0; }
@@ -130,49 +133,49 @@ export function ResumeDocument() {
     const pxPerMm = sheet.clientWidth / 210;
     const pageH = 297 * pxPerMm;
 
-    const SELECTOR = '.proj, .act-item, .edu-item, .cert-item, .sec-h';
-    const ORPHAN_GUARD = 80;
+    // Rule: flow continuously, but never cut a unit across a page boundary.
+    // Keep the coarsest unit that still fits on a page whole — a whole section
+    // first, then a whole project/item, falling back to inner blocks for anything
+    // too tall to fit (e.g. the projects section). Document order lists coarser
+    // units first, so the first crossing unit that fits is always the coarsest.
+    // Sections that fit are kept whole (never cut); the oversized projects section
+    // flows block by block (a project may span pages, but a block is never cut).
+    const KEEP = '.sec, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
     const topPad = pxPerMm * 18;
+    const pad = topPad / 2;
+    const usable = pageH - topPad; // a unit taller than this can't be kept whole
 
-    // force-page sections: push to top of next page regardless of position
-    (Array.from(sheet.querySelectorAll('.sec-force-page')) as HTMLElement[]).forEach(el => {
-      const top = topInSheet(el, sheet);
-      const pageNum = Math.floor(top / pageH);
-      if (top > pageNum * pageH + 5) {
-        const boundary = (pageNum + 1) * pageH;
-        const spacer = document.createElement('div');
-        spacer.className = 'pg-spacer';
-        spacer.style.height = `${boundary - top + GAP + topPad}px`;
-        el.parentNode?.insertBefore(spacer, el);
-      }
-    });
+    // first content block following a section header — kept on the same page as it
+    const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
+      const sec = header.closest('.sec');
+      return sec ? (sec.querySelector('.proj-head, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+    };
 
-    for (let iter = 0; iter < 20; iter++) {
-      const blocks = Array.from(sheet.querySelectorAll(SELECTOR)) as HTMLElement[];
+    for (let iter = 0; iter < 60; iter++) {
       let fixed = false;
+      const els = Array.from(sheet.querySelectorAll(KEEP)) as HTMLElement[];
+      for (const el of els) {
+        const h = el.offsetHeight;
+        if (h > usable) continue; // too tall to keep whole — a finer unit handles it
+        const top = topInSheet(el, sheet);
+        const boundary = (Math.floor(top / pageH) + 1) * pageH;
 
-      for (const block of blocks) {
-        const top = topInSheet(block, sheet);
-        const bottom = top + block.offsetHeight;
-        const pageNum = Math.floor(top / pageH);
-        const boundary = (pageNum + 1) * pageH;
+        // a header is "cut" if it would be split from its first block (break-after:avoid)
+        let span = top + h;
+        if (el.classList.contains('sec-h')) {
+          const fb = firstBlockOf(el);
+          if (fb && fb.offsetHeight <= usable) span = topInSheet(fb, sheet) + fb.offsetHeight;
+        }
 
-        const isCrossing = boundary > top && boundary < bottom;
-        const isOrphan = block.classList.contains('sec-h')
-          && boundary > bottom
-          && boundary - bottom < ORPHAN_GUARD;
-
-        if (isCrossing || isOrphan) {
-          const spacerH = boundary - top + GAP + topPad;
+        if (boundary > top && boundary < span) {
           const spacer = document.createElement('div');
           spacer.className = 'pg-spacer';
-          spacer.style.height = `${spacerH}px`;
-          block.parentNode?.insertBefore(spacer, block);
+          spacer.style.height = `${boundary - top + GAP + pad}px`;
+          el.parentNode?.insertBefore(spacer, el);
           fixed = true;
           break;
         }
       }
-
       if (!fixed) break;
     }
 
@@ -246,7 +249,7 @@ export function ResumeDocument() {
             </div>
           </div>
 
-          <div className="sec sec-force-page">
+          <div className="sec">
             <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span></div>
             <div className="career-projs">
               {P.projects.filter(pr => !pr.badge).map((pr, i) => (
@@ -258,16 +261,16 @@ export function ResumeDocument() {
                     </div>
                     <div className="proj-desc">{pr.desc}</div>
                   </div>
-                  {pr.blocks.some(b => b.lines || b.oneliner) && (
+                  {pr.blocks.some(b => b.brief || b.oneliner) && (
                     <div className="proj-achievements">
-                      {pr.blocks.filter(b => b.lines || b.oneliner).map((b, j) => (
+                      {pr.blocks.filter(b => b.brief || b.oneliner).map((b, j) => (
                         <div key={j} className="proj-ach-row">
                           <span className="proj-ach-label">{b.label}</span>
-                          {b.lines ? (
-                            <>
-                              <span className="proj-ach-action">{b.lines[1]}</span>
-                              <span className="proj-ach-result">{b.lines[2]}</span>
-                            </>
+                          {b.brief ? (
+                            <div className="ach-brief">
+                              <span className="b1">{b.brief[0]}</span>
+                              <span className="b2">{b.brief[1]}</span>
+                            </div>
                           ) : (
                             <span className="proj-ach-result">{b.oneliner}</span>
                           )}
