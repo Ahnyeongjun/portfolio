@@ -64,17 +64,18 @@ const CSS = `
 .rallit-root .career-overview { font-size:12.5px; color:var(--ink-2); line-height:1.75; margin-top:14px; }
 .rallit-root .proj { margin-bottom:26px; }
 .rallit-root .proj:last-child { margin-bottom:0; }
-.rallit-root .proj-head { padding-bottom:12px; border-bottom:1px solid var(--line); margin-bottom:14px; }
+.rallit-root .career-projs { margin-top:20px; display:flex; flex-direction:column; }
+.rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
-.rallit-root .proj-title { font-size:15.5px; font-weight:800; letter-spacing:-0.02em; }
+.rallit-root .proj-title { font-size:14.5px; font-weight:800; letter-spacing:-0.02em; }
 .rallit-root .proj-period { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); white-space:nowrap; }
-.rallit-root .proj-company { font-size:12px; color:var(--ink-2); font-weight:600; margin-top:3px; }
-.rallit-root .proj-desc { font-size:12px; color:var(--ink-2); line-height:1.62; margin-top:9px; }
+.rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:5px; }
 .rallit-root .proj-stack { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-.rallit-root .proj-achievements { margin-top:12px; display:flex; flex-direction:column; gap:5px; }
+.rallit-root .proj-achievements { margin-top:10px; display:flex; flex-direction:column; gap:10px; }
+.rallit-root .proj-ach-wrap { display:flex; flex-direction:column; gap:2px; }
+.rallit-root .proj-ach-label { font-size:10px; font-weight:700; color:var(--ink-3); letter-spacing:0.04em; padding-left:14px; }
 .rallit-root .proj-ach { font-size:11.5px; color:var(--ink); line-height:1.6; padding-left:14px; position:relative; }
 .rallit-root .proj-ach::before { content:""; position:absolute; left:0; top:8px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
-.rallit-root .proj-ach strong { color:var(--ink); font-weight:700; }
 .rallit-root .tag { font-size:11px; font-weight:600; color:var(--ink-2); background:var(--bg-soft); border-radius:999px; padding:5px 12px; }
 .rallit-root .pf-block { margin-top:14px; padding:14px 16px; background:var(--bg-soft); border-radius:13px; }
 .rallit-root .pf-block:first-of-type { margin-top:0; }
@@ -152,23 +153,26 @@ export function ResumeDocument() {
             <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
             <div className="career-period">{P.career.period}</div>
           </div>
-          {P.projects.map((pr, i) => (
-            <div key={i} className="proj">
-              <div className="proj-head">
-                <div className="proj-top"><span className="proj-title">{pr.title}</span><span className="proj-period">{pr.period}</span></div>
-                <div className="proj-desc">{pr.desc}</div>
-              </div>
-              {pr.blocks.some(b => b.oneliner) && (
-                <div className="proj-achievements">
-                  {pr.blocks.filter(b => b.oneliner).map((b, j) => (
-                    <div key={j} className="proj-ach">
-                      <strong>{b.label}</strong>: {b.oneliner}
-                    </div>
-                  ))}
+          <div className="career-projs">
+            {P.projects.map((pr, i) => (
+              <div key={i} className="proj">
+                <div className="proj-head">
+                  <div className="proj-top"><span className="proj-title">{pr.title}</span><span className="proj-period">{pr.period}</span></div>
+                  <div className="proj-desc">{pr.desc}</div>
                 </div>
-              )}
-            </div>
-          ))}
+                {pr.blocks.some(b => b.oneliner) && (
+                  <div className="proj-achievements">
+                    {pr.blocks.filter(b => b.oneliner).map((b, j) => (
+                      <div key={j} className="proj-ach-wrap">
+                        <div className="proj-ach-label">{b.label}</div>
+                        <div className="proj-ach">{b.oneliner}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="sec">
