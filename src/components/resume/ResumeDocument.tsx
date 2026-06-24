@@ -27,6 +27,7 @@ const CSS = `
   .rallit-root .sheet-inner { padding:14mm 14mm; }
   @page { size:A4; margin:11mm 0; }
   .rallit-root .proj, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item { break-inside:avoid; }
+  .rallit-root .sec-force-page { break-before:page; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
@@ -128,7 +129,21 @@ export function ResumeDocument() {
     const pageH = 297 * pxPerMm;
 
     const SELECTOR = '.proj, .act-item, .edu-item, .cert-item, .sec-h';
-    const ORPHAN_GUARD = 80; // px — sec-h this close to boundary → push to next page
+    const ORPHAN_GUARD = 80;
+    const topPad = pxPerMm * 18;
+
+    // force-page sections: push to top of next page regardless of position
+    (Array.from(sheet.querySelectorAll('.sec-force-page')) as HTMLElement[]).forEach(el => {
+      const top = topInSheet(el, sheet);
+      const pageNum = Math.floor(top / pageH);
+      if (top > pageNum * pageH + 5) {
+        const boundary = (pageNum + 1) * pageH;
+        const spacer = document.createElement('div');
+        spacer.className = 'pg-spacer';
+        spacer.style.height = `${boundary - top + GAP + topPad}px`;
+        el.parentNode?.insertBefore(spacer, el);
+      }
+    });
 
     for (let iter = 0; iter < 20; iter++) {
       const blocks = Array.from(sheet.querySelectorAll(SELECTOR)) as HTMLElement[];
@@ -146,7 +161,6 @@ export function ResumeDocument() {
           && boundary - bottom < ORPHAN_GUARD;
 
         if (isCrossing || isOrphan) {
-          const topPad = pxPerMm * 18;
           const spacerH = boundary - top + GAP + topPad;
           const spacer = document.createElement('div');
           spacer.className = 'pg-spacer';
@@ -230,7 +244,7 @@ export function ResumeDocument() {
             </div>
           </div>
 
-          <div className="sec">
+          <div className="sec sec-force-page">
             <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span></div>
             <div className="career-projs">
               {P.projects.map((pr, i) => (
