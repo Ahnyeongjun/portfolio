@@ -1,8 +1,5 @@
 // Document content for the /resume (Rallit) and /portfolio-pdf (Wanted) pages.
-// Content is organized from the live portfolio site (profile / projects / experience),
-// reshaped into the 현상→원인→대응→성과 (STAR) structure the document designs use.
-// Order mirrors the live site: company projects by latest start (MCP → NIPA → KARI),
-// and items within each project follow the site's achievement order.
+// Single source of truth synced with lib/projects.ts achievements.
 /* eslint-disable */
 
 export interface DocBlock {
@@ -11,6 +8,8 @@ export interface DocBlock {
   cause: string;
   actions: string[];
   result: string;
+  oneliner?: string; // 이력서용 한 줄 요약 (단순한 항목)
+  lines?: string[];  // 이력서용 다중 줄: [문제, 해결·선택근거, 결과]
 }
 export interface DocProject {
   title: string;
@@ -19,6 +18,7 @@ export interface DocProject {
   stack: string[];
   desc: string;
   blocks: DocBlock[];
+  badge?: string; // 예: "사내 개인", "납품"
 }
 
 export const PROFILE = {
@@ -31,7 +31,7 @@ export const PROFILE = {
 
   summary: [
     "한컴인스페이스에서 5년간 위성영상 AI 플랫폼의 백엔드를 맡아 온 개발자입니다. 한국항공우주연구원(KARI)에 납품한 처리 플랫폼과 정보통신산업진흥원(NIPA) 지원 변화탐지 플랫폼을 설계·운영하며, 국가기관이 실제 업무에 쓰는 시스템을 안정적으로 운영해 왔습니다.",
-    "운영에서 부딪힌 병목은 임시방편으로 막지 않고 구조로 풀어왔습니다. 모놀리식을 9개 MSA로 분리해 재배포를 월 10건에서 1건으로 줄였고, GPUShare로 GPU 4장에 70개 파드를 병렬 추론시켜 하루 처리량을 200건에서 3,000건까지 끌어올렸으며, 38초 걸리던 메타데이터 API를 159ms로 단축했습니다.",
+    "운영에서 부딪힌 병목은 임시방편으로 막지 않고 구조로 풀어왔습니다. 모놀리식 → MSA 전환으로 재배포를 월 10건에서 1건으로 줄였고, GPUShare로 GPU 4장에 70개 파드를 병렬 추론시켜 하루 처리량을 200건에서 3,000건까지 끌어올렸으며, 38초 걸리던 메타데이터 API를 159ms로 단축했습니다.",
     "CDC 인프라 의존을 걷어내려 Outbox 패턴을 직접 구현해 이벤트 유실을 없앴고, 외부 인터넷이 막힌 폐쇄망에서는 Snowflake 분산 ID를 직접 구현했습니다. 외부 도구를 기다리기보다 필요하면 직접 만드는 쪽을 택해왔습니다.",
     "결국 잘하는 일은 \"왜 느린가, 왜 터지는가\"를 끝까지 파고들어, 다시 터지지 않는 구조로 바꾸는 것입니다. 화면 뒤에서 시스템이 조용하고 안정적으로 돌아가게 만드는 일에 가장 큰 보람을 느낍니다.",
   ],
@@ -51,32 +51,26 @@ export const PROFILE = {
     metrics: ["재배포 월 10건→1건", "배포 4분→30초", "메타데이터 API 38초→159ms", "GPU 4장 70파드 병렬 추론", "이벤트 유실 0건"],
     groups: [
       {
-        title: "FastMCP 기반 사내 AI 에이전트",
+        title: "AI 처리 플랫폼 풀스택 개발",
         items: [
-          "FastMCP 기반 8개 도구 구현 (Git·캘린더·HRWeb·Gmail 연동)",
-          "Git 커밋 + 캘린더 병합으로 주간보고 자동 생성 후 Gmail 발송",
-          "엑셀 템플릿을 ZIP/XML 레벨에서 직접 조작 — 서식·수식 보존하며 내용 주입",
-          "사내 HRWeb(아마란스) Playwright 전 흐름 브라우저 자동화",
+          "위성영상 탐지·세그멘테이션·변화탐지 AI 파이프라인 설계·운영",
+          "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
+          "k6 부하테스트 기반 API 최적화 — PostGIS 38초→159ms, 에러율 11%→0%",
+          "파일 기반 폐쇄망 연계 구현 — 이벤트 유실 0건",
         ],
       },
       {
-        title: "NIPA 위성 변화탐지 AI 플랫폼",
+        title: "AI 모델 학습·추론",
         items: [
-          "Salt 폴링 → RabbitMQ ack/nack + DLQ 비동기 처리 파이프라인 재설계",
-          "모놀리식 → 9개 서비스 MSA 전환, 전 서비스 FastAPI 통일 및 Nginx 라우팅",
-          "폐쇄망 분산 ID를 위한 Snowflake 알고리즘 직접 구현 (worker ID에 망 정보 인코딩)",
-          "Envoy Gateway · Keycloak OIDC 게이트웨이 레벨 인증 구현",
-          "Next.js 15 + FSD 레거시 프론트엔드 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider",
+          "객체탐지·세그멘테이션 모델 학습·서빙 — mAP50 0.644, mIoU 0.7205",
+          "추론 가용성 확보 — GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
         ],
       },
       {
-        title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼",
+        title: "사내 자동화 에이전트 개발",
         items: [
-          "AOP + MyBatis 기반 Outbox 패턴 라이브러리 직접 개발 (CDC 인프라 의존 제거)",
-          "Aliyun GPUShare로 GPU 자원 분할 — 4장에서 70개 파드 병렬 추론",
-          "YOLOv11m 객체탐지 · UPerNet+ConvNeXt 세그멘테이션 AI 모델 서빙",
-          "janus 워크플로우 추상화로 10개 이상 위성 소스를 단일 파이프라인으로 통합",
-          "PostGIS 메타데이터 조회 API 성능 최적화 (38초 → 159ms)",
+          "FastMCP 에이전트 — Git·캘린더·HRWeb 통합, 문서 자동화",
+          "ML 실험 자율화 에이전트 — 개인 작업·자동 학습 실험기록 통합 관리·가시화, Slack 알림",
         ],
       },
     ],
@@ -84,48 +78,70 @@ export const PROFILE = {
 
   projects: [
     {
-      title: "FastMCP 기반 사내 AI 에이전트",
-      company: "한컴인스페이스",
-      period: "2026.03. ~ 2026.04.",
-      stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
-      desc: "Git·캘린더·HRWeb·Gmail을 MCP 도구로 연결해 주간보고 작성·공수 입력 등 반복 수작업을 자동화한 사내 AI 에이전트.",
-      blocks: [
-        {
-          label: "반복 수작업 자동화",
-          situation: "주간보고 작성과 HRWeb 공수 입력에 매주 30분~1시간이 소요됐습니다.",
-          cause: "Git 커밋·Google Calendar·사내 HR 시스템이 분리되어 데이터 수집과 문서 작성을 모두 수동으로 처리했습니다.",
-          actions: ["FastMCP 기반 8개 도구 구현 (list_commits·get_trips·generate_report·upload_hrweb 등)", "Git 커밋 + 캘린더 병합 → 주간보고 초안 자동 생성 후 Gmail 발송", "HRWeb Playwright 전 흐름 자동화"],
-          result: "매주 30분~1시간 걸리던 작업을 단일 명령으로 자동화하고, Cursor·Claude Desktop에서 호출 가능하도록 공유했습니다.",
-        },
-      ],
-    },
-    {
       title: "NIPA 위성 변화탐지 AI 플랫폼 — MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       stack: ["FastAPI", "RabbitMQ", "Next.js 15", "CesiumJS", "Go", "ONNX Runtime", "Kubernetes", "Nginx"],
-      desc: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼. 정보통신산업진흥원(NIPA) 지원 사업으로, 9개 MSA + FastAPI 기반으로 재설계했습니다.",
+      desc: "NIPA 지원으로 구축한 위성 변화탐지 플랫폼. 수 GB 규모의 고해상도 위성 영상 두 장을 AI로 픽셀 단위 비교해 도로·건물·토지 변화를 자동 탐지하고 지도에 가시화한다. 모놀리식 구조를 MSA + FastAPI로 전면 재설계해 운영 안정성을 끌어올렸다.",
       blocks: [
         {
-          label: "비동기 처리 파이프라인 재설계",
-          situation: "노드 재시작 시 변화탐지 작업이 RUNNING 상태로 고착되어 수동 DB 복구를 반복했습니다.",
-          cause: "Salt 폴링 방식은 작업 완료를 콜백으로 확인해, 노드 재시작 시 콜백이 유실되면 상태 갱신이 불가능했습니다.",
-          actions: ["RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환", "처리 완료 전 연결이 끊기면 자동 재투입, 3회 초과 시 DLQ 격리"],
-          result: "ack 기반 구조로 노드 장애가 작업 유실로 이어지지 않는 구조적 보장을 확보했습니다. (작업 유실 0건)",
+          label: "비동기 처리 파이프라인",
+          situation: "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착",
+          cause: "완료 콜백 구조로 노드 재시작 시 콜백이 유실되면 상태 갱신 불가",
+          actions: [
+            "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환",
+            "처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
+          ],
+          result: "작업 유실 0건",
+          lines: [
+            "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 — 수동 DB 복구 반복",
+            "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환 — 처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
+            "작업 유실 0건",
+          ],
         },
         {
-          label: "서비스 MSA 전환",
-          situation: "모놀리식으로 기능 하나를 배포해도 전체 서비스가 재시작되어 잦은 배포마다 서비스 중단이 발생했습니다.",
-          cause: "모든 기능이 단일 프로세스로 묶여 도메인 경계 없이 결합된 구조였습니다.",
-          actions: ["도메인 경계 기준으로 9개 MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅"],
-          result: "서비스 간 경계가 명확해져 장애가 격리됐고, 재배포 월 10건→1건, 배포 속도 4분→30초로 개선했습니다.",
+          label: "MSA 전환",
+          situation: "모놀리식으로 기능 하나 배포 시 전체 서비스 재시작",
+          cause: "모든 기능이 단일 프로세스로 결합, 도메인 경계 없음",
+          actions: [
+            "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅",
+          ],
+          result: "재배포 월 10건→1건, 배포 속도 4분→30초",
+          lines: [
+            "모놀리식으로 기능 하나 배포 시 전체 재시작 — 잦은 배포마다 운영 중단 발생",
+            "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅 — 서비스별 독립 배포·장애 격리 확보",
+            "재배포 월 10건→1건, 배포 속도 4분→30초",
+          ],
         },
         {
-          label: "레거시 프론트엔드 전면 재설계",
-          situation: "Thymeleaf 레거시 프론트는 기능 경계가 없어 수정 영향 범위를 예측할 수 없었습니다.",
-          cause: "SSR 템플릿 방식이라 컴포넌트 추상화가 없어 재사용이 불가능했습니다.",
-          actions: ["Next.js 15 + FSD 전면 마이그레이션", "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer를 단일 인터페이스로 추상화"],
-          result: "컴포넌트 재사용 구조를 확립해, 신규 레이어 타입 추가 시 기존 코드 수정 0건을 달성했습니다.",
+          label: "폐쇄망 분산 ID",
+          situation: "분리망 환경에서 외부 코디네이터 접근 불가",
+          cause: "UUID로는 장애 시 발생 서버 추적 불가",
+          actions: [
+            "Snowflake 알고리즘 직접 구현",
+            "worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
+          ],
+          result: "외부 의존 없는 분산 ID 발급, 장애 서버 추적 가능",
+          lines: [
+            "분리망 환경으로 외부 ID 코디네이터 접근 불가 — UUID로는 장애 시 발생 서버 추적 불가",
+            "Snowflake 알고리즘 직접 구현 — worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
+            "외부 의존 없는 분산 ID 발급, 장애 서버 추적 가능",
+          ],
+        },
+        {
+          label: "레거시 프론트 재설계",
+          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가",
+          cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가",
+          actions: [
+            "Next.js 15 + FSD 전면 마이그레이션",
+            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
+          ],
+          result: "신규 레이어 추가 시 기존 코드 수정 0건",
+          lines: [
+            "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 — 회귀 위험으로 작은 수정도 전체 수동 검증",
+            "Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
+            "신규 레이어 추가 시 기존 코드 수정 0건",
+          ],
         },
       ],
     },
@@ -134,28 +150,122 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Aliyun GPUShare", "Kubernetes", "MyBatis", "Redis"],
-      desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS로 가시화하는 플랫폼. 한국항공우주연구원 납품.",
+      desc: "한국항공우주연구원(KARI)에 납품한 위성영상 AI 처리 플랫폼. 사내 K8s 기반 AI 플랫폼의 출발점으로, 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했다. 다누리·Sentinel·Landsat 등 10종 이상의 위성에서 수집한 영상을 자동으로 AI 추론(객체탐지·세그멘테이션·초해상도)하고 3D 지도 위에 실시간 가시화한다.",
       blocks: [
         {
           label: "이벤트 유실 해결",
-          situation: "Debezium replication slot이 반복 파손되어 전체 스냅샷을 재수행해야 했습니다.",
-          cause: "CDC 방식은 DB 로그에 의존해 slot 파손 시 전체 재동기화가 필요했습니다.",
-          actions: ["AOP + MyBatis 기반 Outbox 라이브러리 직접 개발", "비즈니스 코드 수정 없이 투명하게 적용"],
-          result: "CDC 인프라 의존을 제거하고 애플리케이션 레벨에서 이벤트 보장을 달성했습니다. (이벤트 유실 0건)",
+          situation: "Debezium replication slot 반복 파손으로 전체 스냅샷 재수행",
+          cause: "CDC 방식은 DB 로그에 의존해 slot 파손 시 전체 재동기화 필요",
+          actions: [
+            "AOP + MyBatis Outbox 라이브러리 직접 개발",
+            "비즈니스 코드 수정 없이 투명하게 적용",
+          ],
+          result: "CDC 인프라 의존 제거, 이벤트 유실 0건",
+          lines: [
+            "Debezium replication slot 반복 파손 — 전체 스냅샷 재수행마다 수 시간 운영 중단",
+            "AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 없이 애플리케이션 레벨 이벤트 보장, 비즈니스 코드 수정 없이 적용",
+            "CDC 인프라 의존 제거, 이벤트 유실 0건",
+          ],
         },
         {
           label: "GPU 자원 활용",
-          situation: "AI 추론 처리량이 한계에 부딪혀 작업이 적체됐는데, 정작 GPU 자원의 90%는 유휴 상태였습니다.",
-          cause: "스케줄러가 파드 하나에 GPU 한 장을 통째로 할당해, 모델 하나가 메모리 대부분을 비워둔 채 점유하고 있었습니다.",
-          actions: ["Aliyun GPUShare로 gpu-mem 단위 분할·분배", "ONNX Runtime 추론 서비스 독립 배포로 모델별 스케일링"],
-          result: "GPU 4장에서 70개 파드 병렬 추론으로 일 처리량을 200건에서 3,000건까지 끌어올렸습니다.",
+          situation: "1파드=1GPU 강제로 자원 90% 유휴",
+          cause: "스케줄러가 GPU 한 장 통째로 할당, 모델이 VRAM 일부만 사용 중에도 독점",
+          actions: [
+            "Aliyun GPUShare gpu-mem 단위 분할",
+            "ONNX Runtime으로 모델별 추론 서비스 독립 배포",
+          ],
+          result: "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
+          lines: [
+            "1파드=1GPU 강제로 자원 90% 유휴 — AI 처리량 한계인데 GPU 대부분이 유휴 상태",
+            "Aliyun GPUShare gpu-mem 단위 분할 — ONNX Runtime으로 모델별 추론 서비스 분리해 독립 스케일링 확보",
+            "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
+          ],
+        },
+        {
+          label: "AI 모델 서빙",
+          situation: "위성영상 특성으로 범용 augmentation이 오히려 성능 저하",
+          cause: "회전 augmentation 역효과, 다종 센서 색감 도메인 차이",
+          actions: [
+            "YOLOv11m OBB/HBB 이원 탐지 20클래스 서빙",
+            "회전 augmentation 역효과 실험으로 확인·제거",
+            "다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
+          ],
+          result: "HBB mAP50 0.644 / OBB 0.604, UPerNet+ConvNeXt mIoU 0.7205",
+          lines: [
+            "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 서빙",
+            "회전 augmentation 역효과 실험으로 확인·제거, 다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
+            "HBB mAP50 0.644 / OBB 0.604, 세그멘테이션 mIoU 0.7205",
+          ],
         },
         {
           label: "메타데이터 API 성능",
-          situation: "위성 메타데이터 조회 API가 38초나 걸렸습니다.",
-          cause: "PostGIS 전수 연산을 매 요청마다 수행하는 구조였습니다.",
-          actions: ["조건부 실행 + 페이징 + Redis 캐싱 적용"],
-          result: "API 응답을 38초에서 159ms로 239배 단축하고, 50VU 부하 테스트 에러율을 11.22%에서 0%로 잡았습니다.",
+          situation: "PostGIS 전수 연산으로 위성 메타 API 38초 소요",
+          cause: "필터 없이 전체 레코드에 매 요청마다 공간연산 수행",
+          actions: [
+            "조건부 실행으로 연산 대상 축소",
+            "커서 페이징으로 메모리 압력 해소",
+            "Redis 캐싱으로 반복 연산 제거",
+          ],
+          result: "159ms (239배 단축), 50VU 에러율 11.22%→0%",
+          lines: [
+            "PostGIS 전수 연산으로 위성 메타 API 38초 소요 — 50VU 에러율 11.22%",
+            "조건부 실행 + 커서 페이징 + Redis 캐싱 — 계층별로 효과 독립 검증",
+            "159ms (239배 단축), 에러율 11.22%→0%",
+          ],
+        },
+      ],
+    },
+    {
+      title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트 개발",
+      company: "한컴인스페이스",
+      period: "2026.03. ~ 2026.04.",
+      badge: "사내 개인",
+      stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
+      desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유.",
+      blocks: [
+        {
+          label: "반복 수작업 자동화",
+          situation: "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요",
+          cause: "Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
+          actions: [
+            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
+            "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
+            "HRWeb(아마란스) Playwright 전 흐름 자동화",
+          ],
+          result: "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
+          lines: [
+            "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 — Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
+            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
+            "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
+          ],
+        },
+      ],
+    },
+    {
+      title: "ML 실험 자율 오케스트레이터 — Claude Code 에이전트 설계",
+      company: "한컴인스페이스",
+      period: "2026.05. ~ 2026.06.",
+      badge: "사내 개인",
+      stack: ["Claude Code", "Python", "Shell Script", "Slack API"],
+      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임. Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영.",
+      blocks: [
+        {
+          label: "ML 실험 자율 루프",
+          situation: "ML 실험 루프(초기화→학습→검증→기록→다음 실험 결정)를 엔지니어가 수동으로 순환",
+          cause: "각 단계 완료 후 사람이 결과를 보고 다음 실험을 결정해야 해 자리를 비우면 실험이 멈춤",
+          actions: [
+            "Claude Code Skill이 work_history를 읽고 다음 실험 판단",
+            "Hook+sh로 학습 프로세스 자동 실행",
+            "실험 결과를 work_history에 기록 → 다음 판단 인풋으로 재투입하는 자율 루프 구성",
+            "Slack WebHook으로 완료·에러 실시간 알림",
+          ],
+          result: "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
+          lines: [
+            "ML 실험 루프를 엔지니어가 수동 순환 — 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
+            "Skill이 work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 — Slack 완료·에러 실시간 알림",
+            "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
+          ],
         },
       ],
     },
@@ -173,22 +283,37 @@ export const PROFILE = {
       ],
     },
     {
+      title: "제4회 블레이버스 MVP 개발 해커톤",
+      org: "블레이버스", year: "2026",
+      desc: "기계공학 3D 학습 플랫폼 SIMVEX 개발 — @react-three/fiber 기반 3D 분해·조립 시뮬레이션 및 SSE 스트리밍 AI 어시스턴트 구현.",
+      notes: [
+        "부품이 같은 방향으로 분해되어 겹치는 문제를 피보나치 스피어 알고리즘으로 해결 — 균일한 분해 애니메이션 구현",
+        "SSE 스트리밍 AI 응답으로 학습 흐름 끊김 없이 실시간 표시",
+      ],
+    },
+    {
       title: "스위프(SWYP) 웹 9기 ~ 11기, 앱 4기",
       org: "스위프", year: "2025 ~ 2026",
       desc: "4개 기수에 백엔드·프론트엔드·PM으로 참여하며 팀 프로젝트를 웹·앱으로 출시했습니다.",
       notes: [
         "9기 백엔드(모먼티어), 10기 프론트엔드(축지법), 11기 PM·프론트엔드(위딩), 앱 4기 백엔드(Mapin)",
-        "[성과] SWYP 다수 기수 완주 및 배포",
+        "SWYP 다수 기수 완주 및 배포",
       ],
     },
     {
       title: "항해99 백엔드코스 9기",
       org: "항해99", year: "2025",
-      desc: "동시성 제어와 이벤트 드리븐 아키텍처를 실전으로 검증하는 학습 프로젝트.",
+      desc: "동시성 제어와 이벤트 드리븐 아키텍처를 실전으로 검증하는 학습 프로젝트. 상위 10% 수료.",
       notes: [
-        "[좌석 중복 예약] 비관적 락 → Redis 분산락 → 낙관적 락 순으로 전환, k6 + Grafana 부하 테스트로 트레이드오프 검증 → 상위 10% 수료",
+        "[좌석 중복 예약] 비관적 락 → Redis 분산락 → 낙관적 락 순으로 전환, k6 + Grafana 부하 테스트로 트레이드오프 검증",
         "[분산 트랜잭션] Redis 대기열 → Kafka 전환, Choreography Saga + DLQ로 일관성 확보",
       ],
+    },
+    {
+      title: "AI 커리어스쿨",
+      org: "멋쟁이사자처럼", year: "2024",
+      desc: "Python 기반 데이터 분석 및 시각화 학습 — 위성 영상 데이터 파이프라인·AI 모델 서빙 업무의 데이터 처리 흐름 이해에 기반이 됨.",
+      notes: [],
     },
   ],
 
