@@ -69,8 +69,8 @@ const CSS = `
 .rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:4px; }
 .rallit-root .proj-badge { display:inline-block; font-size:9.5px; font-weight:700; color:var(--ink-2); background:var(--bg-soft); border:1px solid var(--line); border-radius:4px; padding:1px 7px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
 .rallit-root .proj-achievements { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
-.rallit-root .proj-ach-row { padding:5px 10px; border-left:2px solid var(--accent); }
-.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:3px; }
+.rallit-root .proj-ach-row { padding:0; }
+.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:2px; }
 .rallit-root .proj-ach-result { display:block; font-size:12px; color:var(--ink); font-weight:600; line-height:1.55; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
