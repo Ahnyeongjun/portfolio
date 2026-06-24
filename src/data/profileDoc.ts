@@ -78,59 +78,6 @@ export const PROFILE = {
 
   projects: [
     {
-      title: "ML 실험 자율 오케스트레이터 — Claude Code 에이전트 설계",
-      company: "한컴인스페이스",
-      period: "2026.05. ~ 2026.06.",
-      badge: "사내 개인",
-      stack: ["Claude Code", "Python", "Shell Script", "Slack API"],
-      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임. Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영.",
-      blocks: [
-        {
-          label: "ML 실험 자율 루프",
-          situation: "ML 실험 루프(초기화→학습→검증→기록→다음 실험 결정)를 엔지니어가 수동으로 순환",
-          cause: "각 단계 완료 후 사람이 결과를 보고 다음 실험을 결정해야 해 자리를 비우면 실험이 멈춤",
-          actions: [
-            "Claude Code Skill이 work_history를 읽고 다음 실험 판단",
-            "Hook+sh로 학습 프로세스 자동 실행",
-            "실험 결과를 work_history에 기록 → 다음 판단 인풋으로 재투입하는 자율 루프 구성",
-            "Slack WebHook으로 완료·에러 실시간 알림",
-          ],
-          result: "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
-          lines: [
-            "ML 실험 루프를 엔지니어가 수동 순환 — 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
-            "Skill이 work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 — Slack 완료·에러 실시간 알림",
-            "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
-          ],
-        },
-      ],
-    },
-    {
-      title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트 개발",
-      company: "한컴인스페이스",
-      period: "2026.03. ~ 2026.04.",
-      badge: "사내 개인",
-      stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
-      desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유.",
-      blocks: [
-        {
-          label: "반복 수작업 자동화",
-          situation: "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요",
-          cause: "Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
-          actions: [
-            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
-            "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
-            "HRWeb(아마란스) Playwright 전 흐름 자동화",
-          ],
-          result: "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
-          lines: [
-            "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 — Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
-            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
-            "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
-          ],
-        },
-      ],
-    },
-    {
       title: "NIPA 위성 변화탐지 AI 플랫폼 — MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
@@ -280,6 +227,59 @@ export const PROFILE = {
             "PostGIS 전수 연산으로 위성 메타 API 38초 소요 — 50VU 에러율 11.22%",
             "조건부 실행 + 커서 페이징 + Redis 캐싱 — 계층별로 효과 독립 검증",
             "159ms (239배 단축), 에러율 11.22%→0%",
+          ],
+        },
+      ],
+    },
+    {
+      title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트 개발",
+      company: "한컴인스페이스",
+      period: "2026.03. ~ 2026.04.",
+      badge: "사내 개인",
+      stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
+      desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유.",
+      blocks: [
+        {
+          label: "반복 수작업 자동화",
+          situation: "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요",
+          cause: "Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
+          actions: [
+            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
+            "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
+            "HRWeb(아마란스) Playwright 전 흐름 자동화",
+          ],
+          result: "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
+          lines: [
+            "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 — Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
+            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
+            "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
+          ],
+        },
+      ],
+    },
+    {
+      title: "ML 실험 자율 오케스트레이터 — Claude Code 에이전트 설계",
+      company: "한컴인스페이스",
+      period: "2026.05. ~ 2026.06.",
+      badge: "사내 개인",
+      stack: ["Claude Code", "Python", "Shell Script", "Slack API"],
+      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임. Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영.",
+      blocks: [
+        {
+          label: "ML 실험 자율 루프",
+          situation: "ML 실험 루프(초기화→학습→검증→기록→다음 실험 결정)를 엔지니어가 수동으로 순환",
+          cause: "각 단계 완료 후 사람이 결과를 보고 다음 실험을 결정해야 해 자리를 비우면 실험이 멈춤",
+          actions: [
+            "Claude Code Skill이 work_history를 읽고 다음 실험 판단",
+            "Hook+sh로 학습 프로세스 자동 실행",
+            "실험 결과를 work_history에 기록 → 다음 판단 인풋으로 재투입하는 자율 루프 구성",
+            "Slack WebHook으로 완료·에러 실시간 알림",
+          ],
+          result: "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
+          lines: [
+            "ML 실험 루프를 엔지니어가 수동 순환 — 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
+            "Skill이 work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 — Slack 완료·에러 실시간 알림",
+            "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
           ],
         },
       ],
