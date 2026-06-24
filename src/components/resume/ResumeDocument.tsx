@@ -61,7 +61,13 @@ const CSS = `
 .rallit-root .proj { margin-bottom:22px; border-top:1px solid var(--line-2); padding-top:16px; }
 .rallit-root .proj:first-child { border-top:none; padding-top:0; }
 .rallit-root .proj:last-child { margin-bottom:0; }
-.rallit-root .career-projs { margin-top:16px; display:flex; flex-direction:column; }
+.rallit-root .career-groups { margin-top:16px; display:flex; flex-direction:column; gap:12px; }
+.rallit-root .career-group {}
+.rallit-root .cg-title { font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; }
+.rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
+.rallit-root .cg-item { font-size:11.5px; color:var(--ink-2); line-height:1.6; padding-left:12px; position:relative; }
+.rallit-root .cg-item::before { content:""; position:absolute; left:0; top:8px; width:3px; height:3px; border-radius:50%; background:var(--ink-3); }
+.rallit-root .career-projs { margin-top:0; display:flex; flex-direction:column; }
 .rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
 .rallit-root .proj-title { font-size:13px; font-weight:700; letter-spacing:-0.01em; color:var(--ink-2); }
@@ -212,8 +218,22 @@ export function ResumeDocument() {
               <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
               <div className="career-period">{P.career.period}</div>
             </div>
+            <div className="career-groups">
+              {P.career.groups.map((g, i) => (
+                <div key={i} className="career-group">
+                  <div className="cg-title">{g.title}</div>
+                  <ul className="cg-items">
+                    {g.items.map((item, j) => <li key={j} className="cg-item">{item}</li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="sec">
+            <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span></div>
             <div className="career-projs">
-              {P.projects.map((pr, i) => (
+              {P.projects.filter(pr => pr.badge === "사내 개인").map((pr, i) => (
                 <div key={i} className="proj">
                   <div className="proj-head">
                     <div className="proj-top">
@@ -240,7 +260,7 @@ export function ResumeDocument() {
           </div>
 
           <div className="sec">
-            <div className="sec-h"><span className="no">02</span><span className="t">대외활동</span></div>
+            <div className="sec-h"><span className="no">03</span><span className="t">대외활동</span></div>
             {P.activities.map((a, i) => (
               <div key={i} className="act-item">
                 <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
@@ -252,7 +272,7 @@ export function ResumeDocument() {
           <div className="sec">
             <div className="two-col">
               <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">03</span><span className="t">교육</span></div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">교육</span></div>
                 {P.education.map((e, i) => (
                   <div key={i} className="edu-item">
                     <div className="edu-school">{e.school}</div>
@@ -262,7 +282,7 @@ export function ResumeDocument() {
                 ))}
               </div>
               <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">자격증</span></div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">05</span><span className="t">자격증</span></div>
                 {P.certs.map((c, i) => (
                   <div key={i} className="cert-item">
                     <div className="cert-top"><span className="cert-name">{c.name}</span><span className="cert-date">{c.date}</span></div>
@@ -274,7 +294,7 @@ export function ResumeDocument() {
           </div>
 
           <div className="sec">
-            <div className="sec-h"><span className="no">05</span><span className="t">기술 스택</span></div>
+            <div className="sec-h"><span className="no">06</span><span className="t">기술 스택</span></div>
             <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
           </div>
 

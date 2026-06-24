@@ -51,38 +51,26 @@ export const PROFILE = {
     metrics: ["재배포 월 10건→1건", "배포 4분→30초", "메타데이터 API 38초→159ms", "GPU 4장 70파드 병렬 추론", "이벤트 유실 0건"],
     groups: [
       {
-        title: "ML 실험 자율 오케스트레이터 — Claude Code 에이전트",
+        title: "AI 처리 플랫폼 풀스택 개발",
         items: [
-          "Skill이 work_history를 읽고 다음 실험 판단 → Hook+sh 학습 자동 실행 → 결과 재기록 자율 루프",
-          "실험 완료·에러 시 Slack 실시간 알림",
-          "AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 설계",
+          "위성영상 탐지·분류·세그멘테이션 AI 파이프라인 설계·개발 — NIPA, KARI 납품",
+          "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
+          "API 성능 최적화 — PostGIS 38초→159ms (239배), 에러율 11.22%→0%",
+          "분산 ID·메시지큐 직접 구현 — Snowflake ID, Outbox 패턴, 이벤트 유실 0건",
         ],
       },
       {
-        title: "Git · 캘린더 · HRWeb 통합 MCP 에이전트",
+        title: "AI 모델·추론 파이프라인 개발",
         items: [
-          "FastMCP 8개 도구 구현 (list_commits·get_trips·generate_report·upload_hrweb 등)",
-          "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
-          "HRWeb(아마란스) Playwright 전 흐름 브라우저 자동화",
+          "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 — mAP50 0.644, mIoU 0.7205",
+          "GPU 추론 최적화 — GPUShare gpu-mem 단위 분할로 GPU 4장 70파드 병렬 추론, 처리량 200건→3,000건",
         ],
       },
       {
-        title: "NIPA 위성 변화탐지 AI 플랫폼",
+        title: "사내 자동화 에이전트 개발",
         items: [
-          "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 → RabbitMQ ack/nack + DLQ 전환 — 작업 유실 0건",
-          "모놀리식으로 기능 하나 배포 시 전체 재시작 → MSA 분리, 전 서비스 FastAPI 전환 — 재배포 월 10건→1건, 배포 4분→30초",
-          "분리망 환경에서 외부 코디네이터 접근 불가, UUID로는 발생 서버 추적 불가 → Snowflake 알고리즘 직접 구현, worker ID에 망 정보 인코딩",
-          "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 → Next.js 15 + FSD 마이그레이션, CesiumJS 커스텀 ImageryProvider — 코드 수정 0건",
-        ],
-      },
-      {
-        title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼",
-        items: [
-          "Debezium replication slot 반복 파손으로 전체 스냅샷 재수행 → AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 제거, 이벤트 유실 0건",
-          "1파드=1GPU 강제로 자원 90% 유휴 → Aliyun GPUShare gpu-mem 단위 분할 — GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
-          "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 — 회전 augmentation 역효과 확인·제거, 도메인 매칭 전처리 — mAP50 0.644, mIoU 0.7205",
-          "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 → janus H_BASE/S_BASE 추상화, 10+ 소스 단일 파이프라인 — 코드 수정 0건",
-          "PostGIS 전수 연산으로 위성 메타 API 38초 소요 → 조건부 실행 + 페이징 + Redis 캐싱 — 159ms (239배), 에러율 11.22%→0%",
+          "FastMCP 에이전트 구현 — Git·캘린더·HRWeb 통합, 주간보고·공수 입력 문서 자동화",
+          "Claude Code 에이전트 설계 — ML 실험 작업기록 자동화, 자율 실험 루프, Slack 알림",
         ],
       },
     ],
