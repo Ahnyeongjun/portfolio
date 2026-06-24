@@ -114,7 +114,7 @@ export const PROFILE = {
           cause: "Salt 폴링 방식은 작업 완료를 콜백으로 확인해, 노드 재시작 시 콜백이 유실되면 상태 갱신이 불가능했습니다.",
           actions: ["RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환", "처리 완료 전 연결이 끊기면 자동 재투입, 3회 초과 시 DLQ 격리"],
           result: "ack 기반 구조로 노드 장애가 작업 유실로 이어지지 않는 구조적 보장을 확보했습니다. (작업 유실 0건)",
-          oneliner: "노드 재시작 시 작업 고착·수동 DB 복구 반복 → RabbitMQ ack/nack + DLQ 전환 → 작업 유실 0건",
+          oneliner: "Salt 폴링 콜백 유실 구조로 노드 재시작 시 작업 고착 → at-least-once 보장 RabbitMQ ack/nack + 3회 초과 DLQ 격리 → 작업 유실 0건",
         },
         {
           label: "서비스 MSA 전환",
@@ -122,7 +122,7 @@ export const PROFILE = {
           cause: "모든 기능이 단일 프로세스로 묶여 도메인 경계 없이 결합된 구조였습니다.",
           actions: ["도메인 경계 기준으로 MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅"],
           result: "서비스 간 경계가 명확해져 장애가 격리됐고, 재배포 월 10건→1건, 배포 속도 4분→30초로 개선했습니다.",
-          oneliner: "기능 하나 배포에도 전체 서비스 재시작 → 도메인 기준 MSA 분리·FastAPI 전환 → 재배포 월 10건→1건, 배포 4분→30초",
+          oneliner: "단일 프로세스 결합 구조로 기능 하나 수정에도 전체 재배포 강제 → 도메인 경계 MSA 분리로 장애 격리·독립 배포 확보 → 재배포 월 10건→1건, 배포 4분→30초",
         },
         {
           label: "레거시 프론트엔드 전면 재설계",
@@ -130,7 +130,7 @@ export const PROFILE = {
           cause: "SSR 템플릿 방식이라 컴포넌트 추상화가 없어 재사용이 불가능했습니다.",
           actions: ["Next.js 15 + FSD 전면 마이그레이션", "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer를 단일 인터페이스로 추상화"],
           result: "컴포넌트 재사용 구조를 확립해, 신규 레이어 타입 추가 시 기존 코드 수정 0건을 달성했습니다.",
-          oneliner: "Thymeleaf 수정 영향 범위 예측 불가 → Next.js 15 + FSD 전면 재설계 → 신규 레이어 추가 시 기존 코드 수정 0건",
+          oneliner: "Thymeleaf 컴포넌트 경계 없어 수정 영향 범위 예측 불가 → Next.js 15 + FSD로 feature 단위 변경 격리 → 신규 레이어 추가 시 기존 코드 수정 0건",
         },
       ],
     },
@@ -147,7 +147,7 @@ export const PROFILE = {
           cause: "CDC 방식은 DB 로그에 의존해 slot 파손 시 전체 재동기화가 필요했습니다.",
           actions: ["AOP + MyBatis 기반 Outbox 라이브러리 직접 개발", "비즈니스 코드 수정 없이 투명하게 적용"],
           result: "CDC 인프라 의존을 제거하고 애플리케이션 레벨에서 이벤트 보장을 달성했습니다. (이벤트 유실 0건)",
-          oneliner: "Debezium slot 반복 파손·전체 재동기화 → Outbox 라이브러리 직접 개발 (CDC 인프라 의존 제거) → 이벤트 유실 0건",
+          oneliner: "Debezium slot 파손 반복 → CDC 외부 의존 없이 AOP+MyBatis로 Outbox 패턴 애플리케이션 레벨 직접 구현 → 이벤트 유실 0건",
         },
         {
           label: "GPU 자원 활용",
@@ -155,7 +155,7 @@ export const PROFILE = {
           cause: "스케줄러가 파드 하나에 GPU 한 장을 통째로 할당해, 모델 하나가 메모리 대부분을 비워둔 채 점유하고 있었습니다.",
           actions: ["Aliyun GPUShare로 gpu-mem 단위 분할·분배", "ONNX Runtime 추론 서비스 독립 배포로 모델별 스케일링"],
           result: "GPU 4장에서 70개 파드 병렬 추론으로 일 처리량을 200건에서 3,000건까지 끌어올렸습니다.",
-          oneliner: "AI 분석 적체로 납품 일정 위협, GPU 90% 유휴 → GPUShare 분할 + ONNX 독립 배포 → GPU 4장 70파드, 일 200건→3,000건",
+          oneliner: "1파드-1GPU 전체 할당으로 모델 유휴 중에도 자원 점유 → GPUShare mem 단위 공유 + ONNX 서비스 분리로 병렬화 → GPU 4장 70파드, 일 200건→3,000건",
         },
         {
           label: "메타데이터 API 성능",
@@ -163,7 +163,7 @@ export const PROFILE = {
           cause: "PostGIS 전수 연산을 매 요청마다 수행하는 구조였습니다.",
           actions: ["조건부 실행 + 페이징 + Redis 캐싱 적용"],
           result: "API 응답을 38초에서 159ms로 239배 단축하고, 50VU 부하 테스트 에러율을 11.22%에서 0%로 잡았습니다.",
-          oneliner: "위성 검색 API 38초로 실사용 불가 수준 → 조건부 실행·페이징·Redis 캐싱 → 159ms, 에러율 11.22%→0%",
+          oneliner: "매 요청 PostGIS 전수 공간연산으로 API 38초 → 조건 필터링으로 연산 범위 축소 + 커서 페이징 + Redis 캐싱 계층 적용 → 159ms, 에러율 11.22%→0%",
         },
       ],
     },
