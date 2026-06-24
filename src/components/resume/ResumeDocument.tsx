@@ -231,7 +231,46 @@ export function ResumeDocument() {
           </div>
 
           <div className="sec">
-            <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span></div>
+            <div className="sec-h"><span className="no">02</span><span className="t">대외활동</span></div>
+            {P.activities.map((a, i) => (
+              <div key={i} className="act-item">
+                <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
+                <div className="act-desc">{a.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="sec">
+            <div className="two-col">
+              <div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">03</span><span className="t">교육</span></div>
+                {P.education.map((e, i) => (
+                  <div key={i} className="edu-item">
+                    <div className="edu-school">{e.school}</div>
+                    <div className="edu-degree">{e.degree}</div>
+                    <div className="edu-meta">{e.period} · {e.status}</div>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">자격증</span></div>
+                {P.certs.map((c, i) => (
+                  <div key={i} className="cert-item">
+                    <div className="cert-top"><span className="cert-name">{c.name}</span><span className="cert-date">{c.date}</span></div>
+                    <div className="cert-issuer">{c.status} · {c.issuer}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="sec">
+            <div className="sec-h"><span className="no">05</span><span className="t">기술 스택</span></div>
+            <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
+          </div>
+
+          <div className="sec">
+            <div className="sec-h"><span className="no">06</span><span className="t">프로젝트</span></div>
             <div className="career-projs">
               {P.projects.filter(pr => pr.badge === "사내 개인").map((pr, i) => (
                 <div key={i} className="proj">
@@ -257,45 +296,6 @@ export function ResumeDocument() {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="sec">
-            <div className="sec-h"><span className="no">03</span><span className="t">대외활동</span></div>
-            {P.activities.map((a, i) => (
-              <div key={i} className="act-item">
-                <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
-                <div className="act-desc">{a.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="sec">
-            <div className="two-col">
-              <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">교육</span></div>
-                {P.education.map((e, i) => (
-                  <div key={i} className="edu-item">
-                    <div className="edu-school">{e.school}</div>
-                    <div className="edu-degree">{e.degree}</div>
-                    <div className="edu-meta">{e.period} · {e.status}</div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">05</span><span className="t">자격증</span></div>
-                {P.certs.map((c, i) => (
-                  <div key={i} className="cert-item">
-                    <div className="cert-top"><span className="cert-name">{c.name}</span><span className="cert-date">{c.date}</span></div>
-                    <div className="cert-issuer">{c.status} · {c.issuer}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="sec">
-            <div className="sec-h"><span className="no">06</span><span className="t">기술 스택</span></div>
-            <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
           </div>
 
           <div className="foot"><span>{P.name} · {P.role}</span><span>{P.email}</span></div>
