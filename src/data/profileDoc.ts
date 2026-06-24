@@ -83,7 +83,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       stack: ["FastAPI", "RabbitMQ", "Next.js 15", "CesiumJS", "Go", "ONNX Runtime", "Kubernetes", "Nginx"],
-      desc: "NIPA 지원으로 구축한 위성 변화탐지 플랫폼입니다. 수 GB 규모의 고해상도 위성 영상 두 장을 AI로 픽셀 단위 비교해 도로·건물·토지 변화를 자동 탐지하고 지도에 가시화합니다. 모놀리식 구조를 MSA + FastAPI로 전면 재설계해 운영 안정성을 끌어올렸습니다.",
+      desc: "같은 지역을 다른 시점에 찍은 고해상도 위성영상 두 장을 AI로 픽셀 단위까지 비교해, 도로·건물·토지의 변화를 자동으로 찾아 지도에 보여주는 플랫폼입니다. 폴링에 묶여 확장이 어렵던 모놀리식을 메시지 큐 기반 MSA로 전면 재설계했습니다.",
       blocks: [
         {
           label: "비동기 처리 파이프라인",
@@ -167,7 +167,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Aliyun GPUShare", "Kubernetes", "MyBatis", "Redis"],
-      desc: "한국항공우주연구원(KARI)에 납품한 위성영상 AI 처리 플랫폼입니다. 사내 K8s 기반 AI 플랫폼의 출발점으로, 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했습니다. 다누리·Sentinel·Landsat 등 10종 이상의 위성에서 수집한 영상을 자동으로 AI 추론(객체탐지·세그멘테이션·초해상도)하고 3D 지도 위에 실시간 가시화합니다.",
+      desc: "다누리·Sentinel·Landsat 등 10종이 넘는 위성에서 들어온 영상을 자동으로 AI 추론(탐지·세그멘테이션·초해상도)하고 3D 지도 위에 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, 사내 Kubernetes 기반 AI 플랫폼의 출발점이 되어 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했습니다.",
       blocks: [
         {
           label: "이벤트 유실 해결",
