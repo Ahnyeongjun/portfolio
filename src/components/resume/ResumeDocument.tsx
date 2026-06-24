@@ -157,7 +157,6 @@ export function ResumeDocument() {
               <div className="proj-head">
                 <div className="proj-top"><span className="proj-title">{pr.title}</span><span className="proj-period">{pr.period}</span></div>
                 <div className="proj-desc">{pr.desc}</div>
-                <div className="proj-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
               </div>
               {pr.blocks.some(b => b.oneliner) && (
                 <div className="proj-achievements">
