@@ -56,7 +56,7 @@ export const PROFILE = {
           "위성영상 AI 처리 파이프라인 설계·개발 — NIPA·KARI 납품",
           "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
           "k6 부하테스트 기반 API 최적화 — PostGIS 38초→159ms, 에러율 11%→0%",
-          "망 분리 환경 대응 — 외부 의존 없는 Snowflake ID·Outbox 패턴 직접 구현, 이벤트 유실 0건",
+          "파일 기반 폐쇄망 연계 구현 — Snowflake ID·Outbox 패턴 직접 구현, 이벤트 유실 0건",
         ],
       },
       {
