@@ -67,13 +67,13 @@ const CSS = `
 .rallit-root .proj-title { font-size:14.5px; font-weight:800; letter-spacing:-0.02em; }
 .rallit-root .proj-period { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); white-space:nowrap; }
 .rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:5px; }
-.rallit-root .proj-achievements { margin-top:10px; display:flex; flex-direction:column; gap:10px; }
 .rallit-root .proj-badge { display:inline-block; font-size:9.5px; font-weight:700; color:var(--ink-2); background:var(--bg-soft); border:1px solid var(--line); border-radius:4px; padding:1px 7px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
-.rallit-root .proj-ach-wrap { display:flex; flex-direction:column; gap:2px; }
-.rallit-root .proj-ach-label { font-size:10px; font-weight:700; color:var(--ink-3); letter-spacing:0.04em; padding-left:14px; }
-.rallit-root .proj-ach { font-size:11.5px; color:var(--ink-2); line-height:1.6; padding-left:14px; position:relative; }
-.rallit-root .proj-ach::before { content:""; position:absolute; left:0; top:8px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
-.rallit-root .proj-ach-result { color:var(--ink); font-weight:700; }
+.rallit-root .proj-achievements { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
+.rallit-root .proj-ach-row { font-size:11.5px; line-height:1.65; color:var(--ink-2); padding-left:13px; position:relative; }
+.rallit-root .proj-ach-row::before { content:""; position:absolute; left:0; top:7px; width:3px; height:3px; border-radius:50%; background:var(--accent); }
+.rallit-root .proj-ach-label { font-size:10.5px; font-weight:500; color:var(--ink-3); margin-right:5px; }
+.rallit-root .proj-ach-label::after { content:":"; }
+.rallit-root .proj-ach-result { color:var(--ink); font-weight:600; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
 .rallit-root .act-item:first-child { padding-top:0; }
@@ -228,14 +228,11 @@ export function ResumeDocument() {
                   {pr.blocks.some(b => b.lines || b.oneliner) && (
                     <div className="proj-achievements">
                       {pr.blocks.filter(b => b.lines || b.oneliner).map((b, j) => (
-                        <div key={j} className="proj-ach-wrap">
-                          <div className="proj-ach-label">{b.label}</div>
-                          {b.lines
-                            ? b.lines.map((line, k) => (
-                                <div key={k} className={`proj-ach${k === b.lines!.length - 1 ? " proj-ach-result" : ""}`}>{line}</div>
-                              ))
-                            : <div className="proj-ach">{b.oneliner}</div>
-                          }
+                        <div key={j} className="proj-ach-row">
+                          <span className="proj-ach-label">{b.label}</span>
+                          <span className="proj-ach-result">
+                            {b.lines ? b.lines[b.lines.length - 1] : b.oneliner}
+                          </span>
                         </div>
                       ))}
                     </div>
