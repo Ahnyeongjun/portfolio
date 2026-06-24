@@ -53,24 +53,24 @@ export const PROFILE = {
       {
         title: "AI 처리 플랫폼 풀스택 개발",
         items: [
-          "위성영상 탐지·분류·세그멘테이션 AI 파이프라인 설계·개발 — NIPA, KARI 납품",
+          "위성영상 AI 처리 파이프라인 설계·개발 — NIPA·KARI 납품",
           "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
-          "k6 부하테스트·테스트 코드 기반 API 성능 최적화 — PostGIS 38초→159ms (239배), 에러율 11.22%→0%",
+          "k6 부하테스트 기반 API 최적화 — PostGIS 38초→159ms, 에러율 11%→0%",
           "분산 ID·메시지큐 직접 구현 — Snowflake ID, Outbox 패턴, 이벤트 유실 0건",
         ],
       },
       {
         title: "AI 모델·추론 파이프라인 개발",
         items: [
-          "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 — mAP50 0.644, mIoU 0.7205",
-          "GPU 추론 최적화 — GPUShare gpu-mem 단위 분할로 GPU 4장 70파드 병렬 추론, 처리량 200건→3,000건",
+          "YOLOv11m 탐지·UPerNet 세그멘테이션 서빙 — mAP50 0.644, mIoU 0.7205",
+          "GPUShare gpu-mem 분할 — GPU 4장 70파드 병렬 추론, 처리량 200→3,000건/일",
         ],
       },
       {
         title: "사내 자동화 에이전트 개발",
         items: [
-          "FastMCP 에이전트 구현 — Git·캘린더·HRWeb 통합, 주간보고·공수 입력 문서 자동화",
-          "Claude Code 에이전트 설계 — ML 실험 작업기록 자동화, 자율 실험 루프, Slack 알림",
+          "FastMCP 에이전트 — Git·캘린더·HRWeb 통합, 문서 자동화",
+          "Claude Code 에이전트 — ML 실험 루프 자동화, Slack 알림",
         ],
       },
     ],
