@@ -60,17 +60,17 @@ export const PROFILE = {
         ],
       },
       {
-        title: "AI 모델 학습·서빙 풀스택 개발",
+        title: "AI 모델 학습·추론",
         items: [
           "객체탐지·세그멘테이션 모델 학습·서빙 — mAP50 0.644, mIoU 0.7205",
-          "GPU 리소스 분할 최적화 — GPU 4장 70파드 병렬 추론, 처리량 200→3,000건/일",
+          "추론 가용성 확보 — GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
         ],
       },
       {
         title: "사내 자동화 에이전트 개발",
         items: [
           "FastMCP 에이전트 — Git·캘린더·HRWeb 통합, 문서 자동화",
-          "Claude Code 에이전트 — ML 실험 루프 자동화, Slack 알림",
+          "ML 실험 자율화 에이전트 — 개인 작업·자동 학습 실험기록 통합 관리·가시화, Slack 알림",
         ],
       },
     ],
@@ -82,7 +82,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       stack: ["FastAPI", "RabbitMQ", "Next.js 15", "CesiumJS", "Go", "ONNX Runtime", "Kubernetes", "Nginx"],
-      desc: "두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼. NIPA(정보통신산업진흥원) 지원 사업. MSA + FastAPI 기반으로 재설계.",
+      desc: "NIPA 지원으로 구축한 위성 변화탐지 플랫폼. 수 GB 규모의 고해상도 위성 영상 두 장을 AI로 픽셀 단위 비교해 도로·건물·토지 변화를 자동 탐지하고 지도에 가시화한다. 모놀리식 구조를 MSA + FastAPI로 전면 재설계해 운영 안정성을 끌어올렸다.",
       blocks: [
         {
           label: "비동기 처리 파이프라인",
@@ -150,7 +150,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Aliyun GPUShare", "Kubernetes", "MyBatis", "Redis"],
-      desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS로 가시화하는 플랫폼. 한국항공우주연구원 납품.",
+      desc: "한국항공우주연구원(KARI)에 납품한 위성영상 AI 처리 플랫폼. 사내 K8s 기반 AI 플랫폼의 출발점으로, 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했다. 다누리·Sentinel·Landsat 등 10종 이상의 위성에서 수집한 영상을 자동으로 AI 추론(객체탐지·세그멘테이션·초해상도)하고 3D 지도 위에 실시간 가시화한다.",
       blocks: [
         {
           label: "이벤트 유실 해결",
@@ -196,21 +196,6 @@ export const PROFILE = {
             "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 서빙",
             "회전 augmentation 역효과 실험으로 확인·제거, 다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
             "HBB mAP50 0.644 / OBB 0.604, 세그멘테이션 mIoU 0.7205",
-          ],
-        },
-        {
-          label: "위성 소스 통합",
-          situation: "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 필요",
-          cause: "위성 소스별 처리 로직이 파이프라인 전체에 산재",
-          actions: [
-            "janus 워크플로우 H_BASE/S_BASE 추상화",
-            "다누리·Sentinel·Landsat 등 10개 이상 소스를 단일 파이프라인으로 통합",
-          ],
-          result: "신규 소스 추가 코드 수정 0건",
-          lines: [
-            "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 필요",
-            "janus 워크플로우 H_BASE/S_BASE 추상화 — 다누리·Sentinel·Landsat 등 10개 이상 소스를 단일 파이프라인으로 통합",
-            "신규 위성 소스 추가 시 코드 수정 0건",
           ],
         },
         {
