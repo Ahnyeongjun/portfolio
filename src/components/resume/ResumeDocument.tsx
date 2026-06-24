@@ -152,19 +152,10 @@ export function ResumeDocument() {
             <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
             <div className="career-period">{P.career.period}</div>
           </div>
-          <div className="career-overview">{P.career.overview}</div>
-          <div className="proj-stack" style={{ marginTop: 10 }}>
-            {P.career.metrics.map((m) => <span key={m} className="tag">{m}</span>)}
-          </div>
-        </div>
-
-        <div className="sec">
-          <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span><span className="cnt">{P.projects.length} projects</span></div>
           {P.projects.map((pr, i) => (
             <div key={i} className="proj">
               <div className="proj-head">
                 <div className="proj-top"><span className="proj-title">{pr.title}</span><span className="proj-period">{pr.period}</span></div>
-                <div className="proj-company">{pr.company}</div>
                 <div className="proj-desc">{pr.desc}</div>
                 <div className="proj-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
               </div>
@@ -182,7 +173,7 @@ export function ResumeDocument() {
         </div>
 
         <div className="sec">
-          <div className="sec-h"><span className="no">03</span><span className="t">대외활동</span></div>
+          <div className="sec-h"><span className="no">02</span><span className="t">대외활동</span></div>
           {P.activities.map((a, i) => (
             <div key={i} className="act-item">
               <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
@@ -195,7 +186,7 @@ export function ResumeDocument() {
         <div className="sec">
           <div className="two-col">
             <div>
-              <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">교육</span></div>
+              <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">03</span><span className="t">교육</span></div>
               {P.education.map((e, i) => (
                 <div key={i} className="edu-item">
                   <div className="edu-school">{e.school}</div>
@@ -205,7 +196,7 @@ export function ResumeDocument() {
               ))}
             </div>
             <div>
-              <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">05</span><span className="t">자격증</span></div>
+              <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">자격증</span></div>
               {P.certs.map((c, i) => (
                 <div key={i} className="cert-item">
                   <div className="cert-top"><span className="cert-name">{c.name}</span><span className="cert-date">{c.date}</span></div>
@@ -217,7 +208,7 @@ export function ResumeDocument() {
         </div>
 
         <div className="sec">
-          <div className="sec-h"><span className="no">06</span><span className="t">기술 스택</span></div>
+          <div className="sec-h"><span className="no">05</span><span className="t">기술 스택</span></div>
           <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
         </div>
 
