@@ -55,25 +55,23 @@ const CSS = `
 .rallit-root .sec-h .no { font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink-3); }
 .rallit-root .sec-h .t { font-size:18px; font-weight:800; letter-spacing:-0.03em; }
 .rallit-root .career-head { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
-.rallit-root .career-co { font-size:16.5px; font-weight:800; }
-.rallit-root .career-pos { font-size:12.5px; color:var(--ink-2); margin-top:4px; }
+.rallit-root .career-co { font-size:17px; font-weight:800; }
+.rallit-root .career-pos { font-size:12px; color:var(--ink-3); margin-top:3px; }
 .rallit-root .career-period { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); white-space:nowrap; }
-.rallit-root .career-overview { font-size:12.5px; color:var(--ink-2); line-height:1.75; margin-top:14px; }
-.rallit-root .proj { margin-bottom:26px; }
+.rallit-root .proj { margin-bottom:22px; border-top:1px solid var(--line-2); padding-top:16px; }
+.rallit-root .proj:first-child { border-top:none; padding-top:0; }
 .rallit-root .proj:last-child { margin-bottom:0; }
-.rallit-root .career-projs { margin-top:20px; display:flex; flex-direction:column; }
+.rallit-root .career-projs { margin-top:16px; display:flex; flex-direction:column; }
 .rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
-.rallit-root .proj-title { font-size:14.5px; font-weight:800; letter-spacing:-0.02em; }
-.rallit-root .proj-period { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); white-space:nowrap; }
-.rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:5px; }
+.rallit-root .proj-title { font-size:13px; font-weight:700; letter-spacing:-0.01em; color:var(--ink-2); }
+.rallit-root .proj-period { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); white-space:nowrap; }
+.rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:4px; }
 .rallit-root .proj-badge { display:inline-block; font-size:9.5px; font-weight:700; color:var(--ink-2); background:var(--bg-soft); border:1px solid var(--line); border-radius:4px; padding:1px 7px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
-.rallit-root .proj-achievements { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
-.rallit-root .proj-ach-row { font-size:11.5px; line-height:1.65; color:var(--ink-2); padding-left:13px; position:relative; }
-.rallit-root .proj-ach-row::before { content:""; position:absolute; left:0; top:7px; width:3px; height:3px; border-radius:50%; background:var(--accent); }
-.rallit-root .proj-ach-label { font-size:10.5px; font-weight:500; color:var(--ink-3); margin-right:5px; }
-.rallit-root .proj-ach-label::after { content:":"; }
-.rallit-root .proj-ach-result { color:var(--ink); font-weight:600; }
+.rallit-root .proj-achievements { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.rallit-root .proj-ach-row { padding:5px 10px; border-left:2px solid var(--accent); }
+.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:3px; }
+.rallit-root .proj-ach-result { display:block; font-size:12px; color:var(--ink); font-weight:600; line-height:1.55; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
 .rallit-root .act-item:first-child { padding-top:0; }
@@ -214,7 +212,6 @@ export function ResumeDocument() {
               <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
               <div className="career-period">{P.career.period}</div>
             </div>
-            <div className="career-overview">{P.career.overview}</div>
             <div className="career-projs">
               {P.projects.map((pr, i) => (
                 <div key={i} className="proj">
