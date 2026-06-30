@@ -42,10 +42,10 @@ const CSS = `
 .rallit-root .hd-photo { width:110px; height:110px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 12px rgba(20,22,28,0.14); }
 .rallit-root .hd-photo img { display:block; width:100%; height:100%; object-fit:cover; }
 .rallit-root .hd-rule { height:2px; background:var(--ink); margin:18px 0 0; }
-.rallit-root .summary { margin-top:20px; }
-.rallit-root .summary p { font-size:13px; color:var(--ink-2); line-height:1.85; margin-bottom:11px; }
-.rallit-root .summary p:first-child { font-size:14px; color:var(--ink); font-weight:600; line-height:1.7; }
-.rallit-root .summary p:last-child { margin-bottom:0; }
+.rallit-root .summary { margin-top:20px; display:flex; flex-direction:column; gap:16px; }
+.rallit-root .sm-head { font-size:13.5px; font-weight:800; color:var(--ink); line-height:1.5; letter-spacing:-0.025em; margin-bottom:6px; }
+.rallit-root .sm-body { font-size:12px; color:var(--ink-2); line-height:1.75; }
+.rallit-root .sm-close { font-size:12px; color:var(--ink-2); line-height:1.75; padding-top:14px; border-top:1px solid var(--line); }
 .rallit-root .highlights { display:flex; margin-top:22px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
 .rallit-root .hl { flex:1; padding:15px 18px; border-left:1px solid var(--line); }
 .rallit-root .hl:first-child { border-left:none; padding-left:0; }
@@ -84,11 +84,8 @@ const CSS = `
 .rallit-root .proj-ach-result { display:block; font-size:11.5px; color:var(--ink); font-weight:700; line-height:1.55; }
 .rallit-root .ach-brief { display:flex; flex-direction:column; gap:8px; }
 .rallit-root .ach-row { display:grid; grid-template-columns:28px 1fr; column-gap:12px; align-items:baseline; border-left:2.5px solid var(--line); padding-left:11px; }
-.rallit-root .ach-row.res { border-left-color:var(--accent); }
 .rallit-root .ach-k { font-size:10px; font-weight:700; color:var(--ink-3); letter-spacing:0.02em; white-space:nowrap; }
-.rallit-root .ach-row.res .ach-k { color:var(--ink); }
 .rallit-root .ach-v { font-size:11.5px; color:var(--ink-2); line-height:1.62; }
-.rallit-root .ach-row.res .ach-v { color:var(--ink); font-weight:700; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
 .rallit-root .act-item:first-child { padding-top:0; }
@@ -286,7 +283,15 @@ export function ResumeDocument() {
           </div>
           <div className="hd-rule" />
 
-          <div className="summary">{P.summary.map((s, i) => <p key={i}>{s}</p>)}</div>
+          <div className="summary">
+            {P.summary.map((s, i) => (
+              <div key={i} className="sm-block">
+                <p className="sm-head">{s.head}</p>
+                <p className="sm-body">{s.body}</p>
+              </div>
+            ))}
+            <p className="sm-close">{P.closing}</p>
+          </div>
 
           <div className="sec">
             <div className="sec-h"><span className="no">01</span><span className="t">경력</span></div>
@@ -327,7 +332,7 @@ export function ResumeDocument() {
                             <div className="ach-brief">
                               <div className="ach-row"><span className="ach-k">원인</span><span className="ach-v">{b.brief[0]}</span></div>
                               <div className="ach-row"><span className="ach-k">해결</span><span className="ach-v">{b.brief[1]}</span></div>
-                              {b.result && <div className="ach-row res"><span className="ach-k">결과</span><span className="ach-v">{b.result}</span></div>}
+                              {b.result && <div className="ach-row"><span className="ach-k">결과</span><span className="ach-v">{b.result}</span></div>}
                             </div>
                           ) : (
                             <span className="proj-ach-result">{b.oneliner}</span>

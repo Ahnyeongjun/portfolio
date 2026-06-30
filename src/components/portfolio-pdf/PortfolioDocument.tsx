@@ -126,10 +126,7 @@ function hl(text: string): React.ReactNode[] {
 
 export function PortfolioDocument() {
   const P = PROFILE;
-  const VALUES = [
-    { h: "맡은 영역에 머물지 않고, 서비스 전체를 만듭니다", p: P.summary[1] },
-    { h: "문제 앞에서 기다리지 않고, 직접 만드는 쪽을 택합니다", p: `${P.summary[2]} ${P.summary[3]}` },
-  ];
+  const VALUES = P.summary.map((s) => ({ h: s.head, p: s.body }));
 
   return (
     <div className="wanted-root">
@@ -146,7 +143,7 @@ export function PortfolioDocument() {
       <div className="sheet"><div className="sheet-inner">
         <div className="w-brand">Portfolio</div>
         <div className="w-role">Backend Engineer<span className="dot">.</span></div>
-        <div className="w-sub">{P.summary[0]}</div>
+        <div className="w-sub">{P.tagline}</div>
 
         <div className="w-vals">
           {VALUES.map((v, i) => (
