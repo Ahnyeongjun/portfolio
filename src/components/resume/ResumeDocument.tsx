@@ -23,7 +23,7 @@ const CSS = `
 @media print {
   .rallit-root { background:#fff; padding:0; }
   .rallit-toolbar { display:none !important; }
-  .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0; }
+  .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .rallit-root .sheet-inner { padding:14mm 14mm; }
   @page { size:A4; margin:11mm 0; }
   .rallit-root .sec, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
@@ -127,10 +127,14 @@ export function ResumeDocument() {
     const sheet = sheetRef.current;
     if (!sheet) return;
 
-    // clean up previous injections
+    // clean up previous injections (reset min-height first so the re-measure is honest)
+    sheet.style.minHeight = '';
     sheet.querySelectorAll('.pg-spacer, .pg-line').forEach(el => el.remove());
 
-    const pxPerMm = sheet.clientWidth / 210;
+    // Page size is fixed to the CSS rendering of A4 (1mm = 96/25.4px at every
+    // resolution), so breaks are deterministic and never shift between reloads
+    // or screens. This matches the 210mm sheet's own rendered width.
+    const pxPerMm = 96 / 25.4;
     const pageH = 297 * pxPerMm;
 
     // Rule: flow continuously, but never cut a unit across a page boundary.
@@ -141,14 +145,32 @@ export function ResumeDocument() {
     // Sections that fit are kept whole (never cut); the oversized projects section
     // flows block by block (a project may span pages, but a block is never cut).
     const KEEP = '.sec, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
-    const topPad = pxPerMm * 18;
-    const pad = topPad / 2;
-    const usable = pageH - topPad; // a unit taller than this can't be kept whole
+    const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
+    const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
-    // first content block following a section header — kept on the same page as it
+    // first real content block following a section header — kept on the same page
+    // as the header so the title never lands alone at the bottom of a page. For
+    // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const sec = header.closest('.sec');
-      return sec ? (sec.querySelector('.proj-head, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+      return sec ? (sec.querySelector('.proj-ach-row, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+    };
+
+    // push an element to the top of the next page so that its visible content
+    // lands at exactly GAP + PAGE_PAD below the boundary — regardless of which
+    // element type starts the page. `top` is the border-box top, and the element
+    // only moves down by the spacer's height (its margin-top still applies on top
+    // of the spacer, so margin must NOT be subtracted). Only the border-box-inner
+    // spacing (border + padding) offsets the visible content, so subtract that.
+    const pushBefore = (el: HTMLElement, top: number, boundary: number) => {
+      const cs = getComputedStyle(el);
+      const ownInset =
+        (parseFloat(cs.borderTopWidth) || 0) +
+        (parseFloat(cs.paddingTop) || 0);
+      const spacer = document.createElement('div');
+      spacer.className = 'pg-spacer';
+      spacer.style.height = `${Math.max(0, boundary - top + GAP + PAGE_PAD - ownInset)}px`;
+      el.parentNode?.insertBefore(spacer, el);
     };
 
     for (let iter = 0; iter < 60; iter++) {
@@ -168,10 +190,7 @@ export function ResumeDocument() {
         }
 
         if (boundary > top && boundary < span) {
-          const spacer = document.createElement('div');
-          spacer.className = 'pg-spacer';
-          spacer.style.height = `${boundary - top + GAP + pad}px`;
-          el.parentNode?.insertBefore(spacer, el);
+          pushBefore(el, top, boundary);
           fixed = true;
           break;
         }
@@ -179,26 +198,50 @@ export function ResumeDocument() {
       if (!fixed) break;
     }
 
-    // overlay page-gap bars at each 297mm boundary
-    const totalH = sheet.scrollHeight;
-    let pos = pageH;
-    let page = 2;
-    while (pos < totalH - 10) {
+    // pad the sheet up to a whole number of pages, so the last page is a full
+    // fixed-size A4 too (the white sheet fills the last page instead of ending
+    // at the content).
+    const contentH = sheet.scrollHeight;
+    const pages = Math.max(1, Math.ceil((contentH - 1) / pageH));
+    sheet.style.minHeight = `${pages * pageH}px`;
+
+    // overlay page-gap bars at each boundary
+    for (let p = 1; p < pages; p++) {
       const line = document.createElement('div');
       line.className = 'pg-line';
-      line.style.top = `${pos}px`;
-      line.innerHTML = `<span class="pg-line-label">PAGE ${page}</span>`;
+      line.style.top = `${p * pageH}px`;
+      line.innerHTML = `<span class="pg-line-label">PAGE ${p + 1}</span>`;
       sheet.appendChild(line);
-      pos += pageH;
-      page++;
     }
   }, []);
 
   useEffect(() => {
     applyBreaks();
-    const ro = new ResizeObserver(applyBreaks);
+    // Web fonts load after first paint; the initial measure uses fallback-font
+    // metrics and misplaces breaks (sections look cut on reload). Recompute once
+    // fonts are ready, and again on the next frame to settle any reflow.
+    let raf = 0;
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        applyBreaks();
+        raf = requestAnimationFrame(applyBreaks);
+      });
+    }
+    // Only recompute when the sheet's WIDTH changes (window resize / zoom).
+    // applyBreaks mutates the sheet's HEIGHT (spacers + min-height); observing
+    // that would feed back into an endless resize loop (the sheet "shrinking").
+    let lastW = sheetRef.current?.clientWidth ?? 0;
+    const ro = new ResizeObserver(() => {
+      const w = sheetRef.current?.clientWidth ?? 0;
+      if (w === lastW) return;
+      lastW = w;
+      applyBreaks();
+    });
     if (sheetRef.current) ro.observe(sheetRef.current);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [applyBreaks]);
 
   return (
