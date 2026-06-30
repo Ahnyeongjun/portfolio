@@ -62,7 +62,7 @@ const CSS = `
 .rallit-root .proj { margin-bottom:22px; border-top:1px solid var(--line-2); padding-top:16px; }
 .rallit-root .proj:first-child { border-top:none; padding-top:0; }
 .rallit-root .proj:last-child { margin-bottom:0; }
-.rallit-root .career-groups { margin-top:16px; display:flex; flex-direction:column; gap:12px; }
+.rallit-root .career-groups { margin-top:16px; padding-left:14px; display:flex; flex-direction:column; gap:12px; }
 .rallit-root .career-group {}
 .rallit-root .cg-title { font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; }
 .rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
@@ -71,19 +71,24 @@ const CSS = `
 .rallit-root .career-projs { margin-top:0; display:flex; flex-direction:column; }
 .rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
-.rallit-root .proj-title { font-size:13px; font-weight:700; letter-spacing:-0.01em; color:var(--ink-2); }
+.rallit-root .proj-title { font-size:15.5px; font-weight:800; letter-spacing:-0.025em; color:var(--ink); }
 .rallit-root .proj-period { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); white-space:nowrap; }
 .rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:4px; }
 .rallit-root .proj-badge { display:inline-block; font-size:9.5px; font-weight:700; color:var(--ink-2); background:var(--bg-soft); border:1px solid var(--line); border-radius:4px; padding:1px 7px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
-.rallit-root .proj-achievements { margin-top:14px; display:flex; flex-direction:column; gap:0; }
-.rallit-root .proj-ach-row { padding:9px 0 9px 12px; border-top:1px solid var(--line-2); border-left:2px solid var(--line); }
+.rallit-root .proj-achievements { margin-top:15px; padding:14px 0 2px 15px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:0; }
+.rallit-root .proj-ach-row { padding:11px 0 12px 0; border-top:1px solid var(--line-2); }
 .rallit-root .proj-ach-row:first-child { border-top:none; padding-top:0; }
-.rallit-root .proj-ach-label { display:block; font-size:9px; font-weight:700; color:var(--ink-3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; }
+.rallit-root .proj-ach-label { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--ink); letter-spacing:-0.02em; margin-bottom:8px; }
+.rallit-root .proj-ach-label::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--accent); flex-shrink:0; }
 .rallit-root .proj-ach-action { display:block; font-size:11.5px; color:var(--ink-2); line-height:1.6; margin-bottom:3px; }
 .rallit-root .proj-ach-result { display:block; font-size:11.5px; color:var(--ink); font-weight:700; line-height:1.55; }
-.rallit-root .ach-brief { display:flex; flex-direction:column; gap:4px; }
-.rallit-root .ach-brief .b1 { font-size:11.5px; color:var(--ink-2); line-height:1.62; }
-.rallit-root .ach-brief .b2 { font-size:11.5px; color:var(--ink); font-weight:600; line-height:1.62; }
+.rallit-root .ach-brief { display:flex; flex-direction:column; gap:8px; }
+.rallit-root .ach-row { display:grid; grid-template-columns:28px 1fr; column-gap:12px; align-items:baseline; border-left:2.5px solid var(--line); padding-left:11px; }
+.rallit-root .ach-row.res { border-left-color:var(--accent); }
+.rallit-root .ach-k { font-size:10px; font-weight:700; color:var(--ink-3); letter-spacing:0.02em; white-space:nowrap; }
+.rallit-root .ach-row.res .ach-k { color:var(--ink); }
+.rallit-root .ach-v { font-size:11.5px; color:var(--ink-2); line-height:1.62; }
+.rallit-root .ach-row.res .ach-v { color:var(--ink); font-weight:700; }
 .rallit-root .act-item { padding:13px 0; border-bottom:1px solid var(--line); }
 .rallit-root .act-item:last-child { border-bottom:none; padding-bottom:0; }
 .rallit-root .act-item:first-child { padding-top:0; }
@@ -152,8 +157,8 @@ export function ResumeDocument() {
     // as the header so the title never lands alone at the bottom of a page. For
     // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
-      const sec = header.closest('.sec');
-      return sec ? (sec.querySelector('.proj-ach-row, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+      const scope = header.parentElement; // same column/section body as the header
+      return scope ? (scope.querySelector('.proj-ach-row, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
     };
 
     // push an element to the top of the next page so that its visible content
@@ -180,7 +185,9 @@ export function ResumeDocument() {
         const h = el.offsetHeight;
         if (h > usable) continue; // too tall to keep whole — a finer unit handles it
         const top = topInSheet(el, sheet);
-        const boundary = (Math.floor(top / pageH) + 1) * pageH;
+        const pageIdx = Math.floor(top / pageH);
+        const prevBoundary = pageIdx * pageH;
+        const boundary = prevBoundary + pageH;
 
         // a header is "cut" if it would be split from its first block (break-after:avoid)
         let span = top + h;
@@ -189,8 +196,15 @@ export function ResumeDocument() {
           if (fb && fb.offsetHeight <= usable) span = topInSheet(fb, sheet) + fb.offsetHeight;
         }
 
+        // (1) element (or header + first block) crosses the next boundary → next page
         if (boundary > top && boundary < span) {
           pushBefore(el, top, boundary);
+          fixed = true;
+          break;
+        }
+        // (2) element sits underneath a page-gap bar (covered) → nudge below the bar
+        if (prevBoundary >= pageH && top - prevBoundary < GAP) {
+          pushBefore(el, top, prevBoundary);
           fixed = true;
           break;
         }
@@ -311,8 +325,9 @@ export function ResumeDocument() {
                           <span className="proj-ach-label">{b.label}</span>
                           {b.brief ? (
                             <div className="ach-brief">
-                              <span className="b1">{b.brief[0]}</span>
-                              <span className="b2">{b.brief[1]}</span>
+                              <div className="ach-row"><span className="ach-k">원인</span><span className="ach-v">{b.brief[0]}</span></div>
+                              <div className="ach-row"><span className="ach-k">해결</span><span className="ach-v">{b.brief[1]}</span></div>
+                              {b.result && <div className="ach-row res"><span className="ach-k">결과</span><span className="ach-v">{b.result}</span></div>}
                             </div>
                           ) : (
                             <span className="proj-ach-result">{b.oneliner}</span>
