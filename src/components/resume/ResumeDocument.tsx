@@ -290,7 +290,6 @@ export function ResumeDocument() {
                 <p className="sm-body">{s.body}</p>
               </div>
             ))}
-            <p className="sm-close">{P.closing}</p>
           </div>
 
           <div className="sec">
