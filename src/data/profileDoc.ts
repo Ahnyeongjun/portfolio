@@ -141,7 +141,7 @@ export const PROFILE = {
             "Snowflake 알고리즘 직접 구현",
             "worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
           ],
-          result: "외부 의존 없는 분산 ID 발급, 장애 서버 추적 가능",
+          result: "worker ID만으로 발생 서버 특정 가능",
           brief: [
             "외부와 분리된 폐쇄망으로 ID 코디네이터 부재, UUID로는 장애 발생 서버 추적 불가",
             "Snowflake 알고리즘 직접 구현, worker ID 비트에 망 정보(서브넷·서버) 인코딩",
@@ -149,7 +149,7 @@ export const PROFILE = {
           lines: [
             "분리망 환경으로 외부 ID 코디네이터 접근 불가 — UUID로는 장애 시 발생 서버 추적 불가",
             "Snowflake 알고리즘 직접 구현 — worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
-            "외부 의존 없는 분산 ID 발급, 장애 서버 추적 가능",
+            "worker ID만으로 발생 서버 특정 가능",
           ],
         },
         {
