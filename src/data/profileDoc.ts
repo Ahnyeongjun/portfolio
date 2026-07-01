@@ -116,22 +116,22 @@ export const PROFILE = {
         },
         {
           label: "게이트웨이 레벨 인증",
-          situation: "서비스가 늘어날수록 각 FastAPI 서비스가 JWT 검증 로직을 직접 처리해 인증 코드가 중복",
-          cause: "인증 정책 변경 시 전 서비스를 동시에 수정해야 하고, 신규 서비스마다 JWT 미들웨어를 직접 추가해야 함",
+          situation: "서비스별 JWT 직접 검증으로 인증 코드 중복",
+          cause: "정책 변경 시 전 서비스 동시 수정 필요, 신규 서비스마다 JWT 미들웨어 직접 추가",
           actions: [
-            "Keycloak을 OIDC Provider로 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위로 적용해 인증을 게이트웨이 레벨로 이동",
-            "인증된 요청에만 forwardAccessToken으로 Access Token을 헤더에 실어 전달, 백엔드는 토큰 검증 없이 헤더 사용자 정보만 사용",
-            "서비스별 Keycloak 클라이언트 분리로 권한 범위 세밀화, SealedSecret으로 클라이언트 시크릿 암호화해 Git 커밋 가능하게 함",
+            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위로 적용해 인증을 게이트웨이 레벨로 이동",
+            "forwardAccessToken으로 인증된 요청에만 Access Token 헤더 전달, 백엔드는 헤더 사용자 정보만 사용",
+            "서비스별 Keycloak 클라이언트 분리, SealedSecret으로 클라이언트 시크릿 암호화",
           ],
-          result: "정책 변경 시 SecurityPolicy 1개만 수정, 신규 서비스는 HTTPRoute에 Policy 연결만으로 인증 적용, Keycloak 세션 공유로 SSO 확보",
+          result: "정책 변경 시 SecurityPolicy 1개만 수정, 신규 서비스는 Policy 연결만으로 인증 적용, Keycloak 세션 공유 SSO 확보",
           brief: [
             "서비스가 늘어날수록 각 FastAPI 서비스가 JWT 검증을 직접 처리해 인증 코드가 중복되고, 정책 변경 시 전 서비스를 동시에 수정해야 했습니다.",
             "Keycloak OIDC와 Envoy Gateway SecurityPolicy로 인증을 게이트웨이 레벨로 끌어올려, 정책 변경은 SecurityPolicy 1개만 수정하면 되도록 만들었습니다.",
           ],
           lines: [
             "서비스별 JWT 직접 검증으로 인증 코드 중복 — 정책 변경 시 전 서비스 동시 수정, 신규 서비스마다 미들웨어 직접 추가",
-            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위 적용 — forwardAccessToken으로 헤더 전달, SealedSecret으로 시크릿 암호화",
-            "SecurityPolicy 1개만 수정하면 정책 변경 완료, 신규 서비스는 Policy 연결만으로 인증 적용, Keycloak 세션 공유 SSO 확보",
+            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위 적용 — forwardAccessToken으로 헤더 전달",
+            "SecurityPolicy 1개만 수정하면 정책 변경 완료, Keycloak 세션 공유 SSO 확보",
           ],
         },
         {
@@ -154,21 +154,21 @@ export const PROFILE = {
         },
         {
           label: "멀티 배포 뷰어·레거시 프론트 재설계",
-          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가, 동일 서비스를 지구 변화탐지·달지도 두 모드로 배포해야 함",
-          cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가",
+          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가",
+          cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가, 지구 변화탐지·달지도 두 모드를 별도 배포해야 함",
           actions: [
             "Next.js 15 + FSD 전면 마이그레이션, 지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리",
-            "동일 Docker 이미지를 K8s pod 환경변수(MAP_TYPE: EARTH|MOON)만 바꿔 여러 배포판으로 분리, dynamic import로 달지도 청크는 필요 시점에만 로드",
-            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer·달지도 등 이종 레이어를 단일 인터페이스로 추상화",
+            "동일 Docker 이미지를 K8s env(MAP_TYPE: EARTH|MOON)만 바꿔 배포판 분리, dynamic import로 달지도 청크 지연 로드",
+            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer·달지도 이종 레이어 단일 인터페이스 추상화",
           ],
           result: "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           brief: [
-            "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가했고, 동일 서비스를 지구 변화탐지·달지도 두 모드로 배포해야 했습니다.",
+            "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가했고, 지구 변화탐지·달지도 두 모드를 별도 배포해야 했습니다.",
             "Next.js 15·FSD로 feature slice를 분리해 동일 Docker 이미지를 K8s 환경변수만으로 여러 배포판으로 나눴고, CesiumJS 커스텀 ImageryProvider로 이종 레이어를 단일 인터페이스로 추상화했습니다.",
           ],
           lines: [
             "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가, 지구/달지도 두 모드 배포 필요",
-            "Next.js 15 + FSD로 feature slice 분리, 동일 이미지를 K8s env(MAP_TYPE)만으로 멀티 배포, CesiumJS ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
+            "Next.js 15 + FSD로 feature slice 분리, K8s env(MAP_TYPE)만으로 멀티 배포, CesiumJS ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
             "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           ],
         },
@@ -183,12 +183,12 @@ export const PROFILE = {
       blocks: [
         {
           label: "부하 테스트 기반 성능·보안 개선",
-          situation: "국가기관 납품으로 보안 요구사항이 엄격, k6 50VU 부하테스트에서 에러율 11.22% 발생",
-          cause: "32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에 직접 삽입되는 SQL injection 취약점 존재, 위성 메타 목록은 페이지네이션 없이 매 요청마다 PostGIS 연산 실행, 수집 현황 집계는 JOIN 조건 누락으로 카테시안 곱 발생, 알람 팝업 목록은 BLOB이 HikariCP 커넥션을 독점",
+          situation: "국가기관 납품으로 보안 요구사항 엄격, k6 50VU 부하테스트에서 에러율 11.22% 발생",
+          cause: "32개 매퍼에 SQL injection 취약점 존재, 페이지네이션·조건 없는 쿼리로 3가지 성능 병목(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점) 발생",
           actions: [
-            "보안 체크리스트 직접 작성해 개발 단계마다 선반영, JUnit 통합 테스트 작성",
+            "보안 체크리스트 선반영, JUnit 통합 테스트 작성",
             "SQL injection 취약점을 화이트리스트 검증으로 교체",
-            "조건부 PostGIS 실행, 기본 페이지네이션, BLOB 컬럼 목록/상세 분리, Redis 캐싱 적용",
+            "조건부 PostGIS 실행, 페이지네이션, BLOB 컬럼 분리, Redis 캐싱 적용",
           ],
           result: "위성 메타 목록 38초→159ms(239배), 수집 현황 집계 46초→181ms(256배), 알람 팝업 목록 25초→104ms(캐시 20ms), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
           brief: [
@@ -203,10 +203,10 @@ export const PROFILE = {
         },
         {
           label: "파일 기반 양방향 DB 동기화",
-          situation: "외부망↔폐쇄망이 물리 분리된 환경에서 위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요, ZooKeeper·etcd 같은 외부 코디네이터도 접근 불가",
-          cause: "포트 개방·외부 CDC 솔루션을 쓸 수 없어 Debezium CDC로 DB 변경 로그를 읽었으나 replication slot이 반복 파손, UUID v4로는 어느 망·서버에서 생성됐는지 역추적도 불가능",
+          situation: "외부망↔폐쇄망 물리 분리 환경에서 DB 양방향 동기화·분산 ID 발급 필요",
+          cause: "Debezium CDC의 replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
           actions: [
-            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현 — beforeCommit() 원자적 저장, ThreadLocal OutboxContext로 재발행 시 무한 루프 방지",
+            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현",
             "Snowflake 알고리즘 직접 구현, worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
           ],
           result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
