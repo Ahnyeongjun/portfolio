@@ -75,7 +75,6 @@ export const PROFILE = {
         items: [
           "객체탐지·세그멘테이션 모델 학습·서빙 — mAP50 0.644, mIoU 0.7205",
           "추론 가용성 확보 — GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
-          "janus 워크플로우 엔진 개발 — 10개 이상 위성 소스 단일 파이프라인, 신규 소스 추가 코드 수정 0건",
         ],
       },
       {
@@ -183,40 +182,21 @@ export const PROFILE = {
         },
         {
           label: "파일 기반 양방향 DB 동기화",
-          situation: "외부망↔폐쇄망이 물리 분리된 환경에서 위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요",
-          cause: "포트 개방·외부 CDC 솔루션을 쓸 수 없어 Debezium CDC로 DB 변경 로그를 읽었으나, 운영 중 replication slot이 반복 파손돼 매번 전체 스냅샷 재수행 필요",
+          situation: "외부망↔폐쇄망이 물리 분리된 환경에서 위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요, ZooKeeper·etcd 같은 외부 코디네이터도 접근 불가",
+          cause: "포트 개방·외부 CDC 솔루션을 쓸 수 없어 Debezium CDC로 DB 변경 로그를 읽었으나 replication slot이 반복 파손, UUID v4로는 어느 망·서버에서 생성됐는지 역추적도 불가능",
           actions: [
-            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현",
-            "beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 묶고, ThreadLocal OutboxContext로 재발행 시 무한 루프 방지",
+            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현 — beforeCommit() 원자적 저장, ThreadLocal OutboxContext로 재발행 시 무한 루프 방지",
+            "Snowflake 알고리즘 직접 구현, worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
           ],
-          result: "이벤트 유실 없이 안정적으로 운영",
+          result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
           brief: [
-            "외부망↔폐쇄망이 물리 분리돼 포트·외부 솔루션을 쓸 수 없는 환경에서, Debezium CDC로 양방향 DB 동기화를 구현했으나 replication slot이 반복 파손돼 매번 전체 스냅샷을 재수행해야 했습니다.",
-            "CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현해, beforeCommit() 원자적 저장과 재발행 무한루프 방지로 이벤트 유실 없이 안정적으로 운영했습니다.",
+            "외부망↔폐쇄망이 물리 분리돼 포트·외부 솔루션을 쓸 수 없는 환경에서, Debezium CDC로 양방향 DB 동기화를 구현했으나 replication slot이 반복 파손됐고, UUID v4로는 발생 망·서버 역추적도 불가능했습니다.",
+            "CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현했으며, Snowflake 알고리즘으로 worker ID에 망 정보를 인코딩해 이벤트 유실 없이 안정적으로 운영했습니다.",
           ],
           lines: [
-            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 — replication slot 반복 파손으로 매번 전체 스냅샷 재수행",
-            "Debezium 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현 — beforeCommit() 원자적 저장, ThreadLocal로 재발행 무한루프 방지",
-            "이벤트 유실 없이 안정적으로 운영",
-          ],
-        },
-        {
-          label: "폐쇄망 분산 ID",
-          situation: "외부망↔폐쇄망 물리 분리 환경에서 ZooKeeper·etcd 같은 외부 코디네이터 접근 불가",
-          cause: "UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적 불가능",
-          actions: [
-            "Snowflake 알고리즘 직접 구현",
-            "worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
-          ],
-          result: "외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보",
-          brief: [
-            "외부망↔폐쇄망이 물리 분리돼 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없었고, UUID v4로는 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.",
-            "Snowflake 알고리즘을 직접 구현해 worker ID 비트 영역에 망 정보를 인코딩, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보했습니다.",
-          ],
-          lines: [
-            "외부 코디네이터 접근 불가한 폐쇄망 환경 — UUID v4로는 발생 망·서버 역추적 불가",
-            "Snowflake 알고리즘 직접 구현 — worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
-            "외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
+            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 — replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
+            "Debezium 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현, Snowflake 알고리즘으로 worker ID에 망 정보 인코딩",
+            "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
           ],
         },
         {
@@ -257,43 +237,6 @@ export const PROFILE = {
             "나디르 고정 촬영으로 회전 augmentation 역효과, 땅·도로 색상 유사로 세그멘테이션 분류 어려움",
             "20클래스 OBB(대형)/HBB(소형) 이원화, 회전 augmentation 제거, ConvNeXt-Base+UPerNet+Skeleton Head 세그멘테이션",
             "HBB mAP50 0.644 / OBB 0.604, 세그멘테이션 mIoU 0.7205",
-          ],
-        },
-        {
-          label: "GPU 자원 활용",
-          situation: "1파드=1GPU 강제로 자원 90% 유휴",
-          cause: "스케줄러가 GPU 한 장 통째로 할당, 모델이 VRAM 일부만 사용 중에도 독점",
-          actions: [
-            "Aliyun GPUShare aliyun.com/gpu-mem 단위 분할",
-          ],
-          result: "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
-          brief: [
-            "스케줄러가 GPU를 한 장씩 통째로 할당, 모델이 메모리 일부만 사용해도 GPU 독점으로 처리량 한계·자원 90% 유휴",
-            "Aliyun GPUShare aliyun.com/gpu-mem 단위로 GPU 메모리 분할",
-          ],
-          lines: [
-            "1파드=1GPU 강제로 자원 90% 유휴 — AI 처리량 한계인데 GPU 대부분이 유휴 상태",
-            "Aliyun GPUShare aliyun.com/gpu-mem 단위 분할",
-            "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
-          ],
-        },
-        {
-          label: "위성 소스 통합",
-          situation: "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정",
-          cause: "다누리·Sentinel·Landsat 등 소스마다 처리 로직이 개별 하드코딩되어 표준화되지 않음",
-          actions: [
-            "janus 워크플로우 엔진 직접 설계·구현",
-            "H_BASE/S_BASE 추상화로 소스별 처리 로직을 표준 인터페이스로 통일",
-          ],
-          result: "10개 이상 위성 소스를 단일 파이프라인으로 통합, 신규 소스 추가 시 코드 수정 0건",
-          brief: [
-            "다누리·Sentinel·Landsat 등 위성 소스마다 처리 로직이 하드코딩돼 있어, 신규 위성이 추가될 때마다 파이프라인 전체를 수정해야 했습니다.",
-            "janus 워크플로우 엔진을 설계해 H_BASE/S_BASE로 소스별 처리 로직을 추상화, 10개 이상 소스를 단일 파이프라인으로 통합했습니다.",
-          ],
-          lines: [
-            "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 필요",
-            "janus 워크플로우 엔진 설계, H_BASE/S_BASE 추상화로 소스별 처리 로직 표준화 — 10개 이상 소스 단일 파이프라인 통합",
-            "10개 이상 위성 소스를 단일 파이프라인으로 통합, 신규 소스 추가 시 코드 수정 0건",
           ],
         },
       ],
