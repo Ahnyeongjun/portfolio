@@ -159,7 +159,7 @@ export const PROFILE = {
             "Next.js 15 + FSD 전면 마이그레이션",
             "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
           ],
-          result: "신규 레이어 3종 추가 시 기존 코드 수정 0건, 레이어 추가 작업 시간도 일 단위에서 시간 단위로 단축",
+          result: "신규 레이어 추가 시 기존 코드 수정 0건",
           brief: [
             "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가",
             "Next.js 15·FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
@@ -167,7 +167,7 @@ export const PROFILE = {
           lines: [
             "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 — 회귀 위험으로 작은 수정도 전체 수동 검증",
             "Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
-            "신규 레이어 3종 추가 시 기존 코드 수정 0건, 작업 시간도 일 단위에서 시간 단위로 단축",
+            "신규 레이어 추가 시 기존 코드 수정 0건",
           ],
         },
       ],
@@ -187,7 +187,7 @@ export const PROFILE = {
             "AOP + MyBatis Outbox 라이브러리 직접 개발",
             "비즈니스 코드 수정 없이 투명하게 적용",
           ],
-          result: "CDC 인프라 의존 제거, Outbox 전환 이후 6개월간 이벤트 유실 0건",
+          result: "CDC 인프라 의존 제거, 이벤트 유실 0건",
           brief: [
             "CDC가 DB 로그에 의존해 Debezium replication slot 파손 시마다 전체 스냅샷 재수행, 그때마다 수 시간 운영 중단",
             "AOP·MyBatis 기반 Outbox 라이브러리 직접 개발, 비즈니스 코드 수정 없이 투명하게 적용",
@@ -195,7 +195,7 @@ export const PROFILE = {
           lines: [
             "Debezium replication slot 반복 파손 — 전체 스냅샷 재수행마다 수 시간 운영 중단",
             "AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 없이 애플리케이션 레벨 이벤트 보장, 비즈니스 코드 수정 없이 적용",
-            "CDC 인프라 의존 제거, Outbox 전환 이후 6개월간 이벤트 유실 0건",
+            "CDC 인프라 의존 제거, 이벤트 유실 0건",
           ],
         },
         {
@@ -226,7 +226,7 @@ export const PROFILE = {
             "회전 augmentation 역효과 실험으로 확인·제거",
             "다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
           ],
-          result: "HBB mAP50 0.644 / OBB 0.604, UPerNet+ConvNeXt mIoU 0.7205 — 20클래스 탐지 기준 현업 운영 정확도 확보",
+          result: "HBB mAP50 0.644 / OBB 0.604, UPerNet+ConvNeXt mIoU 0.7205",
           brief: [
             "위성영상 특성상 회전 증강 역효과, 센서별 색감 차이로 범용 augmentation 적용 시 정확도 저하",
             "YOLOv11m OBB/HBB 20클래스 서빙, 역효과 augmentation 실험 제거·센서별 도메인 매칭 전처리",
@@ -234,7 +234,26 @@ export const PROFILE = {
           lines: [
             "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 서빙",
             "회전 augmentation 역효과 실험으로 확인·제거, 다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
-            "HBB mAP50 0.644 / OBB 0.604, mIoU 0.7205 — 20클래스 탐지 기준 현업 운영 정확도 확보",
+            "HBB mAP50 0.644 / OBB 0.604, mIoU 0.7205",
+          ],
+        },
+        {
+          label: "위성 소스 통합",
+          situation: "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정",
+          cause: "다누리·Sentinel·Landsat 등 소스마다 처리 로직이 개별 하드코딩되어 표준화되지 않음",
+          actions: [
+            "janus 워크플로우 엔진 직접 설계·구현",
+            "H_BASE/S_BASE 추상화로 소스별 처리 로직을 표준 인터페이스로 통일",
+          ],
+          result: "10개 이상 위성 소스를 단일 파이프라인으로 통합, 신규 소스 추가 시 코드 수정 0건",
+          brief: [
+            "다누리·Sentinel·Landsat 등 위성 소스마다 처리 로직이 하드코딩돼 있어, 신규 위성이 추가될 때마다 파이프라인 전체를 수정해야 했습니다.",
+            "janus 워크플로우 엔진을 설계해 H_BASE/S_BASE로 소스별 처리 로직을 추상화, 10개 이상 소스를 단일 파이프라인으로 통합했습니다.",
+          ],
+          lines: [
+            "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 필요",
+            "janus 워크플로우 엔진 설계, H_BASE/S_BASE 추상화로 소스별 처리 로직 표준화 — 10개 이상 소스 단일 파이프라인 통합",
+            "10개 이상 위성 소스를 단일 파이프라인으로 통합, 신규 소스 추가 시 코드 수정 0건",
           ],
         },
         {
