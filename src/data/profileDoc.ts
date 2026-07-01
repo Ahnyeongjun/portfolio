@@ -134,25 +134,6 @@ export const PROFILE = {
           ],
         },
         {
-          label: "폐쇄망 분산 ID",
-          situation: "분리망 환경에서 외부 코디네이터 접근 불가",
-          cause: "UUID로는 장애 시 발생 서버 추적 불가",
-          actions: [
-            "Snowflake 알고리즘 직접 구현",
-            "worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
-          ],
-          result: "worker ID만으로 발생 서버 특정 가능",
-          brief: [
-            "외부와 분리된 폐쇄망으로 ID 코디네이터 부재, UUID로는 장애 발생 서버 추적 불가",
-            "Snowflake 알고리즘 직접 구현, worker ID 비트에 망 정보(서브넷·서버) 인코딩",
-          ],
-          lines: [
-            "분리망 환경으로 외부 ID 코디네이터 접근 불가 — UUID로는 장애 시 발생 서버 추적 불가",
-            "Snowflake 알고리즘 직접 구현 — worker ID 비트에 망 정보(서브넷·서버) 인코딩해 ID만으로 발생 서버 특정",
-            "worker ID만으로 발생 서버 특정 가능",
-          ],
-        },
-        {
           label: "레거시 프론트 재설계",
           situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가",
           cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가",
@@ -181,22 +162,101 @@ export const PROFILE = {
       desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
       blocks: [
         {
-          label: "이벤트 유실 해결",
-          situation: "Debezium replication slot 반복 파손으로 전체 스냅샷 재수행",
-          cause: "CDC 방식은 DB 로그에 의존해 slot 파손 시 전체 재동기화 필요",
+          label: "부하 테스트 기반 성능·보안 개선",
+          situation: "국가기관 납품으로 보안 요구사항이 엄격, k6 50VU 부하테스트에서 에러율 11.22% 발생",
+          cause: "32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에 직접 삽입되는 SQL injection 취약점 존재, 위성 메타 목록은 페이지네이션 없이 매 요청마다 PostGIS 연산 실행, 수집 현황 집계는 JOIN 조건 누락으로 카테시안 곱 발생, 알람 팝업 목록은 BLOB이 HikariCP 커넥션을 독점",
           actions: [
-            "AOP + MyBatis Outbox 라이브러리 직접 개발",
-            "비즈니스 코드 수정 없이 투명하게 적용",
+            "보안 체크리스트 직접 작성해 개발 단계마다 선반영, JUnit 통합 테스트 작성",
+            "SQL injection 취약점을 화이트리스트 검증으로 교체",
+            "조건부 PostGIS 실행, 기본 페이지네이션, BLOB 컬럼 목록/상세 분리, Redis 캐싱 적용",
           ],
-          result: "CDC 인프라 의존 제거, 이벤트 유실 0건",
+          result: "위성 메타 목록 38초→159ms(239배), 수집 현황 집계 46초→181ms(256배), 알람 팝업 목록 25초→104ms(캐시 20ms), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
           brief: [
-            "CDC가 DB 로그에 의존해 Debezium replication slot 파손 시마다 전체 스냅샷 재수행, 그때마다 수 시간 운영 중단",
-            "AOP·MyBatis 기반 Outbox 라이브러리 직접 개발, 비즈니스 코드 수정 없이 투명하게 적용",
+            "국가기관 납품 특성상 보안 요구사항이 엄격했고, 32개 매퍼에 SQL injection 취약점이 있었으며, k6 50VU 부하테스트에서 에러율 11.22%가 발생했습니다.",
+            "보안 체크리스트·JUnit 통합 테스트를 선반영하고 SQL injection을 화이트리스트 검증으로 교체, 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 병목을 해소했습니다.",
           ],
           lines: [
-            "Debezium replication slot 반복 파손 — 전체 스냅샷 재수행마다 수 시간 운영 중단",
-            "AOP + MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 없이 애플리케이션 레벨 이벤트 보장, 비즈니스 코드 수정 없이 적용",
-            "CDC 인프라 의존 제거, 이벤트 유실 0건",
+            "보안 요구사항 엄격 + SQL injection 취약점 + k6 50VU 에러율 11.22%(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점)",
+            "보안 체크리스트·JUnit 통합 테스트 선반영, SQL injection 화이트리스트 검증 교체, 조건부 실행·페이지네이션·BLOB 분리·Redis 캐싱",
+            "위성 메타 38초→159ms, 수집 현황 46초→181ms, 알람 목록 25초→104ms(캐시 20ms), 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+          ],
+        },
+        {
+          label: "파일 기반 양방향 DB 동기화",
+          situation: "외부망↔폐쇄망이 물리 분리된 환경에서 위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요",
+          cause: "포트 개방·외부 CDC 솔루션을 쓸 수 없어 Debezium CDC로 DB 변경 로그를 읽었으나, 운영 중 replication slot이 반복 파손돼 매번 전체 스냅샷 재수행 필요",
+          actions: [
+            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현",
+            "beforeCommit()으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 묶고, ThreadLocal OutboxContext로 재발행 시 무한 루프 방지",
+          ],
+          result: "이벤트 유실 없이 안정적으로 운영",
+          brief: [
+            "외부망↔폐쇄망이 물리 분리돼 포트·외부 솔루션을 쓸 수 없는 환경에서, Debezium CDC로 양방향 DB 동기화를 구현했으나 replication slot이 반복 파손돼 매번 전체 스냅샷을 재수행해야 했습니다.",
+            "CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현해, beforeCommit() 원자적 저장과 재발행 무한루프 방지로 이벤트 유실 없이 안정적으로 운영했습니다.",
+          ],
+          lines: [
+            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 — replication slot 반복 파손으로 매번 전체 스냅샷 재수행",
+            "Debezium 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현 — beforeCommit() 원자적 저장, ThreadLocal로 재발행 무한루프 방지",
+            "이벤트 유실 없이 안정적으로 운영",
+          ],
+        },
+        {
+          label: "폐쇄망 분산 ID",
+          situation: "외부망↔폐쇄망 물리 분리 환경에서 ZooKeeper·etcd 같은 외부 코디네이터 접근 불가",
+          cause: "UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적 불가능",
+          actions: [
+            "Snowflake 알고리즘 직접 구현",
+            "worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
+          ],
+          result: "외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보",
+          brief: [
+            "외부망↔폐쇄망이 물리 분리돼 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없었고, UUID v4로는 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.",
+            "Snowflake 알고리즘을 직접 구현해 worker ID 비트 영역에 망 정보를 인코딩, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보했습니다.",
+          ],
+          lines: [
+            "외부 코디네이터 접근 불가한 폐쇄망 환경 — UUID v4로는 발생 망·서버 역추적 불가",
+            "Snowflake 알고리즘 직접 구현 — worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
+            "외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
+          ],
+        },
+        {
+          label: "영상 서빙 속도 개선",
+          situation: "수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어가 렌더링 불가",
+          cause: "WMS는 BBOX가 매번 달라 캐시 히트율이 0%에 수렴, 객체탐지 결과 GeoJSON은 요청마다 동적 생성돼 줌 레벨과 무관하게 항상 풀 디테일로 직렬화",
+          actions: [
+            "Go로 영상 서빙 서버 구현, WMS·WMTS·MVT 세 프로토콜 지원",
+            "WMTS 256×256 고정 격자 타일 사전 생성·디스크 캐싱으로 베이스맵 서빙",
+            "객체탐지 결과를 GeoJSON 동적 생성에서 ETL 단계 MVT 사전 생성으로 전환",
+          ],
+          result: "WMTS 타일 캐싱 2.4s→0.4s, MVT 전환으로 객체탐지 오버레이 응답 약 5분→1초 이내",
+          brief: [
+            "수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어가 렌더링하지 못했고, 객체탐지 결과를 GeoJSON으로 매번 동적 생성해 캐싱 효과 없이 응답에 최대 5분이 걸렸습니다.",
+            "Go로 영상 서빙 서버를 구현해 WMS·WMTS·MVT 세 프로토콜을 지원하고, 베이스맵은 WMTS 타일 사전 생성·캐싱으로, 객체탐지 결과는 ETL 단계 MVT 사전 생성으로 전환했습니다.",
+          ],
+          lines: [
+            "GeoTIFF 원본 직접 서빙 시 뷰어 렌더링 불가, 객체탐지 결과 GeoJSON 동적 생성으로 캐싱 불가·응답 최대 5분",
+            "Go 영상 서빙 서버 구현 — WMS·WMTS·MVT 지원, WMTS 타일 사전생성·캐싱, 객체탐지 결과 MVT 사전생성 전환",
+            "WMTS 타일 캐싱 2.4s→0.4s, MVT 전환으로 객체탐지 오버레이 응답 약 5분→1초 이내",
+          ],
+        },
+        {
+          label: "관심정보 객체탐지·변화탐지 세그멘테이션 성능 향상",
+          situation: "위성 나디르(직하방) 고정 촬영 특성상 회전 augmentation이 오히려 역효과, 땅과 도로 색상이 유사해 세그멘테이션 픽셀 분류가 까다로움",
+          cause: "객체 방향이 이미 정렬돼 있어 45도 회전 augmentation 적용 시 mAP50 하락, DINOv2 ViT-B/14는 목표 mIoU 0.72에 미달",
+          actions: [
+            "회전 방향이 중요한 대형 15클래스는 OBB(YOLOv11m-obb), 위치만 중요한 소형 5클래스는 HBB(YOLOv11m)로 이원화",
+            "회전 augmentation 제거 실험으로 mAP50 하락 확인·제거",
+            "ConvNeXt-Base(ImageNet-22k)+UPerNet에 도로 중심선 보조 학습(Skeleton Head) 추가",
+          ],
+          result: "HBB mAP50 0.644 / OBB mAP50 0.604, 세그멘테이션 mIoU 0.7205",
+          brief: [
+            "위성 나디르 고정 촬영 특성상 회전 augmentation이 오히려 mAP50을 떨어뜨렸고, 땅과 도로 색상이 유사해 세그멘테이션 픽셀 분류가 까다로웠습니다.",
+            "20클래스를 OBB/HBB로 이원화하고 회전 augmentation을 제거했으며, ConvNeXt-Base+UPerNet에 Skeleton Head를 추가해 mIoU 0.7205를 달성했습니다.",
+          ],
+          lines: [
+            "나디르 고정 촬영으로 회전 augmentation 역효과, 땅·도로 색상 유사로 세그멘테이션 분류 어려움",
+            "20클래스 OBB(대형)/HBB(소형) 이원화, 회전 augmentation 제거, ConvNeXt-Base+UPerNet+Skeleton Head 세그멘테이션",
+            "HBB mAP50 0.644 / OBB 0.604, 세그멘테이션 mIoU 0.7205",
           ],
         },
         {
@@ -218,26 +278,6 @@ export const PROFILE = {
           ],
         },
         {
-          label: "관심정보 객체탐지·세그멘테이션 성능 향상",
-          situation: "위성영상 특성으로 범용 augmentation이 오히려 성능 저하",
-          cause: "회전 augmentation 역효과, 다종 센서 색감 도메인 차이",
-          actions: [
-            "YOLOv11m OBB/HBB 이원 탐지 20클래스 서빙",
-            "회전 augmentation 역효과 실험으로 확인·제거",
-            "다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
-          ],
-          result: "HBB mAP50 0.644 / OBB 0.604, UPerNet+ConvNeXt mIoU 0.7205",
-          brief: [
-            "위성영상 특성상 회전 증강 역효과, 센서별 색감 차이로 범용 augmentation 적용 시 정확도 저하",
-            "YOLOv11m OBB/HBB 20클래스 서빙, 역효과 augmentation 실험 제거·센서별 도메인 매칭 전처리",
-          ],
-          lines: [
-            "YOLOv11m OBB/HBB 이원 탐지 20클래스, UPerNet+ConvNeXt 세그멘테이션 서빙",
-            "회전 augmentation 역효과 실험으로 확인·제거, 다종 센서 색감 차이를 도메인 매칭 전처리로 보정",
-            "HBB mAP50 0.644 / OBB 0.604, mIoU 0.7205",
-          ],
-        },
-        {
           label: "위성 소스 통합",
           situation: "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정",
           cause: "다누리·Sentinel·Landsat 등 소스마다 처리 로직이 개별 하드코딩되어 표준화되지 않음",
@@ -254,26 +294,6 @@ export const PROFILE = {
             "소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 필요",
             "janus 워크플로우 엔진 설계, H_BASE/S_BASE 추상화로 소스별 처리 로직 표준화 — 10개 이상 소스 단일 파이프라인 통합",
             "10개 이상 위성 소스를 단일 파이프라인으로 통합, 신규 소스 추가 시 코드 수정 0건",
-          ],
-        },
-        {
-          label: "부하테스트 기반 성능 개선",
-          situation: "PostGIS 전수 연산으로 위성 메타 API 38초 소요",
-          cause: "필터 없이 전체 레코드에 매 요청마다 공간연산 수행",
-          actions: [
-            "조건부 실행으로 연산 대상 축소",
-            "커서 페이징으로 메모리 압력 해소",
-            "Redis 캐싱으로 반복 연산 제거",
-          ],
-          result: "159ms (239배 단축), 50VU 에러율 11.22%→0%",
-          brief: [
-            "필터 없이 매 요청마다 전체 레코드에 PostGIS 공간연산 수행, API 응답 38초·50VU 부하 시 에러율 11% 초과",
-            "조건부 실행으로 연산 대상 축소, 커서 페이징·Redis 캐싱 적용",
-          ],
-          lines: [
-            "PostGIS 전수 연산으로 위성 메타 API 38초 소요 — 50VU 에러율 11.22%",
-            "조건부 실행 + 커서 페이징 + Redis 캐싱 — 계층별로 효과 독립 검증",
-            "159ms (239배 단축), 에러율 11.22%→0%",
           ],
         },
       ],
