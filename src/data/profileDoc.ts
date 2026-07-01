@@ -92,7 +92,7 @@ export const PROFILE = {
       title: "NIPA 위성 변화탐지 AI 플랫폼 — MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
-      stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes"],
+      stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes", "Envoy Gateway", "Keycloak"],
       desc: "두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계하며 RabbitMQ 비동기 파이프라인과 Next.js 15 FSD 프론트엔드를 처음 도입했습니다.",
       blocks: [
         {
@@ -115,40 +115,61 @@ export const PROFILE = {
           ],
         },
         {
+          label: "게이트웨이 레벨 인증",
+          situation: "서비스가 늘어날수록 각 FastAPI 서비스가 JWT 검증 로직을 직접 처리해 인증 코드가 중복",
+          cause: "인증 정책 변경 시 전 서비스를 동시에 수정해야 하고, 신규 서비스마다 JWT 미들웨어를 직접 추가해야 함",
+          actions: [
+            "Keycloak을 OIDC Provider로 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위로 적용해 인증을 게이트웨이 레벨로 이동",
+            "인증된 요청에만 forwardAccessToken으로 Access Token을 헤더에 실어 전달, 백엔드는 토큰 검증 없이 헤더 사용자 정보만 사용",
+            "서비스별 Keycloak 클라이언트 분리로 권한 범위 세밀화, SealedSecret으로 클라이언트 시크릿 암호화해 Git 커밋 가능하게 함",
+          ],
+          result: "정책 변경 시 SecurityPolicy 1개만 수정, 신규 서비스는 HTTPRoute에 Policy 연결만으로 인증 적용, Keycloak 세션 공유로 SSO 확보",
+          brief: [
+            "서비스가 늘어날수록 각 FastAPI 서비스가 JWT 검증을 직접 처리해 인증 코드가 중복되고, 정책 변경 시 전 서비스를 동시에 수정해야 했습니다.",
+            "Keycloak OIDC와 Envoy Gateway SecurityPolicy로 인증을 게이트웨이 레벨로 끌어올려, 정책 변경은 SecurityPolicy 1개만 수정하면 되도록 만들었습니다.",
+          ],
+          lines: [
+            "서비스별 JWT 직접 검증으로 인증 코드 중복 — 정책 변경 시 전 서비스 동시 수정, 신규 서비스마다 미들웨어 직접 추가",
+            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위 적용 — forwardAccessToken으로 헤더 전달, SealedSecret으로 시크릿 암호화",
+            "SecurityPolicy 1개만 수정하면 정책 변경 완료, 신규 서비스는 Policy 연결만으로 인증 적용, Keycloak 세션 공유 SSO 확보",
+          ],
+        },
+        {
           label: "MSA 전환",
           situation: "모놀리식으로 기능 하나 배포 시 전체 서비스 재시작",
           cause: "모든 기능이 단일 프로세스로 결합, 도메인 경계 없음",
           actions: [
-            "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅",
+            "MSA 분리, 전 서비스 FastAPI 전환, Envoy Gateway로 경로별 라우팅·OIDC 인증 처리",
           ],
           result: "재배포 월 10건→1건, 배포 속도 4분→30초",
           brief: [
             "모든 기능이 단일 프로세스로 결합돼 도메인 경계 부재, 기능 하나 배포에도 전체 서비스 재시작으로 배포 시마다 운영 중단",
-            "도메인 단위 9개 서비스로 분리, 전 서비스 FastAPI 통일·Nginx 라우팅",
+            "도메인 단위 9개 서비스로 분리, 전 서비스 FastAPI 통일·Envoy Gateway 라우팅",
           ],
           lines: [
             "모놀리식으로 기능 하나 배포 시 전체 재시작 — 잦은 배포마다 운영 중단 발생",
-            "MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅 — 서비스별 독립 배포·장애 격리 확보",
+            "MSA 분리, 전 서비스 FastAPI 전환, Envoy Gateway 라우팅 — 서비스별 독립 배포·장애 격리 확보",
             "재배포 월 10건→1건, 배포 속도 4분→30초",
           ],
         },
         {
-          label: "레거시 프론트 재설계",
-          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가",
+          label: "멀티 배포 뷰어·레거시 프론트 재설계",
+          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가, 동일 서비스를 지구 변화탐지·달지도 두 모드로 배포해야 함",
           cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가",
           actions: [
-            "Next.js 15 + FSD 전면 마이그레이션",
-            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
+            "Next.js 15 + FSD 전면 마이그레이션, 지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리",
+            "동일 Docker 이미지를 K8s pod 환경변수(MAP_TYPE: EARTH|MOON)만 바꿔 여러 배포판으로 분리, dynamic import로 달지도 청크는 필요 시점에만 로드",
+            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer·달지도 등 이종 레이어를 단일 인터페이스로 추상화",
           ],
-          result: "신규 레이어 추가 시 기존 코드 수정 0건",
+          result: "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           brief: [
-            "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가",
-            "Next.js 15·FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
+            "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가했고, 동일 서비스를 지구 변화탐지·달지도 두 모드로 배포해야 했습니다.",
+            "Next.js 15·FSD로 feature slice를 분리해 동일 Docker 이미지를 K8s 환경변수만으로 여러 배포판으로 나눴고, CesiumJS 커스텀 ImageryProvider로 이종 레이어를 단일 인터페이스로 추상화했습니다.",
           ],
           lines: [
-            "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 — 회귀 위험으로 작은 수정도 전체 수동 검증",
-            "Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
-            "신규 레이어 추가 시 기존 코드 수정 0건",
+            "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가, 지구/달지도 두 모드 배포 필요",
+            "Next.js 15 + FSD로 feature slice 분리, 동일 이미지를 K8s env(MAP_TYPE)만으로 멀티 배포, CesiumJS ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
+            "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           ],
         },
       ],
