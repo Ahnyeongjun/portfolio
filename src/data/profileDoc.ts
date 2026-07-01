@@ -67,7 +67,7 @@ export const PROFILE = {
           "위성영상 탐지·세그멘테이션·변화탐지 AI 파이프라인 설계·운영",
           "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
           "k6 부하테스트 기반 API 최적화 — PostGIS 38초→159ms, 에러율 11%→0%",
-          "파일 기반 폐쇄망 연계 구현 — 이벤트 유실 0건",
+          "AOP+MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 제거, 이벤트 유실 0건",
         ],
       },
       {
@@ -75,6 +75,7 @@ export const PROFILE = {
         items: [
           "객체탐지·세그멘테이션 모델 학습·서빙 — mAP50 0.644, mIoU 0.7205",
           "추론 가용성 확보 — GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
+          "janus 워크플로우 엔진 개발 — 10개 이상 위성 소스 단일 파이프라인, 신규 소스 추가 코드 수정 0건",
         ],
       },
       {
@@ -203,17 +204,16 @@ export const PROFILE = {
           situation: "1파드=1GPU 강제로 자원 90% 유휴",
           cause: "스케줄러가 GPU 한 장 통째로 할당, 모델이 VRAM 일부만 사용 중에도 독점",
           actions: [
-            "Aliyun GPUShare gpu-mem 단위 분할",
-            "ONNX Runtime으로 모델별 추론 서비스 독립 배포",
+            "Aliyun GPUShare aliyun.com/gpu-mem 단위 분할",
           ],
           result: "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
           brief: [
             "스케줄러가 GPU를 한 장씩 통째로 할당, 모델이 메모리 일부만 사용해도 GPU 독점으로 처리량 한계·자원 90% 유휴",
-            "Aliyun GPUShare로 GPU 메모리 단위 분할, ONNX Runtime으로 모델별 추론 서비스 독립 배포",
+            "Aliyun GPUShare aliyun.com/gpu-mem 단위로 GPU 메모리 분할",
           ],
           lines: [
             "1파드=1GPU 강제로 자원 90% 유휴 — AI 처리량 한계인데 GPU 대부분이 유휴 상태",
-            "Aliyun GPUShare gpu-mem 단위 분할 — ONNX Runtime으로 모델별 추론 서비스 분리해 독립 스케일링 확보",
+            "Aliyun GPUShare aliyun.com/gpu-mem 단위 분할",
             "GPU 4장에서 70파드 병렬 추론, 일 처리량 200건→3,000건",
           ],
         },
