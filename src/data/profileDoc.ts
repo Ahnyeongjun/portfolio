@@ -93,8 +93,8 @@ export const PROFILE = {
       title: "NIPA 위성 변화탐지 AI 플랫폼 — MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
-      stack: ["FastAPI", "RabbitMQ", "Next.js 15", "CesiumJS", "Go", "ONNX Runtime", "Kubernetes", "Nginx"],
-      desc: "같은 지역을 다른 시점에 찍은 고해상도 위성영상 두 장을 AI로 픽셀 단위까지 비교해, 도로·건물·토지의 변화를 자동으로 찾아 지도에 보여주는 플랫폼입니다. 폴링에 묶여 확장이 어렵던 모놀리식을 메시지 큐 기반 MSA로 전면 재설계했습니다.",
+      stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes"],
+      desc: "두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계하며 RabbitMQ 비동기 파이프라인과 Next.js 15 FSD 프론트엔드를 처음 도입했습니다.",
       blocks: [
         {
           label: "비동기 처리 파이프라인",
@@ -174,11 +174,11 @@ export const PROFILE = {
       ],
     },
     {
-      title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼",
+      title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
-      stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Aliyun GPUShare", "Kubernetes", "MyBatis", "Redis"],
-      desc: "다누리·Sentinel·Landsat 등 10종이 넘는 위성에서 들어온 영상을 자동으로 AI 추론(탐지·세그멘테이션·초해상도)하고 3D 지도 위에 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, 사내 Kubernetes 기반 AI 플랫폼의 출발점이 되어 이후 NIPA·국가기관 프로젝트가 이 구조에서 발전했습니다.",
+      stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack"],
+      desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
       blocks: [
         {
           label: "이벤트 유실 해결",
@@ -218,7 +218,7 @@ export const PROFILE = {
           ],
         },
         {
-          label: "AI 모델 서빙",
+          label: "관심정보 객체탐지·세그멘테이션 성능 향상",
           situation: "위성영상 특성으로 범용 augmentation이 오히려 성능 저하",
           cause: "회전 augmentation 역효과, 다종 센서 색감 도메인 차이",
           actions: [
@@ -257,7 +257,7 @@ export const PROFILE = {
           ],
         },
         {
-          label: "메타데이터 API 성능",
+          label: "부하테스트 기반 성능 개선",
           situation: "PostGIS 전수 연산으로 위성 메타 API 38초 소요",
           cause: "필터 없이 전체 레코드에 매 요청마다 공간연산 수행",
           actions: [
@@ -283,7 +283,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2026.03. ~ 2026.04.",
       badge: "사내 개인",
-      stack: ["Python", "FastMCP", "Playwright", "Gmail API", "Google Calendar API"],
+      stack: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
       desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트입니다. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유했습니다.",
       blocks: [
         {
