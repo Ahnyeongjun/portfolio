@@ -179,6 +179,15 @@ export function DflowRetrospective() {
             떨어졌고, 그제서야 남은 실패가 진짜 성능 문제(api_load 시나리오의 응답 지연)라는 걸
             확인할 수 있었습니다.
           </p>
+          <CompareTable
+            headers={["항목", "수정 전", "수정 후"]}
+            rows={[
+              { cells: ["태스크 임포트 바디", "[{image: ...}]", "[{data: {image: ...}}]"] },
+              { cells: ["Transfer Learning URL", "/api/tasks/{id}/...", "/api/transferlearnings/{id}/..."] },
+              { cells: ["삭제 요청", "http.delete()", "http.del()"] },
+              { cells: ["k6 실패율", "23.8%", "0.5%"], highlight: true },
+            ]}
+          />
         </AccordionSection>
 
         {/* 3. SQLite 병목 */}
