@@ -47,7 +47,7 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
 
         <div className="pf-career-head reveal">
           <span className="pf-career-logo">
-            <Image src="/hancom_logo.png" alt="한컴인스페이스" width={56} height={56} style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
+            <Image src="/hancominpsace_logo.png" alt="한컴인스페이스" width={56} height={56} style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
           </span>
           <div>
             <div className="pf-career-co">{company}</div>
