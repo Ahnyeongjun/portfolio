@@ -171,28 +171,24 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 2. 다중 분할 화면 공통 툴바 */}
+        {/* 2. 시계열분석 모드 상태 공통화 */}
         <AccordionSection
-          title="다중 분할 화면 공통 툴바 — 모드 기반 커맨드 브로드캐스트"
-          hint="화면이 몇 개로 쪼개지든 상단 툴바 하나로 전부 제어"
+          title="시계열분석 모드 상태 공통화 — 호출부 의존 없는 폴백"
+          hint="ui-top.js/ui-bottom.js — 여러 곳에서 호출되는 함수의 모드 유실 방지"
           module="inops-das"
         >
           <p>
-            화면은 단일 지도 뷰 외에도 두 시점을 겹쳐보는 <Highlight>스와이프 2분할</Highlight>,
-            여러 영상을 동시에 배치하는 <Highlight>시계열 분석 N분할</Highlight> 등 레이아웃이
-            여러 가지였고, 분할된 각 패널은 독립된 iframe으로 떠 있었습니다. 홈·줌인/줌아웃·정북방향
-            같은 상단 툴바 버튼은 원래 메인 지도 하나만 제어하도록 짜여 있어서, 화면이 분할된
-            상태에서 버튼을 누르면 분할된 패널들은 반응하지 않는 문제가 있었습니다.
+            시계열분석 화면 전환 함수(<code>changeTsAnlSelectImage</code>)는 상단 탭, 좌측
+            레이어 패널 등 여러 곳에서 호출되는 공통 함수였는데, 호출부에 따라
+            <Highlight>modeId를 넘기지 않는 경우</Highlight>가 있었습니다. 이 경우 어떤 모드로
+            동작해야 하는지가 유실돼, 직전에 어떤 모드로 진입했는지와 무관하게 동작이 꼬였습니다.
           </p>
           <p>
-            분할 화면 각각(스와이프 패널, 시계열 패널)에 <code>cameraHome</code>·
-            <code>earthZoomIn</code>·<code>zoomIn</code>·<code>zoomOut</code>·<code>northward</code>라는
-            동일한 이름의 공통 API를 구현하고, 상단 툴바 쪽에서는 현재 화면 모드를 확인해
-            <Highlight>Swipe·Anl 모드일 때는</Highlight> 모드 관리 컴포넌트가 들고 있는 활성
-            iframe 목록을 순회하며 같은 커맨드를 각 iframe에 전달하고, <Highlight>단일 뷰
-            모드일 때는</Highlight> 기존처럼 메인 지도 컴포넌트를 바로 호출하도록 분기했습니다.
-            버튼 쪽 코드는 그대로 두고, 화면이 몇 개로 나뉘어 있든 같은 커맨드가 전체에
-            전달되도록 만든 것입니다.
+            시계열분석 진입 시점의 모드를 <code>baseModeId</code>라는 값으로 기억해두고,
+            <code>changeTsAnlSelectImage(modeId)</code>가 modeId 없이 호출되면 이 값으로
+            폴백하도록 바꿨습니다. 사용자가 시계열분석 탭을 벗어나면 <code>ui-top.js</code>에서
+            <code>resetBaseModeId()</code>를 호출해 기억해둔 모드를 초기화하도록 해, 다음에
+            다시 들어올 때 이전 세션의 모드가 잘못 남아있지 않게 했습니다.
           </p>
         </AccordionSection>
 
