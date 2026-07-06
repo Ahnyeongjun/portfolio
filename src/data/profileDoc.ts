@@ -163,7 +163,7 @@ export const PROFILE = {
           ],
           result: "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           brief: [
-            "jQuery에서 Thymeleaf로 이어진 레거시 프론트, 컴포넌트 추상화 없어 기능 경계 모호·작은 수정에도 영향 범위 예측 불가했고, 지구 변화탐지·달지도 두 모드를 별도 배포해야 했습니다.",
+            "jQuery·Thymeleaf 레거시 프론트는 컴포넌트 추상화가 없어 기능 경계가 모호했고, 지구 변화탐지·달지도 두 모드를 별도로 배포해야 했습니다.",
             "Next.js 15·FSD로 feature slice를 분리해 동일 Docker 이미지를 K8s 환경변수만으로 여러 배포판으로 나눴고, CesiumJS 커스텀 ImageryProvider로 이종 레이어를 단일 인터페이스로 추상화했습니다.",
           ],
           lines: [
@@ -190,10 +190,10 @@ export const PROFILE = {
             "SQL injection 취약점을 화이트리스트 검증으로 교체",
             "조건부 PostGIS 실행, 페이지네이션, BLOB 컬럼 분리, Redis 캐싱 적용",
           ],
-          result: "위성 메타 목록 38초→159ms(239배), 수집 현황 집계 46초→181ms(256배), 알람 팝업 목록 25초→104ms(캐시 20ms), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+          result: "위성 메타 목록 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
           brief: [
-            "국가기관 납품 특성상 보안 요구사항이 엄격했고, 32개 매퍼에 SQL injection 취약점이 있었으며, k6 50VU 부하테스트에서 에러율 11.22%가 발생했습니다.",
-            "보안 체크리스트·JUnit 통합 테스트를 선반영하고 SQL injection을 화이트리스트 검증으로 교체, 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 병목을 해소했습니다.",
+            "국가기관 납품 특성상 보안 요구사항이 엄격했는데, 32개 매퍼에 SQL injection 취약점이 있었고 k6 50VU 부하테스트 에러율도 11.22%에 달했습니다.",
+            "보안 체크리스트·JUnit 통합 테스트를 선반영하고 SQL injection을 화이트리스트 검증으로 교체했습니다. 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 병목도 해소했습니다.",
           ],
           lines: [
             "보안 요구사항 엄격 + SQL injection 취약점 + k6 50VU 에러율 11.22%(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점)",
@@ -209,10 +209,10 @@ export const PROFILE = {
             "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현",
             "Snowflake 알고리즘 직접 구현, worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
           ],
-          result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
+          result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 전역 유일 ID 발급·망 추적 확보",
           brief: [
-            "외부망↔폐쇄망이 물리 분리돼 포트·외부 솔루션을 쓸 수 없는 환경에서, Debezium CDC로 양방향 DB 동기화를 구현했으나 replication slot이 반복 파손됐고, UUID v4로는 발생 망·서버 역추적도 불가능했습니다.",
-            "CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현했으며, Snowflake 알고리즘으로 worker ID에 망 정보를 인코딩해 이벤트 유실 없이 안정적으로 운영했습니다.",
+            "외부망↔폐쇄망이 물리 분리된 환경에서 Debezium CDC의 replication slot이 반복 파손됐고, UUID v4로는 발생 망·서버를 역추적할 수 없었습니다.",
+            "MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현하고, Snowflake 알고리즘으로 worker ID에 망 정보를 인코딩했습니다.",
           ],
           lines: [
             "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 — replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
@@ -326,6 +326,15 @@ export const PROFILE = {
   ] as DocProject[],
 
   activities: [
+    {
+      title: "드론 탑재 실시간 객체탐지 시스템 — ROS2 마이그레이션 분석",
+      org: "한컴인스페이스", year: "2026",
+      desc: "동료가 개발한 드론 탑재 Faster R-CNN 객체탐지 시스템(ROS1 Noetic)의 아키텍처를 분석하고 ROS2 Humble 전환 계획을 수립했습니다.",
+      notes: [
+        "UDP 명령으로 ROS_MASTER_URI를 동적 설정해 멀티프로세스를 띄우는 기존 구조를 분석, ROS2 도입 시 ROS_DOMAIN_ID 기반 멀티 세션 격리로 대체하는 전환안 설계",
+        "rospy→rclpy 전환이 필요한 컴포넌트별 작업 항목과 단계별 마이그레이션 순서·검증 계획 수립",
+      ],
+    },
     {
       title: "FESI 13기 — 백엔드 멘토링",
       org: "codeit", year: "2026",
