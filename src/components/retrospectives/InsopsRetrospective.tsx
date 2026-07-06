@@ -206,48 +206,65 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 4. 판독보고서 위치 고정/북마크 */}
+        {/* 4. 판독보고서 — CesiumJS 기반 보고서 저작 */}
         <AccordionSection
-          title="판독보고서 — 3D globe 위치 고정·북마크"
-          hint="CesiumJS 카메라·좌표 API를 직접 다뤄 위치 고정·북마크 구현"
+          title="판독보고서 — CesiumJS 3D globe 기반 보고서 저작 도구"
+          hint="페이지별 화면 캡처가 그대로 HWP 배경이 되는 구조, Cesium 카메라·좌표·엔티티 API 전반 활용"
           module="inops-das"
         >
           <p>
-            판독보고서는 분석관이 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적을 지정하고
-            의견을 작성해, 최종적으로 <Highlight>HWP</Highlight>(정부 표준 문서 포맷) 파일로
-            내려받는 기능입니다. 문제는 보고서를 작성하는 동안 지도를 조작하다 실수로 카메라가
-            움직이면 표적 좌표 기준이 되는 화면이 흐트러진다는 점이었습니다. 또 여러 표적을
-            오가며 작성할 때 처음 보던 화면으로 정확히 되돌아갈 방법도 없었습니다.
+            판독보고서는 분석관이 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 화살표·텍스트로
+            주석을 달고, 여러 페이지에 걸쳐 의견을 작성해 최종적으로 <Highlight>HWP</Highlight>
+            (정부 표준 문서 포맷) 파일로 내려받는 기능입니다. 각 페이지는 그 시점의 3D globe 화면을
+            그대로 캡처해 <code>screenshot.background</code>로 저장하고, 이 이미지가 HWP 문서의
+            페이지 배경으로 삽입됩니다. 즉 카메라가 어디를 보고 있느냐가 곧 보고서에 박제되는
+            내용이라, 화면 상태를 정확히 제어하는 것 자체가 기능의 핵심이었습니다.
           </p>
           <p>
-            현재 카메라가 보고 있는 영역을 <Highlight>위경도 사각 범위</Highlight>로 계산하는
-            함수를 직접 구현해, 위치를 북마크(<code>flag</code>)하고 원할 때 그 뷰로 그대로
-            복귀(<code>load</code>)할 수 있게 했습니다. CesiumJS의 <code>computeViewRectangle</code>이
-            반환하지 않는 경우(카메라가 지구본 바깥을 향할 때 등)를 대비해 화면 좌상단·우하단
-            픽셀을 직접 타원체에 투영해 좌표를 역산하는 폴백도 함께 만들었고, 날짜변경선을
-            넘어가는 뷰(서쪽 경도 &gt; 동쪽 경도)도 보정했습니다. 여기에 지도 조작 자체를
-            막는 화면 잠금 토글을 더해, 작성 중 실수로 뷰가 틀어지는 문제를 없앴습니다.
+            이 구조 위에서 여러 CesiumJS 기능을 직접 다뤘습니다. 카메라가 보는 영역을
+            <Highlight>위경도 사각 범위</Highlight>로 계산해 뷰를 북마크·복귀시키는 기능을
+            만들었고(<code>computeViewRectangle</code> 실패 시 화면 픽셀을 타원체에 직접 투영해
+            좌표를 역산하는 폴백, 날짜변경선을 넘는 뷰 보정 포함), 표적 지정 시 화면 좌표를
+            위경도로 환산해 저장했습니다. 화살표·텍스트 같은 주석은 Cesium 엔티티로 그려 선
+            두께를 소수점 단위까지 조정할 수 있게 했고, 줌 레벨이 바뀌어도 텍스트 엔티티가
+            사라지지 않도록 처리했습니다. 정북 방향 정렬, 카메라 회전 버그처럼 globe 조작 자체의
+            안정성 문제도 여러 차례 수정했습니다.
           </p>
         </AccordionSection>
 
         {/* 5. 컴포넌트 매니저 */}
         <AccordionSection
-          title="다중 팝업 · iframe 컴포넌트 통신 안정화"
-          hint="공통 컴포넌트 매니저(ins-comp-mng) — 중복 요청 방지 로직 개선"
+          title="공통 컴포넌트 매니저 — 팝업·iframe·인페이지 통신 통합"
+          hint="ins-comp-mng: 컴포넌트 위치와 무관하게 동일한 API로 호출"
           module="inops-das"
         >
           <p>
-            분석 화면의 각 패널·팝업·iframe은 <Highlight>ins-comp-mng</Highlight>라는 공통
-            컴포넌트 매니저를 통해 부모창과 <code>postMessage</code>로 통신합니다. 아직 초기화되지
-            않은 컴포넌트로 함수 호출이 몰리면 무한 재요청을 막기 위해 동일 컴포넌트로의 재호출을
-            한 번 차단하는 가드가 있었는데, 이 가드가 카메라 이동·좌표 이동처럼 원래 반복 호출이
-            정상인 함수까지 막아버리는 부작용이 있었습니다.
+            분석 화면은 같은 페이지 안의 패널, 별도 팝업 윈도우, iframe 등 컴포넌트가 실행되는
+            위치가 제각각이었습니다. 화면을 만들 때마다 "이 컴포넌트가 팝업인지 iframe인지"를
+            매번 구분해서 호출 방식을 다르게 짜야 한다면 화면이 늘어날수록 관리가 어려워집니다.
           </p>
           <p>
-            차단 기준을 컴포넌트 단위에서 <code>{"컴포넌트ID + 함수명"}</code> 조합 단위로 세분화하고,
-            반복 호출이 정상인 함수(<code>tsCameraFlyTo</code>, <code>setTsVectorLocation</code> 등)는
-            <Highlight>allowedRepeatArray</Highlight>로 예외 처리했습니다. 컴포넌트를 다시 등록할 때
-            이전 window 참조가 남아있던 문제도 <code>delete windws[compId]</code>로 정리해
+            <Highlight>ins-comp-mng</Highlight>는 컴포넌트가 어디서 실행되든
+            <code>ins.comp.execute(compId, fnName, args)</code> 하나로 호출할 수 있게
+            추상화한 공통 매니저입니다. 내부적으로 컴포넌트 등록 정보를 보고 대상이 같은 페이지의
+            객체면 함수를 직접 호출하고, 팝업이나 iframe이면 <code>postMessage</code>로 명령을
+            전달해 그쪽에서 같은 이름의 함수를 실행시킵니다. 호출하는 쪽은 대상이 어디 있는지
+            신경 쓸 필요가 없습니다.
+          </p>
+          <CompareTable
+            headers={["컴포넌트 위치", "등록 정보", "execute() 호출 시 동작"]}
+            rows={[
+              { cells: ["같은 페이지 내 객체", "compObj", "함수 직접 호출"], highlight: true },
+              { cells: ["팝업 윈도우", "winObj", "postMessage로 팝업에 전달"], highlight: true },
+              { cells: ["iframe", "windws[winId] → contentWindow", "postMessage로 iframe에 전달"], highlight: true },
+              { cells: ["아직 등록 안 됨", "compsNotExist 목록", "부모창으로 재위임, 무한 재요청 방지"], muted: true },
+            ]}
+          />
+          <p>
+            이 위에서 실제로 맡은 일은, 미등록 컴포넌트로의 재요청을 막는 가드가 카메라 이동처럼
+            반복 호출이 정상인 함수까지 막아버리는 부작용을 고치는 것이었습니다. 차단 기준을
+            컴포넌트 단위에서 <code>{"컴포넌트ID + 함수명"}</code> 조합 단위로 세분화하고,
+            반복 호출이 정상인 함수는 <Highlight>allowedRepeatArray</Highlight>로 예외 처리해
             해결했습니다.
           </p>
         </AccordionSection>
