@@ -269,6 +269,28 @@ export function InsopsRetrospective() {
           />
         </AccordionSection>
 
+        {/* 6. 컴포넌트 매니저 */}
+        <AccordionSection
+          title="다중 팝업 · iframe 컴포넌트 통신 안정화"
+          hint="공통 컴포넌트 매니저(ins-comp-mng) — 중복 요청 방지 로직 개선"
+          module="inops-das"
+        >
+          <p>
+            분석 화면의 각 패널·팝업·iframe은 <Highlight>ins-comp-mng</Highlight>라는 공통
+            컴포넌트 매니저를 통해 부모창과 <code>postMessage</code>로 통신합니다. 아직 초기화되지
+            않은 컴포넌트로 함수 호출이 몰리면 무한 재요청을 막기 위해 동일 컴포넌트로의 재호출을
+            한 번 차단하는 가드가 있었는데, 이 가드가 카메라 이동·좌표 이동처럼 원래 반복 호출이
+            정상인 함수까지 막아버리는 부작용이 있었습니다.
+          </p>
+          <p>
+            차단 기준을 컴포넌트 단위에서 <code>{"컴포넌트ID + 함수명"}</code> 조합 단위로 세분화하고,
+            반복 호출이 정상인 함수(<code>tsCameraFlyTo</code>, <code>setTsVectorLocation</code> 등)는
+            <Highlight>allowedRepeatArray</Highlight>로 예외 처리했습니다. 컴포넌트를 다시 등록할 때
+            이전 window 참조가 남아있던 문제도 <code>delete windws[compId]</code>로 정리해
+            해결했습니다.
+          </p>
+        </AccordionSection>
+
       </div>
     </div>
   );
