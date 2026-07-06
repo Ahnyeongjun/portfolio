@@ -171,24 +171,31 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 2. 시계열분석 모드 상태 공통화 */}
+        {/* 2. 다중 모드 공통 처리 */}
         <AccordionSection
-          title="시계열분석 모드 상태 공통화 — 호출부 의존 없는 폴백"
-          hint="ui-top.js/ui-bottom.js — 여러 곳에서 호출되는 함수의 모드 유실 방지"
+          title="다중 모드 공존 화면의 공통 분기 처리"
+          hint="ui-top.js/ui-bottom.js — 일반·스와이프·시계열분석·변화탐지(TCD) 등 여러 모드를 같은 코드베이스에서 분기"
           module="inops-das"
         >
           <p>
-            시계열분석 화면 전환 함수(<code>changeTsAnlSelectImage</code>)는 상단 탭, 좌측
-            레이어 패널 등 여러 곳에서 호출되는 공통 함수였는데, 호출부에 따라
-            <Highlight>modeId를 넘기지 않는 경우</Highlight>가 있었습니다. 이 경우 어떤 모드로
-            동작해야 하는지가 유실돼, 직전에 어떤 모드로 진입했는지와 무관하게 동작이 꼬였습니다.
+            화면은 일반 단일 뷰 외에도 스와이프 비교, 시계열분석, 변화탐지(TCD) 등 여러
+            <Highlight>모드</Highlight>로 동작했고, 상단 툴바·좌측 패널 같은 공통 컴포넌트는
+            어떤 모드에서 호출됐는지에 따라 동작을 다르게 처리해야 했습니다. 모드 정보가
+            호출부마다 일관되게 전달되지 않아, 같은 함수라도 상황에 따라 다르게 동작하거나
+            아예 정보가 유실되는 문제가 여러 곳에서 반복됐습니다.
           </p>
+          <CompareTable
+            headers={["위치", "문제", "처리 방식"]}
+            rows={[
+              { cells: ["시계열분석 전환 함수", "호출부에 따라 modeId를 안 넘기는 경우 존재", "진입 시점 모드를 baseModeId로 기억해두고 폴백, 탭 이탈 시 초기화"], highlight: true },
+              { cells: ["시계열 패널 배치 로직", "변화탐지(TCD) 모드와 일반 다중비교 모드가 같은 배치 함수를 씀", "isTcdTsAnl 플래그로 분기해 TCD는 전/후 페어링, 일반은 날짜순 배치"], highlight: true },
+              { cells: ["상단 툴바 버튼", "스와이프·시계열 분할 화면에서는 메인 지도 하나만 반응", "getMode()로 현재 모드 확인 후 해당 모드의 분할 화면에도 동일 커맨드 전달"], highlight: true },
+            ]}
+          />
           <p>
-            시계열분석 진입 시점의 모드를 <code>baseModeId</code>라는 값으로 기억해두고,
-            <code>changeTsAnlSelectImage(modeId)</code>가 modeId 없이 호출되면 이 값으로
-            폴백하도록 바꿨습니다. 사용자가 시계열분석 탭을 벗어나면 <code>ui-top.js</code>에서
-            <code>resetBaseModeId()</code>를 호출해 기억해둔 모드를 초기화하도록 해, 다음에
-            다시 들어올 때 이전 세션의 모드가 잘못 남아있지 않게 했습니다.
+            각 사례는 다루는 화면도, 고쳐야 하는 파일도 달랐지만 근본적으로는 같은 문제였습니다
+            — 여러 모드가 공존하는 화면에서 공통 코드가 &ldquo;지금 어떤 모드인지&rdquo;를
+            안정적으로 알 수 있어야 한다는 것이었습니다.
           </p>
         </AccordionSection>
 
