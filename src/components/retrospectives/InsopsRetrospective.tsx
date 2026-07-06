@@ -1,13 +1,5 @@
 import React from 'react';
 
-function CodeBlock({ children }: { children: string }) {
-  return (
-    <pre className="bg-muted/50 border border-border rounded-lg p-4 overflow-x-auto text-sm leading-relaxed font-mono text-foreground">
-      {children}
-    </pre>
-  );
-}
-
 function Highlight({ children }: { children: React.ReactNode }) {
   return (
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
@@ -195,35 +187,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 3. AOI 조회 필터 */}
-        <AccordionSection
-          title="AOI 조회 성능 개선"
-          hint="등록일 기준 당일 데이터만 필터링 — 조회량 90%+ 감소"
-          module="inops-api-svr"
-        >
-          <p>
-            AOI 관리 화면이 과거 데이터까지 전부 표출해 그리드가 무거워지고 있었습니다.
-            분석관이 실제로 확인해야 하는 건 그날 들어온 긴급/일반 AOI뿐인데, 매번 전체
-            이력을 다 조회하고 있었습니다.
-          </p>
-          <p>
-            도메인 객체(<code>MiExtnColctAoi</code>)에 <Highlight>regDt</Highlight> 필드를
-            추가하고, MyBatis 쿼리에 당일 날짜 조건을 걸어 등록일 기준으로 필터링했습니다.
-          </p>
-          <CodeBlock>{`<!-- MiExtnColctAoiMapper.xml -->
-<where>
-  MECA.REG_DT &gt; #{regDt}::DATE  <!-- 당일(YYYYMMDD) 이후 등록분만 조회 -->
-</where>`}</CodeBlock>
-          <CompareTable
-            headers={["조회 범위", "전", "후"]}
-            rows={[
-              { cells: ["AOI 관리 그리드", "전체 이력", "당일 등록분만"], highlight: true },
-              { cells: ["조회 데이터량", "누적 전체", "90%+ 감소"], highlight: true },
-            ]}
-          />
-        </AccordionSection>
-
-        {/* 4. 영상 통합검색 팝업 신규 구축 */}
+        {/* 3. 영상 통합검색 팝업 신규 구축 */}
         <AccordionSection
           title="영상 통합검색 · 업로드 팝업 신규 구축"
           hint="검색 그리드 + 업로드 다이얼로그를 처음부터 개발"
@@ -242,7 +206,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 5. 판독보고서 정합성 */}
+        {/* 4. 판독보고서 정합성 */}
         <AccordionSection
           title="판독보고서 데이터 정합성 버그"
           hint="MyBatis 매퍼 컬럼 순서 불일치"
@@ -269,7 +233,7 @@ export function InsopsRetrospective() {
           />
         </AccordionSection>
 
-        {/* 6. 컴포넌트 매니저 */}
+        {/* 5. 컴포넌트 매니저 */}
         <AccordionSection
           title="다중 팝업 · iframe 컴포넌트 통신 안정화"
           hint="공통 컴포넌트 매니저(ins-comp-mng) — 중복 요청 방지 로직 개선"
