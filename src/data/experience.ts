@@ -60,5 +60,5 @@ export const certifications: CertificationItem[] = [
   { year: '2025', title: 'SQL개발자(SQLD)' },
   { year: '2025', title: '정보처리기사' },
   { year: '2021', title: '정보기기운용기능사' },
-  { year: '2020', title: '정보처리기능사' },
+  { year: '2020', title: '프로그래밍기능사' },
 ];
