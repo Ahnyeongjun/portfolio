@@ -177,30 +177,22 @@ export function InsopsRetrospective() {
           />
         </AccordionSection>
 
-        {/* 2. 좌표 DD/DMS */}
+        {/* 2. 수집 이력/통계 화면 신규 구축 */}
         <AccordionSection
-          title="좌표 표시 — DD/DMS 듀얼 포맷"
-          hint="위경도/경위도 토글"
-          module="inops-das"
+          title="수집 이력 · 수집 통계 화면 신규 구축"
+          hint="컨트롤러·그리드·조회 UI까지 처음부터 개발"
+          module="inops-cms"
         >
           <p>
-            좌표 표기 방식(위경도 우선 vs 경위도 우선)이 고정돼 있어, 협업하는 분석관마다 익숙한
-            표기가 달라 매번 헷갈리는 문제가 있었습니다.
+            위성영상이 얼마나, 언제 수집되고 있는지 운영자가 한눈에 확인할 화면이 없어
+            데이터 관리 담당자가 DB를 직접 조회해야 했습니다.
           </p>
           <p>
-            라디오 버튼으로 <Highlight>isFirstLongitude</Highlight> 불리언 값을 전환할 수 있게
-            하고, 이 값을 CesiumJS 좌표 계산 로직인 <code>location()</code>·<code>multiLocation()</code>
-            함수 양쪽에 그대로 전달했습니다. DD(십진도)·DMS(도분초) 두 포맷터 모두 이 플래그를
-            기준으로 좌표 순서와 라벨 텍스트를 다시 계산하도록 해, 토글 즉시 화면 전체가
-            일관되게 갱신되도록 했습니다.
+            <Highlight>수집 이력</Highlight> 조회 화면과 <Highlight>수집 통계</Highlight> 집계
+            화면을 라우팅부터 그리드까지 처음부터 구축했습니다. 기간(당일/1일/3일/7일/1개월)
+            단축 버튼과 시/분 단위 세부 시간 필터를 넣은 검색 폼을 만들고, 신규 컨트롤러
+            엔드포인트 2개를 추가해 조회 결과를 그리드로 표출하도록 했습니다.
           </p>
-          <CompareTable
-            headers={["isFirstLongitude", "표시 순서", "적용 대상"]}
-            rows={[
-              { cells: ["true", "경도, 위도 순 (경위도)", "DD·DMS 포맷 공통"] },
-              { cells: ["false", "위도, 경도 순 (위경도)", "DD·DMS 포맷 공통"] },
-            ]}
-          />
         </AccordionSection>
 
         {/* 3. AOI 조회 필터 */}
@@ -231,28 +223,23 @@ export function InsopsRetrospective() {
           />
         </AccordionSection>
 
-        {/* 4. 변화탐지 우선순위 */}
+        {/* 4. 영상 통합검색 팝업 신규 구축 */}
         <AccordionSection
-          title="변화탐지 매칭 범위 확대"
-          hint="위성 소스 우선순위 재설계 + 신규 위성 추가"
-          module="inops-api-svr"
+          title="영상 통합검색 · 업로드 팝업 신규 구축"
+          hint="검색 그리드 + 업로드 다이얼로그를 처음부터 개발"
+          module="inops-das"
         >
           <p>
-            시계열 변화탐지 분석에서 비교할 위성 영상을 고를 때, ±31일 시간창 제약이 지나치게
-            좁고 우선순위 로직에 신규 위성(PNEO)이 반영돼 있지 않아 비교 대상이 누락되는
-            경우가 있었습니다.
+            여러 소스의 위성영상을 흩어진 화면에서 각각 찾아야 해서, 분석관이 필요한 영상을
+            한 번에 검색할 방법이 없었습니다. 규격 외로 들어오는 기타 영상을 등록할 창구도
+            따로 없었습니다.
           </p>
           <p>
-            전후 31일 시간창 체크를 제거해 매칭 범위를 넓히고, 위성 유형 판별 CASE 문에
-            <code>{"prod_tp_cd like 'PNEO_%'"}</code> 조건을 3순위로 추가했습니다.
+            <Highlight>통합검색 팝업</Highlight>을 신규로 구축해 기간 조건 검색과 그리드 결과
+            표출을 한 화면에서 처리하도록 했고, 팝업 안에 <Highlight>기타 영상 업로드</Highlight>
+            다이얼로그를 붙여 규격 외 영상도 같은 화면에서 바로 등록할 수 있게 했습니다.
+            검색 팝업과 업로드 다이얼로그 모두 컨트롤러 라우팅부터 새로 추가했습니다.
           </p>
-          <CompareTable
-            headers={["우선순위", "1", "2", "3", "4", "5"]}
-            rows={[
-              { cells: ["변경 전", "WV3", "WV2", "K3A", "K3", "—"] },
-              { cells: ["변경 후", "WV3", "WV2", "PNEO", "K3A", "K3"], highlight: true },
-            ]}
-          />
         </AccordionSection>
 
         {/* 5. 판독보고서 정합성 */}
