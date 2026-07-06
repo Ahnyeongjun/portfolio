@@ -206,31 +206,28 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 4. 판독보고서 정합성 */}
+        {/* 4. 판독보고서 위치 고정/북마크 */}
         <AccordionSection
-          title="판독보고서 데이터 정합성 버그"
-          hint="MyBatis 매퍼 컬럼 순서 불일치"
-          module="inops-api-svr"
+          title="판독보고서 — 3D globe 위치 고정·북마크"
+          hint="CesiumJS 카메라·좌표 API를 직접 다뤄 위치 고정·북마크 구현"
+          module="inops-das"
         >
           <p>
-            분석관이 판독보고서 작성 시 해외지역 여부를 &ldquo;예&rdquo;로 체크했는데, 저장 후
-            다시 조회하면 &ldquo;아니오&rdquo;로 표시되는 버그가 보고됐습니다.
+            판독보고서는 분석관이 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적을 지정하고
+            의견을 작성해, 최종적으로 <Highlight>HWP</Highlight>(정부 표준 문서 포맷) 파일로
+            내려받는 기능입니다. 문제는 보고서를 작성하는 동안 지도를 조작하다 실수로 카메라가
+            움직이면 표적 좌표 기준이 되는 화면이 흐트러진다는 점이었습니다. 또 여러 표적을
+            오가며 작성할 때 처음 보던 화면으로 정확히 되돌아갈 방법도 없었습니다.
           </p>
           <p>
-            원인은 <code>GrRptMapper.xml</code>의 INSERT 파라미터 바인딩 순서가 실제 테이블
-            컬럼 순서와 어긋나 있던 것이었습니다. <Highlight>{"#{imptncScinfoYn}"}</Highlight>과
-            <Highlight>{"#{frncntryAreaYn}"}</Highlight> 두 파라미터의 위치가 테이블 컬럼
-            순서와 반대로 매핑돼, 값이 서로 뒤바뀌어 저장되고 있었습니다. 매퍼의 파라미터
-            순서를 테이블 스키마에 맞게 정정해 지정학적으로 중요한 메타데이터가 정확히
-            저장되도록 했습니다.
+            현재 카메라가 보고 있는 영역을 <Highlight>위경도 사각 범위</Highlight>로 계산하는
+            함수를 직접 구현해, 위치를 북마크(<code>flag</code>)하고 원할 때 그 뷰로 그대로
+            복귀(<code>load</code>)할 수 있게 했습니다. CesiumJS의 <code>computeViewRectangle</code>이
+            반환하지 않는 경우(카메라가 지구본 바깥을 향할 때 등)를 대비해 화면 좌상단·우하단
+            픽셀을 직접 타원체에 투영해 좌표를 역산하는 폴백도 함께 만들었고, 날짜변경선을
+            넘어가는 뷰(서쪽 경도 &gt; 동쪽 경도)도 보정했습니다. 여기에 지도 조작 자체를
+            막는 화면 잠금 토글을 더해, 작성 중 실수로 뷰가 틀어지는 문제를 없앴습니다.
           </p>
-          <CompareTable
-            headers={["바인딩 순서", "1번째 파라미터", "2번째 파라미터", "결과"]}
-            rows={[
-              { cells: ["수정 전", "frncntryAreaYn", "imptncScinfoYn", "값 뒤바뀜 저장"] },
-              { cells: ["수정 후", "imptncScinfoYn", "frncntryAreaYn", "정상 저장"], highlight: true },
-            ]}
-          />
         </AccordionSection>
 
         {/* 5. 컴포넌트 매니저 */}
