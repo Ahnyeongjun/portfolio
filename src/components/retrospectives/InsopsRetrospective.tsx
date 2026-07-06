@@ -90,7 +90,7 @@ export function InsopsRetrospective() {
       {/* 도입부 */}
       <p>
         다종 위성영상을 판독·변화탐지하는 국가보안기관 대상 플랫폼(INSOPS)입니다.
-        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈로 서버를 분리한 구조이며,
+        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module) 구조이며,
         프론트엔드(inops-cms/inops-das)와 API(inops-api-svr)를 2년간 담당하며 판독보고서·
         AOI 관리·촬영계획·변화탐지 등 분석관이 매일 쓰는 기능을 end-to-end로 구현했습니다.
       </p>
