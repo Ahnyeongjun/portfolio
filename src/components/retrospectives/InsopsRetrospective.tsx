@@ -163,8 +163,8 @@ export function InsopsRetrospective() {
             AOI 관리 화면에서 같은 값을 처음부터 다시 입력하는 이중 작업이었습니다.
           </p>
           <p>
-            주문에 긴급(PS+우선순위) 플래그가 있으면, 저장 시점에 <Highlight>{"/mi-extn-colct-aoi"}</Highlight> API로
-            AOI 레코드를 자동 생성하도록 만들었습니다. 주문 입력 방식이 두 가지였기 때문에,
+            주문에 긴급(PS+우선순위) 플래그가 있으면, 저장 시점에 <Highlight>AOI 등록 API</Highlight>를
+            호출해 레코드를 자동 생성하도록 만들었습니다. 주문 입력 방식이 두 가지였기 때문에,
             어떤 방식으로 들어오든 바운딩 박스를 동적으로 계산해 같은 API로 보내도록
             분기 처리했습니다.
           </p>
