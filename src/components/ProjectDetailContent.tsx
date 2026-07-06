@@ -44,7 +44,7 @@ export function ProjectDetailContent({ project }: Props) {
 
   const imageResources = project.resources?.filter(r => r.type === "image") ?? [];
   const allImages = [
-    ...(project.imageUrl && !project.imageUrl.endsWith(".svg") && !imageResources.some(r => r.url === project.imageUrl)
+    ...(project.imageUrl && !/\.svg$|logo/i.test(project.imageUrl) && !imageResources.some(r => r.url === project.imageUrl)
       ? [{ url: project.imageUrl, label: title }]
       : []),
     ...imageResources.map(r => ({ url: r.url, label: r.label })),

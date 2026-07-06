@@ -10,13 +10,13 @@ interface ImageSlideshowProps {
 }
 
 function SlideshowImage({ url, label, priority }: { url: string; label: string; priority?: boolean }) {
-  const isSvg = url.endsWith(".svg");
+  const isLogo = /\.svg$|logo/i.test(url);
   return (
     <Image
       src={url}
       alt={label}
       fill
-      className={isSvg ? "object-contain p-6" : "object-cover"}
+      className={isLogo ? "object-contain p-6" : "object-cover"}
       priority={priority}
     />
   );
