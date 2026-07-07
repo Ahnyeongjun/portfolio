@@ -1,5 +1,5 @@
 ---
-title: "JWT & 인증/인가 — 면접 대비 정리"
+title: "JWT & 인증/인가 - 면접 대비 정리"
 description: "세션 vs 토큰 방식, JWT 구조와 검증, Access/Refresh Token 전략, OAuth2 흐름, Spring Security 필터 체인까지 정리한다."
 date: "2026-04-02"
 category: "Java/Spring"
@@ -127,7 +127,7 @@ HTTP 요청
 SecurityFilterChain
 ├── SecurityContextPersistenceFilter  (SecurityContext 로드/저장)
 ├── UsernamePasswordAuthenticationFilter (폼 로그인)
-├── JwtAuthenticationFilter (커스텀 — JWT 검증)
+├── JwtAuthenticationFilter (커스텀 - JWT 검증)
 │       ↓ 검증 성공
 │   SecurityContextHolder에 Authentication 저장
 ├── ExceptionTranslationFilter

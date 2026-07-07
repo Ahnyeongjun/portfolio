@@ -3,7 +3,7 @@ import { ResumeDocument } from "@/components/resume/ResumeDocument";
 
 export const metadata: Metadata = {
   title: "이력서 | 안영준",
-  description: "안영준 이력서 — Backend Developer",
+  description: "안영준 이력서 - Backend Developer",
 };
 
 export default function ResumePage() {

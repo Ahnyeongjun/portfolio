@@ -46,13 +46,13 @@ export function DeadlineMateRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Search} title="EXISTS vs IN — 다대다 필터링의 성능 차이">
+        <Section icon={Search} title="EXISTS vs IN - 다대다 필터링의 성능 차이">
           <p>
             모임에는 여러 카테고리와 태그가 붙고, 사용자는 복수 조건으로 필터링합니다.
             처음엔 <Highlight>IN</Highlight>으로 구현했는데 카테고리·태그 수만큼
             조인 결과가 중복 행으로 폭증했습니다.
           </p>
-          <CodeBlock>{`// IN — 다대다 조인 시 중복 행 발생, DISTINCT 필요
+          <CodeBlock>{`// IN - 다대다 조인 시 중복 행 발생, DISTINCT 필요
 queryFactory.select(gathering)
     .from(gathering)
     .join(gathering.categories, category)
@@ -60,7 +60,7 @@ queryFactory.select(gathering)
     .distinct()
     .fetch();
 
-// EXISTS — 조인 없이 존재 여부만 확인, 중복 없음
+// EXISTS - 조인 없이 존재 여부만 확인, 중복 없음
 BooleanExpression categoryFilter = JPAExpressions
     .selectOne()
     .from(gatheringCategory)
@@ -77,7 +77,7 @@ BooleanExpression categoryFilter = JPAExpressions
           </p>
         </Section>
 
-        <Section icon={Bell} title="@TransactionalEventListener(AFTER_COMMIT) — 커밋 후에만 알림을">
+        <Section icon={Bell} title="@TransactionalEventListener(AFTER_COMMIT) - 커밋 후에만 알림을">
           <p>
             모임 생성 직후 알림을 발송하는 로직을 처음엔 서비스 메서드 안에 직접 호출했습니다.
             문제는 알림 발송이 실패하면 모임 생성 트랜잭션 전체가 롤백된다는 점이었습니다.
@@ -106,13 +106,13 @@ public void onGatheringCreated(GatheringCreatedEvent event) {
           </p>
         </Section>
 
-        <Section icon={Lock} title="PESSIMISTIC_WRITE — 동시 신청 경쟁 조건 해소">
+        <Section icon={Lock} title="PESSIMISTIC_WRITE - 동시 신청 경쟁 조건 해소">
           <p>
             모임 신청 시 <code>currentMembers</code>를 읽고 <code>maxMembers</code>와 비교한 뒤
             증가시키는 흐름이 있습니다. 동시에 여러 요청이 들어오면 같은 값을 읽어
             정원을 초과할 수 있습니다.
           </p>
-          <CodeBlock>{`// PESSIMISTIC_WRITE — 조회 시점에 배타 잠금 획득
+          <CodeBlock>{`// PESSIMISTIC_WRITE - 조회 시점에 배타 잠금 획득
 @Lock(LockModeType.PESSIMISTIC_WRITE)
 @Query("SELECT g FROM Gathering g WHERE g.id = :id")
 Optional<Gathering> findByIdWithLock(@Param("id") Long id);
@@ -135,19 +135,19 @@ gatheringRepository.incrementMembers(id);`}</CodeBlock>
           </p>
         </Section>
 
-        <Section icon={Layers} title="Rich Domain Model — 비즈니스 로직은 엔티티가 가져야 한다">
+        <Section icon={Layers} title="Rich Domain Model - 비즈니스 로직은 엔티티가 가져야 한다">
           <p>
             처음에는 서비스 레이어에서 상태를 직접 바꾸는 방식으로 작성했습니다.
             서비스가 엔티티 필드를 열어서 값을 설정하는 전형적인
             <Highlight>Anemic Domain Model</Highlight> 패턴이었습니다.
           </p>
-          <CodeBlock>{`// Anemic — 서비스가 검증과 상태 변경을 직접 수행
+          <CodeBlock>{`// Anemic - 서비스가 검증과 상태 변경을 직접 수행
 if (!gathering.getLeaderId().equals(requesterId)) {
     throw new BusinessException(ErrorCode.INVALID_GATHERING_LEADER);
 }
 gathering.setStatus(GatheringStatus.COMPLETED); // 외부에서 직접 수정
 
-// Rich — 검증과 상태 변경이 엔티티 메서드로 캡슐화
+// Rich - 검증과 상태 변경이 엔티티 메서드로 캡슐화
 gathering.validateLeader(requesterId); // 내부에서 예외 발생
 gathering.complete(); // 상태 전이 조건을 엔티티가 직접 검증
 
@@ -166,13 +166,13 @@ public void complete() {
           </p>
         </Section>
 
-        <Section icon={GitBranch} title="CQRS + Projection — 읽기 모델을 따로 만드는 이유">
+        <Section icon={GitBranch} title="CQRS + Projection - 읽기 모델을 따로 만드는 이유">
           <p>
             모임 목록 조회는 여러 테이블을 조인하고, 페이지네이션에 정렬 조건까지 붙습니다.
             JPA 엔티티 그래프로 이걸 처리하면 지연 로딩·즉시 로딩 선택 문제와
             N+1이 반복적으로 따라옵니다.
           </p>
-          <CodeBlock>{`// Command — 쓰기 전용, 트랜잭션 보장
+          <CodeBlock>{`// Command - 쓰기 전용, 트랜잭션 보장
 @Service
 @Transactional
 public class GatheringService {
@@ -180,14 +180,14 @@ public class GatheringService {
     public void delete(Long gatheringId, Long requesterId) { ... }
 }
 
-// Query — 읽기 전용, @Transactional(readOnly = true)
+// Query - 읽기 전용, @Transactional(readOnly = true)
 @Service
 @Transactional(readOnly = true)
 public class GatheringQueryService {
     public GatheringListResponse getGatherings(GatheringSearchCondition condition, ...) { ... }
 }
 
-// Projection Read Model — 조회에 필요한 컬럼만 담은 불변 레코드
+// Projection Read Model - 조회에 필요한 컬럼만 담은 불변 레코드
 @Builder
 public record GatheringListRow(
     Long id, Long leaderId, GatheringType type,
@@ -205,13 +205,13 @@ public record GatheringListRow(
           </p>
         </Section>
 
-        <Section icon={KeyRound} title="OAuthClientFactory — Enum 키로 멀티 프로바이더 관리">
+        <Section icon={KeyRound} title="OAuthClientFactory - Enum 키로 멀티 프로바이더 관리">
           <p>
             Kakao·Google 두 가지 OAuth를 지원하면서 처음 구현하면 자연스럽게
             provider 문자열로 분기하는 if-else가 생깁니다. 새 제공자가 추가될 때마다
             조건 분기를 찾아 수정해야 하고, 누락 시 런타임 오류로 이어집니다.
           </p>
-          <CodeBlock>{`// OAuthProviderType — 별도 모듈로 분리해 import해서 사용
+          <CodeBlock>{`// OAuthProviderType - 별도 모듈로 분리해 import해서 사용
 public enum OAuthProviderType {
     KAKAO, GOOGLE;
 }
@@ -222,7 +222,7 @@ public interface OAuthClient {
     OAuthProviderType getProviderType();
 }
 
-// Factory — Enum을 키로 Map에 보관
+// Factory - Enum을 키로 Map에 보관
 @Component
 public class OAuthClientFactory {
     private final Map<OAuthProviderType, OAuthClient> clients;
@@ -257,12 +257,12 @@ public class OAuthClientFactory {
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "Rich Domain Model — 비즈니스 규칙을 엔티티에 캡슐화해 서비스 코드가 얇아지고 로직 중복이 사라짐",
-                "CQRS + Projection — Command/Query 서비스 분리, 읽기 모델(GatheringListRow)로 불필요한 컬럼 로드 제거",
-                "EXISTS vs IN — 다대다 관계 필터링에서 EXISTS가 중복 행 없이 더 효율적인 이유",
-                "@TransactionalEventListener(AFTER_COMMIT) — 외부 호출 실패가 핵심 트랜잭션에 영향을 주지 않는 설계",
-                "PESSIMISTIC_WRITE vs Optimistic Lock — 경쟁 빈도와 재시도 가능 여부로 락 전략 선택",
-                "OAuthClientFactory + Enum 키 — String 분기 제거, 컴파일 타임 타입 안전성 확보, 제공자 추가 시 클래스 1개만 등록",
+                "Rich Domain Model - 비즈니스 규칙을 엔티티에 캡슐화해 서비스 코드가 얇아지고 로직 중복이 사라짐",
+                "CQRS + Projection - Command/Query 서비스 분리, 읽기 모델(GatheringListRow)로 불필요한 컬럼 로드 제거",
+                "EXISTS vs IN - 다대다 관계 필터링에서 EXISTS가 중복 행 없이 더 효율적인 이유",
+                "@TransactionalEventListener(AFTER_COMMIT) - 외부 호출 실패가 핵심 트랜잭션에 영향을 주지 않는 설계",
+                "PESSIMISTIC_WRITE vs Optimistic Lock - 경쟁 빈도와 재시도 가능 여부로 락 전략 선택",
+                "OAuthClientFactory + Enum 키 - String 분기 제거, 컴파일 타임 타입 안전성 확보, 제공자 추가 시 클래스 1개만 등록",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

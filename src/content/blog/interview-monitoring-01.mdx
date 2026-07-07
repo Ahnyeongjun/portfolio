@@ -1,5 +1,5 @@
 ---
-title: "모니터링 & 관찰성 — 면접 대비 정리"
+title: "모니터링 & 관찰성 - 면접 대비 정리"
 description: "Prometheus/Grafana 메트릭, 로그 레벨 전략, 분산 추적, Spring Boot Actuator, 알람 설계까지. 운영 관찰성을 갖추는 방법을 정리한다."
 date: "2026-04-02"
 category: "DevOps"
@@ -14,9 +14,9 @@ seriesOrder: 18
 **관찰성 (Observability)**: 시스템 내부 상태를 외부에서 얼마나 잘 파악할 수 있는가.
 
 ```
-Metrics  — 숫자로 표현된 시스템 상태 (응답 시간, 에러율, 요청 수)
-Logs     — 이벤트 기록 (무슨 일이 언제 일어났는가)
-Traces   — 요청의 전체 흐름 (어느 서비스가 어디서 시간을 썼는가)
+Metrics  - 숫자로 표현된 시스템 상태 (응답 시간, 에러율, 요청 수)
+Logs     - 이벤트 기록 (무슨 일이 언제 일어났는가)
+Traces   - 요청의 전체 흐름 (어느 서비스가 어디서 시간을 썼는가)
 ```
 
 ---
@@ -123,11 +123,11 @@ jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}
 ### 로그 레벨
 
 ```
-ERROR — 즉각 대응 필요. 요청 처리 실패, 외부 연동 오류
-WARN  — 주의 필요하지만 서비스는 동작. 재시도 성공, 성능 저하
-INFO  — 중요한 비즈니스 이벤트. 주문 생성, 사용자 로그인
-DEBUG — 개발/디버깅용. 상세 처리 과정
-TRACE — 매우 상세. 프레임워크 내부
+ERROR - 즉각 대응 필요. 요청 처리 실패, 외부 연동 오류
+WARN  - 주의 필요하지만 서비스는 동작. 재시도 성공, 성능 저하
+INFO  - 중요한 비즈니스 이벤트. 주문 생성, 사용자 로그인
+DEBUG - 개발/디버깅용. 상세 처리 과정
+TRACE - 매우 상세. 프레임워크 내부
 ```
 
 운영 환경: `INFO` 이상.  
@@ -258,14 +258,14 @@ SLO를 SLA보다 엄격하게 설정해 위반 전에 대응할 시간을 확보
 ## Spring Boot Actuator 엔드포인트
 
 ```
-/actuator/health          — 헬스 상태 (K8s probe)
-/actuator/metrics         — 메트릭 목록
-/actuator/prometheus      — Prometheus 포맷 메트릭
-/actuator/info            — 애플리케이션 정보
-/actuator/loggers         — 런타임 로그 레벨 변경 (재시작 없이)
-/actuator/env             — 환경변수 조회
-/actuator/threaddump      — 스레드 덤프
-/actuator/heapdump        — 힙 덤프
+/actuator/health          - 헬스 상태 (K8s probe)
+/actuator/metrics         - 메트릭 목록
+/actuator/prometheus      - Prometheus 포맷 메트릭
+/actuator/info            - 애플리케이션 정보
+/actuator/loggers         - 런타임 로그 레벨 변경 (재시작 없이)
+/actuator/env             - 환경변수 조회
+/actuator/threaddump      - 스레드 덤프
+/actuator/heapdump        - 힙 덤프
 ```
 
 운영 환경에서는 `/actuator/health`와 `/actuator/prometheus`만 외부 노출, 나머지는 내부 포트로 제한.

@@ -119,7 +119,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — MSA</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 - MSA</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary/40" />
@@ -158,8 +158,31 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Python + ONNX</p>
-            <FlowNode highlight sub="ECT · MambaCD · MINIMA — 모델 선정 진행 중">변화탐지 AI</FlowNode>
+            <FlowNode highlight sub="ECT · MambaCD · MINIMA - 모델 선정 진행 중">변화탐지 AI</FlowNode>
           </div>
+        </div>
+        {/* 변화탐지 AI 호출 흐름 */}
+        <div className="pt-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">변화탐지 AI 호출 흐름</p>
+          <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+            {([
+              ["웹 뷰어", "전·후 영상 선택 · 분석 신청"],
+              ["API 서버", "작업 생성 · 큐 발행"],
+              ["RabbitMQ", "ack/nack · DLQ"],
+              ["변화탐지 AI", "ONNX 추론 (consumer)"],
+              ["후처리", "결과 저장 · 타일화"],
+              ["웹 뷰어", "지도 위 변화 가시화"],
+            ] as [string, string][]).map(([name, desc], i, arr) => (
+              <li key={i} className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs">
+                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-semibold shrink-0">{i + 1}</span>
+                  <span className="font-medium text-foreground">{name}</span>
+                  <span className="text-muted-foreground font-normal">{desc}</span>
+                </span>
+                {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+              </li>
+            ))}
+          </ol>
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex-1 border-t border-dashed border-border" />
@@ -188,7 +211,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
 
         {/* 1. Keycloak OIDC */}
         <AccordionSection
-          title="Envoy Gateway + Keycloak OIDC — 게이트웨이 레벨 인증"
+          title="Envoy Gateway + Keycloak OIDC - 게이트웨이 레벨 인증"
           hint="각 서비스 인증 코드 제거 · SecurityPolicy로 HTTPRoute 단위 적용"
           module="백엔드 공통"
         >
@@ -236,7 +259,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             RabbitMQ가 자동으로 메시지를 재투입합니다.
             3회 초과 실패 시 <Highlight>DLQ</Highlight>로 격리해 운영자가 원인을 파악한 뒤 수동 republish합니다.
           </p>
-          <CodeBlock>{`# DLX 설정 — 재시도 3회 초과 시 DLQ 격리
+          <CodeBlock>{`# DLX 설정 - 재시도 3회 초과 시 DLQ 격리
 channel.exchange_declare(exchange='gprocessor.dlx', exchange_type='direct', durable=True)
 channel.queue_declare(queue='gprocessor.dlq', durable=True)
 channel.queue_declare(
@@ -282,10 +305,10 @@ def callback(ch, method, properties, body):
               { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },
               { cells: ["AI 추론", "Python + ONNX", "변화탐지 AI 추론 (RabbitMQ consumer)", "3개"], highlight: true },
               { cells: ["후처리", "Python", "변화탐지 후처리 · 결과 저장", "3개"], highlight: true },
-              { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "—"] },
-              { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "—"] },
-              { cells: ["게이트웨이", "Envoy Gateway · Keycloak", "OIDC 인증 · 경로 라우팅 · TLS · 업로드 제한", "—"] },
-              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "—"] },
+              { cells: ["메시지 큐", "RabbitMQ", "비동기 메시지 큐 StatefulSet", "-"] },
+              { cells: ["데이터베이스", "PostgreSQL + PostGIS", "공간 데이터 저장소", "-"] },
+              { cells: ["게이트웨이", "Envoy Gateway · Keycloak", "OIDC 인증 · 경로 라우팅 · TLS · 업로드 제한", "-"] },
+              { cells: ["웹 뷰어", "Next.js 15", "CesiumJS 웹 UI · 달지도 · 지역 통계", "-"] },
             ]}
           />
           <p>
@@ -320,26 +343,26 @@ env:
     value: "EARTH"          # ← MOON으로 바꾸면 달지도 모드
   - name: VIEWER_TITLE
     value: "국토 변화 정보 서비스"
-  - name: BACKEND_API_URL   # 서버사이드 프록시 — 클라이언트에 백엔드 URL 미노출
+  - name: BACKEND_API_URL   # 서버사이드 프록시 - 클라이언트에 백엔드 URL 미노출
     value: "http://[내부IP]:16103"
   - name: UI_MAP_INDEX_VISIBLE
-    value: "true"           # MOON 배포에서는 false — 변화 인덱스 위젯 숨김`}</CodeBlock>
-          <CodeBlock>{`// Client — MAP_TYPE env에 따라 피처 청크를 필요 시점에 동적 로드
+    value: "true"           # MOON 배포에서는 false - 변화 인덱스 위젯 숨김`}</CodeBlock>
+          <CodeBlock>{`// Client - MAP_TYPE env에 따라 피처 청크를 필요 시점에 동적 로드
 const EarthViewer = dynamic(() => import("@/features/earth-viewer"));
 const MoonViewer  = dynamic(() => import("@/features/moon-viewer"));
 
 export function ViewerWidget({ mapType }: { mapType: string }) {
   return mapType === "MOON"
-    ? <MoonViewer />    // 달지도 청크 — MOON 배포에서만 로드
+    ? <MoonViewer />    // 달지도 청크 - MOON 배포에서만 로드
     : <EarthViewer />;  // 지구 변화탐지 청크
 }`}</CodeBlock>
-          <p className="font-medium text-foreground">지구 모드 — PostGIS 지역별 변화 통계</p>
+          <p className="font-medium text-foreground">지구 모드 - PostGIS 지역별 변화 통계</p>
           <p>
             변화 폴리곤과 행정구역을 공간 조인해
             시·도 / 시·군·구 / 사용자 AOI 단위 변화 면적·변화율을 집계합니다.
             지역 클릭 시 시계열 차트, 임계값 초과 지역은 히트맵으로 강조됩니다.
           </p>
-          <p className="font-medium text-foreground">달 모드 — 아폴로 경로 · 크레이터</p>
+          <p className="font-medium text-foreground">달 모드 - 아폴로 경로 · 크레이터</p>
           <CompareTable
             headers={["레이어", "데이터 출처", "표현 방식"]}
             rows={[

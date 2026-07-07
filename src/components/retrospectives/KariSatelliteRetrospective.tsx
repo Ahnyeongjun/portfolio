@@ -119,7 +119,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — 6개 모듈</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 - 6개 모듈</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary/40" />
@@ -169,10 +169,33 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">FastAPI + ONNX Runtime</p>
             <FlowNode highlight sub="OD · SEG · SR · 200→3,000건/일">AI 추론</FlowNode>
-            <p className="text-xs text-muted-foreground/70">Aliyun GPUShare — GPU당 10파드 자동 분할</p>
+            <p className="text-xs text-muted-foreground/70">Aliyun GPUShare - GPU당 10파드 자동 분할</p>
           </div>
         </div>
 
+        {/* 변화탐지 AI 호출 흐름 */}
+        <div className="pt-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">변화탐지 AI 호출 흐름</p>
+          <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+            {([
+              ["사용자 페이지", "분석 영역 · 시점 선택 · 신청"],
+              ["API 서버", "작업 등록 · Outbox 이벤트"],
+              ["망연계", "외부망 → 폐쇄망 전달"],
+              ["AI 추론", "변화탐지 ONNX 추론"],
+              ["타일 / 파일 서버", "결과 타일화 · 서빙"],
+              ["사용자 페이지", "지구본 위 변화 가시화"],
+            ] as [string, string][]).map(([name, desc], i, arr) => (
+              <li key={i} className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs">
+                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-semibold shrink-0">{i + 1}</span>
+                  <span className="font-medium text-foreground">{name}</span>
+                  <span className="text-muted-foreground font-normal">{desc}</span>
+                </span>
+                {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+              </li>
+            ))}
+          </ol>
+        </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex-1 border-t border-dashed border-border" />
           <span className="shrink-0 px-2">망연계 (외부망 ↔ 폐쇄망) · Kubernetes · PostgreSQL</span>
@@ -213,15 +236,15 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           <ul className="space-y-2 list-none">
             <li className="flex gap-2">
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">①</span>
-              <span><Highlight>위성 메타 목록</Highlight> — 페이지네이션 없이 전체 행 반환, 파라미터가 없어도 매 요청마다 <Highlight>PostGIS ST_INTERSECTION</Highlight> 실행</span>
+              <span><Highlight>위성 메타 목록</Highlight> - 페이지네이션 없이 전체 행 반환, 파라미터가 없어도 매 요청마다 <Highlight>PostGIS ST_INTERSECTION</Highlight> 실행</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">②</span>
-              <span><Highlight>수집 현황 집계</Highlight> — CTE에 명시적 JOIN 조건 없어 카테시안 곱 발생 → 타임아웃</span>
+              <span><Highlight>수집 현황 집계</Highlight> - CTE에 명시적 JOIN 조건 없어 카테시안 곱 발생 → 타임아웃</span>
             </li>
             <li className="flex gap-2">
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">③</span>
-              <span><Highlight>알람 팝업 목록</Highlight> — base64 PNG BLOB을 목록 쿼리에 포함, HikariCP 커넥션 30개 독점 → 전체 요청 연쇄 타임아웃</span>
+              <span><Highlight>알람 팝업 목록</Highlight> - base64 PNG BLOB을 목록 쿼리에 포함, HikariCP 커넥션 30개 독점 → 전체 요청 연쇄 타임아웃</span>
             </li>
           </ul>
           <p>
@@ -275,7 +298,7 @@ public class OutboxInterceptor implements Interceptor {
 public void beforeCommit(boolean readOnly) {
     outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
-          <p className="font-medium text-foreground">폐쇄망 분산 ID — Snowflake 알고리즘 직접 구현</p>
+          <p className="font-medium text-foreground">폐쇄망 분산 ID - Snowflake 알고리즘 직접 구현</p>
           <p>
             외부망↔폐쇄망 물리 분리 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
             UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.
@@ -314,8 +337,8 @@ def generate(self) -> int:
           <CompareTable
             headers={["프로토콜", "방식", "용도"]}
             rows={[
-              { cells: ["WMS", "임의 BBOX 단일 이미지 렌더링", "고정 단일 영역 조회 — BBOX가 매번 달라 캐시 히트율 0%에 수렴, 인터랙티브 탐색 불적합"] },
-              { cells: ["WMTS", "256×256 고정 격자 타일 사전 생성 · 디스크 캐싱", "베이스맵 전체 영역 · 줌 레벨별 점진적 로드 (2.4s → 0.4s) — tile URL 고정으로 캐시 히트율 높음"], highlight: true },
+              { cells: ["WMS", "임의 BBOX 단일 이미지 렌더링", "고정 단일 영역 조회 - BBOX가 매번 달라 캐시 히트율 0%에 수렴, 인터랙티브 탐색 불적합"] },
+              { cells: ["WMTS", "256×256 고정 격자 타일 사전 생성 · 디스크 캐싱", "베이스맵 전체 영역 · 줌 레벨별 점진적 로드 (2.4s → 0.4s) - tile URL 고정으로 캐시 히트율 높음"], highlight: true },
               { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
             ]}
           />
@@ -336,8 +359,8 @@ def generate(self) -> int:
             rows={[
               { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
               { cells: ["클라이언트 사양", "i5 이상 필요", "펜티엄급에서도 동작"], highlight: true },
-              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화 — 확대해도 보이는 영역만"], highlight: true },
-              { cells: ["캐시 효율", "영역 기반 — 히트율 낮음", "타일 단위 — 재사용 가능"] },
+              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화 - 확대해도 보이는 영역만"], highlight: true },
+              { cells: ["캐시 효율", "영역 기반 - 히트율 낮음", "타일 단위 - 재사용 가능"] },
               { cells: ["생성 시점", "요청마다 실시간", "ETL 완료 시 자동"] },
             ]}
           />

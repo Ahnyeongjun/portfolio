@@ -32,6 +32,90 @@ function SparkIcon() {
 export function CareerSection({ projects, company, period }: CareerSectionProps) {
   const t = useTranslations('career');
   const { lang } = useLang();
+
+  const regularProjects = projects.filter((p) => !p.internal);
+  const internalProjects = projects.filter((p) => p.internal);
+
+  function renderCard(proj: Project, i: number) {
+    const maxTags = 5;
+    const shownTags = proj.tags.slice(0, maxTags);
+    const extraTags = proj.tags.length - maxTags;
+    const achList = lang === 'en' && proj.achievementsEn?.length ? proj.achievementsEn : proj.achievements;
+    const achieveTags = (achList ?? [])
+      .map((a) => a.match(/^\s*\[([^\]]+)\]/)?.[1])
+      .filter((t): t is string => Boolean(t))
+      .slice(0, 3);
+
+    return (
+      <Link
+        key={proj.id}
+        href={`/projects/${proj.id}`}
+        className="pf-proj-card reveal"
+        style={{ transitionDelay: `${(i % 2) * 80}ms` }}
+      >
+        <div className="pf-proj-thumb">
+          <span className="pf-proj-num">{String(i + 1).padStart(2, '0')}</span>
+          {proj.internal && (
+            <span className="pf-proj-badge">{lang === 'en' ? 'Internal' : '사내 도구'}</span>
+          )}
+          {proj.imageUrl ? (
+            <Image
+              src={proj.imageUrl}
+              alt={proj.title}
+              fill
+              style={{
+                objectFit: /\.svg$|logo/i.test(proj.imageUrl) ? 'contain' : 'cover',
+                padding: /\.svg$|logo/i.test(proj.imageUrl) ? '16px' : undefined,
+              }}
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
+          ) : (
+            <span style={{
+              fontFamily: 'var(--font-family-mono)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--pf-text-mute)',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              padding: '0 16px',
+              opacity: 0.7,
+            }}>{proj.thumbLabel ?? proj.title}</span>
+          )}
+        </div>
+        <div className="pf-proj-body">
+          <div className="pf-proj-head">
+            <div>
+              <div className="pf-proj-name">{lang === 'en' && proj.titleEn ? proj.titleEn : proj.title}</div>
+              {proj.role && <div className="pf-proj-subtitle">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>}
+            </div>
+            <span className="pf-proj-period">{proj.period}</span>
+          </div>
+          <p className="pf-proj-desc">{lang === 'en' && proj.descriptionEn ? proj.descriptionEn : proj.description}</p>
+          <div className="pf-proj-role">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}{proj.company ? ' · ' + proj.company : ''}</div>
+          <div className="pf-proj-tags">
+            {shownTags.map((tag) => (
+              <span key={tag} className="pf-proj-tag">{tag}</span>
+            ))}
+            {extraTags > 0 && <span className="pf-proj-tag more">+{extraTags}</span>}
+          </div>
+          <div className="pf-proj-foot">
+            <span className="pf-proj-achieve">
+              {achieveTags.length > 0 ? (
+                <><SparkIcon /> {achieveTags.join(' · ')}</>
+              ) : (
+                <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{proj.company}</span>
+              )}
+            </span>
+            <span className="pf-proj-view">
+              {t('detailBtn')} <span className="arr"><ArrowIcon /></span>
+            </span>
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <section
       id="career"
@@ -60,80 +144,26 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
         </div>
 
         <div className="pf-proj-grid">
-          {projects.map((proj, i) => {
-            const maxTags = 5;
-            const shownTags = proj.tags.slice(0, maxTags);
-            const extraTags = proj.tags.length - maxTags;
-            const topAchieve = proj.achievements?.[0];
-
-            return (
-              <Link
-                key={proj.id}
-                href={`/projects/${proj.id}`}
-                className="pf-proj-card reveal"
-                style={{ transitionDelay: `${(i % 2) * 80}ms` }}
-              >
-                <div className="pf-proj-thumb">
-                  <span className="pf-proj-num">{String(i + 1).padStart(2, '0')}</span>
-                  {proj.imageUrl ? (
-                    <Image
-                      src={proj.imageUrl}
-                      alt={proj.title}
-                      fill
-                      style={{
-                        objectFit: /\.svg$|logo/i.test(proj.imageUrl) ? 'contain' : 'cover',
-                        padding: /\.svg$|logo/i.test(proj.imageUrl) ? '16px' : undefined,
-                      }}
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                  ) : (
-                    <span style={{
-                      fontFamily: 'var(--font-family-mono)',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: 'var(--pf-text-mute)',
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                      textAlign: 'center',
-                      padding: '0 16px',
-                      opacity: 0.7,
-                    }}>{proj.thumbLabel ?? proj.title}</span>
-                  )}
-                </div>
-                <div className="pf-proj-body">
-                  <div className="pf-proj-head">
-                    <div>
-                      <div className="pf-proj-name">{lang === 'en' && proj.titleEn ? proj.titleEn : proj.title}</div>
-                      {proj.role && <div className="pf-proj-subtitle">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}</div>}
-                    </div>
-                    <span className="pf-proj-period">{proj.period}</span>
-                  </div>
-                  <p className="pf-proj-desc">{lang === 'en' && proj.descriptionEn ? proj.descriptionEn : proj.description}</p>
-                  <div className="pf-proj-role">{lang === 'en' && proj.roleEn ? proj.roleEn : proj.role}{proj.company ? ' · ' + proj.company : ''}</div>
-                  <div className="pf-proj-tags">
-                    {shownTags.map((tag) => (
-                      <span key={tag} className="pf-proj-tag">{tag}</span>
-                    ))}
-                    {extraTags > 0 && <span className="pf-proj-tag more">+{extraTags}</span>}
-                  </div>
-                  <div className="pf-proj-foot">
-                    <span className="pf-proj-achieve">
-                      {topAchieve ? (() => {
-                        const achieve = lang === 'en' && proj.achievementsEn?.[0] ? proj.achievementsEn[0] : topAchieve;
-                        return <><SparkIcon /> {achieve.slice(0, 30)}{achieve.length > 30 ? '…' : ''}</>;
-                      })() : (
-                        <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{proj.company}</span>
-                      )}
-                    </span>
-                    <span className="pf-proj-view">
-                      {t('detailBtn')} <span className="arr"><ArrowIcon /></span>
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+          {regularProjects.map((proj, i) => renderCard(proj, i))}
         </div>
+
+        {internalProjects.length > 0 && (
+          <>
+            <div className="pf-career-subhead reveal">
+              <span className="pf-career-subtitle">
+                {lang === 'en' ? 'Internal Tools · Personal Work' : '사내 도구 · 개인 작업'}
+              </span>
+              <span className="pf-career-subnote">
+                {lang === 'en'
+                  ? 'Not client deliverables - tools built and shared in-house'
+                  : '발주처 납품물이 아닌, 사내에서 직접 만들어 공유한 작업'}
+              </span>
+            </div>
+            <div className="pf-proj-grid">
+              {internalProjects.map((proj, i) => renderCard(proj, i))}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

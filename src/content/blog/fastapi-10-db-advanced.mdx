@@ -106,7 +106,7 @@ def get_db():
 
 ```
 A의 잔액 -10,000원  (성공)
-B의 잔액 +10,000원  (실패 — 서버 다운)
+B의 잔액 +10,000원  (실패 - 서버 다운)
 ```
 
 중간에 실패하면 A의 돈만 사라진다. 트랜잭션이 없으면 이런 상황을 막을 수 없다.
@@ -126,14 +126,14 @@ SQLAlchemy에서 가장 헷갈리는 부분이다.
 
 ```python
 db.add(user)    # 메모리에 등록 (DB에 아직 없음)
-db.flush()      # SQL 전송 — DB에 반영됐지만 확정 아님. 같은 트랜잭션 내 조회는 가능
-db.commit()     # 최종 확정 — 이 시점에 영구 저장
-db.rollback()   # 되돌리기 — commit 전에만 가능
+db.flush()      # SQL 전송 - DB에 반영됐지만 확정 아님. 같은 트랜잭션 내 조회는 가능
+db.commit()     # 최종 확정 - 이 시점에 영구 저장
+db.rollback()   # 되돌리기 - commit 전에만 가능
 ```
 
 `flush()`는 `user.id`처럼 DB가 자동 생성하는 값을 얻어야 할 때 쓴다. 커밋하지 않았으니 롤백도 가능한 상태다.
 
-### 실전 예시 — 여러 테이블에 걸친 작업
+### 실전 예시 - 여러 테이블에 걸친 작업
 
 ```python
 # app/users/service.py
@@ -197,9 +197,9 @@ B-Tree에서 위치 바로 탐색 (약 20번 비교)
 
 ### 인덱스의 종류
 
-- **B-Tree 인덱스 (기본)** — 등호(`=`), 범위(`>`, `<`), 정렬(`ORDER BY`)에 효과적. PostgreSQL/MySQL 기본 타입.
-- **Unique 인덱스** — 중복 값을 허용하지 않는 인덱스. `email`같이 유일해야 하는 컬럼에 사용.
-- **복합 인덱스 (Composite Index)** — 여러 컬럼을 묶어서 만드는 인덱스. `WHERE status = 'active' AND created_at > ?` 같은 조건에 효과적.
+- **B-Tree 인덱스 (기본)** - 등호(`=`), 범위(`>`, `<`), 정렬(`ORDER BY`)에 효과적. PostgreSQL/MySQL 기본 타입.
+- **Unique 인덱스** - 중복 값을 허용하지 않는 인덱스. `email`같이 유일해야 하는 컬럼에 사용.
+- **복합 인덱스 (Composite Index)** - 여러 컬럼을 묶어서 만드는 인덱스. `WHERE status = 'active' AND created_at > ?` 같은 조건에 효과적.
 
 ### SQLAlchemy에서 인덱스 설정
 
@@ -218,7 +218,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
 
-    # 복합 인덱스 — is_active + created_at 조합으로 자주 조회한다면
+    # 복합 인덱스 - is_active + created_at 조합으로 자주 조회한다면
     __table_args__ = (
         Index("ix_users_active_created", "is_active", "created_at"),
     )

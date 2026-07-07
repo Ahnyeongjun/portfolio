@@ -26,8 +26,8 @@ export const profile = {
     '이 일들의 공통점은 하나입니다. "왜 이런가"를 끝까지 파고들어, 다시 터지지 않는 구조로 바꿨다는 것. 화면 뒤에서 시스템이 조용히, 안정적으로 돌아가게 만드는 일이 제가 가장 잘하고 또 좋아하는 일입니다.',
   ],
   introductionEn: [
-    "Hi — I'm a developer who has spent five years on the backend of satellite-imagery AI platforms at Hancom InSpace. I designed and ran the imagery-processing platform we delivered to the Korea Aerospace Research Institute (KARI) and the satellite change-detection platform built under NIPA funding — systems national institutions actually run in their daily work.",
+    "Hi - I'm a developer who has spent five years on the backend of satellite-imagery AI platforms at Hancom InSpace. I designed and ran the imagery-processing platform we delivered to the Korea Aerospace Research Institute (KARI) and the satellite change-detection platform built under NIPA funding - systems national institutions actually run in their daily work.",
     "As I took over operations, I worked through the harder backend problems myself. I brought a list API that took 38 seconds on full PostGIS scans down to 159 ms with conditional execution and Redis caching; when Debezium CDC kept breaking and losing events, I cut the dependency and solved it by building the Outbox pattern myself; and because the air-gapped network left no room for an external coordinator to hand out distributed IDs, I implemented Snowflake IDs from scratch, encoding enough to trace which server issued each one.",
-    'There\'s one thread through all of it: I dig into why something breaks, then rebuild it so it won\'t break again. Keeping a system running quietly and reliably behind the screen is what I do best — and what I enjoy most.',
+    'There\'s one thread through all of it: I dig into why something breaks, then rebuild it so it won\'t break again. Keeping a system running quietly and reliably behind the screen is what I do best - and what I enjoy most.',
   ],
 } as const;

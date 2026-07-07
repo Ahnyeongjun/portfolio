@@ -109,7 +109,7 @@ export function InsopsRetrospective() {
 
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 — 서버 분리</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 - 서버 분리</p>
 
         <div className="grid grid-cols-2 gap-3">
           <FlowNode highlight sub="콘텐츠 관리 FRONT-END">inops-cms</FlowNode>
@@ -146,10 +146,10 @@ export function InsopsRetrospective() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
 
-        {/* 1. 판독보고서 — CesiumJS 기반 보고서 저작 */}
+        {/* 1. 판독보고서 - CesiumJS 기반 보고서 저작 */}
         <AccordionSection
-          title="판독보고서 — CesiumJS 3D globe 기반 보고서 저작 도구"
-          hint="별도 도구 없이 분석·주석·보고서 작성을 한 화면에서 원스톱 처리 — 분석관 호평"
+          title="판독보고서 - CesiumJS 3D globe 기반 보고서 저작 도구"
+          hint="별도 도구 없이 분석·주석·보고서 작성을 한 화면에서 원스톱 처리 - 분석관 호평"
           module="inops-das"
         >
           <p>
@@ -163,7 +163,7 @@ export function InsopsRetrospective() {
             않아도 된다는 점에서 분석관들의 호평이 많았습니다.
           </p>
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide">이전 — PPT 등 별도 도구를 오가며 작성</p>
+            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide">이전 - PPT 등 별도 도구를 오가며 작성</p>
             <div className="flex items-stretch gap-1.5 overflow-x-auto pb-1">
               {[
                 ["화면 캡처", "판독 화면에서"],
@@ -180,7 +180,7 @@ export function InsopsRetrospective() {
                 </React.Fragment>
               ))}
             </div>
-            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide pt-1">판독보고서 — 한 화면에서 이어서</p>
+            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide pt-1">판독보고서 - 한 화면에서 이어서</p>
             <div className="flex items-stretch gap-1.5 overflow-x-auto pb-1">
               {[
                 ["표적 확인", "3D globe에서"],
@@ -211,15 +211,15 @@ export function InsopsRetrospective() {
 
         {/* 2. 다운로드 엔드포인트 통합 */}
         <AccordionSection
-          title="다운로드 엔드포인트 통합 — 일반 다운로드와 INNORIX 대용량 전송을 하나로"
-          hint="파일 크기·전송 방식과 무관하게 /download.do 하나 — 파라미터 유무로 일반/대용량 자동 분기"
+          title="다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로"
+          hint="파일 크기·전송 방식과 무관하게 /download.do 하나 - 파라미터 유무로 일반/대용량 자동 분기"
           module="ins-file-svr"
         >
           <p>
             일반 다운로드와 위성영상처럼 큰 파일의 <Highlight>INNORIX</Highlight> 대용량 전송을
             엔드포인트를 따로 두지 않고 <code>/download.do</code> 하나로 처리했습니다. 분기 기준은
             파일 크기가 아니라 요청에 <code>_StartOffset</code>·<code>_EndOffset</code> 파라미터가
-            있는지입니다 — INNORIX 클라이언트가 <code>downloadType: "stream"</code> 설정일 때만 이
+            있는지입니다 - INNORIX 클라이언트가 <code>downloadType: "stream"</code> 설정일 때만 이
             파라미터를 붙여 보냅니다.
           </p>
           <CompareTable
@@ -239,8 +239,8 @@ export function InsopsRetrospective() {
 
         {/* 3. 컴포넌트 매니저 */}
         <AccordionSection
-          title="공통 컴포넌트 매니저 — 팝업·iframe·인페이지 통신 통합"
-          hint="팝업·iframe 등 서로 다른 window의 함수를 execute() 하나로 통일 — 창 경계를 넘는 이름+인자 기반 호출 추상화"
+          title="공통 컴포넌트 매니저 - 팝업·iframe·인페이지 통신 통합"
+          hint="팝업·iframe 등 서로 다른 window의 함수를 execute() 하나로 통일 - 창 경계를 넘는 이름+인자 기반 호출 추상화"
           module="inops-das"
         >
           <p>
@@ -259,7 +259,7 @@ export function InsopsRetrospective() {
             headers={["대상", "매니저 없이", "execute(compId, fnName, args)로"]}
             rows={[
               { cells: ["같은 페이지 객체", "직접 호출", "동일하게 직접 호출"] },
-              { cells: ["팝업 (window.open, 부모와 독립된 생명주기)", "핸들을 계속 들고 있다가 직접 호출 — 로딩 전이면 에러", "위치 신경 안 쓰고 동일하게 호출, 응답은 콜백 함수명(fnName)으로 다시 받음"], highlight: true },
+              { cells: ["팝업 (window.open, 부모와 독립된 생명주기)", "핸들을 계속 들고 있다가 직접 호출 - 로딩 전이면 에러", "위치 신경 안 쓰고 동일하게 호출, 응답은 콜백 함수명(fnName)으로 다시 받음"], highlight: true },
               { cells: ["iframe (contentWindow, 부모 DOM에 종속)", "contentWindow 직접 접근 또는 postMessage·리스너를 매번 직접 구현", "위치 신경 안 쓰고 동일하게 호출, 응답은 팝업과 동일한 fnName 콜백 방식"], highlight: true },
               { cells: ["아직 등록 안 됨", "호출부가 대상 존재 여부까지 알아야 함", "부모창으로 재위임, 무한 재요청 방지"], muted: true },
             ]}

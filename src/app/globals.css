@@ -815,6 +815,17 @@ code, pre {
   font-size: 12px; font-weight: 600; color: var(--pf-ac-strong);
   background: rgba(255,255,255,0.82); border: 1px solid var(--pf-bdr); padding: 4px 9px; border-radius: 7px;
 }
+.pf-proj-badge {
+  position: absolute; top: 14px; right: 16px; z-index: 1; font-family: var(--font-family-mono);
+  font-size: 11px; font-weight: 600; color: var(--pf-text-mute); letter-spacing: 0.02em;
+  background: rgba(255,255,255,0.82); border: 1px dashed var(--pf-bdr); padding: 4px 9px; border-radius: 7px;
+}
+.pf-career-subhead {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px;
+  margin: 40px 0 22px; padding-top: 26px; border-top: 1px dashed var(--pf-bdr);
+}
+.pf-career-subtitle { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.pf-career-subnote { font-size: 13px; color: var(--pf-text-mute); }
 .pf-proj-body { padding: 22px 22px 24px; display: flex; flex-direction: column; flex: 1; }
 .pf-proj-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .pf-proj-name { font-size: 18.5px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
@@ -832,7 +843,8 @@ code, pre {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--pf-bdr);
 }
-.pf-proj-achieve { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--pf-mint); font-weight: 600; }
+.pf-proj-achieve { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--pf-mint); font-weight: 600; min-width: 0; overflow: hidden; white-space: nowrap; }
+.pf-proj-achieve svg { flex-shrink: 0; }
 .pf-proj-view { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--pf-ac-strong); }
 .pf-proj-card:hover .pf-proj-view .arr { transform: translateX(3px); }
 .pf-proj-view .arr { transition: transform 0.2s var(--pf-ease); display: inline-flex; }

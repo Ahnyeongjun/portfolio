@@ -96,7 +96,7 @@ export function NanosatelliteAIRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">객체탐지 — HBB 실험 결과</h3>
+        <h3 className="text-lg font-bold text-foreground">객체탐지 - HBB 실험 결과</h3>
         <p>
           20클래스 HBB 탐지 모델을 중심으로 모델 아키텍처와 증강 전략을 비교했습니다.
           <Highlight>mosaic + mixup + copy_paste + randaugment</Highlight> 복합 증강이
@@ -119,7 +119,7 @@ export function NanosatelliteAIRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">객체탐지 — OBB 실험 결과</h3>
+        <h3 className="text-lg font-bold text-foreground">객체탐지 - OBB 실험 결과</h3>
         <p>
           OBB는 probiou loss 계산이 메모리를 많이 사용하는데,
           mosaic 증강과 조합하면 인스턴스 수가 폭증해 <Highlight>OOM이 발생</Highlight>했습니다.
@@ -128,8 +128,8 @@ export function NanosatelliteAIRetrospective() {
         <Table
           headers={["실험", "증강 전략", "mAP50", "비고"]}
           rows={[
-            ["training_01~02", "norotate / 초기", "—", "best 없음"],
-            ["training_04", "mosaic + 강한 aug", "—", "OOM 실패"],
+            ["training_01~02", "norotate / 초기", "-", "best 없음"],
+            ["training_04", "mosaic + 강한 aug", "-", "OOM 실패"],
             ["training_05", "mosaic + 강한 aug + 패치", "0.466", "probiou 패치 버그"],
             ["training_03", "보수적 (mosaic만)", <span key="a" className="text-green-600 font-semibold">0.604 ★</span>, "BEST"],
           ]}
@@ -137,7 +137,7 @@ export function NanosatelliteAIRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">세그멘테이션 — 주요 실험 결과 (39회 중 발췌)</h3>
+        <h3 className="text-lg font-bold text-foreground">세그멘테이션 - 주요 실험 결과 (39회 중 발췌)</h3>
         <p>
           ConvNeXt-Base(ImageNet-22k pretrained) + UPerNet 조합을 기반으로
           손실 함수, 디코더, 외부 데이터, Skeleton Head를 단계적으로 탐색했습니다.
@@ -159,7 +159,7 @@ export function NanosatelliteAIRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">road↔ground 오분류 — 색감으로 구분 불가능한 한계</h3>
+        <h3 className="text-lg font-bold text-foreground">road↔ground 오분류 - 색감으로 구분 불가능한 한계</h3>
         <p>
           가장 어려운 문제는 도로(road)와 나지(ground) 클래스 간 오분류였습니다.
           Confusion matrix를 분석해 보니 두 클래스의

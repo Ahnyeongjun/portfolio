@@ -19,13 +19,14 @@ import { BooksightRetrospective } from "@/components/retrospectives/BooksightRet
 import { PillCareRetrospective } from "@/components/retrospectives/PillCareRetrospective";
 import { DflowRetrospective } from "@/components/retrospectives/DflowRetrospective";
 import { InsopsRetrospective } from "@/components/retrospectives/InsopsRetrospective";
+import { MlOrchestratorRetrospective } from "@/components/retrospectives/MlOrchestratorRetrospective";
 import type { Project } from "@/lib/projects";
 
 const RETROSPECTIVE_IDS = [
   "kari-satellite", "nipa-satellite", "team-mcp-agent",
   "momentier", "chugjibup", "wedding", "mapin",
   "simvex", "deadline-mate", "booksight", "pillcare",
-  "dflow-perf", "insops-satellite",
+  "dflow-perf", "insops-satellite", "ml-experiment-orchestrator",
 ];
 
 interface Props {
@@ -197,6 +198,7 @@ export function ProjectDetailContent({ project }: Props) {
             {project.id === "pillcare" && <PillCareRetrospective />}
             {project.id === "dflow-perf" && <DflowRetrospective />}
             {project.id === "insops-satellite" && <InsopsRetrospective />}
+            {project.id === "ml-experiment-orchestrator" && <MlOrchestratorRetrospective />}
 
             {/* Resources */}
             {project.resources && project.resources.some(r => r.type !== "image") && (

@@ -8,7 +8,7 @@ function SpotCards() {
   const t = useTranslations('hero');
   return (
     <div className="pf-hero-visual">
-      {/* Blue top card — 대표 성과 */}
+      {/* Blue top card - 대표 성과 */}
       <div className="pf-spot-card blue">
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 12, fontFamily: 'var(--font-family-mono)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {t('apiLabel')}

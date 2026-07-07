@@ -21,9 +21,9 @@ tags: ["k6", "부하 테스트", "성능", "CI/CD", "smoke test", "load test", "
 
 k6를 쓰는 이유는 세 가지다.
 
-- **JavaScript로 작성** — 별도 언어를 배울 필요 없다. ES6 문법으로 그냥 쓰면 된다.
-- **Go로 구동** — 스크립트는 JS로 작성하지만 실행 엔진은 Go다. 단일 머신에서도 수천 명의 가상 유저를 돌릴 수 있다.
-- **코드로 관리** — 테스트 스크립트를 앱 코드와 함께 Git으로 버전 관리한다. CI/CD에 끼워 넣기도 쉽다.
+- **JavaScript로 작성** - 별도 언어를 배울 필요 없다. ES6 문법으로 그냥 쓰면 된다.
+- **Go로 구동** - 스크립트는 JS로 작성하지만 실행 엔진은 Go다. 단일 머신에서도 수천 명의 가상 유저를 돌릴 수 있다.
+- **코드로 관리** - 테스트 스크립트를 앱 코드와 함께 Git으로 버전 관리한다. CI/CD에 끼워 넣기도 쉽다.
 
 ## 설치
 
@@ -56,11 +56,11 @@ import { check, sleep } from 'k6';
 
 // 1. 테스트 옵션
 export const options = {
-  vus: 10,         // Virtual Users — 동시 가상 유저 수
+  vus: 10,         // Virtual Users - 동시 가상 유저 수
   duration: '30s', // 테스트 실행 시간
 };
 
-// 2. 기본 함수 — VU마다 반복 실행
+// 2. 기본 함수 - VU마다 반복 실행
 export default function () {
   const res = http.get('http://localhost:8000/users/1');
 
@@ -88,7 +88,7 @@ k6 run tests/load/smoke.js
 
 `vus: 50` → 50명이 동시에 API를 두드린다고 상상하면 됨
 
-### stages — 트래픽 패턴 정의
+### stages - 트래픽 패턴 정의
 
 실제 트래픽은 갑자기 오지 않는다. 서서히 증가했다가 유지되다 감소한다.
 
@@ -104,7 +104,7 @@ export const options = {
 };
 ```
 
-### thresholds — 통과/실패 기준
+### thresholds - 통과/실패 기준
 
 테스트가 성공인지 실패인지 기준을 코드로 정의한다.
 
@@ -133,7 +133,7 @@ tests/
     └── soak.js    ← 장시간 안정성 테스트
 ```
 
-### smoke.js — 배포 직후 기본 동작 확인
+### smoke.js - 배포 직후 기본 동작 확인
 
 ```javascript
 // tests/load/smoke.js
@@ -160,7 +160,7 @@ export default function () {
 }
 ```
 
-### load.js — 일반 부하 테스트 (인증 포함)
+### load.js - 일반 부하 테스트 (인증 포함)
 
 ```javascript
 // tests/load/load.js
@@ -182,7 +182,7 @@ export const options = {
   },
 };
 
-// setup() — 테스트 시작 전 1회 실행. 반환값이 default function에 data로 전달됨
+// setup() - 테스트 시작 전 1회 실행. 반환값이 default function에 data로 전달됨
 export function setup() {
   const loginRes = http.post(
     `${BASE_URL}/auth/login`,
@@ -200,7 +200,7 @@ export default function (data) {
     Authorization: `Bearer ${data.token}`,
   };
 
-  // group() — 관련 요청을 묶어서 결과에서 구분 가능
+  // group() - 관련 요청을 묶어서 결과에서 구분 가능
   group('user APIs', () => {
     const meRes = http.get(`${BASE_URL}/users/me`, { headers });
     check(meRes, { 'get me 200': (r) => r.status === 200 });
@@ -215,7 +215,7 @@ export default function (data) {
 }
 ```
 
-### stress.js — 한계점 찾기
+### stress.js - 한계점 찾기
 
 ```javascript
 // tests/load/stress.js
@@ -340,10 +340,10 @@ threshold를 넘기면 k6가 오류 코드를 반환하며 종료 → GitHub Act
 배포
 │
 ▼
-smoke test — 기본 동작 확인 (1 VU, 30s)
+smoke test - 기본 동작 확인 (1 VU, 30s)
 │
 ▼
-load test — 예상 트래픽 성능 측정 (20 VU, 5m)
+load test - 예상 트래픽 성능 측정 (20 VU, 5m)
 │
 ▼
 threshold 통과?

@@ -64,7 +64,7 @@ export function AboutSection() {
           </div>
         </div>
 
-        {/* Right — intro text, padded down to align with body */}
+        {/* Right - intro text, padded down to align with body */}
         <div className="reveal pf-about-body" style={{ transitionDelay: '90ms', paddingTop: 56 }}>
           {intro.map((p, i) => <p key={i}>{p}</p>)}
         </div>

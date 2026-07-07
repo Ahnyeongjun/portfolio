@@ -170,7 +170,7 @@ export function DflowRetrospective() {
         >
           <p>
             k6로 4개 시나리오 부하테스트를 처음 돌렸을 때 실패율이 <Highlight>23.8%</Highlight>에
-            달했습니다. 원인은 성능 문제가 아니라 API 스펙 불일치였습니다 — 태스크 임포트 요청
+            달했습니다. 원인은 성능 문제가 아니라 API 스펙 불일치였습니다 - 태스크 임포트 요청
             바디가 실제 API 스펙과 달랐고, Transfer Learning 엔드포인트 URL이 잘못돼 있었으며,
             k6의 예약어와 충돌하는 <code>http.delete()</code> 호출도 있었습니다.
           </p>

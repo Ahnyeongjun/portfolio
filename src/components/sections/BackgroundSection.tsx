@@ -17,7 +17,7 @@ export function BackgroundSection() {
           <h2 className="pf-h-sec">{t('heading')}</h2>
         </div>
 
-        {/* Education | Certifications — 2 columns */}
+        {/* Education | Certifications - 2 columns */}
         <div className="pf-bg-grid-layout reveal">
           <div className="pf-panel">
             <div className="pf-panel-title">{t('education')}</div>
@@ -41,7 +41,7 @@ export function BackgroundSection() {
           </div>
         </div>
 
-        {/* Activities — below, in a grid */}
+        {/* Activities - below, in a grid */}
         <div className="reveal" style={{ marginTop: 22 }}>
           <div className="pf-section-label-sm">{t('activities')}</div>
           <div className="pf-act-list">

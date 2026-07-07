@@ -1,5 +1,5 @@
 ---
-title: "설계 패턴 — 면접 대비 정리"
+title: "설계 패턴 - 면접 대비 정리"
 description: "SOLID 원칙, Singleton/Strategy/Observer/Factory/Decorator 등 GoF 패턴, Spring에서 어떻게 쓰이는지까지 정리한다."
 date: "2026-04-02"
 category: "Java/Spring"
@@ -11,7 +11,7 @@ seriesOrder: 14
 
 ## SOLID 원칙
 
-### S — Single Responsibility Principle (단일 책임)
+### S - Single Responsibility Principle (단일 책임)
 
 클래스는 하나의 이유로만 변경돼야 한다.
 
@@ -29,7 +29,7 @@ class EmailService { public void sendEmail(User user) { ... } }
 class ReportService { public void generatePdfReport(User user) { ... } }
 ```
 
-### O — Open/Closed Principle (개방/폐쇄)
+### O - Open/Closed Principle (개방/폐쇄)
 
 확장에는 열려 있고, 수정에는 닫혀 있어야 한다.
 
@@ -58,7 +58,7 @@ class CouponDiscount implements DiscountPolicy {
 // 새 정책은 새 클래스로 추가, 기존 코드 수정 불필요
 ```
 
-### L — Liskov Substitution Principle (리스코프 치환)
+### L - Liskov Substitution Principle (리스코프 치환)
 
 자식 클래스는 부모 클래스를 대체할 수 있어야 한다.
 
@@ -75,7 +75,7 @@ class Square extends Rectangle {
 }
 ```
 
-### I — Interface Segregation Principle (인터페이스 분리)
+### I - Interface Segregation Principle (인터페이스 분리)
 
 클라이언트가 사용하지 않는 메서드에 의존하면 안 된다.
 
@@ -94,7 +94,7 @@ class Human implements Workable, Eatable { ... }
 class Robot implements Workable { ... }
 ```
 
-### D — Dependency Inversion Principle (의존 역전)
+### D - Dependency Inversion Principle (의존 역전)
 
 고수준 모듈이 저수준 모듈에 의존하면 안 된다. 둘 다 추상화에 의존해야 한다.
 

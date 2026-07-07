@@ -65,23 +65,23 @@ export const PROFILE = {
         title: "AI 처리 플랫폼 풀스택 개발",
         items: [
           "위성영상 탐지·세그멘테이션·변화탐지 AI 파이프라인 설계·운영",
-          "MSA 전환·배포 자동화 — 재배포 월 10건→1건, 배포 4분→30초",
-          "k6 부하테스트 기반 API 최적화 — PostGIS 38초→159ms, 에러율 11%→0%",
-          "AOP+MyBatis Outbox 라이브러리 직접 개발 — CDC 인프라 의존 제거, 이벤트 유실 0건",
+          "MSA 전환·배포 자동화 - 재배포 월 10건→1건, 배포 4분→30초",
+          "k6 부하테스트 기반 API 최적화 - PostGIS 38초→159ms, 에러율 11%→0%",
+          "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건",
         ],
       },
       {
         title: "AI 모델 학습·추론",
         items: [
-          "객체탐지·세그멘테이션 모델 학습·서빙 — mAP50 0.644, mIoU 0.7205",
-          "추론 가용성 확보 — GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
+          "객체탐지·세그멘테이션 모델 학습·서빙 - mAP50 0.644, mIoU 0.7205",
+          "추론 가용성 확보 - GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
         ],
       },
       {
         title: "사내 자동화 에이전트 개발",
         items: [
-          "FastMCP 에이전트 — Git·캘린더·HRWeb 통합, 문서 자동화",
-          "ML 실험 자율화 에이전트 — cronjob으로 학습 루프 자동 실행·기록, Claude Skill·Hook 기반 실험기록 표 자동 생성, Slack 알림",
+          "FastMCP 에이전트 - Git·캘린더·HRWeb 통합, 문서 자동화",
+          "ML 실험 자율화 에이전트 - cronjob으로 학습 루프 자동 실행·기록, Claude Skill·Hook 기반 실험기록 표 자동 생성, Slack 알림",
         ],
       },
     ],
@@ -89,7 +89,7 @@ export const PROFILE = {
 
   projects: [
     {
-      title: "NIPA 위성 변화탐지 AI 플랫폼 — MSA 설계",
+      title: "NIPA 위성 변화탐지 AI 플랫폼 - MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes", "Envoy Gateway", "Keycloak"],
@@ -109,8 +109,8 @@ export const PROFILE = {
             "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환, 연결 단절 시 자동 재투입·3회 초과 시 DLQ 격리",
           ],
           lines: [
-            "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 — 수동 DB 복구 반복",
-            "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환 — 처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
+            "Salt 폴링 ack/nack 없어 노드 재시작 시 작업 RUNNING 고착 - 수동 DB 복구 반복",
+            "RabbitMQ ack/nack + DLQ 비동기 파이프라인으로 전환 - 처리 완료 전 연결 끊기면 자동 재투입, 3회 초과 시 DLQ 격리",
             "작업 유실 0건",
           ],
         },
@@ -129,8 +129,8 @@ export const PROFILE = {
             "Keycloak OIDC와 Envoy Gateway SecurityPolicy로 인증을 게이트웨이 레벨로 끌어올려, 정책 변경은 SecurityPolicy 1개만 수정하면 되도록 만들었습니다.",
           ],
           lines: [
-            "서비스별 JWT 직접 검증으로 인증 코드 중복 — 정책 변경 시 전 서비스 동시 수정, 신규 서비스마다 미들웨어 직접 추가",
-            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위 적용 — forwardAccessToken으로 헤더 전달",
+            "서비스별 JWT 직접 검증으로 인증 코드 중복 - 정책 변경 시 전 서비스 동시 수정, 신규 서비스마다 미들웨어 직접 추가",
+            "Keycloak OIDC Provider 도입, Envoy Gateway SecurityPolicy를 HTTPRoute 단위 적용 - forwardAccessToken으로 헤더 전달",
             "SecurityPolicy 1개만 수정하면 정책 변경 완료, Keycloak 세션 공유 SSO 확보",
           ],
         },
@@ -147,8 +147,8 @@ export const PROFILE = {
             "도메인 단위 9개 서비스로 분리, 전 서비스 FastAPI 통일·Envoy Gateway 라우팅",
           ],
           lines: [
-            "모놀리식으로 기능 하나 배포 시 전체 재시작 — 잦은 배포마다 운영 중단 발생",
-            "MSA 분리, 전 서비스 FastAPI 전환, Envoy Gateway 라우팅 — 서비스별 독립 배포·장애 격리 확보",
+            "모놀리식으로 기능 하나 배포 시 전체 재시작 - 잦은 배포마다 운영 중단 발생",
+            "MSA 분리, 전 서비스 FastAPI 전환, Envoy Gateway 라우팅 - 서비스별 독립 배포·장애 격리 확보",
             "재배포 월 10건→1건, 배포 속도 4분→30초",
           ],
         },
@@ -159,7 +159,7 @@ export const PROFILE = {
           actions: [
             "Next.js 15 + FSD 전면 마이그레이션, 지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리",
             "동일 Docker 이미지를 K8s env(MAP_TYPE: EARTH|MOON)만 바꿔 배포판 분리, dynamic import로 달지도 청크 지연 로드",
-            "CesiumJS 커스텀 ImageryProvider — MVT·MBTiles·ImageLayer·달지도 이종 레이어 단일 인터페이스 추상화",
+            "CesiumJS 커스텀 ImageryProvider - MVT·MBTiles·ImageLayer·달지도 이종 레이어 단일 인터페이스 추상화",
           ],
           result: "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
           brief: [
@@ -215,7 +215,7 @@ export const PROFILE = {
             "MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현하고, Snowflake 알고리즘으로 worker ID에 망 정보를 인코딩했습니다.",
           ],
           lines: [
-            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 — replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
+            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 - replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
             "Debezium 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현, Snowflake 알고리즘으로 worker ID에 망 정보 인코딩",
             "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
           ],
@@ -236,7 +236,7 @@ export const PROFILE = {
           ],
           lines: [
             "GeoTIFF 원본 직접 서빙 시 뷰어 렌더링 불가, 객체탐지 결과 GeoJSON 동적 생성으로 캐싱 불가·응답 최대 5분",
-            "Go 영상 서빙 서버 구현 — WMS·WMTS·MVT 지원, WMTS 타일 사전생성·캐싱, 객체탐지 결과 MVT 사전생성 전환",
+            "Go 영상 서빙 서버 구현 - WMS·WMTS·MVT 지원, WMTS 타일 사전생성·캐싱, 객체탐지 결과 MVT 사전생성 전환",
             "WMTS 타일 캐싱 2.4s→0.4s, MVT 전환으로 객체탐지 오버레이 응답 약 5분→1초 이내",
           ],
         },
@@ -275,7 +275,7 @@ export const PROFILE = {
           situation: "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요",
           cause: "Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
           actions: [
-            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
+            "FastMCP 8개 도구 구현 - list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
             "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
             "HRWeb(아마란스) Playwright 전 흐름 자동화",
           ],
@@ -285,15 +285,15 @@ export const PROFILE = {
             "FastMCP로 8개 도구를 구현해 Git 커밋과 캘린더를 병합·엑셀 생성·Gmail 발송까지 단일 명령으로 자동화하고, 팀 전체가 Claude Desktop·Cursor에서 호출할 수 있게 했습니다.",
           ],
           lines: [
-            "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 — Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
-            "FastMCP 8개 도구 구현 — list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
+            "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요 - Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
+            "FastMCP 8개 도구 구현 - list_commits·get_trips·generate_report·upload_hrweb 등, Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
             "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
           ],
         },
       ],
     },
     {
-      title: "ML 실험 자율 오케스트레이터 — Claude Code 에이전트 설계",
+      title: "ML 실험 자율 오케스트레이터 - Claude Code 에이전트 설계",
       company: "한컴인스페이스",
       period: "2026.05. ~ 2026.06.",
       badge: "사내 개인",
@@ -310,15 +310,15 @@ export const PROFILE = {
             "실험 결과를 work_history에 기록 → 다음 판단 인풋으로 재투입하는 자율 루프 구성",
             "Slack WebHook으로 완료·에러 실시간 알림",
           ],
-          result: "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
+          result: "엔지니어 개입 없는 연속 실험 가능 - AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
           brief: [
             "ML 실험 루프의 각 단계마다 사람이 결과를 보고 다음 실험을 결정해야 해서, 자리를 비우면 실험이 멈추고 재개할 때 맥락을 다시 파악해야 했습니다.",
             "cronjob으로 Claude Code Skill을 주기적으로 실행해 work_history를 읽고 다음 실험을 판단하게 하고, Hook으로 학습을 자동 실행·기록·재투입하는 자율 루프를 구성해 엔지니어 개입 없는 연속 실험을 가능하게 했습니다.",
           ],
           lines: [
-            "ML 실험 루프를 엔지니어가 수동 순환 — 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
-            "cronjob으로 Claude Code Skill 주기 실행 → work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 — Slack 완료·에러 실시간 알림",
-            "엔지니어 개입 없는 연속 실험 가능 — AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
+            "ML 실험 루프를 엔지니어가 수동 순환 - 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
+            "cronjob으로 Claude Code Skill 주기 실행 → work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 - Slack 완료·에러 실시간 알림",
+            "엔지니어 개입 없는 연속 실험 가능 - AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
           ],
         },
       ],
@@ -327,7 +327,7 @@ export const PROFILE = {
 
   activities: [
     {
-      title: "드론 탑재 실시간 객체탐지 시스템 — ROS2 마이그레이션 분석",
+      title: "드론 탑재 실시간 객체탐지 시스템 - ROS2 마이그레이션 분석",
       org: "한컴인스페이스", year: "2026",
       desc: "동료가 개발한 드론 탑재 Faster R-CNN 객체탐지 시스템(ROS1 Noetic)의 아키텍처를 분석하고 ROS2 Humble 전환 계획을 수립했습니다.",
       notes: [
@@ -336,7 +336,7 @@ export const PROFILE = {
       ],
     },
     {
-      title: "FESI 13기 — 백엔드 멘토링",
+      title: "FESI 13기 - 백엔드 멘토링",
       org: "codeit", year: "2026",
       desc: "프론트엔드 부트캠프 수강생 6명 대상 실무 방식 기반 멘토링 (PR 리뷰, REST API 설계, DDD·TDD 실습).",
       notes: [
@@ -348,9 +348,9 @@ export const PROFILE = {
     {
       title: "제4회 블레이버스 MVP 개발 해커톤",
       org: "블레이버스", year: "2026",
-      desc: "기계공학 3D 학습 플랫폼 SIMVEX 개발 — @react-three/fiber 기반 3D 분해·조립 시뮬레이션 및 SSE 스트리밍 AI 어시스턴트 구현.",
+      desc: "기계공학 3D 학습 플랫폼 SIMVEX 개발 - @react-three/fiber 기반 3D 분해·조립 시뮬레이션 및 SSE 스트리밍 AI 어시스턴트 구현.",
       notes: [
-        "부품이 같은 방향으로 분해되어 겹치는 문제를 피보나치 스피어 알고리즘으로 해결 — 균일한 분해 애니메이션 구현",
+        "부품이 같은 방향으로 분해되어 겹치는 문제를 피보나치 스피어 알고리즘으로 해결 - 균일한 분해 애니메이션 구현",
         "SSE 스트리밍 AI 응답으로 학습 흐름 끊김 없이 실시간 표시",
       ],
     },
@@ -375,7 +375,7 @@ export const PROFILE = {
     {
       title: "AI 커리어스쿨",
       org: "멋쟁이사자처럼", year: "2024",
-      desc: "Python 기반 데이터 분석 및 시각화 학습 — 위성 영상 데이터 파이프라인·AI 모델 서빙 업무의 데이터 처리 흐름 이해에 기반이 됨.",
+      desc: "Python 기반 데이터 분석 및 시각화 학습 - 위성 영상 데이터 파이프라인·AI 모델 서빙 업무의 데이터 처리 흐름 이해에 기반이 됨.",
       notes: [],
     },
   ],

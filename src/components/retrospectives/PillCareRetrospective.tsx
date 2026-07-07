@@ -46,13 +46,13 @@ export function PillCareRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Brain} title="건강 위험 지수 설계 — 분산된 데이터를 하나의 점수로">
+        <Section icon={Brain} title="건강 위험 지수 설계 - 분산된 데이터를 하나의 점수로">
           <p>
             복약 기록, 증상 일지, 외부 환경 데이터가 따로 존재하면 사용자는 지금 자신의
             건강 상태가 어느 정도 위험한지 직관적으로 알기 어렵습니다.
             이 문제를 해결하고자 5개 도메인을 가중합하는 0~100점 건강 위험 지수를 설계했습니다.
           </p>
-          <CodeBlock>{`# 건강 위험 지수 (Health Index) 산출 — 5개 도메인 가중합
+          <CodeBlock>{`# 건강 위험 지수 (Health Index) 산출 - 5개 도메인 가중합
 health_index = (
     medication_adherence_score * 0.25  # 복약 순응도
   + disease_trend_score        * 0.25  # 질환 추이
@@ -72,7 +72,7 @@ health_index = (
           </p>
         </Section>
 
-        <Section icon={Zap} title="환경 데이터 × 건강 알림 — 컨텍스트 기반 트리거">
+        <Section icon={Zap} title="환경 데이터 × 건강 알림 - 컨텍스트 기반 트리거">
           <p>
             단순히 복약 시간을 알려주는 것에서 나아가, 오늘 환경이 특정 질환에
             미치는 영향까지 알림에 반영하고 싶었습니다.
@@ -82,11 +82,11 @@ health_index = (
           <CodeBlock>{`# 알림 트리거 조건 예시
 # 고혈압 환자 + 기온 급변(일교차 10°C 이상) → 경고 알림
 if user.has_disease("hypertension") and weather.temp_diff >= 10:
-    notify(user, level="WARNING", reason="기온 급변 — 혈압 변동 주의")
+    notify(user, level="WARNING", reason="기온 급변 - 혈압 변동 주의")
 
 # 호흡기 질환 환자 + 미세먼지 나쁨(PM2.5 > 35) → 외출 자제 알림
 if user.has_disease("respiratory") and air.pm25 > 35:
-    notify(user, level="CAUTION", reason="미세먼지 나쁨 — 외출 시 마스크 착용")`}</CodeBlock>
+    notify(user, level="CAUTION", reason="미세먼지 나쁨 - 외출 시 마스크 착용")`}</CodeBlock>
           <p>
             외부 API 응답은 <Highlight>AsyncPG + FastAPI</Highlight> 비동기 구조로 처리했습니다.
             날씨·미세먼지 API는 지역 코드 기반 응답이라 사용자 좌표를 행정구역 코드로
@@ -94,7 +94,7 @@ if user.has_disease("respiratory") and air.pm25 > 35:
           </p>
         </Section>
 
-        <Section icon={Layers} title="AI Hub ResNet — 알약 이미지로 약품명 추론">
+        <Section icon={Layers} title="AI Hub ResNet - 알약 이미지로 약품명 추론">
           <p>
             복약 등록 시 약품명을 직접 검색하는 것은 번거롭고 오기입 위험이 있습니다.
             AI Hub에서 제공하는 알약 이미지 분류 ResNet 모델을 활용해
@@ -127,7 +127,7 @@ async def recognize_pill(image: UploadFile):
           </p>
         </Section>
 
-        <Section icon={Database} title="헬스케어 UI 설계 — 정보 계층과 위험도 시각화">
+        <Section icon={Database} title="헬스케어 UI 설계 - 정보 계층과 위험도 시각화">
           <p>
             헬스케어 앱에서 가장 중요한 것은 <Highlight>사용자가 정보를 읽는 데 인지 부하를 줄이는 것</Highlight>입니다.
             이미지에 나타난 홈 대시보드를 설계할 때 3단 정보 계층을 의식적으로 구성했습니다.
@@ -136,9 +136,9 @@ async def recognize_pill(image: UploadFile):
             <p className="font-medium text-foreground mb-3">홈 대시보드 3단 구조:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "최상단 — AI 건강 브리핑 카드: 점수 + 오늘 주의사항 2줄 (스캔 단계)",
-                "중단 — 오늘 복약 현황: 복용/미복용 약 목록, 진행률 (확인 단계)",
-                "하단 — 건강 습관 트래커: 수면·운동·수분 섭취 (기록 단계)",
+                "최상단 - AI 건강 브리핑 카드: 점수 + 오늘 주의사항 2줄 (스캔 단계)",
+                "중단 - 오늘 복약 현황: 복용/미복용 약 목록, 진행률 (확인 단계)",
+                "하단 - 건강 습관 트래커: 수면·운동·수분 섭취 (기록 단계)",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
@@ -159,10 +159,10 @@ async def recognize_pill(image: UploadFile):
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "건강 도메인 데이터 모델링 — 복약·질환·일지·예약·알림 6개 도메인 간 관계 설계",
-                "FastAPI AsyncPG — Python 비동기 ORM으로 I/O 집약적 외부 API 호출 처리",
-                "AI Hub 추론 파이프라인 — confidence score 기반 폴백으로 낮은 신뢰도 처리, 식약처 DUR 연동으로 병용 금기 등록 시점 표시",
-                "헬스케어 UI 설계 원칙 — 인지 부하 최소화를 위한 정보 계층 구조와 위험도 시각화",
+                "건강 도메인 데이터 모델링 - 복약·질환·일지·예약·알림 6개 도메인 간 관계 설계",
+                "FastAPI AsyncPG - Python 비동기 ORM으로 I/O 집약적 외부 API 호출 처리",
+                "AI Hub 추론 파이프라인 - confidence score 기반 폴백으로 낮은 신뢰도 처리, 식약처 DUR 연동으로 병용 금기 등록 시점 표시",
+                "헬스케어 UI 설계 원칙 - 인지 부하 최소화를 위한 정보 계층 구조와 위험도 시각화",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

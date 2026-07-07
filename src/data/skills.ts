@@ -4,7 +4,7 @@ export interface SkillCategory {
   items: string[];
 }
 
-/** Single source of truth for the tech stack — used by the portfolio section and the résumé. */
+/** Single source of truth for the tech stack - used by the portfolio section and the résumé. */
 export const techStack: SkillCategory[] = [
   { label: 'Backend',    sub: 'server-side', items: ['Spring Boot', 'Java', 'FastAPI', 'Python', 'Go'] },
   { label: 'Frontend',   sub: 'client-side', items: ['Next.js', 'TypeScript', 'Storybook'] },

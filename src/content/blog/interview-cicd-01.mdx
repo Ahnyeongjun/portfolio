@@ -1,5 +1,5 @@
 ---
-title: "CI/CD & Docker 심화 — 면접 대비 정리"
+title: "CI/CD & Docker 심화 - 면접 대비 정리"
 description: "Docker 멀티스테이지 빌드, 이미지 최적화, GitHub Actions 파이프라인 구성, 무중단 배포 전략까지. 실무 CI/CD 자동화 경험 기반으로 정리한다."
 date: "2026-04-02"
 category: "DevOps"
@@ -49,7 +49,7 @@ CMD ["java", "-jar", "app.jar"]  # 레이어 4
 나쁜 예:
 
 ```dockerfile
-COPY . .          # 소스 전체 복사 — 파일 하나 바뀌면 이하 전부 캐시 무효화
+COPY . .          # 소스 전체 복사 - 파일 하나 바뀌면 이하 전부 캐시 무효화
 RUN ./gradlew build
 ```
 
@@ -275,7 +275,7 @@ spec:
 
 ---
 
-## Docker Compose — 로컬 개발 환경
+## Docker Compose - 로컬 개발 환경
 
 ```yaml
 # docker-compose.yml

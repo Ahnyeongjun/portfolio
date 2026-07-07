@@ -1,5 +1,5 @@
 ---
-title: "AWS 핵심 서비스 — 면접 대비 정리"
+title: "AWS 핵심 서비스 - 면접 대비 정리"
 description: "EC2, ECS Fargate, RDS, ElastiCache, S3, SQS, API Gateway, IAM까지. 백엔드 개발자가 알아야 할 AWS 서비스와 아키텍처 패턴을 정리한다."
 date: "2026-04-02"
 category: "DevOps"
@@ -19,9 +19,9 @@ seriesOrder: 22
 
 ```
 VPC (10.0.0.0/16)
-├── Public Subnet (10.0.1.0/24) — 인터넷 접근 가능 (ALB, NAT)
-├── Private Subnet (10.0.2.0/24) — 내부만 (ECS, EC2)
-└── DB Subnet (10.0.3.0/24) — DB만 (RDS)
+├── Public Subnet (10.0.1.0/24) - 인터넷 접근 가능 (ALB, NAT)
+├── Private Subnet (10.0.2.0/24) - 내부만 (ECS, EC2)
+└── DB Subnet (10.0.3.0/24) - DB만 (RDS)
 ```
 
 ---
@@ -33,10 +33,10 @@ VPC (10.0.0.0/16)
 가상 서버. 직접 OS 수준 접근 필요할 때.
 
 **인스턴스 타입**:
-- `t3.medium` — 범용, 버스터블 CPU
-- `m5.large` — 균형 잡힌 메모리/CPU
-- `c5.large` — CPU 집약
-- `r5.large` — 메모리 집약 (DB, Redis)
+- `t3.medium` - 범용, 버스터블 CPU
+- `m5.large` - 균형 잡힌 메모리/CPU
+- `c5.large` - CPU 집약
+- `r5.large` - 메모리 집약 (DB, Redis)
 
 **비용 최적화**:
 - On-Demand: 기본. 시간당 요금.

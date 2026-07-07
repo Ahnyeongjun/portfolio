@@ -113,7 +113,7 @@ const CSS = `
 @media (max-width:760px) { .rallit-root .sheet { width:auto; margin:0; } .rallit-root .highlights { flex-wrap:wrap; } .rallit-root .hl { min-width:50%; } }
 `;
 
-const GAP = 28; // px — height of the gray page-gap bar
+const GAP = 28; // px - height of the gray page-gap bar
 
 function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
   const er = el.getBoundingClientRect();
@@ -140,7 +140,7 @@ export function ResumeDocument() {
     const pageH = 297 * pxPerMm;
 
     // Rule: flow continuously, but never cut a unit across a page boundary.
-    // Keep the coarsest unit that still fits on a page whole — a whole section
+    // Keep the coarsest unit that still fits on a page whole - a whole section
     // first, then a whole project/item, falling back to inner blocks for anything
     // too tall to fit (e.g. the projects section). Document order lists coarser
     // units first, so the first crossing unit that fits is always the coarsest.
@@ -150,7 +150,7 @@ export function ResumeDocument() {
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
-    // first real content block following a section header — kept on the same page
+    // first real content block following a section header - kept on the same page
     // as the header so the title never lands alone at the bottom of a page. For
     // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
@@ -159,7 +159,7 @@ export function ResumeDocument() {
     };
 
     // push an element to the top of the next page so that its visible content
-    // lands at exactly GAP + PAGE_PAD below the boundary — regardless of which
+    // lands at exactly GAP + PAGE_PAD below the boundary - regardless of which
     // element type starts the page. `top` is the border-box top, and the element
     // only moves down by the spacer's height (its margin-top still applies on top
     // of the spacer, so margin must NOT be subtracted). Only the border-box-inner
@@ -180,7 +180,7 @@ export function ResumeDocument() {
       const els = Array.from(sheet.querySelectorAll(KEEP)) as HTMLElement[];
       for (const el of els) {
         const h = el.offsetHeight;
-        if (h > usable) continue; // too tall to keep whole — a finer unit handles it
+        if (h > usable) continue; // too tall to keep whole - a finer unit handles it
         const top = topInSheet(el, sheet);
         const pageIdx = Math.floor(top / pageH);
         const prevBoundary = pageIdx * pageH;

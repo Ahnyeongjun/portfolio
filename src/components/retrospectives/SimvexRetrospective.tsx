@@ -46,7 +46,7 @@ export function SimvexRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={GitBranch} title="Transform 충돌 방지 — 이중 그룹 구조">
+        <Section icon={GitBranch} title="Transform 충돌 방지 - 이중 그룹 구조">
           <p>
             3D 편집에서 문제가 하나 있었습니다.
             분해 애니메이션은 부품을 <Highlight>절대 위치</Highlight>로 이동시키고,
@@ -78,7 +78,7 @@ outerGroupRef.current.position.lerp(explodeTarget, 0.1);
           </p>
         </Section>
 
-        <Section icon={Server} title="SSE 스트리밍 AI 응답 — 타이핑 애니메이션">
+        <Section icon={Server} title="SSE 스트리밍 AI 응답 - 타이핑 애니메이션">
           <p>
             AI 어시스턴트는 <Highlight>SSE(Server-Sent Events)</Highlight>로 응답을 스트리밍합니다.
             백엔드에서 <code>text/event-stream</code> 형식으로 청크를 보내고,
@@ -125,10 +125,10 @@ while (true) {
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "Outer/Inner 이중 그룹 구조 — 두 변환 시스템이 충돌하지 않도록 계층을 나누는 설계 패턴",
-                "useFrame 기반 애니메이션 — React 렌더 사이클이 아닌 Three.js 렌더 루프에서 상태를 제어하는 방식",
-                "SSE 스트리밍 파싱 + 타이핑 애니메이션 — 수신과 표시를 분리하여 자연스러운 AI 응답 UX 구현",
-                "Zustand subscribe 패턴 — 상태 변화를 3D 씬에 직접 반영하는 브릿지 구조",
+                "Outer/Inner 이중 그룹 구조 - 두 변환 시스템이 충돌하지 않도록 계층을 나누는 설계 패턴",
+                "useFrame 기반 애니메이션 - React 렌더 사이클이 아닌 Three.js 렌더 루프에서 상태를 제어하는 방식",
+                "SSE 스트리밍 파싱 + 타이핑 애니메이션 - 수신과 표시를 분리하여 자연스러운 AI 응답 UX 구현",
+                "Zustand subscribe 패턴 - 상태 변화를 3D 씬에 직접 반영하는 브릿지 구조",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

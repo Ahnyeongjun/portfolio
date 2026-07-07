@@ -46,19 +46,19 @@ export function MapinRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Zap} title="Virtual Threads — 스레드 풀 한도를 없애다">
+        <Section icon={Zap} title="Virtual Threads - 스레드 풀 한도를 없애다">
           <p>
             분석 파이프라인은 URL 하나당 외부 API를 여러 번 호출합니다.
             처음에는 고정 크기 스레드 풀을 사용했는데, 동시 요청이 늘어나면
             풀이 고갈되어 대기가 발생했습니다.
           </p>
-          <CodeBlock>{`// 기존 — 고정 풀, 동시 요청 많으면 대기 발생
+          <CodeBlock>{`// 기존 - 고정 풀, 동시 요청 많으면 대기 발생
 @Bean
 ExecutorService pipelineExecutor() {
     return Executors.newFixedThreadPool(20);
 }
 
-// Java 21 Virtual Threads — URL당 가상 스레드 할당, 한도 없음
+// Java 21 Virtual Threads - URL당 가상 스레드 할당, 한도 없음
 @Bean
 ExecutorService pipelineExecutor() {
     return Executors.newVirtualThreadPerTaskExecutor();
@@ -75,7 +75,7 @@ ExecutorService pipelineExecutor() {
           </p>
         </Section>
 
-        <Section icon={Layers} title="3단계 캐싱 — GPT 호출을 0회로 줄이는 방법">
+        <Section icon={Layers} title="3단계 캐싱 - GPT 호출을 0회로 줄이는 방법">
           <p>
             동일한 URL이 재요청될 때마다 GPT를 호출하면 비용이 선형으로 늘어납니다.
             어디서 스킵할 수 있는지 분석해보니 세 단계로 나뉘었습니다.
@@ -110,18 +110,18 @@ if (!pool.isEmpty()) {
           </p>
         </Section>
 
-        <Section icon={Brain} title="배치 스코어링 — N개를 GPT 1회 호출로">
+        <Section icon={Brain} title="배치 스코어링 - N개를 GPT 1회 호출로">
           <p>
             반대 관점 후보를 검색하면 10~20개가 나옵니다.
             처음 설계는 후보마다 GPT를 1회씩 호출해 관점 점수를 매기는 방식이었는데,
             20개면 20번의 API 호출이 발생합니다.
           </p>
-          <CodeBlock>{`// 개별 호출 — 후보 N개면 GPT N번
+          <CodeBlock>{`// 개별 호출 - 후보 N개면 GPT N번
 for (Content candidate : candidates) {
     double score = gpt.scoreViewpoint(candidate); // N회
 }
 
-// 배치 스코어링 — 후보 전체를 JSON 배열로 묶어 1회 호출
+// 배치 스코어링 - 후보 전체를 JSON 배열로 묶어 1회 호출
 String prompt = buildBatchPrompt(candidates); // 전체 후보 직렬화
 List<ScoredContent> results = gpt.scoreBatch(prompt); // 1회`}</CodeBlock>
           <p>
@@ -135,19 +135,19 @@ List<ScoredContent> results = gpt.scoreBatch(prompt); // 1회`}</CodeBlock>
           </p>
         </Section>
 
-        <Section icon={GitMerge} title="CompletableFuture 병렬 검색 — 실패해도 결과를 버리지 않는 방법">
+        <Section icon={GitMerge} title="CompletableFuture 병렬 검색 - 실패해도 결과를 버리지 않는 방법">
           <p>
             반대관점 후보를 수집할 때 YouTube API와 Naver 검색 API를 동시에 호출합니다.
             처음엔 순차 호출로 구현했는데, 쿼리 2~3개 × 2개 API면 최대 6번의 직렬 호출이 되어
             레이턴시가 쌓였습니다.
           </p>
-          <CodeBlock>{`// 순차 호출 — 쿼리 N개 × API 2개 = 직렬 호출
+          <CodeBlock>{`// 순차 호출 - 쿼리 N개 × API 2개 = 직렬 호출
 for (String query : queries) {
     results.addAll(youtubeClient.search(query));
     results.addAll(naverClient.search(query));
 }
 
-// 병렬 호출 — 전체를 동시 실행, 각자 실패해도 빈 리스트로 계속
+// 병렬 호출 - 전체를 동시 실행, 각자 실패해도 빈 리스트로 계속
 List<CompletableFuture<List<Content>>> futures = queries.stream()
     .flatMap(q -> Stream.of(
         youtubeClient.searchAsync(q)
@@ -175,7 +175,7 @@ List<Content> candidates = CompletableFuture
           </p>
         </Section>
 
-        <Section icon={Database} title="2-Stage Embedding Retrieval — 벡터 유사도로 반대관점 후보 확보">
+        <Section icon={Database} title="2-Stage Embedding Retrieval - 벡터 유사도로 반대관점 후보 확보">
           <p>
             키워드 텍스트 매칭만으로는 주제는 비슷하지만 관점이 다른 콘텐츠를 찾기 어렵습니다.
             <Highlight>text-embedding-3-small</Highlight>로 각 키워드를 1536차원 벡터로 변환하고,
@@ -217,12 +217,12 @@ ORDER BY
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "Java 21 Virtual Threads — I/O 집약적 파이프라인에서 스레드 풀 한도 없이 동시성 확보",
-                "CompletableFuture 병렬 검색 — exceptionally()로 부분 실패를 허용하면서 전체 결과를 allOf로 병합",
-                "3단계 캐싱 설계 — 파이프라인 어느 단계부터 재사용 가능한지 분석해 GPT 호출 최소화",
-                "배치 스코어링 — N개 후보를 GPT 1회 호출로 처리해 레이턴시와 비용 동시 절감",
-                "pgvector 2-Stage Retrieval — 코사인 유사도로 주제 근접 50개 확보 후 viewpointScore로 메모리 필터링",
-                "synchronized pinning 이슈 — Virtual Threads 환경에서 피해야 할 패턴 체득",
+                "Java 21 Virtual Threads - I/O 집약적 파이프라인에서 스레드 풀 한도 없이 동시성 확보",
+                "CompletableFuture 병렬 검색 - exceptionally()로 부분 실패를 허용하면서 전체 결과를 allOf로 병합",
+                "3단계 캐싱 설계 - 파이프라인 어느 단계부터 재사용 가능한지 분석해 GPT 호출 최소화",
+                "배치 스코어링 - N개 후보를 GPT 1회 호출로 처리해 레이턴시와 비용 동시 절감",
+                "pgvector 2-Stage Retrieval - 코사인 유사도로 주제 근접 50개 확보 후 viewpointScore로 메모리 필터링",
+                "synchronized pinning 이슈 - Virtual Threads 환경에서 피해야 할 패턴 체득",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

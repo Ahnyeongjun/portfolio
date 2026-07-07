@@ -46,18 +46,18 @@ export function BooksightRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Database} title="초기 데이터 적재 — 기술 선택의 여정">
+        <Section icon={Database} title="초기 데이터 적재 - 기술 선택의 여정">
           <p>
             서비스 오픈 전에 문화데이터 CSV(25개 파일, 약 12만 건)를 DB에 밀어 넣어야 했습니다.
             단순해 보였지만, 세 가지 방법을 시도하고 모두 벽에 부딪혔습니다.
           </p>
           <p>
-            <Highlight>코루틴 시도</Highlight> — Book 저장과 BookAuthor 저장을 하나의 트랜잭션으로 묶어야 했는데,
+            <Highlight>코루틴 시도</Highlight> - Book 저장과 BookAuthor 저장을 하나의 트랜잭션으로 묶어야 했는데,
             코루틴 스코프에서는 Spring의 트랜잭션 컨텍스트가 전파되지 않았습니다.
             서로 다른 코루틴에서 동일 트랜잭션을 공유할 수 없어 원자성 보장이 불가능했고, 결국 포기했습니다.
           </p>
           <p>
-            <Highlight>JPA saveAll 시도</Highlight> — 편리해 보였지만, 멀티 프로세스 환경에서
+            <Highlight>JPA saveAll 시도</Highlight> - 편리해 보였지만, 멀티 프로세스 환경에서
             엔티티 충돌이 발생했고 대량 INSERT 성능도 기대 이하였습니다.
             JPA의 더티 체킹과 1차 캐시가 대량 적재 시나리오에서는 오히려 부담이 됐습니다.
           </p>
@@ -98,7 +98,7 @@ books.chunked(100).forEach { chunk ->
 }`}</CodeBlock>
         </Section>
 
-        <Section icon={Package} title="external 패키지 — CSV → 카카오 API → DB 파이프라인">
+        <Section icon={Package} title="external 패키지 - CSV → 카카오 API → DB 파이프라인">
           <p>
             외부 연동 코드를 <Highlight>external 패키지</Highlight>로 분리해서 관리한 것이 이번 프로젝트의 구조적 시도였습니다.
             카카오 API 클라이언트, 국립중앙도서관 클라이언트, CSV 적재 로더를 모두 external 아래에 두니
@@ -202,8 +202,8 @@ val orderSpecifier = OrderSpecifier(
               {[
                 "대량 적재 기술 비교 (코루틴 → JPA → JdbcTemplate) 끝에 상황에 맞는 도구 선택의 중요성",
                 "Spring Batch Reader-Processor-Writer 패턴과 실무적인 중복 실행 방지 전략",
-                "external 패키지로 외부 연동 책임 분리 — 파이프라인을 패키지 단위로 관리한 첫 경험",
-                "QueryDSL 도입 — 타입 안전한 동적 쿼리와 런타임 정렬 패턴 체득",
+                "external 패키지로 외부 연동 책임 분리 - 파이프라인을 패키지 단위로 관리한 첫 경험",
+                "QueryDSL 도입 - 타입 안전한 동적 쿼리와 런타임 정렬 패턴 체득",
                 "AOP + 이벤트 기반으로 검색 로그를 비침투적으로 수집하고 배치에 활용하는 구조 설계",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">

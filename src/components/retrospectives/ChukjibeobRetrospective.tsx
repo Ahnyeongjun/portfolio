@@ -46,20 +46,20 @@ export function ChukjibeobRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Server} title="Feign Client — RestTemplate을 대체하다">
+        <Section icon={Server} title="Feign Client - RestTemplate을 대체하다">
           <p>
             이전 프로젝트(Booksight)에서는 외부 API 연동을 <Highlight>RestTemplate</Highlight>으로 직접 구현했습니다.
             URL 조합, 헤더 설정, 응답 파싱을 모두 직접 작성했는데,
             이 프로젝트 코드를 보면서 <Highlight>Feign Client</Highlight>를 처음 접했습니다.
           </p>
-          <CodeBlock>{`// RestTemplate — 직접 구현
+          <CodeBlock>{`// RestTemplate - 직접 구현
 String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
     .queryParam("serviceKey", key)
     .queryParam("pageNo", page)
     .build().toUriString();
 restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
-// Feign Client — 인터페이스 선언만으로 끝
+// Feign Client - 인터페이스 선언만으로 끝
 @FeignClient(url = "http://apis.data.go.kr/...")
 interface TourApiClient {
     @GetMapping("/searchFestival2")
@@ -76,7 +76,7 @@ interface TourApiClient {
           </p>
         </Section>
 
-        <Section icon={Layers} title="Tour API 파싱 — 응답 타입이 개수에 따라 달라진다">
+        <Section icon={Layers} title="Tour API 파싱 - 응답 타입이 개수에 따라 달라진다">
           <p>
             Tour API에는 독특한 특성이 있습니다. 결과가 여러 개면 <Highlight>List</Highlight>로,
             1개면 <Highlight>Map</Highlight>으로 응답이 옵니다.
@@ -111,20 +111,20 @@ List<FestivalDto> searchFestival2(...);`}</CodeBlock>
           </p>
         </Section>
 
-        <Section icon={GitBranch} title="Chunk vs Tasklet — Spring Batch의 정석">
+        <Section icon={GitBranch} title="Chunk vs Tasklet - Spring Batch의 정석">
           <p>
             이 프로젝트 배치 코드에는 <Highlight>Tasklet</Highlight>과 <Highlight>Chunk</Highlight> 방식이
             함께 선언되어 있었습니다. 처음엔 Tasklet으로 구현했다가 Chunk로 전환한 흔적으로 보였는데,
             둘의 차이를 정리해봤습니다.
           </p>
-          <CodeBlock>{`// Tasklet — 하나의 트랜잭션에서 전체 처리
+          <CodeBlock>{`// Tasklet - 하나의 트랜잭션에서 전체 처리
 // 중간에 실패하면 처음부터 다시
 return (contribution, chunkContext) -> {
     processor.processFestivalBatch(startDate, endDate, pageSize);
     return RepeatStatus.FINISHED;
 };
 
-// Chunk — 10개씩 잘라서 트랜잭션
+// Chunk - 10개씩 잘라서 트랜잭션
 // 중간 실패 시 해당 청크만 롤백, 완료된 청크는 보존
 StepBuilder.chunk(10, transactionManager)
     .reader(reader)
@@ -148,9 +148,9 @@ StepBuilder.chunk(10, transactionManager)
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "Feign Client — 인터페이스 선언만으로 외부 API 클라이언트를 만드는 선언적 방식",
-                "공공 API의 비일관적인 응답 구조 대응 — ACCEPT_SINGLE_VALUE_AS_ARRAY 설정",
-                "Chunk vs Tasklet — 대량 데이터 배치에서 Chunk가 정석인 이유",
+                "Feign Client - 인터페이스 선언만으로 외부 API 클라이언트를 만드는 선언적 방식",
+                "공공 API의 비일관적인 응답 구조 대응 - ACCEPT_SINGLE_VALUE_AS_ARRAY 설정",
+                "Chunk vs Tasklet - 대량 데이터 배치에서 Chunk가 정석인 이유",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

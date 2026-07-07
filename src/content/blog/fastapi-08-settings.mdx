@@ -15,7 +15,7 @@ seriesOrder: 8
 7편 `core/config.py`를 다시 보자.
 
 ```python
-# app/core/config.py (7편 — 나쁜 예)
+# app/core/config.py (7편 - 나쁜 예)
 SECRET_KEY = "your-secret-key-change-this-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -23,9 +23,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 이 코드에는 두 가지 문제가 있다.
 
-**보안 문제** — `SECRET_KEY`가 소스코드에 박혀 있으면 GitHub에 올리는 순간 전 세계에 공개된다. JWT 서명 키가 노출되면 누구든 유효한 토큰을 위조할 수 있다.
+**보안 문제** - `SECRET_KEY`가 소스코드에 박혀 있으면 GitHub에 올리는 순간 전 세계에 공개된다. JWT 서명 키가 노출되면 누구든 유효한 토큰을 위조할 수 있다.
 
-**환경별 분리 불가** — 개발 DB와 프로덕션 DB 주소가 다른데, 코드에 하드코딩하면 배포할 때마다 코드를 수정해야 한다.
+**환경별 분리 불가** - 개발 DB와 프로덕션 DB 주소가 다른데, 코드에 하드코딩하면 배포할 때마다 코드를 수정해야 한다.
 
 ```
 개발 환경  DATABASE_URL = "postgresql://localhost/dev_db"
@@ -75,7 +75,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 DEBUG=false
 ```
 
-## core/config.py — pydantic-settings로 재작성
+## core/config.py - pydantic-settings로 재작성
 
 ```python
 # app/core/config.py
@@ -117,10 +117,10 @@ def get_settings() -> Settings:
 `get_settings()`를 호출할 때마다 `.env` 파일을 다시 읽으면 낭비다. `@lru_cache`는 첫 호출 결과를 캐시해서 이후 호출은 즉시 반환한다.
 
 ```python
-# 첫 호출 — .env 파일 읽기 발생
+# 첫 호출 - .env 파일 읽기 발생
 settings = get_settings()
 
-# 이후 호출 — 캐시에서 반환 (파일 읽기 없음)
+# 이후 호출 - 캐시에서 반환 (파일 읽기 없음)
 settings = get_settings()
 ```
 

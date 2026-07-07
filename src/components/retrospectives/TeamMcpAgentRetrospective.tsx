@@ -143,7 +143,7 @@ export function TeamMcpAgentRetrospective({ description }: { description?: strin
 
         {/* 1. 엑셀 XML */}
         <AccordionSection
-          title="엑셀 서식 100% 보존 — zipfile + XML 직접 조작"
+          title="엑셀 서식 100% 보존 - zipfile + XML 직접 조작"
           hint="openpyxl 서식 손실 → ElementTree로 셀 직접 주입"
         >
           <p>
@@ -208,7 +208,7 @@ def inject_cells(template_path, out_path, cell_map: dict):
             <Highlight>부분 일치</Highlight>로 선택하도록 했습니다.
           </p>
           <CodeBlock>{`async def fill_hrweb(page, date: str, project_keyword: str, hours: float):
-    # 월 선택 드롭다운 — 부분 일치
+    # 월 선택 드롭다운 - 부분 일치
     await page.select_option("select#month", label=re.compile(date[:7]))
     await asyncio.sleep(0.8)  # Blazor 재렌더링 대기
 
@@ -217,7 +217,7 @@ def inject_cells(template_path, out_path, cell_map: dict):
     await row.click()
     await asyncio.sleep(0.5)
 
-    # 프로젝트 셀렉터 — 키워드 부분 일치
+    # 프로젝트 셀렉터 - 키워드 부분 일치
     await page.select_option(
         "select#project",
         label=re.compile(project_keyword, re.IGNORECASE)

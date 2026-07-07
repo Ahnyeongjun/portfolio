@@ -1,5 +1,5 @@
 ---
-title: "Kotlin 특성 — 면접 대비 정리"
+title: "Kotlin 특성 - 면접 대비 정리"
 description: "Java와의 차이점, Null Safety, 데이터 클래스, 확장 함수, 코루틴, Spring Boot에서 Kotlin 사용 패턴까지 정리한다."
 date: "2026-04-02"
 category: "Kotlin"
@@ -134,7 +134,7 @@ fun handleResult(result: ApiResult<User>) {
         is ApiResult.Success -> println("사용자: ${result.data.name}")
         is ApiResult.Error -> println("오류 ${result.code}: ${result.message}")
         ApiResult.Loading -> println("로딩 중...")
-        // else 없어도 됨 — 컴파일러가 모든 케이스 확인
+        // else 없어도 됨 - 컴파일러가 모든 케이스 확인
     }
 }
 ```
@@ -165,8 +165,8 @@ lifecycleScope.launch {
 
 ```kotlin
 Dispatchers.Main       // 메인 스레드 (Android UI)
-Dispatchers.IO         // I/O 작업 (파일, 네트워크, DB) — 스레드 풀
-Dispatchers.Default    // CPU 집약 작업 — CPU 코어 수만큼 스레드
+Dispatchers.IO         // I/O 작업 (파일, 네트워크, DB) - 스레드 풀
+Dispatchers.Default    // CPU 집약 작업 - CPU 코어 수만큼 스레드
 Dispatchers.Unconfined // 제약 없음 (특수 케이스)
 ```
 

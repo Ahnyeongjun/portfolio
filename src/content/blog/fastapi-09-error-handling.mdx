@@ -32,9 +32,9 @@ def create_user(self, ...):
 
 두 가지 문제가 있다.
 
-**클라이언트가 원인을 모른다** — 이메일 중복인지, DB 오류인지, 코드 버그인지 구분이 안 된다.
+**클라이언트가 원인을 모른다** - 이메일 중복인지, DB 오류인지, 코드 버그인지 구분이 안 된다.
 
-**에러 응답 형식이 제각각이다** — `HTTPException`은 `{"detail": "..."}`, `ValueError`는 500, 없는 엔드포인트는 또 다른 형식이다. 프론트엔드가 에러를 파싱하기 어렵다.
+**에러 응답 형식이 제각각이다** - `HTTPException`은 `{"detail": "..."}`, `ValueError`는 500, 없는 엔드포인트는 또 다른 형식이다. 프론트엔드가 에러를 파싱하기 어렵다.
 
 목표는 모든 에러를 아래 형식으로 통일하는 것이다.
 
@@ -60,27 +60,27 @@ class AppException(HTTPException):
         self.message = message
         self.detail = detail
 
-# 400 — 잘못된 요청
+# 400 - 잘못된 요청
 class BadRequestException(AppException):
     def __init__(self, message: str, code: str = "BAD_REQUEST", detail=None):
         super().__init__(400, code, message, detail)
 
-# 401 — 인증 실패
+# 401 - 인증 실패
 class UnauthorizedException(AppException):
     def __init__(self, message: str = "인증이 필요합니다", code: str = "UNAUTHORIZED"):
         super().__init__(401, code, message)
 
-# 403 — 권한 없음
+# 403 - 권한 없음
 class ForbiddenException(AppException):
     def __init__(self, message: str = "접근 권한이 없습니다", code: str = "FORBIDDEN"):
         super().__init__(403, code, message)
 
-# 404 — 리소스 없음
+# 404 - 리소스 없음
 class NotFoundException(AppException):
     def __init__(self, message: str, code: str = "NOT_FOUND"):
         super().__init__(404, code, message)
 
-# 409 — 충돌 (이미 존재)
+# 409 - 충돌 (이미 존재)
 class ConflictException(AppException):
     def __init__(self, message: str, code: str = "CONFLICT"):
         super().__init__(409, code, message)
@@ -154,7 +154,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """처리되지 않은 예외 — 500"""
+    """처리되지 않은 예외 - 500"""
     # 실제 서비스에서는 Sentry 같은 도구로 여기서 에러를 수집한다
     return JSONResponse(
         status_code=500,
@@ -220,7 +220,7 @@ class UserService:
 ## 에러 응답 예시
 
 ```json
-// POST /users — 이미 존재하는 이메일
+// POST /users - 이미 존재하는 이메일
 // HTTP 409
 {
   "code": "USER_ALREADY_EXISTS",
@@ -228,7 +228,7 @@ class UserService:
   "detail": null
 }
 
-// POST /users — 이메일 형식 오류
+// POST /users - 이메일 형식 오류
 // HTTP 422
 {
   "code": "VALIDATION_ERROR",

@@ -46,7 +46,7 @@ export function WithingRetrospective() {
       <h2 className="text-2xl font-bold text-foreground mb-6">프로젝트 회고</h2>
       <div className="space-y-5">
 
-        <Section icon={Server} title="Next.js API Route — 프록시로 쓰다">
+        <Section icon={Server} title="Next.js API Route - 프록시로 쓰다">
           <p>
             프론트엔드에서 백엔드와 AI 서버를 직접 호출하면 두 가지 문제가 생깁니다.
             하나는 <Highlight>CORS</Highlight>이고, 다른 하나는 <Highlight>Authorization 헤더</Highlight> 관리입니다.
@@ -82,7 +82,7 @@ fetch("/api/recommend/dress", { method: "POST", body: ... })`}</CodeBlock>
           </p>
         </Section>
 
-        <Section icon={Database} title="SHA256 해시 캐싱 — 540가지 조합을 미리 쌓다">
+        <Section icon={Database} title="SHA256 해시 캐싱 - 540가지 조합을 미리 쌓다">
           <p>
             드레스 추천 로직은 <Highlight>체형</Highlight>과 <Highlight>스타일 선호도</Highlight> 조합에 따라
             GPT-4에게 프롬프트를 보내고 결과를 반환하는 구조입니다.
@@ -119,7 +119,7 @@ db.execute("INSERT INTO dress_cache (cache_key, result) VALUES (%s, %s)",
           </p>
         </Section>
 
-        <Section icon={Layers} title="웨딩홀 추천 — SQL 동적 쿼리와 조건 완화 폴백">
+        <Section icon={Layers} title="웨딩홀 추천 - SQL 동적 쿼리와 조건 완화 폴백">
           <p>
             웨딩홀 추천은 GPT-4 대신 <Highlight>SQL 동적 쿼리 빌더</Highlight>로 구현했습니다.
             예산, 지역, 수용 인원, 분위기 등 여러 필터 조건을 조합하여 DB에서 직접 조회하는 방식입니다.
@@ -170,11 +170,11 @@ def recommend_halls(filters: dict):
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
             <ul className="space-y-2 ml-1">
               {[
-                "Next.js API Route 프록시 패턴 — CORS 우회와 인증 헤더 중앙화를 동시에 해결하는 구조",
-                "SHA256 해시 기반 MySQL 캐싱 — 동일 조합 재호출을 DB 조회로 대체하여 LLM 비용 절감",
-                "SQL 동적 쿼리 + 조건 완화 폴백 — 구조화된 데이터에는 LLM보다 SQL이 적합함을 직접 확인",
-                "DALL-E 2 + Paramiko SSH 파이프라인 — 이미지 생성부터 서버 업로드까지 자동화",
-                "PM 역할 병행 — IA 설계와 WBS 관리를 직접 해보며 기획자의 시각으로 개발 우선순위 조정 경험",
+                "Next.js API Route 프록시 패턴 - CORS 우회와 인증 헤더 중앙화를 동시에 해결하는 구조",
+                "SHA256 해시 기반 MySQL 캐싱 - 동일 조합 재호출을 DB 조회로 대체하여 LLM 비용 절감",
+                "SQL 동적 쿼리 + 조건 완화 폴백 - 구조화된 데이터에는 LLM보다 SQL이 적합함을 직접 확인",
+                "DALL-E 2 + Paramiko SSH 파이프라인 - 이미지 생성부터 서버 업로드까지 자동화",
+                "PM 역할 병행 - IA 설계와 WBS 관리를 직접 해보며 기획자의 시각으로 개발 우선순위 조정 경험",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />

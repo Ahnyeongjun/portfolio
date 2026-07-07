@@ -95,7 +95,7 @@ export function InopsRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">단일 요청 응답시간 — 수정 전후 비교</h3>
+        <h3 className="text-lg font-bold text-foreground">단일 요청 응답시간 - 수정 전후 비교</h3>
         <Table
           headers={["API", "수정 전", "수정 후", "개선율", "원인"]}
           rows={[
@@ -108,7 +108,7 @@ export function InopsRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">원인 1 — 페이징 미적용과 공간 연산 무조건 실행</h3>
+        <h3 className="text-lg font-bold text-foreground">원인 1 - 페이징 미적용과 공간 연산 무조건 실행</h3>
         <p>
           목록 조회 API는 컨트롤러에서 페이지 번호·크기 기본값을 설정하지 않아
           PageHelper가 동작하지 않았습니다. 결과적으로 <Highlight>13,018건 전수 조회</Highlight> 후
@@ -123,7 +123,7 @@ export function InopsRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">원인 2 — 대용량 이진 컬럼을 목록 쿼리에 포함</h3>
+        <h3 className="text-lg font-bold text-foreground">원인 2 - 대용량 이진 컬럼을 목록 쿼리에 포함</h3>
         <p>
           알림 목록 API는 건별로 수십 MB에 달하는 base64 인코딩 PNG 이미지를
           담는 컬럼이 <Highlight>목록 쿼리의 SELECT 절에 포함</Highlight>되어 있었습니다.
@@ -137,7 +137,7 @@ export function InopsRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">k6 동시 부하 테스트 — 장애 패턴 재현과 해소</h3>
+        <h3 className="text-lg font-bold text-foreground">k6 동시 부하 테스트 - 장애 패턴 재현과 해소</h3>
         <p>
           수정 전, 알림 API가 25초씩 응답하면서 동시 사용자 30명 수준에서
           <Highlight>HikariCP 커넥션 30개를 모두 점유</Highlight>했습니다.
@@ -179,7 +179,7 @@ export function InopsRetrospective() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-foreground">제약 환경 배포 — WAR 직접 패치</h3>
+        <h3 className="text-lg font-bold text-foreground">제약 환경 배포 - WAR 직접 패치</h3>
         <p>
           내부망 환경이라 Maven Nexus에 접근할 수 없어 일반적인 빌드·배포 파이프라인을
           사용할 수 없었습니다. .NET의 ZipArchive API를 활용해
