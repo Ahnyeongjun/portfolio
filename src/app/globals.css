@@ -903,6 +903,17 @@ code, pre {
 .pf-blog-cat-pill.active { background: var(--pf-ac-soft); border-color: var(--pf-ac-line); color: var(--pf-ac); font-weight: 600; }
 
 .pf-blog-list { display: flex; flex-direction: column; gap: 10px; max-width: 760px; }
+.pf-blog-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 700; color: var(--pf-text);
+  margin: 26px 0 8px; padding-top: 20px; border-top: 1px solid var(--pf-bdr);
+}
+.pf-blog-section-title:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.pf-blog-section-count {
+  font-size: 12px; font-weight: 600; background: var(--pf-bg-soft);
+  color: var(--pf-text-mute); border-radius: 20px; padding: 2px 9px;
+}
+#portfolio-page[data-blog-layout="grid"] .pf-blog-section-title { grid-column: 1 / -1; }
 
 .pf-blog-card {
   display: block; text-decoration: none;
@@ -937,7 +948,12 @@ code, pre {
 .pf-blog-time { display: flex; align-items: center; gap: 4px; font-family: var(--font-family-mono); font-size: 11px; color: var(--pf-text-mute); white-space: nowrap; flex-shrink: 0; }
 
 .pf-series-card { background: var(--pf-surface); border: 1px solid var(--pf-bdr); border-radius: 16px; overflow: hidden; max-width: 760px; }
-.pf-series-head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; background: var(--pf-bg-soft); border-bottom: 1px solid var(--pf-bdr); color: var(--pf-ac); }
+.pf-series-head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; background: var(--pf-bg-soft); color: var(--pf-ac); cursor: pointer; user-select: none; list-style: none; }
+.pf-series-head::-webkit-details-marker { display: none; }
+.pf-series-head:hover { background: var(--pf-surface-2, var(--pf-bg-soft)); }
+.pf-series-card[open] > .pf-series-head { border-bottom: 1px solid var(--pf-bdr); }
+.pf-series-toggle { color: var(--pf-text-mute); flex-shrink: 0; transition: transform 0.2s var(--pf-ease); }
+.pf-series-card[open] > .pf-series-head .pf-series-toggle { transform: rotate(180deg); }
 .pf-series-name { font-size: 14px; font-weight: 700; color: var(--pf-text); flex: 1; }
 .pf-series-count { font-size: 12px; font-weight: 600; background: var(--pf-ac-soft); color: var(--pf-ac); border-radius: 20px; padding: 2px 10px; }
 .pf-series-posts { padding: 6px 0; }

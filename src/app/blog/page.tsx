@@ -18,6 +18,8 @@ export const metadata = {
 export default function BlogPage() {
   const items = getBlogListItems();
   const categories = getCategories();
+  const seriesItems = items.filter((i): i is Extract<typeof i, { type: "series" }> => i.type === "series");
+  const postItems = items.filter((i): i is Extract<typeof i, { type: "post" }> => i.type === "post");
 
   return (
     <BlogShell>
@@ -42,12 +44,25 @@ export default function BlogPage() {
 
           {items.length > 0 ? (
             <div className="pf-blog-list">
-              {items.map((item) =>
-                item.type === "series" ? (
-                  <SeriesCard key={`series-${item.series.name}`} series={item.series} />
-                ) : (
-                  <BlogCard key={item.post.slug} {...item.post} />
-                )
+              {seriesItems.length > 0 && (
+                <>
+                  <h2 className="pf-blog-section-title">
+                    시리즈<span className="pf-blog-section-count">{seriesItems.length}</span>
+                  </h2>
+                  {seriesItems.map((item) => (
+                    <SeriesCard key={`series-${item.series.name}`} series={item.series} />
+                  ))}
+                </>
+              )}
+              {postItems.length > 0 && (
+                <>
+                  <h2 className="pf-blog-section-title">
+                    낱개 글<span className="pf-blog-section-count">{postItems.length}</span>
+                  </h2>
+                  {postItems.map((item) => (
+                    <BlogCard key={item.post.slug} {...item.post} />
+                  ))}
+                </>
               )}
             </div>
           ) : (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight, ChevronDown } from "lucide-react";
 
 interface SeriesPost {
   slug: string;
@@ -16,12 +16,13 @@ interface SeriesCardProps {
 
 export function SeriesCard({ series }: SeriesCardProps) {
   return (
-    <div className="pf-series-card">
-      <div className="pf-series-head">
+    <details className="pf-series-card">
+      <summary className="pf-series-head">
         <BookOpen size={14} />
         <span className="pf-series-name">{series.name}</span>
         <span className="pf-series-count">{series.posts.length}편</span>
-      </div>
+        <ChevronDown size={16} className="pf-series-toggle" />
+      </summary>
       <div className="pf-series-posts">
         {series.posts.map((post, i) => (
           <Link key={post.slug} href={`/blog/${post.slug}`} className="pf-series-post">
@@ -31,6 +32,6 @@ export function SeriesCard({ series }: SeriesCardProps) {
           </Link>
         ))}
       </div>
-    </div>
+    </details>
   );
 }
