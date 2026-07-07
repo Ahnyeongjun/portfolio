@@ -1,5 +1,13 @@
 import React from 'react';
 
+function CodeBlock({ children }: { children: string }) {
+  return (
+    <pre className="bg-muted/50 border border-border rounded-lg p-4 overflow-x-auto text-sm leading-relaxed font-mono text-foreground">
+      {children}
+    </pre>
+  );
+}
+
 function Highlight({ children }: { children: React.ReactNode }) {
   return (
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
@@ -133,11 +141,14 @@ export function InsopsRetrospective() {
 
       {/* 도입부 */}
       <p>
-        다종 위성영상을 판독·변화탐지하는 국가보안기관 대상 플랫폼(INSOPS)입니다.
+        INSOPS는 국가보안기관이 위성영상을 수집·판독해 정식 보고서로 만들어내는 시스템입니다.
+        분석관은 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 주석을 달아 판독보고서를
+        작성하고, 완성된 보고서를 정부 표준 문서(HWP)로 내려받습니다.
+      </p>
+      <p>
         Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module) 구조이며,
-        프론트엔드(inops-cms/inops-das)와 API(inops-api-svr)를 2022.05~2024.05 약 2년간
-        담당하며 판독보고서·AOI 관리·촬영계획·변화탐지 등 분석관이 매일 쓰는 기능을
-        end-to-end로 구현했습니다.
+        이 중 프론트엔드(inops-cms/inops-das)와 API(inops-api-svr)를 2022.05~2024.05 약
+        2년간 담당하며 분석관이 매일 쓰는 화면을 end-to-end로 구현했습니다.
       </p>
 
       <div className="space-y-2">
@@ -179,23 +190,25 @@ export function InsopsRetrospective() {
         >
           <p>
             화면은 일반 단일 뷰 외에도 스와이프 비교, 시계열분석, 변화탐지(TCD) 등 여러
-            <Highlight>모드</Highlight>로 동작했고, 상단 툴바·좌측 패널 같은 공통 컴포넌트는
-            어떤 모드에서 호출됐는지에 따라 동작을 다르게 처리해야 했습니다. 모드 정보가
-            호출부마다 일관되게 전달되지 않아, 같은 함수라도 상황에 따라 다르게 동작하거나
-            아예 정보가 유실되는 문제가 여러 곳에서 반복됐습니다.
+            <Highlight>모드</Highlight>로 동작했습니다. 상단 툴바나 좌측 패널처럼 여러 모드에서
+            공통으로 쓰이는 컴포넌트가 "지금 어떤 모드인지"를 스스로 판단할 수 있어야, 모드마다
+            다르게 동작해야 하는 부분을 한 코드베이스 안에서 처리할 수 있었습니다.
           </p>
-          <CompareTable
-            headers={["위치", "문제", "처리 방식"]}
-            rows={[
-              { cells: ["시계열분석 전환 함수", "호출부에 따라 modeId를 안 넘기는 경우 존재", "진입 시점 모드를 baseModeId로 기억해두고 폴백, 탭 이탈 시 초기화"], highlight: true },
-              { cells: ["시계열 패널 배치 로직", "변화탐지(TCD) 모드와 일반 다중비교 모드가 같은 배치 함수를 씀", "isTcdTsAnl 플래그로 분기해 TCD는 전/후 페어링, 일반은 날짜순 배치"], highlight: true },
-              { cells: ["상단 툴바 버튼", "스와이프·시계열 분할 화면에서는 메인 지도 하나만 반응", "getMode()로 현재 모드 확인 후 해당 모드의 분할 화면에도 동일 커맨드 전달"], highlight: true },
-            ]}
-          />
           <p>
-            각 사례는 다루는 화면도, 고쳐야 하는 파일도 달랐지만 근본적으로는 같은 문제였습니다
-            — 여러 모드가 공존하는 화면에서 공통 코드가 &ldquo;지금 어떤 모드인지&rdquo;를
-            안정적으로 알 수 있어야 한다는 것이었습니다.
+            현재 모드는 <code>api.getMode()</code>로 어디서든 조회할 수 있게 해뒀습니다. 상단
+            툴바는 이 값을 확인해, 스와이프·시계열분석처럼 화면이 여러 iframe으로 쪼개지는
+            모드에서는 활성화된 iframe 각각에 같은 커맨드를 전달하고, 일반 모드에서는 메인 지도
+            하나만 제어하도록 분기했습니다. 같은 이유로 시계열 패널 배치 로직도 변화탐지(TCD)
+            모드 여부를 나타내는 <code>isTcdTsAnl</code> 플래그로 분기해, TCD 모드에서는
+            선택한 영상의 이전 시점을 자동으로 매칭해 전/후로 배치하고 일반 모드에서는 촬영일
+            순으로 배치했습니다.
+          </p>
+          <p>
+            <code>getMode()</code> 하나로 전역 모드는 조회할 수 있었지만, 함수 호출 시점마다
+            모드를 명시적으로 넘기지 않는 호출부도 있었습니다. 시계열분석 화면 전환 함수는 이런
+            경우에 대비해 진입 시점의 모드를 <code>baseModeId</code>로 컴포넌트 안에 따로
+            기억해두고, 호출부가 모드를 안 넘기면 그 값으로 폴백하도록 했습니다. 탭을 벗어나면
+            이 값을 초기화해, 다음에 다시 들어왔을 때 이전 모드가 잘못 남아있지 않게 했습니다.
           </p>
         </AccordionSection>
 
@@ -207,23 +220,51 @@ export function InsopsRetrospective() {
         >
           <p>
             판독보고서는 분석관이 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 화살표·텍스트로
-            주석을 달고, 여러 페이지에 걸쳐 의견을 작성해 최종적으로 <Highlight>HWP</Highlight>
-            (정부 표준 문서 포맷) 파일로 내려받는 기능입니다. 각 페이지는 그 시점의 3D globe 화면을
-            그대로 캡처해 <code>screenshot.background</code>로 저장하고, 이 이미지가 HWP 문서의
-            페이지 배경으로 삽입됩니다. 즉 카메라가 어디를 보고 있느냐가 곧 보고서에 박제되는
-            내용이라, 화면 상태를 정확히 제어하는 것 자체가 기능의 핵심이었습니다.
+            주석을 다는 기능입니다. 여러 페이지에 걸쳐 의견을 작성해, 최종적으로
+            <Highlight>HWP</Highlight>(정부 표준 문서 포맷) 파일로 내려받습니다.
           </p>
-          <CompareTable
-            headers={["다룬 문제", "CesiumJS 구현"]}
-            rows={[
-              { cells: ["뷰 북마크·복귀", "computeViewRectangle로 위경도 사각 범위 계산 후 flag/load"], highlight: true },
-              { cells: ["rect 계산 실패 대비", "화면 좌상단·우하단 픽셀을 pickEllipsoid로 직접 투영해 역산"] },
-              { cells: ["날짜변경선 통과 뷰", "서쪽 경도 > 동쪽 경도일 때 동쪽에 360도 보정"] },
-              { cells: ["표적 좌표 추출", "화면 좌표 → cartographic 변환 후 위경도로 저장"] },
-              { cells: ["화살표·텍스트 주석", "Cesium 엔티티(Polyline/Label)로 렌더링, 선 두께 소수점 조정"] },
-              { cells: ["줌 레벨 대응", "줌 변경 시에도 텍스트 엔티티가 사라지지 않도록 처리"] },
-            ]}
-          />
+          <p>
+            각 페이지는 그 시점의 3D globe 화면을 그대로 캡처해 <code>screenshot.background</code>로
+            저장하고, 이 이미지가 HWP 문서의 페이지 배경으로 삽입됩니다.
+          </p>
+          <p>
+            즉 카메라가 어디를 보고 있느냐가 곧 보고서에 박제되는 내용이라, 화면 상태를 정확히
+            제어하는 것 자체가 기능의 핵심이었습니다.
+          </p>
+          <p>
+            현재 카메라가 보는 영역을 위경도 사각 범위로 계산해 북마크(<code>flag</code>)해두고,
+            원할 때 그 뷰로 그대로 복귀(<code>load</code>)할 수 있게 한 함수입니다.
+            <code>computeViewRectangle</code>이 값을 못 돌려주는 경우(카메라가 지구본 바깥을
+            향할 때 등)를 대비해 화면 좌상단·우하단 픽셀을 직접 타원체에 투영해 역산하는
+            폴백을 넣었고, 날짜변경선을 넘는 뷰(서쪽 경도가 동쪽 경도보다 큰 경우)도 보정했습니다.
+          </p>
+          <CodeBlock>{`api.getRect = function(){
+    var rect = viewer.camera.computeViewRectangle(viewer.scene.globe.ellipsoid, new Cesium.Rectangle());
+    if(rect == undefined){
+        // computeViewRectangle 실패 시: 화면 좌상단·우하단 픽셀을 타원체에 직접 투영
+        var leftTop = viewer.scene.camera.pickEllipsoid(new Cesium.Cartesian2(0, 0), viewer.scene.globe.ellipsoid);
+        var rightDown = viewer.scene.camera.pickEllipsoid(
+            new Cesium.Cartesian2(viewer.scene.canvas.width, viewer.scene.canvas.height),
+            viewer.scene.globe.ellipsoid
+        );
+        leftTop = viewer.scene.globe.ellipsoid.cartesianToCartographic(leftTop);
+        rightDown = viewer.scene.globe.ellipsoid.cartesianToCartographic(rightDown);
+        rect = new Cesium.Rectangle(leftTop.longitude, rightDown.latitude, rightDown.longitude, leftTop.latitude);
+    }
+    var west = Number(Cesium.Math.toDegrees(rect.west).toFixed(5));
+    var south = Number(Cesium.Math.toDegrees(rect.south).toFixed(5));
+    var east = Number(Cesium.Math.toDegrees(rect.east).toFixed(5));
+    var north = Number(Cesium.Math.toDegrees(rect.north).toFixed(5));
+
+    if(west > east) east = 360 + east;  // 날짜변경선 통과 보정
+
+    return {"west":west, "south":south, "east":east, "north":north};
+};`}</CodeBlock>
+          <p>
+            이 위에 화살표·텍스트 주석은 Cesium 엔티티(Polyline·Label)로 렌더링해 선 두께를
+            소수점 단위까지 조정할 수 있게 했고, 줌 레벨이 바뀌어도 텍스트 엔티티가 사라지지
+            않도록 처리했습니다.
+          </p>
         </AccordionSection>
 
         {/* 4. 컴포넌트 매니저 */}
