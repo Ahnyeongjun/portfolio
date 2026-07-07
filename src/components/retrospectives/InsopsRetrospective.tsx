@@ -148,7 +148,9 @@ export function InsopsRetrospective() {
       <p>
         Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module) 구조이며,
         이 중 프론트엔드(inops-cms/inops-das)와 API(inops-api-svr)를 2022.05~2024.05 약
-        2년간 담당하며 분석관이 매일 쓰는 화면을 end-to-end로 구현했습니다.
+        2년간 담당하며 분석관이 매일 쓰는 화면을 end-to-end로 구현했습니다. 테이블 수가 많은
+        프로젝트 특성상, DB 스키마를 읽어 MyBatis mapper·entity 코드를 자동 생성해주는 도구도
+        팀 내부적으로 갖추고 있었습니다.
       </p>
 
       <div className="space-y-2">
