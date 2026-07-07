@@ -210,6 +210,23 @@ export function InsopsRetrospective() {
             기억해두고, 호출부가 모드를 안 넘기면 그 값으로 폴백하도록 했습니다. 탭을 벗어나면
             이 값을 초기화해, 다음에 다시 들어왔을 때 이전 모드가 잘못 남아있지 않게 했습니다.
           </p>
+          <p>
+            스와이프·시계열분석처럼 화면을 여러 패널로 쪼개는 모드에서는 패널마다 독립된
+            <code>iframe</code>을 띄웠는데, 같은 화면 안에 <Highlight>같은 URL을 가리키는
+            iframe을 N개</Highlight> 만들고 <code>id</code>·<code>unitIdx</code> 속성만
+            다르게 부여해 서로 구분했습니다. 각 iframe은 로드되면 자신의 <code>id</code>·
+            <code>unitIdx</code>를 읽어 &ldquo;나는 몇 번째 패널인지&rdquo;를 파악하고, 부모
+            창에 <code>getModeId</code>를 요청해 자신이 속한 모드와 세부 설정을 받아옵니다.
+          </p>
+          <CodeBlock>{`// ui-cesium.js — 스와이프 2분할 iframe 생성 (동일 src, id/unitIdx로만 구분)
+tmplt += '<iframe id="iframeCesium0" unitIdx="0" src="' + ins.contextName + '/swipe/unitScrn.do" ...></iframe>';
+tmplt += '<iframe id="iframeCesium1" unitIdx="1" src="' + ins.contextName + '/swipe/unitScrn.do" ...></iframe>';
+
+// swipeUnitScrn.js — 각 iframe이 자기 자신의 속성을 읽어 식별
+let unitPageId = window.frameElement.getAttribute('id');
+let unitIdx = parseInt(window.frameElement.getAttribute('unitIdx'));
+// 부모 컴포넌트에 자신의 모드 정보를 요청
+ins.comp.execute('topComp', 'getModeId', {"pageId": unitPageId, "fnName": "setModeId"});`}</CodeBlock>
         </AccordionSection>
 
         {/* 3. 판독보고서 — CesiumJS 기반 보고서 저작 */}
