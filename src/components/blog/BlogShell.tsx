@@ -16,7 +16,7 @@ const THEMES: { id: BlogTheme; label: string; accent: string }[] = [
 
 export function BlogShell({ children }: { children: React.ReactNode }) {
   const [theme,   setThemeState]  = useState<BlogTheme>('light');
-  const [layout,  setLayoutState] = useState<BlogLayout>('list');
+  const [layout,  setLayoutState] = useState<BlogLayout>('grid');
   const [font,    setFontState]   = useState<BlogFont>('md');
   const [mounted, setMounted]     = useState(false);
 
@@ -38,7 +38,7 @@ export function BlogShell({ children }: { children: React.ReactNode }) {
     <div
       id="portfolio-page"
       data-blog-theme={mounted ? theme  : 'light'}
-      data-blog-layout={mounted ? layout : 'list'}
+      data-blog-layout={mounted ? layout : 'grid'}
       data-blog-font={mounted ? font   : 'md'}
     >
       {mounted && (

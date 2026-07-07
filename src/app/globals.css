@@ -1251,8 +1251,8 @@ code, pre {
 /* ---- Blog list grid layout ---- */
 #portfolio-page[data-blog-layout="grid"] .pf-blog-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
   max-width: 100%;
 }
 #portfolio-page[data-blog-layout="grid"] .pf-series-card { grid-column: 1 / -1; }
