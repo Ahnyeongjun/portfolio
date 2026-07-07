@@ -1,0 +1,182 @@
+---
+title: "게이트웨이 레벨 인증 - Keycloak OIDC와 Envoy Gateway"
+description: "MSA에서 서비스마다 반복되던 JWT 검증을 게이트웨이로 끌어올린 과정. OIDC 개념부터 Envoy Gateway SecurityPolicy, forwardAccessToken, SealedSecret까지 실전 구성을 정리한다."
+date: "2026-07-07"
+category: "Architecture"
+tags: ["Keycloak", "Envoy Gateway", "OIDC", "MSA", "인증", "Kubernetes"]
+---
+
+## 문제: 서비스마다 반복되는 JWT 검증
+
+MSA로 서비스를 쪼개면 인증에서 곧바로 중복이 생긴다.
+
+```
+[ 클라이언트 ]
+     │  Authorization: Bearer <JWT>
+     ▼
+[ Gateway (라우팅만) ]
+     ├─→ Service A ── JWT 검증 미들웨어
+     ├─→ Service B ── JWT 검증 미들웨어
+     └─→ Service C ── JWT 검증 미들웨어   ← 같은 로직 3벌
+```
+
+서비스가 9개로 늘어나던 시점에 이 구조의 비용이 뚜렷하게 드러났다.
+
+- **인증 코드 중복**: 각 FastAPI 서비스가 토큰 서명 검증·만료 확인·클레임 파싱을 직접 구현한다.
+- **정책 변경의 파급**: 토큰 검증 정책을 하나 바꾸면 전 서비스를 동시에 수정·재배포해야 한다.
+- **신규 서비스 비용**: 서비스를 새로 만들 때마다 인증 미들웨어를 다시 붙여야 한다.
+
+인증은 모든 요청이 지나가는 **공통 관심사(cross-cutting concern)**다. 공통 관심사는 각 서비스가 아니라 요청이 반드시 통과하는 한 곳 - **게이트웨이** - 에서 처리하는 게 맞다.
+
+---
+
+## 개념: OIDC와 게이트웨이 인증
+
+### OIDC는 무엇인가
+
+OIDC(OpenID Connect)는 OAuth 2.0 위에 **"사용자가 누구인지"**를 표준화한 인증 계층이다. OAuth 2.0이 "이 요청에 권한이 있는가(인가)"를 다룬다면, OIDC는 그 위에 ID Token을 얹어 "이 요청의 주체가 누구인가(인증)"를 다룬다.
+
+핵심 등장인물은 셋이다.
+
+| 역할 | 이름 | 프로젝트에서 |
+|------|------|-------------|
+| IdP (Identity Provider) | 신원을 검증하고 토큰을 발급 | **Keycloak** |
+| Relying Party | 토큰을 받아 신뢰하는 쪽 | **Envoy Gateway** |
+| Resource Server | 보호되는 실제 API | 백엔드 서비스들 |
+
+Keycloak은 오픈소스 IdP다. Realm(사용자·클라이언트를 담는 격리 단위) 안에 클라이언트를 등록해두면, 표준 OIDC 엔드포인트(`.well-known/openid-configuration`)로 발급·검증·키(JWKS)를 모두 노출한다.
+
+### Authorization Code Flow
+
+브라우저 기반 앱에서 쓰는 표준 흐름은 Authorization Code Flow다.
+
+```
+사용자 ──(1) 보호된 페이지 요청──▶ Gateway
+Gateway ──(2) 미인증 → Keycloak 로그인으로 리다이렉트──▶ 사용자
+사용자 ──(3) Keycloak에서 로그인──▶ Keycloak
+Keycloak ──(4) code 발급 → redirectURL로 리다이렉트──▶ Gateway
+Gateway ──(5) code + client secret으로 토큰 교환──▶ Keycloak
+Keycloak ──(6) ID Token + Access Token 발급──▶ Gateway
+Gateway ──(7) 세션 확립 후 요청 통과──▶ 백엔드
+```
+
+여기서 중요한 점: **토큰을 검증하고 세션을 관리하는 주체가 게이트웨이**라는 것이다. 백엔드는 이 흐름에 전혀 관여하지 않는다.
+
+---
+
+## 실전: 인증을 게이트웨이로 끌어올리기
+
+목표 구조는 이렇다.
+
+```
+[ 클라이언트 ]
+     │
+     ▼
+[ Envoy Gateway ] ── SecurityPolicy(OIDC) ──▶ Keycloak 검증
+     │  인증 통과한 요청에만 Access Token 헤더 주입
+     ├─→ Service A ── 헤더의 사용자 정보만 사용
+     ├─→ Service B
+     └─→ Service C   ← 검증 로직 0벌
+```
+
+### Envoy Gateway와 Gateway API
+
+Envoy Gateway는 Kubernetes **Gateway API**의 구현체다. 기존 Ingress보다 역할이 명확하게 분리돼 있다.
+
+| 리소스 | 역할 |
+|--------|------|
+| `Gateway` | 진입점(리스너·포트·TLS) 정의 |
+| `HTTPRoute` | 경로·호스트별 라우팅 규칙 |
+| `SecurityPolicy` | 인증·인가 등 보안 정책 (Envoy Gateway 확장 CRD) |
+
+인증을 게이트웨이로 옮기는 핵심 도구가 바로 `SecurityPolicy`다.
+
+### SecurityPolicy로 OIDC 붙이기
+
+`SecurityPolicy`는 `targetRefs`로 특정 `HTTPRoute`(또는 `Gateway`)에 **부착**된다. 즉 "이 경로로 들어오는 요청은 OIDC 인증을 통과해야 한다"를 선언적으로 건다.
+
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: change-detection-oidc
+  namespace: nipa
+spec:
+  # HTTPRoute 단위로 정책을 부착
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: change-detection-route
+  oidc:
+    provider:
+      # Keycloak Realm의 OIDC issuer — .well-known 자동 탐색
+      issuer: "https://auth.example.com/realms/nipa"
+    clientID: "change-detection"
+    clientSecret:
+      name: keycloak-change-detection-secret   # Secret 참조
+    redirectURL: "https://app.example.com/oauth2/callback"
+    logoutPath: "/logout"
+    # 인증된 요청에 Access Token을 헤더로 백엔드에 전달
+    forwardAccessToken: true
+```
+
+`issuer`만 주면 Envoy Gateway가 `.well-known/openid-configuration`을 읽어 인가·토큰·JWKS 엔드포인트를 알아서 구성한다. 미인증 요청은 자동으로 Keycloak 로그인으로 리다이렉트되고, 콜백·토큰 교환·세션 쿠키까지 게이트웨이가 처리한다.
+
+### forwardAccessToken - 백엔드는 헤더만 본다
+
+`forwardAccessToken: true`가 이 구조의 연결 고리다. 게이트웨이가 인증을 통과시킨 요청에만 Access Token을 헤더로 실어 백엔드로 넘긴다.
+
+```
+Envoy Gateway (인증 완료)
+   │  Authorization: Bearer <access_token>  ← 게이트웨이가 주입
+   ▼
+백엔드 서비스
+   - 토큰 서명 검증 X
+   - 게이트웨이를 통과했다는 사실 자체가 인증 보증
+   - 필요하면 헤더/토큰의 클레임(sub, email, roles)만 읽어 사용
+```
+
+백엔드는 **더 이상 JWT를 검증하지 않는다.** 게이트웨이를 통과했다는 것 자체가 인증되었다는 뜻이므로, 서비스는 헤더에 담긴 사용자 정보만 신뢰해서 쓰면 된다. 인증 미들웨어 9벌이 0벌이 된다.
+
+> 전제는 **네트워크 경계**다. 백엔드가 게이트웨이를 우회해 직접 호출되지 않도록 NetworkPolicy로 게이트웨이 경유만 허용해야, "통과 = 인증됨" 가정이 성립한다.
+
+### 서비스별 클라이언트 분리와 SealedSecret
+
+Keycloak Realm 안에서 서비스마다 **별도 클라이언트**를 둔다. 한 서비스의 시크릿이 노출돼도 다른 서비스로 번지지 않게 하고, 서비스별 접근 범위(scope·role)를 따로 관리하기 위해서다.
+
+문제는 클라이언트 시크릿을 어떻게 Git에 두느냐다. 평문 `Secret`은 매니페스트에 그대로 노출되므로 GitOps에 올릴 수 없다. 여기서 **SealedSecret**을 쓴다.
+
+```
+[ 평문 Secret ]
+     │  kubeseal (클러스터 공개키로 암호화)
+     ▼
+[ SealedSecret ]  ← 암호문이라 Git에 커밋 가능
+     │  클러스터 안의 controller가 개인키로 복호화
+     ▼
+[ Secret ]  ← 런타임에만 평문으로 존재
+```
+
+암호화된 `SealedSecret`만 저장소에 올라가고, 복호화는 클러스터 안의 컨트롤러만 할 수 있다. 시크릿을 Git에서 관리하면서도 평문은 절대 노출되지 않는다.
+
+---
+
+## 결과와 트레이드오프
+
+정리하면 인증의 위치가 바뀌었다.
+
+| | Before | After |
+|--|--------|-------|
+| 검증 위치 | 각 서비스 (9벌) | 게이트웨이 (1곳) |
+| 정책 변경 | 전 서비스 수정·재배포 | `SecurityPolicy` 1개 수정 |
+| 신규 서비스 | 인증 미들웨어 추가 구현 | Policy 연결만 |
+| 세션 | 서비스마다 제각각 | Keycloak 공유 → **SSO** |
+
+핵심 이득은 **정책 변경 지점이 하나로 모였다**는 것이다. 신규 서비스는 `SecurityPolicy`를 `HTTPRoute`에 연결하는 것만으로 동일한 인증을 얻고, Keycloak 세션을 공유하므로 서비스 간 SSO가 자연스럽게 확보된다.
+
+트레이드오프도 분명하다.
+
+- **게이트웨이가 단일 인증 지점**이 되므로, 게이트웨이 장애는 곧 전체 인증 장애다. 가용성 확보가 중요해진다.
+- **"통과 = 인증됨" 가정은 네트워크 경계에 의존**한다. 백엔드 직접 호출 경로가 열려 있으면 무너진다.
+- 세밀한 인가(리소스 단위 권한)는 여전히 서비스의 몫이다. 게이트웨이는 "인증된 사용자인가"까지, "이 사용자가 이 리소스에 권한이 있는가"는 서비스가 판단한다.
+
+인증이라는 공통 관심사를 요청이 반드시 지나가는 한 곳으로 끌어올리면, 서비스는 비즈니스 로직에만 집중할 수 있다. MSA에서 게이트웨이 레벨 인증이 갖는 의미가 여기에 있다.
