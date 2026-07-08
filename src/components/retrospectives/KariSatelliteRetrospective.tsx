@@ -370,6 +370,14 @@ def generate(self) -> int:
             GeoJSON처럼 전체 탐지 결과를 한 번에 내려주지 않아 클라이언트 메모리 부담이 크게 줄었고,
             사양 제약이 있는 현장 운용 환경에서도 원활하게 동작하게 됐습니다.
           </p>
+          <p className="font-medium text-foreground">Nginx Ingress keepalive 튜닝</p>
+          <p>
+            타일 요청이 트래픽 대부분을 차지하는데, 매 요청마다 <Highlight>TCP 핸드셰이크가
+            반복</Highlight>되는 오버헤드가 있었습니다. Nginx Ingress의{" "}
+            <code>upstream keepalive</code> 설정으로 커넥션을 재사용하도록 바꿔 핸드셰이크
+            오버헤드를 제거했고, 동시에 K8s 레플리카를 늘려도 그대로 스케일되는 구조를
+            확보했습니다.
+          </p>
         </AccordionSection>
 
         {/* 4. OD/SEG */}
@@ -500,6 +508,39 @@ def generate(self) -> int:
           <p>
             한정된 GPU로 더 많은 워크로드를 돌릴 수 있게 되면서 <Highlight>GPU 4장에서 70파드 병렬 추론</Highlight>,
             일 처리량은 200건에서 3,000건으로 늘었습니다.
+          </p>
+        </AccordionSection>
+
+        {/* HTTPS 리버스 프록시 · TLS 인증서 */}
+        <AccordionSection
+          title="HTTPS 리버스 프록시·TLS 인증서 구성"
+          hint="Tomcat 앞단 Nginx로 HTTPS 종단 - 와일드카드 인증서·보안 헤더·쿠키 속성 통합 관리"
+          module="Nginx"
+        >
+          <p>
+            레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했는데, Tomcat이 직접
+            내려주는 보안 헤더가 서비스마다 제각각이었고, 와일드카드 인증서와 체인을
+            Tomcat 단독으로 관리하기도 번거로웠습니다.
+          </p>
+          <p>
+            <Highlight>Nginx를 Tomcat 앞단 HTTPS 리버스 프록시</Highlight>로 구성해 와일드카드
+            TLS 인증서(전체 체인 포함)를 적용하고, TLSv1.2/1.3·세션 캐시를 설정했습니다.
+            Tomcat이 내려주는 중복 보안 헤더는 제거하고 <Highlight>CSP·X-Frame-Options·
+            Referrer-Policy</Highlight> 등을 Nginx 한 곳에서 통합 관리했습니다.
+          </p>
+          <CompareTable
+            headers={["항목", "Tomcat 단독", "Nginx 리버스 프록시"]}
+            rows={[
+              { cells: ["TLS 인증서 관리", "서비스마다 개별 적용", "Nginx 한 곳에서 와일드카드 인증서 통합 관리"], highlight: true },
+              { cells: ["보안 헤더", "서비스마다 제각각", "CSP·X-Frame-Options 등 한 곳에서 일원화"], highlight: true },
+              { cells: ["외부 지도 타일 API 호출", "프론트엔드에서 직접 - CSP·보안 정책 저촉", "path 기반으로 Nginx가 대신 프록시"], highlight: true },
+            ]}
+          />
+          <p>
+            path 기반 라우팅으로 내부 분석 서비스·지도 서버와 외부 지도 타일 API를 함께
+            프록시하고, 쿠키 보안 속성(<code>secure</code>·<code>httponly</code>·<code>samesite</code>)까지
+            일괄 적용했습니다. 대용량 위성영상 전송을 위한 타임아웃·바디 크기(최대 5GB)도
+            함께 튜닝했습니다.
           </p>
         </AccordionSection>
       </div>

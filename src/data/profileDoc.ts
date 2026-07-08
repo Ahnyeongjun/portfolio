@@ -473,7 +473,7 @@ export const PROFILE_PLATFORM = {
       title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
-      stack: ["Kubernetes", "Go", "Python", "SaltStack", "Aliyun GPUShare", "PostgreSQL", "Zabbix", "Rocky Linux"],
+      stack: ["Kubernetes", "Go", "Python", "SaltStack", "Aliyun GPUShare", "PostgreSQL", "Zabbix", "Nginx", "Rocky Linux"],
       desc: "회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
       blocks: [
         {
@@ -542,6 +542,34 @@ export const PROFILE_PLATFORM = {
           brief: [
             "외부망·폐쇄망 DB를 동기화해야 했지만 망연계 솔루션이 파일 기반 전송만 지원해 API 폴링이 불가능했습니다.",
             "Debezium CDC로 WAL 레벨 변경분을 JSON 파일로 반출·반입하는 망 분리 우회형 아키텍처를 구축해 보안을 지키면서 실시간성을 확보했습니다.",
+          ],
+        },
+        {
+          label: "HTTPS 리버스 프록시·TLS 인증서 구성",
+          situation: "레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했고, 서비스마다 보안 헤더 설정이 제각각이었습니다.",
+          cause: "Tomcat 단독으로는 와일드카드 인증서(전체 체인 포함) 갱신·보안 헤더 통합 관리가 번거로웠고, 외부 지도 타일 API 호출을 프론트엔드에서 직접 나가면 CSP·보안 정책에 걸렸습니다.",
+          actions: [
+            "Nginx를 Tomcat 앞단 HTTPS 리버스 프록시로 구성 - 와일드카드 TLS 인증서·체인을 적용하고 TLSv1.2/1.3·세션 캐시 설정",
+            "Tomcat이 내려주는 중복 보안 헤더를 제거하고 CSP·X-Frame-Options·Referrer-Policy 등을 Nginx 한 곳에서 통합 관리",
+            "path 기반 라우팅으로 내부 분석 서비스·지도 서버와 외부 지도 타일 API를 함께 프록시, 쿠키 보안 속성(secure·httponly·samesite)까지 일괄 적용",
+          ],
+          result: "HTTPS 종단·인증서 관리·보안 헤더를 Nginx 한 곳에서 통합, 대용량 위성영상 전송을 위한 타임아웃·바디 크기(최대 5GB)까지 함께 튜닝",
+          brief: [
+            "Tomcat 단독으로는 와일드카드 인증서 갱신과 서비스별 제각각인 보안 헤더 관리가 번거로웠습니다.",
+            "Nginx를 HTTPS 리버스 프록시로 앞단에 두고 TLS 인증서·보안 헤더·쿠키 속성을 한 곳에서 통합 관리하도록 구성했습니다.",
+          ],
+        },
+        {
+          label: "Nginx Ingress keepalive 튜닝",
+          situation: "위성영상 타일 요청이 트래픽 대부분을 차지하는데, 매 요청마다 TCP 핸드셰이크가 반복되는 오버헤드가 있었습니다.",
+          cause: "Nginx Ingress의 기본 설정은 백엔드로의 커넥션을 요청마다 새로 맺어, 핸드셰이크 비용이 그대로 응답 지연에 더해졌습니다.",
+          actions: [
+            "Nginx Ingress의 upstream keepalive 설정으로 백엔드 커넥션을 재사용하도록 튜닝",
+          ],
+          result: "TCP 핸드셰이크 오버헤드 제거, K8s 레플리카를 늘려도 그대로 스케일되는 구조 확보",
+          brief: [
+            "타일 요청이 트래픽 대부분을 차지하는데 매 요청마다 TCP 핸드셰이크가 반복돼 응답 지연이 누적됐습니다.",
+            "Nginx Ingress upstream keepalive로 백엔드 커넥션을 재사용하도록 튜닝해 핸드셰이크 오버헤드를 제거하고 K8s 레플리카 확장에도 그대로 대응하도록 만들었습니다.",
           ],
         },
       ],

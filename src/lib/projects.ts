@@ -79,7 +79,7 @@ export const projects: Project[] = [
     titleEn: "KARI Satellite Imagery AI Processing Platform",
     description: "10개 이상 위성 소스를 수집·처리해 AI 추론 결과를 CesiumJS로 가시화하는 위성영상 AI 처리 플랫폼. 한국항공우주연구원 납품.",
     descriptionEn: "AI processing platform collecting 10+ satellite sources and visualizing inference results (object detection, segmentation, super-resolution) via CesiumJS. Delivered to Korea Aerospace Research Institute (KARI).",
-    tags: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack"],
+    tags: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack", "Nginx"],
     imageUrl: "/kari_logo.svg",
     status: "deployed",
     type: "company",
