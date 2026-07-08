@@ -29,6 +29,7 @@ export const PROFILE = {
   github: "github.com/Ahnyeongjun",
   githubUrl: "https://github.com/Ahnyeongjun",
   location: "서울, Korea",
+  military: "면제",
 
   tagline: "백엔드에서 시작해, 서비스 전체를 만드는 엔지니어",
   summary: [
@@ -385,7 +386,7 @@ export const PROFILE = {
     { school: "대덕소프트웨어마이스터고등학교", degree: "고등학교 · 소프트웨어개발과", period: "2020.03. ~ 2022.03.", status: "졸업" },
   ],
 
-  skills: ["Spring Boot", "Java", "Kotlin", "Python", "Go", "FastAPI", "PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "Kubernetes", "Docker", "Next.js"],
+  skills: ["Spring Boot", "Java", "Kotlin", "Python", "Go", "FastAPI", "PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "Kubernetes", "Docker", "SaltStack", "Zabbix", "Next.js"],
 
   certs: [
     { name: "SQL개발자(SQLD)", issuer: "한국데이터산업진흥원", date: "2025.12.", status: "합격" },
@@ -393,4 +394,294 @@ export const PROFILE = {
     { name: "정보기기운용기능사", issuer: "한국산업인력공단", date: "2021.12.", status: "합격" },
     { name: "프로그래밍기능사", issuer: "한국산업인력공단", date: "2020.12.", status: "합격" },
   ],
+};
+
+// Platform Engineer resume - fully independent from PROFILE. Only identity/
+// education/cert facts are shared by reference (same person, same facts);
+// tagline, summary, highlights, career, and every project/block below are
+// written from scratch so this reads as its own document, not a relabeled
+// copy of the backend resume. Source: temp/platform_engineer_resume.md.
+export const PROFILE_PLATFORM = {
+  name: PROFILE.name,
+  role: "플랫폼 엔지니어",
+  email: PROFILE.email,
+  github: PROFILE.github,
+  githubUrl: PROFILE.githubUrl,
+  location: PROFILE.location,
+  military: PROFILE.military,
+
+  tagline: "관리형 서비스에 기대지 않고, 클러스터를 바닥부터 만들고 굴려온 플랫폼 엔지니어",
+  summary: [
+    {
+      head: "관리형 서비스 없이, 클러스터를 직접 부트스트랩",
+      body: "관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다. SaltStack Minion으로 노드별 연결 상태와 메모리 사용률을 실시간 점검해 메모리 50% 미만 노드에만 AI 워크로드를 자동 할당하는 자원 인지형 배치 구조를 만들었고, Aliyun GPUShare로 GPU 한 장을 fraction 단위로 나눠 여러 컨테이너가 동시에 추론하도록 구성했습니다.",
+    },
+    {
+      head: "인터넷이 완전히 막힌 환경에서, 장애는 코드와 로그로만",
+      body: "국가보안기관 납품 시스템은 외부 검색도 라이브러리 반입도 불가능한 에어갭 환경입니다. 가시화가 전부 실패하는 장애를 마운트 → 디바이스 → 펌웨어까지 추적해 NVMe 펌웨어 업그레이드 시 데이터 이동 로직 누락을 근본 원인으로 찾아냈고, Zabbix로 장애 사전 감지 체계를 직접 구축했습니다.",
+    },
+    {
+      head: "메시지 큐로 쪼개면, 병목만 골라 늘릴 수 있다",
+      body: "DB 폴링 방식의 처리 파이프라인을 수집·전처리·추론·후처리 단계별 큐로 분리해 처리 워커를 1개에서 15개로 수평 확장했습니다. 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 접근 계층을 Go API로 중앙화하는 신규 구축까지 인프라 전 과정을 직접 결정한 경험이 있습니다.",
+    },
+  ],
+
+  highlights: [
+    { v: "kubeadm", l: "베어메탈 K8s 직접 부트스트랩" },
+    { v: "GPU 1장 → 70파드", l: "Aliyun GPUShare 병렬 추론" },
+    { v: "1개 → 15개", l: "처리 워커 수평 확장" },
+    { v: "컨테이너 → 펌웨어", l: "NVMe 장애 근본원인 추적" },
+    { v: "이벤트 유실 0건", l: "Outbox 라이브러리 직접 개발" },
+  ],
+
+  career: {
+    company: "한컴인스페이스",
+    position: "연구원 · 플랫폼 엔지니어링 · 재직 중",
+    period: "2021.07. ~ 재직 중 (5년)",
+    overview: "국가기관 대상 위성영상 AI 처리 플랫폼의 인프라 설계·구축·운영을 전담해왔습니다. 관리형 K8s가 없는 온프레미스·에어갭 환경에서 kubeadm 클러스터 부트스트랩부터 노드 자원 분배·GPU 공유·비동기 파이프라인·모니터링까지 인프라 전 영역을 직접 설계·구축·운영했습니다.",
+    metrics: ["kubeadm 베어메탈 클러스터 구축", "GPU 1장 70파드 병렬 추론", "처리 워커 1→15개 수평 확장", "에어갭 무중단 운영", "이벤트 유실 0건"],
+    groups: [
+      {
+        title: "인프라 설계·구축·운영",
+        items: [
+          "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩",
+          "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단",
+          "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터 무중단 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축",
+          "컨테이너 → 마운트 → 디바이스 → 펌웨어 경계를 넘나든 NVMe 장애 근본원인 추적",
+        ],
+      },
+      {
+        title: "AI 워크로드 스케줄링 & 비동기 파이프라인",
+        items: [
+          "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론",
+          "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장",
+          "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건",
+        ],
+      },
+      {
+        title: "베어메탈 신규 구축 & DB 접근 계층 설계",
+        items: [
+          "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정",
+          "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소",
+        ],
+      },
+    ],
+  },
+
+  projects: [
+    {
+      title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
+      company: "한컴인스페이스",
+      period: "2023.10. ~ 2025.07.",
+      stack: ["Kubernetes", "Go", "Python", "SaltStack", "Aliyun GPUShare", "PostgreSQL", "Zabbix", "Rocky Linux"],
+      desc: "회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
+      blocks: [
+        {
+          label: "Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩",
+          situation: "위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 처음엔 Docker 컨테이너 몇 개로 묶는 구조를 먼저 생각했습니다. 컨테이너 하나가 죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다.",
+          cause: "대안은 세 가지였습니다 - Docker Compose로 묶는 방식, 직접 스크립트로 프로세스를 관리하는 방식, K8s. 앞의 두 방식은 노드가 늘어날수록 관리 포인트가 선형으로 늘고, 노드 장애 시 수동 개입이 필요했습니다.",
+          actions: [
+            "워크로드가 여러 노드에 걸쳐 돌아야 하고 자동 복구가 필요한 상황이라 K8s를 선택",
+            "관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩",
+          ],
+          result: "노드 장애 시에도 워크로드가 자동 복구되는 구조 확보, 이후 모든 K8s 기반 AI 처리 플랫폼의 출발점이 됨",
+          brief: [
+            "컨테이너 하나가 죽으면 작업이 사라지는 구조로는 운영이 불가능했고, Docker Compose·스크립트 기반 관리는 노드가 늘수록 관리 포인트가 선형으로 늘고 장애 시 수동 개입이 필요했습니다.",
+            "워크로드가 여러 노드에 걸쳐 자동 복구돼야 하는 요건에 맞춰 K8s를 선택하고, 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
+          ],
+        },
+        {
+          label: "노드 자원 인지형 스케줄링",
+          situation: "K8s 기본 스케줄러가 노드별 메모리 사용률을 실시간 반영하지 못해, 특정 노드에 무거운 AI 작업이 몰리면 OOM이 발생했습니다.",
+          cause: "스케줄러가 리소스 요청·한도 값만 보고 배치할 뿐 실제 사용률은 반영하지 않는 구조였습니다.",
+          actions: [
+            "SaltStack Minion으로 각 노드의 연결 상태와 메모리 사용률을 실시간 점검",
+            "메모리 50% 미만 노드에만 AI 워크로드를 자동 할당하는 자원 인지형 배치 구조 구현",
+          ],
+          result: "특정 서버 과부하와 OOM을 사전에 차단",
+          brief: [
+            "K8s 기본 스케줄러가 노드별 메모리 사용률을 실시간 반영하지 못해, 특정 노드에 AI 작업이 몰려 OOM이 발생했습니다.",
+            "SaltStack Minion으로 노드 메모리 사용률을 실시간 점검해 50% 미만 노드에만 워크로드를 자동 할당, 과부하와 OOM을 사전에 차단했습니다.",
+          ],
+        },
+        {
+          label: "GPU 자원 공유 (Fractional GPU)",
+          situation: "노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라, 대부분의 시간 동안 GPU가 유휴 상태였습니다.",
+          cause: "여러 모델을 동시에 띄워야 하는 요건과 1파드=1GPU 구조가 맞지 않았고, 당시 GPU 모델은 NVIDIA MIG를 지원하지 않아 하드웨어 파티셔닝을 쓸 수 없었습니다.",
+          actions: [
+            "Aliyun GPUShare를 도입해 여러 컨테이너가 하나의 GPU를 fraction 단위로 나눠 쓰는 소프트웨어 레벨 공유 구성",
+          ],
+          result: "GPU 4장에서 70파드 병렬 추론, 한정된 GPU로 더 많은 워크로드 처리",
+          brief: [
+            "노드당 GPU 하나를 컨테이너 하나가 점유해 대부분의 시간 동안 GPU가 유휴 상태였고, 당시 GPU는 NVIDIA MIG도 지원하지 않았습니다.",
+            "Aliyun GPUShare로 GPU 메모리를 fraction 단위로 나누는 소프트웨어 레벨 공유를 도입해, GPU 4장에서 70파드 병렬 추론을 달성했습니다.",
+          ],
+        },
+        {
+          label: "이벤트 유실 문제 해결 (Outbox 패턴)",
+          situation: "Debezium CDC의 replication slot이 반복 파손돼 전체 스냅샷을 재수행해야 했습니다.",
+          cause: "CDC 방식은 DB 로그 기반이라 slot 파손 시 외부 인프라 의존도가 높아 안정성을 보장하기 어려웠습니다.",
+          actions: [
+            "CDC 인프라 의존을 걷어내고 AOP + MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 개발",
+          ],
+          result: "이벤트 유실 0건, 외부 인프라 의존 없이 애플리케이션 레벨에서 이벤트 보장",
+          brief: [
+            "Debezium CDC의 replication slot이 반복 파손돼 전체 스냅샷을 재수행해야 하는 상황이 반복됐습니다.",
+            "CDC 인프라 의존을 걷어내고 AOP+MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 개발해 이벤트 유실 0건을 달성했습니다.",
+          ],
+        },
+        {
+          label: "망연계 DB 동기화",
+          situation: "외부망과 폐쇄망 DB를 동기화해야 했지만, 망연계 솔루션이 파일 기반 전송만 지원했습니다.",
+          cause: "API 폴링은 망 구조상 불가능했고, DB 덤프 주기 전송은 실시간성이 너무 떨어졌습니다.",
+          actions: [
+            "Debezium CDC로 외부망 DB의 변경 사항을 WAL 레벨에서 캡처해 JSON 파일로 반출",
+            "폐쇄망으로 반입해 동기화하는 망 분리 우회형 정합성 아키텍처 구축",
+          ],
+          result: "보안 지침을 지키면서도 사용자 경험을 해치지 않는 실시간성 확보",
+          brief: [
+            "외부망·폐쇄망 DB를 동기화해야 했지만 망연계 솔루션이 파일 기반 전송만 지원해 API 폴링이 불가능했습니다.",
+            "Debezium CDC로 WAL 레벨 변경분을 JSON 파일로 반출·반입하는 망 분리 우회형 아키텍처를 구축해 보안을 지키면서 실시간성을 확보했습니다.",
+          ],
+        },
+      ],
+    },
+    {
+      title: "NIPA RabbitMQ 기반 변화탐지 AI 처리 플랫폼",
+      company: "한컴인스페이스",
+      period: "2025.07. ~ 진행 중",
+      stack: ["Kubernetes", "RabbitMQ", "FastAPI", "Go", "PostgreSQL", "PyTorch"],
+      desc: "DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를, 메시지 큐 기반 비동기 아키텍처로 전면 재설계했습니다.",
+      blocks: [
+        {
+          label: "RabbitMQ 도입 - Kafka 대비 선택 근거",
+          situation: "DB 폴링 방식을 메시지 큐 기반으로 전환하기로 하면서, Kafka와 RabbitMQ 중 하나를 골라야 했습니다.",
+          cause: "Kafka는 처리량이 높지만 운영 오버헤드가 큽니다. 위성 처리 작업은 단위가 명확해서 메시지 큐 모델이 더 적합했고, ack/nack 기반의 확실한 전달 보장이 필요했습니다.",
+          actions: [
+            "RabbitMQ를 선택하고 ack/nack + DLQ 기반 비동기 구조로 전환",
+          ],
+          result: "운영 오버헤드를 늘리지 않으면서 확실한 전달 보장 확보",
+          brief: [
+            "메시지 큐 기반 전환을 앞두고 Kafka와 RabbitMQ 중 하나를 골라야 했는데, Kafka는 처리량은 높지만 운영 오버헤드가 컸습니다.",
+            "작업 단위가 명확하고 ack/nack 기반의 확실한 전달 보장이 필요한 요건에 맞춰 RabbitMQ를 선택했습니다.",
+          ],
+        },
+        {
+          label: "단계별 큐 분리와 워커 수평 확장",
+          situation: "기존 시스템은 DB를 일정 주기로 폴링해 작업을 가져갔습니다. 워커를 늘려도 같은 DB에 더 많은 폴링 쿼리가 몰려 락 경합으로 수평 확장 효과가 거의 없었습니다.",
+          cause: "완료 콜백 구조라 노드 재시작 시 콜백이 유실되면 작업이 RUNNING 상태로 고착됐고, 폴링 주기를 짧게 잡으면 DB 부하가, 길게 잡으면 지연이 늘었습니다.",
+          actions: [
+            "RabbitMQ ack/nack + DLQ 기반 비동기 구조로 전환",
+            "단일 큐가 아니라 수집→전처리→추론→후처리 단계별로 큐를 분리",
+          ],
+          result: "단계별 독립 확장 가능한 구조 확보, 처리 워커 컨테이너 1개→15개 수평 확장, 작업 유실 0건. 요청을 큐로 받아 워커에 분산하는 이 패턴은 더 큰 트래픽의 AI 추론 서비스 인프라에도 그대로 적용 가능",
+          brief: [
+            "DB 폴링 방식은 워커를 늘려도 같은 DB에 폴링 쿼리가 몰려 락 경합으로 수평 확장 효과가 거의 없었습니다.",
+            "RabbitMQ ack/nack+DLQ 기반으로 전환하고 파이프라인 단계별로 큐를 분리해, 처리 워커를 1개에서 15개로 수평 확장했습니다. 요청을 큐로 받아 워커에 분산하는 이 패턴은 더 큰 트래픽의 AI 추론 인프라에도 그대로 적용됩니다.",
+          ],
+        },
+        {
+          label: "AI 탐지 품질 개선",
+          situation: "완성된 AI 모듈을 그대로 연동하던 기존 방식에서는 전후 영상의 조명·색상 차이와 그림자가 변화로 오탐되는 문제가 누적됐습니다.",
+          cause: "모델 출력을 후처리 없이 그대로 사용해 노이즈가 결과에 그대로 반영됐습니다.",
+          actions: [
+            "전처리에 그림자 제거와 색상 정규화 추가",
+            "후처리에 면적 기반 필터링과 모폴로지 연산 적용",
+          ],
+          result: "픽셀 단위 노이즈 제거, 탐지 품질 개선",
+          brief: [
+            "완성된 AI 모듈을 그대로 연동하며 전후 영상의 조명·색상 차이와 그림자가 변화로 오탐되는 문제가 누적됐습니다.",
+            "전처리에 그림자 제거·색상 정규화, 후처리에 면적 기반 필터링·모폴로지 연산을 추가해 픽셀 단위 노이즈를 제거했습니다.",
+          ],
+        },
+      ],
+    },
+    {
+      title: "국가보안기관 위성영상 AI 처리 플랫폼 운영·신규 구축",
+      company: "한컴인스페이스",
+      period: "2024.07. ~ 진행 중",
+      stack: ["Kubernetes", "Docker", "Rocky Linux", "NVMe Storage", "Go", "PostgreSQL", "GDAL", "Zabbix", "Shell"],
+      desc: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 무중단 운영하는 위성영상 AI 처리 플랫폼 운영을 맡았고(2024.07~), 이어서 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다(2025.06~2025.12).",
+      blocks: [
+        {
+          label: "가시화 전면 실패 장애 - 근본 원인 추적",
+          situation: "가시화 작업이 전부 'No space left on device'로 실패했지만, 마운트된 스토리지 용량은 충분히 남아 있었습니다.",
+          cause: "마운트 경로에 빈 파일을 직접 써보니 단순 쓰기조차 실패해 컨테이너가 아닌 스토리지 자체 문제로 특정했고, 스토리지 장비 NVMe 상태를 원격으로 확인하니 실제 여유 용량이 0이었습니다.",
+          actions: [
+            "업체 운영 코드를 검토해 펌웨어 업그레이드 과정에서 NVMe→system pool 데이터 이동 로직이 누락된 근본 원인 특정",
+            "임시 패치로 서비스 즉시 복구",
+            "업체 정식 패치 연동까지 마무리",
+          ],
+          result: "컨테이너 → 마운트 → 디바이스 → 펌웨어로 시스템 경계를 넘어 추적하는 트러블슈팅 역량 확보, 외부 레퍼런스 없이도 근본 원인까지 추적",
+          brief: [
+            "가시화 작업이 전부 'No space left on device'로 실패했지만 마운트 용량은 충분했습니다. 컨테이너가 아닌 스토리지 자체 문제로 좁혀 NVMe 상태를 직접 확인했습니다.",
+            "업체 운영 코드까지 추적해 펌웨어 업그레이드 시 NVMe→system pool 이동 로직 누락을 근본 원인으로 특정, 임시 패치로 즉시 복구 후 정식 패치 연동을 마무리했습니다.",
+          ],
+        },
+        {
+          label: "대용량 위성영상 OOM 대응",
+          situation: "일부 위성영상이 수억 픽셀 규모라 영상 전체를 메모리에 올리는 것조차 불가능해 컨테이너가 OOM으로 강제 종료됐습니다.",
+          cause: "기존 단일 처리 방식은 영상 크기와 무관하게 동일한 경로로 처리해, 자원이 제한된 환경에서 대용량 영상을 구조적으로 처리할 수 없었습니다.",
+          actions: [
+            "픽셀 수를 기준으로 일반용·대용량용 처리 경로 분기",
+            "대용량 영상은 GDAL 파이프라인으로 먼저 축소한 뒤 폴리곤화하는 방식 도입",
+          ],
+          result: "자원이 부족한 환경에서도 구조적으로 작업이 진행되도록 개선",
+          brief: [
+            "수억 픽셀 규모 위성영상을 통째로 메모리에 올리다 컨테이너가 OOM으로 강제 종료됐습니다.",
+            "픽셀 수 기준으로 일반·대용량 처리 경로를 분기하고, 대용량 영상은 GDAL로 먼저 축소 후 폴리곤화해 구조적으로 해결했습니다.",
+          ],
+        },
+        {
+          label: "장애 사전 감지 체계 구축",
+          situation: "외부 인터넷이 차단된 에어갭 환경이라 장애를 사후에야 인지하는 구조였습니다.",
+          cause: "호스트·서비스 상태를 실시간으로 관측할 모니터링 체계가 없어, 장애가 발생해도 사용자 신고 전까지 인지가 늦었습니다.",
+          actions: [
+            "Zabbix로 호스트·서비스 모니터링 및 커스텀 대시보드 직접 구축",
+          ],
+          result: "장애 사전 감지 체계 확보",
+          brief: [
+            "인터넷이 차단된 에어갭 환경이라 장애를 사후에야 인지하는 구조였습니다.",
+            "Zabbix 커스텀 대시보드로 호스트·서비스 모니터링 체계를 직접 구축해 장애를 사전에 감지할 수 있도록 했습니다.",
+          ],
+        },
+        {
+          label: "DB 접근 계층 중앙화 (신규 구축)",
+          situation: "이어서 주도한 다종위성 수집·처리 플랫폼 신규 구축 프로젝트에서, 기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로 DB에 직접 접근하는 구조였습니다.",
+          cause: "DB 접근 로직과 자격증명이 모든 서비스에 흩어져 있어 스키마가 바뀌면 여러 서비스를 동시에 수정해야 했고, Python ORM과 Go가 같은 DB를 다룰 때 접근 패턴도 서로 어긋났습니다. 언어별로 각자의 ORM 계층을 개선하는 방법도 있었지만, 스키마가 바뀔 때마다 여러 서비스를 동시에 고쳐야 하는 근본 문제 자체는 해결되지 않는 미봉책이었습니다.",
+          actions: [
+            "독립 스키마를 새로 짜는 기회를 활용해 DB 접근을 Go 기반 API 한 곳으로 중앙화",
+            "모든 서비스가 HTTP로만 DB에 접근하도록 재설계",
+          ],
+          result: "스키마 변경 영향 범위가 API 레이어 한 곳으로 축소, 서비스는 언어와 무관하게 동일한 방식으로 DB 접근 가능",
+          brief: [
+            "서비스마다 ORM으로 DB에 직접 접근해 스키마 변경 시 여러 서비스를 동시 수정해야 했고, 언어별 ORM 개선만으로는 이 구조적 문제가 해결되지 않았습니다.",
+            "DB 접근을 Go 기반 API 한 곳으로 중앙화해, 스키마 변경 영향 범위를 API 레이어 하나로 좁히고 언어 무관하게 동일한 방식으로 DB에 접근하도록 만들었습니다.",
+          ],
+        },
+        {
+          label: "베어메탈부터 시작한 신규 인프라 구축",
+          situation: "관리형 인프라가 없는 신규 구축 프로젝트로, 물리 서버 설치부터 시작해야 했습니다.",
+          cause: "검증된 패턴을 그대로 가져올 수 없는 영역(물리 서버 구성, DB 스키마, 수집기 통합)이 많아 운영 시나리오에 맞게 새로 설계해야 했습니다.",
+          actions: [
+            "물리 서버 설치, K8s 클러스터 구성 직접 결정",
+            "다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화 구현",
+            "히스토그램 스트레칭 자동화, COG 포맷 적용으로 가시화 성능 개선",
+            "Cleaner 서비스로 등록일 기준 자동 삭제 워크플로우 구축",
+          ],
+          result: "베어메탈에서 운영 가능한 시스템까지 인프라 전 과정을 직접 결정한 경험 확보",
+          brief: [
+            "관리형 인프라 없이 물리 서버 설치부터 시작해야 하는 신규 구축 프로젝트였습니다.",
+            "물리 서버·K8s 클러스터 구성부터 수집기 통합·포맷 변환 자동화·히스토그램 스트레칭·Cleaner 자동 삭제 워크플로우까지 인프라 전 과정을 직접 주도했습니다.",
+          ],
+        },
+      ],
+    },
+  ] as DocProject[],
+
+  activities: PROFILE.activities,
+  education: PROFILE.education,
+  certs: PROFILE.certs,
+
+  skills: ["Kubernetes", "Docker", "SaltStack", "Zabbix", "Go", "Python", "RabbitMQ", "PostgreSQL", "GDAL", "FastAPI", "Redis", "MySQL", "Kafka"],
 };

@@ -142,6 +142,12 @@ export function InsopsRetrospective() {
         프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·다운로드 컨트롤러(ins-file-svr)를
         2022.05~2024.05 약 2년간 담당하며 분석관이 매일 쓰는 화면을 end-to-end로 구현했습니다.
       </p>
+      <p>
+        이후 국가보안기관 대상 위성영상 AI 처리 플랫폼의 <Highlight>운영</Highlight>을 이어받아
+        인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 무중단 운영했고
+        (2024.07~), 별도의 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터
+        전 과정 <Highlight>신규 구축</Highlight>했습니다(2025.06~2025.12).
+      </p>
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
@@ -310,6 +316,107 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
+        {/* 5. NVMe 펌웨어 장애 근본원인 추적 */}
+        <AccordionSection
+          title="가시화 전면 실패 장애 - 컨테이너에서 NVMe 펌웨어까지 추적"
+          hint="'No space left on device'인데 마운트 용량은 충분 - 컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 추적"
+          module="에어갭 운영"
+        >
+          <p>
+            어느 날 가시화 작업이 전부 <code>No space left on device</code>로 실패하기
+            시작했습니다. 로그만 보면 단순 디스크 부족처럼 보였지만, 마운트된 스토리지의
+            용량을 확인하니 여유가 충분히 남아 있었습니다. <Highlight>명령어로 본 용량과
+            실제 동작이 어긋나 있었습니다.</Highlight>
+          </p>
+          <CompareTable
+            headers={["단계", "확인한 것", "결과"]}
+            rows={[
+              { cells: ["로그", "No space left on device", "단순 디스크 부족처럼 보임"] },
+              { cells: ["마운트 용량", "df -h 등으로 확인", "여유 공간 충분 - 모순 발견"] },
+              { cells: ["마운트 경로 쓰기 테스트", "빈 파일 직접 생성", "단순 쓰기조차 실패 - 컨테이너가 아닌 스토리지 자체 문제로 특정"], highlight: true },
+              { cells: ["스토리지 장비 NVMe 상태", "장비에 원격 접속해 직접 확인", "실제 여유 용량이 0"], highlight: true },
+              { cells: ["업체 운영 코드 검토", "펌웨어 업그레이드 로직 추적", "NVMe → system pool 데이터 이동 로직 누락이 근본 원인"], highlight: true },
+            ]}
+          />
+          <p>
+            임시 패치로 서비스를 즉시 복구한 뒤 업체 정식 패치 연동까지 마무리했습니다.
+            컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 따라 내려가지 않았다면
+            며칠은 더 헤맸을 장애였습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 6. 대용량 영상 OOM 대응 */}
+        <AccordionSection
+          title="대용량 위성영상 OOM 대응 - 픽셀 수 기준 처리 경로 분기"
+          hint="수억 픽셀 영상을 통째로 메모리에 올리면 컨테이너가 OOM으로 강제 종료"
+          module="에어갭 운영"
+        >
+          <p>
+            일부 위성영상은 수억 픽셀 규모라, 기존 단일 처리 방식으로는 영상 전체를
+            메모리에 올리는 것조차 불가능해 컨테이너가 <Highlight>OOM으로 강제 종료</Highlight>됐습니다.
+          </p>
+          <p>
+            픽셀 수를 기준으로 일반용·대용량용 처리 방식을 분기하고, 대용량 영상은{" "}
+            <code>GDAL</code> 파이프라인으로 먼저 축소한 뒤 폴리곤화하는 방식을 도입해
+            자원이 부족한 환경에서도 구조적으로 작업이 진행되도록 개선했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 7. Zabbix 장애 사전 감지 */}
+        <AccordionSection
+          title="Zabbix 장애 사전 감지 체계 구축"
+          hint="인터넷 차단 환경 - 장애를 사후가 아니라 사전에 인지하도록"
+          module="에어갭 운영"
+        >
+          <p>
+            외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도
+            사용자 신고 전까지는 인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로
+            호스트·서비스 상태를 실시간 모니터링하는 커스텀 대시보드를 직접 구축해
+            장애를 사전에 감지할 수 있는 체계를 확보했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 8. DB 접근 계층 중앙화 + 베어메탈 신규 구축 */}
+        <AccordionSection
+          title="다종위성 플랫폼 신규 구축 - DB 접근 계층 중앙화 · 베어메탈 인프라"
+          hint="물리 서버 설치부터 K8s 클러스터 구성, DB 접근을 Go API 한 곳으로 중앙화하는 신규 구축"
+          module="신규 구축"
+        >
+          <p>
+            기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로
+            DB에 직접 접근하는 구조였습니다. DB 접근 로직과 자격증명이 모든 서비스에
+            흩어져 있어 스키마가 바뀌면 여러 서비스를 동시에 수정해야 했고, Python ORM과
+            Go가 같은 DB를 다룰 때 패턴이 어긋나는 문제도 있었습니다.
+          </p>
+          <p>
+            독립 스키마를 새로 짜야 하는 신규 구축 프로젝트의 기회를 활용해, DB 접근을{" "}
+            <Highlight>Go 기반 API 한 곳으로 중앙화</Highlight>했습니다. 모든 서비스가
+            HTTP로만 DB에 접근하도록 바꾸자 스키마 변경의 영향 범위가 API 레이어
+            한 곳으로 좁혀졌고, 서비스는 사용 언어와 무관하게 동일한 방식으로 DB를
+            다룰 수 있게 됐습니다.
+          </p>
+          <p>
+            관리형 인프라가 없는 상태에서 물리 서버 설치, K8s 클러스터 구성부터
+            다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화까지
+            베어메탈에서 운영 가능한 시스템까지의 인프라 전 과정을 직접 결정했습니다.
+          </p>
+          <p className="font-medium text-foreground">기타 기여</p>
+          <ul className="space-y-2 list-none">
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span><Highlight>히스토그램 스트레칭 자동화</Highlight>, <Highlight>COG 포맷</Highlight> 적용으로 가시화 성능 개선</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span><Highlight>Cleaner 서비스</Highlight> - 등록일 기준 자동 삭제 워크플로우 구축</span>
+            </li>
+          </ul>
+        </AccordionSection>
       </div>
     </div>
   );

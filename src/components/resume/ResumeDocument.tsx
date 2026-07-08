@@ -1,8 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useEffect, useCallback } from "react";
-import { PROFILE } from "@/data/profileDoc";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { PROFILE, PROFILE_PLATFORM } from "@/data/profileDoc";
+
+const VARIANTS = {
+  backend: { label: "백엔드", data: PROFILE },
+  platform: { label: "플랫폼", data: PROFILE_PLATFORM },
+} as const;
+type Variant = keyof typeof VARIANTS;
 
 const CSS = `
 .rallit-root { --ink:#17181c; --ink-2:#565a63; --ink-3:#9298a2; --line:#e8eaed; --line-2:#f1f3f5; --bg-soft:#f7f8fa; --accent:#16c47f; --accent-soft:#e7f8f0; --font-sans:"Pretendard",-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo",sans-serif; --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace; }
@@ -15,6 +21,12 @@ const CSS = `
 .rallit-root .pg-line { position:absolute; left:0; right:0; height:28px; background:#dde1e6; z-index:10; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .rallit-root .pg-line-label { font-family:var(--font-mono); font-size:9px; color:var(--ink-3); letter-spacing:0.06em; }
 .rallit-toolbar { position:fixed; top:16px; right:16px; z-index:100; display:flex; gap:8px; align-items:center; }
+.rallit-variant { position:fixed; top:16px; left:16px; z-index:100; display:flex; gap:2px; padding:4px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid var(--line); border-radius:999px; box-shadow:0 4px 16px rgba(20,22,28,0.1); }
+.rallit-variant-btn { border:none; background:transparent; font-family:var(--font-sans); font-size:12.5px; font-weight:700; color:var(--ink-2); padding:8px 16px; border-radius:999px; cursor:pointer; transition:background .15s, color .15s; }
+.rallit-variant-btn.active { background:var(--ink); color:#fff; }
+.rallit-variant-btn:not(.active):hover { background:var(--bg-soft); color:var(--ink); }
+@media print { .rallit-variant { display:none !important; } }
+@media (max-width:760px) { .rallit-variant { left:8px; top:8px; } }
 .rallit-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--ink-2); border:1px solid var(--line); border-radius:50%; box-shadow:0 4px 16px rgba(20,22,28,0.1); cursor:pointer; transition:transform .15s, box-shadow .2s, color .15s, background .15s; }
 .rallit-iconbtn:hover { box-shadow:0 8px 22px rgba(20,22,28,0.16); background:#fff; color:var(--ink); }
 .rallit-iconbtn svg { transition:transform .15s; }
@@ -39,6 +51,7 @@ const CSS = `
 .rallit-root .hd-contact .row { display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-2); }
 .rallit-root .hd-contact .ck { font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.06em; }
 .rallit-root .hd-contact .v { font-weight:600; }
+.rallit-root .hd-contact-secondary { display:flex; flex-wrap:wrap; gap:7px 20px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
 .rallit-root .hd-photo { width:110px; height:110px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 12px rgba(20,22,28,0.14); }
 .rallit-root .hd-photo img { display:block; width:100%; height:100%; object-fit:cover; }
 .rallit-root .hd-rule { height:2px; background:var(--ink); margin:18px 0 0; }
@@ -122,7 +135,8 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
 }
 
 export function ResumeDocument() {
-  const P = PROFILE;
+  const [variant, setVariant] = useState<Variant>("backend");
+  const P = VARIANTS[variant].data;
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const applyBreaks = useCallback(() => {
@@ -253,11 +267,22 @@ export function ResumeDocument() {
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [applyBreaks]);
+  }, [applyBreaks, variant]);
 
   return (
     <div className="rallit-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="rallit-variant">
+        {(Object.keys(VARIANTS) as Variant[]).map((key) => (
+          <button
+            key={key}
+            className={`rallit-variant-btn${variant === key ? " active" : ""}`}
+            onClick={() => setVariant(key)}
+          >
+            {VARIANTS[key].label}
+          </button>
+        ))}
+      </div>
       <div className="rallit-toolbar">
         <Link href="/" className="rallit-iconbtn rallit-back" aria-label="포트폴리오로 돌아가기" title="포트폴리오로 돌아가기">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
@@ -277,6 +302,9 @@ export function ResumeDocument() {
                 <div className="row"><span className="ck">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="row"><span className="ck">GITHUB</span><span className="v">{P.github}</span></div>
                 <div className="row"><span className="ck">BASE</span><span className="v">{P.location}</span></div>
+              </div>
+              <div className="hd-contact-secondary">
+                <div className="row"><span className="ck">병역</span><span className="v">{P.military}</span></div>
               </div>
             </div>
             <div className="hd-photo"><img src="/profile-photo.jpg" alt={P.name} /></div>
