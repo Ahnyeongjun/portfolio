@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { PROFILE } from "@/data/profileDoc";
 
@@ -11,8 +11,11 @@ const CSS = `
 .wanted-root * { box-sizing:border-box; margin:0; padding:0; }
 .wanted-root a { color:inherit; text-decoration:none; }
 .wanted-root mark { background:#eef1f6; color:var(--ink); font-weight:700; padding:1px 5px; border-radius:4px; box-shadow:inset 0 -2px 0 rgba(51,102,255,0.35); }
-.wanted-root .sheet { width:210mm; background:#fff; margin:22px auto; box-shadow:0 1px 2px rgba(20,22,28,0.05),0 18px 50px rgba(20,22,28,0.12); }
+.wanted-root .sheet { width:210mm; min-height:297mm; background:#fff; margin:22px auto; position:relative; box-shadow:0 1px 2px rgba(20,22,28,0.05),0 18px 50px rgba(20,22,28,0.12); }
 .wanted-root .sheet-inner { padding:22mm 20mm 24mm; }
+.wanted-root .pg-spacer { background:#fff; }
+.wanted-root .pg-line { position:absolute; left:0; right:0; height:28px; background:#dde1e6; z-index:10; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.wanted-root .pg-line-label { font-family:var(--font-mono); font-size:9px; color:var(--ink-3); letter-spacing:0.06em; }
 .wanted-toolbar { position:fixed; top:16px; right:16px; z-index:100; display:flex; gap:8px; align-items:center; }
 .wanted-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--ink-2); border:1px solid var(--line); border-radius:50%; box-shadow:0 4px 16px rgba(20,22,28,0.1); cursor:pointer; transition:transform .15s, box-shadow .2s, color .15s, background .15s; }
 .wanted-iconbtn:hover { box-shadow:0 8px 22px rgba(20,22,28,0.16); background:#fff; color:var(--ink); }
@@ -22,10 +25,12 @@ const CSS = `
 @media print {
   .wanted-root { background:#fff; padding:0; }
   .wanted-toolbar { display:none !important; }
-  .wanted-root .sheet { width:auto; margin:0; box-shadow:none; }
+  .wanted-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .wanted-root .sheet-inner { padding:15mm 15mm; }
   @page { size:A4; margin:11mm 0; }
-  .wanted-root .w-proj-head, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item { break-inside:avoid; }
+  .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two { break-inside:avoid; }
+  .wanted-root .w-sec-title { break-after:avoid; }
+  .wanted-root .pg-spacer, .wanted-root .pg-line { display:none; }
   .wanted-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
 .wanted-root .w-brand { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); }
@@ -36,6 +41,7 @@ const CSS = `
 .wanted-root .val-h { font-size:16px; font-weight:800; letter-spacing:-0.025em; display:flex; align-items:flex-start; gap:10px; }
 .wanted-root .val-h::before { content:""; flex-shrink:0; width:4px; height:19px; background:var(--accent); border-radius:2px; margin-top:1px; }
 .wanted-root .val-p { font-size:12.5px; color:var(--ink-2); line-height:1.78; margin-top:8px; padding-left:14px; }
+.wanted-root .w-close { font-size:12.5px; color:var(--ink-2); line-height:1.78; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
 .wanted-root .w-cards { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:28px; }
 .wanted-root .w-card { background:var(--bg-soft); border-radius:14px; padding:18px 20px; }
 .wanted-root .w-card-h { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:13px; }
@@ -103,7 +109,7 @@ const MARK_RE = new RegExp(
     "O\\(N?\\)\\s*(?:→|->)\\s*O\\(1\\)",
     "\\d+\\s*%\\s*(?:향상|개선|단축|절감)",
     "GPU\\s*\\d+장\\s*(?:→|->)\\s*\\d+파드",
-    "수정 0건|유실 0건|호출 0회|0건|0회",
+    "수정 0건|유실 0건|호출 0회|(?<![\\d.,])0건|(?<![\\d.,])0회",
   ].map((s) => `(?:${s})`).join("|"),
   "g"
 );
@@ -124,9 +130,150 @@ function hl(text: string): React.ReactNode[] {
   return out;
 }
 
+const GAP = 28; // px - height of the gray page-gap bar
+
+function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
+  const er = el.getBoundingClientRect();
+  const sr = sheet.getBoundingClientRect();
+  return er.top - sr.top;
+}
+
 export function PortfolioDocument() {
   const P = PROFILE;
   const VALUES = P.summary.map((s) => ({ h: s.head, p: s.body }));
+  const sheetRef = useRef<HTMLDivElement>(null);
+
+  const applyBreaks = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    // clean up previous injections (reset min-height first so the re-measure is honest)
+    sheet.style.minHeight = '';
+    sheet.querySelectorAll('.pg-spacer, .pg-line').forEach(el => el.remove());
+
+    // Page size is fixed to the CSS rendering of A4 (1mm = 96/25.4px at every
+    // resolution), so breaks are deterministic and never shift between reloads
+    // or screens. This matches the 210mm sheet's own rendered width.
+    const pxPerMm = 96 / 25.4;
+    const pageH = 297 * pxPerMm;
+
+    // Rule: flow continuously, but never cut a unit across a page boundary. The
+    // portfolio is flat (no section wrappers), so each unit is kept whole and
+    // sections simply flow. Units too tall to fit a page (a whole project) are
+    // skipped, and their inner blocks (contrib, shots) handle the crossing.
+    const KEEP = '.val, .w-cards, .contrib, .other-item, .w-two, .w-proj-intro, .w-sec-title';
+    const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
+    const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
+
+    // first real content block following a section title - kept on the same page
+    // as the title so it never lands alone at the bottom. The layout is flat, so
+    // find the first block that follows the title in document order.
+    const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
+      const blocks = Array.from(
+        sheet.querySelectorAll('.w-proj-intro, .contrib, .other-item, .w-two')
+      ) as HTMLElement[];
+      for (const b of blocks) {
+        if (header.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) return b;
+      }
+      return null;
+    };
+
+    // push an element to the top of the next page so that its visible content
+    // lands at exactly GAP + PAGE_PAD below the boundary - regardless of which
+    // element type starts the page. `top` is the border-box top, and the element
+    // only moves down by the spacer's height (its margin-top still applies on top
+    // of the spacer, so margin must NOT be subtracted). Only the border-box-inner
+    // spacing (border + padding) offsets the visible content, so subtract that.
+    const pushBefore = (el: HTMLElement, top: number, boundary: number) => {
+      const cs = getComputedStyle(el);
+      const ownInset =
+        (parseFloat(cs.borderTopWidth) || 0) +
+        (parseFloat(cs.paddingTop) || 0);
+      const spacer = document.createElement('div');
+      spacer.className = 'pg-spacer';
+      spacer.style.height = `${Math.max(0, boundary - top + GAP + PAGE_PAD - ownInset)}px`;
+      el.parentNode?.insertBefore(spacer, el);
+    };
+
+    for (let iter = 0; iter < 60; iter++) {
+      let fixed = false;
+      const els = Array.from(sheet.querySelectorAll(KEEP)) as HTMLElement[];
+      for (const el of els) {
+        const h = el.offsetHeight;
+        if (h > usable) continue; // too tall to keep whole - a finer unit handles it
+        const top = topInSheet(el, sheet);
+        const pageIdx = Math.floor(top / pageH);
+        const prevBoundary = pageIdx * pageH;
+        const boundary = prevBoundary + pageH;
+
+        // a title is "cut" if it would be split from its first block (break-after:avoid)
+        let span = top + h;
+        if (el.classList.contains('w-sec-title')) {
+          const fb = firstBlockOf(el);
+          if (fb && fb.offsetHeight <= usable) span = topInSheet(fb, sheet) + fb.offsetHeight;
+        }
+
+        // (1) element (or title + first block) crosses the next boundary → next page
+        if (boundary > top && boundary < span) {
+          pushBefore(el, top, boundary);
+          fixed = true;
+          break;
+        }
+        // (2) element sits underneath a page-gap bar (covered) → nudge below the bar
+        if (prevBoundary >= pageH && top - prevBoundary < GAP) {
+          pushBefore(el, top, prevBoundary);
+          fixed = true;
+          break;
+        }
+      }
+      if (!fixed) break;
+    }
+
+    // pad the sheet up to a whole number of pages, so the last page is a full
+    // fixed-size A4 too (the white sheet fills the last page instead of ending
+    // at the content).
+    const contentH = sheet.scrollHeight;
+    const pages = Math.max(1, Math.ceil((contentH - 1) / pageH));
+    sheet.style.minHeight = `${pages * pageH}px`;
+
+    // overlay page-gap bars at each boundary
+    for (let p = 1; p < pages; p++) {
+      const line = document.createElement('div');
+      line.className = 'pg-line';
+      line.style.top = `${p * pageH}px`;
+      line.innerHTML = `<span class="pg-line-label">PAGE ${p + 1}</span>`;
+      sheet.appendChild(line);
+    }
+  }, []);
+
+  useEffect(() => {
+    applyBreaks();
+    // Web fonts load after first paint; the initial measure uses fallback-font
+    // metrics and misplaces breaks. Recompute once fonts are ready, and again on
+    // the next frame to settle any reflow.
+    let raf = 0;
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        applyBreaks();
+        raf = requestAnimationFrame(applyBreaks);
+      });
+    }
+    // Only recompute when the sheet's WIDTH changes (window resize / zoom).
+    // applyBreaks mutates the sheet's HEIGHT (spacers + min-height); observing
+    // that would feed back into an endless resize loop.
+    let lastW = sheetRef.current?.clientWidth ?? 0;
+    const ro = new ResizeObserver(() => {
+      const w = sheetRef.current?.clientWidth ?? 0;
+      if (w === lastW) return;
+      lastW = w;
+      applyBreaks();
+    });
+    if (sheetRef.current) ro.observe(sheetRef.current);
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [applyBreaks]);
 
   return (
     <div className="wanted-root">
@@ -140,7 +287,7 @@ export function PortfolioDocument() {
         </button>
       </div>
 
-      <div className="sheet"><div className="sheet-inner">
+      <div className="sheet" ref={sheetRef}><div className="sheet-inner">
         <div className="w-brand">Portfolio</div>
         <div className="w-role">Backend Engineer<span className="dot">.</span></div>
         <div className="w-sub">{P.tagline}</div>
@@ -152,6 +299,7 @@ export function PortfolioDocument() {
               <div className="val-p">{hl(v.p)}</div>
             </div>
           ))}
+          {P.summaryClose && <div className="w-close">{hl(P.summaryClose)}</div>}
         </div>
 
         <div className="w-cards">
@@ -173,20 +321,22 @@ export function PortfolioDocument() {
         <div className="w-sec-title">Projects</div>
         {P.projects.map((pr, idx) => (
           <div key={idx} className="w-proj">
-            <div className="w-proj-head">
-              <div className="w-proj-top"><span className="w-proj-name">{pr.title}</span></div>
-              <div className="w-proj-period">{pr.company} · {pr.period}</div>
+            <div className="w-proj-intro">
+              <div className="w-proj-head">
+                <div className="w-proj-top"><span className="w-proj-name">{pr.title}</span></div>
+                <div className="w-proj-period">{pr.company} · {pr.period}</div>
+              </div>
+              <div className="w-shots">
+                <div className="w-shot">스크린샷 / 데모 이미지</div>
+                <div className="w-shot">아키텍처 / 화면</div>
+              </div>
+              <div className="w-sub-h">개요</div>
+              <div className="w-overview">{pr.desc}</div>
+              <div className="w-sub-h">역할</div>
+              <div className="w-role-list">{pr.blocks.map((b, j) => <div key={j} className="w-role-item">{b.label}</div>)}</div>
+              <div className="w-sub-h">Skills</div>
+              <div className="w-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
             </div>
-            <div className="w-shots">
-              <div className="w-shot">스크린샷 / 데모 이미지</div>
-              <div className="w-shot">아키텍처 / 화면</div>
-            </div>
-            <div className="w-sub-h">개요</div>
-            <div className="w-overview">{pr.desc}</div>
-            <div className="w-sub-h">역할</div>
-            <div className="w-role-list">{pr.blocks.map((b, j) => <div key={j} className="w-role-item">{b.label}</div>)}</div>
-            <div className="w-sub-h">Skills</div>
-            <div className="w-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
 
             {pr.blocks.map((b, j) => (
               <div key={j} className="contrib">

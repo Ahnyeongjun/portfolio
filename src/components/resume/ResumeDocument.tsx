@@ -51,7 +51,6 @@ const CSS = `
 .rallit-root .hd-contact .row { display:flex; align-items:baseline; gap:8px; font-size:12px; color:var(--ink-2); }
 .rallit-root .hd-contact .ck { font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.06em; }
 .rallit-root .hd-contact .v { font-weight:600; }
-.rallit-root .hd-contact-secondary { display:flex; flex-wrap:wrap; gap:7px 20px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
 .rallit-root .hd-photo { width:110px; height:110px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 12px rgba(20,22,28,0.14); }
 .rallit-root .hd-photo img { display:block; width:100%; height:100%; object-fit:cover; }
 .rallit-root .hd-rule { height:2px; background:var(--ink); margin:18px 0 0; }
@@ -302,8 +301,6 @@ export function ResumeDocument() {
                 <div className="row"><span className="ck">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="row"><span className="ck">GITHUB</span><span className="v">{P.github}</span></div>
                 <div className="row"><span className="ck">BASE</span><span className="v">{P.location}</span></div>
-              </div>
-              <div className="hd-contact-secondary">
                 <div className="row"><span className="ck">병역</span><span className="v">{P.military}</span></div>
               </div>
             </div>
@@ -318,6 +315,7 @@ export function ResumeDocument() {
                 <p className="sm-body">{s.body}</p>
               </div>
             ))}
+            {P.summaryClose && <p className="sm-close">{P.summaryClose}</p>}
           </div>
 
           <div className="sec">
