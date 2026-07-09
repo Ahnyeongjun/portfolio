@@ -329,15 +329,6 @@ export const PROFILE = {
 
   activities: [
     {
-      title: "드론 탑재 실시간 객체탐지 시스템 - ROS2 마이그레이션 분석",
-      org: "한컴인스페이스", year: "2026",
-      desc: "동료가 개발한 드론 탑재 Faster R-CNN 객체탐지 시스템(ROS1 Noetic)의 아키텍처를 분석하고 ROS2 Humble 전환 계획을 수립했습니다.",
-      notes: [
-        "UDP 명령으로 ROS_MASTER_URI를 동적 설정해 멀티프로세스를 띄우는 기존 구조를 분석, ROS2 도입 시 ROS_DOMAIN_ID 기반 멀티 세션 격리로 대체하는 전환안 설계",
-        "rospy→rclpy 전환이 필요한 컴포넌트별 작업 항목과 단계별 마이그레이션 순서·검증 계획 수립",
-      ],
-    },
-    {
       title: "FESI 13기 - 백엔드 멘토링",
       org: "codeit", year: "2026",
       desc: "프론트엔드 부트캠프 수강생 6명 대상 실무 방식 기반 멘토링 (PR 리뷰, REST API 설계, DDD·TDD 실습).",

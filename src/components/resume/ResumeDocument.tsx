@@ -16,7 +16,7 @@ const CSS = `
 .rallit-root * { box-sizing:border-box; margin:0; padding:0; }
 .rallit-root a { color:inherit; text-decoration:none; }
 .rallit-root .sheet { width:210mm; min-height:297mm; background:#fff; margin:22px auto; position:relative; box-shadow:0 1px 2px rgba(20,22,28,0.05),0 18px 50px rgba(20,22,28,0.12); }
-.rallit-root .sheet-inner { padding:22mm 21mm 24mm; }
+.rallit-root .sheet-inner { padding:15mm 16mm 16mm; }
 .rallit-root .pg-spacer { background:#fff; }
 .rallit-root .pg-line { position:absolute; left:0; right:0; height:28px; background:#dde1e6; z-index:10; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .rallit-root .pg-line-label { font-family:var(--font-mono); font-size:9px; color:var(--ink-3); letter-spacing:0.06em; }
@@ -36,9 +36,9 @@ const CSS = `
   .rallit-root { background:#fff; padding:0; }
   .rallit-toolbar { display:none !important; }
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
-  .rallit-root .sheet-inner { padding:14mm 14mm; }
+  .rallit-root .sheet-inner { padding:12mm 12mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .sec, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
+  .rallit-root .sec, .rallit-root .proj, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
   .rallit-root .sec-h { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -53,8 +53,8 @@ const CSS = `
 .rallit-root .hd-contact .v { font-weight:600; }
 .rallit-root .hd-photo { width:110px; height:110px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 12px rgba(20,22,28,0.14); }
 .rallit-root .hd-photo img { display:block; width:100%; height:100%; object-fit:cover; }
-.rallit-root .hd-rule { height:2px; background:var(--ink); margin:18px 0 0; }
-.rallit-root .summary { margin-top:20px; display:flex; flex-direction:column; gap:16px; }
+.rallit-root .hd-rule { height:2px; background:var(--ink); margin:13px 0 0; }
+.rallit-root .summary { margin-top:15px; display:flex; flex-direction:column; gap:12px; }
 .rallit-root .sm-head { font-size:13.5px; font-weight:800; color:var(--ink); line-height:1.5; letter-spacing:-0.025em; margin-bottom:6px; }
 .rallit-root .sm-body { font-size:12px; color:var(--ink-2); line-height:1.75; }
 .rallit-root .sm-close { font-size:12px; color:var(--ink-2); line-height:1.75; padding-top:14px; border-top:1px solid var(--line); }
@@ -63,18 +63,18 @@ const CSS = `
 .rallit-root .hl:first-child { border-left:none; padding-left:0; }
 .rallit-root .hl .v { font-family:var(--font-mono); font-size:15px; font-weight:800; color:var(--ink); letter-spacing:-0.02em; }
 .rallit-root .hl .l { font-size:11px; color:var(--ink-2); font-weight:600; margin-top:6px; }
-.rallit-root .sec { margin-top:36px; }
-.rallit-root .sec-h { display:flex; align-items:baseline; gap:11px; padding-bottom:10px; border-bottom:1.5px solid var(--ink); margin-bottom:18px; }
+.rallit-root .sec { margin-top:26px; }
+.rallit-root .sec-h { display:flex; align-items:baseline; gap:11px; padding-bottom:8px; border-bottom:1.5px solid var(--ink); margin-bottom:13px; }
 .rallit-root .sec-h .no { font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--ink-3); }
 .rallit-root .sec-h .t { font-size:18px; font-weight:800; letter-spacing:-0.03em; }
 .rallit-root .career-head { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
 .rallit-root .career-co { font-size:17px; font-weight:800; }
 .rallit-root .career-pos { font-size:12px; color:var(--ink-3); margin-top:3px; }
 .rallit-root .career-period { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); white-space:nowrap; }
-.rallit-root .proj { margin-bottom:22px; border-top:1px solid var(--line-2); padding-top:16px; }
+.rallit-root .proj { margin-bottom:16px; border-top:1px solid var(--line-2); padding-top:13px; }
 .rallit-root .proj:first-child { border-top:none; padding-top:0; }
 .rallit-root .proj:last-child { margin-bottom:0; }
-.rallit-root .career-groups { margin-top:16px; padding-left:14px; display:flex; flex-direction:column; gap:12px; }
+.rallit-root .career-groups { margin-top:12px; padding-left:14px; display:flex; flex-direction:column; gap:10px; }
 .rallit-root .career-group {}
 .rallit-root .cg-title { font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; }
 .rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
@@ -87,7 +87,7 @@ const CSS = `
 .rallit-root .proj-period { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); white-space:nowrap; }
 .rallit-root .proj-desc { font-size:11.5px; color:var(--ink-2); line-height:1.62; margin-top:4px; }
 .rallit-root .proj-badge { display:inline-block; font-size:9.5px; font-weight:700; color:var(--ink-2); background:var(--bg-soft); border:1px solid var(--line); border-radius:4px; padding:1px 7px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
-.rallit-root .proj-achievements { margin-top:15px; padding:14px 0 2px 15px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:0; }
+.rallit-root .proj-achievements { margin-top:12px; padding:11px 0 2px 15px; border-top:1px dashed var(--line); display:flex; flex-direction:column; gap:0; }
 .rallit-root .proj-ach-row { padding:11px 0 12px 0; border-top:1px solid var(--line-2); }
 .rallit-root .proj-ach-row:first-child { border-top:none; padding-top:0; }
 .rallit-root .proj-ach-label { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--ink); letter-spacing:-0.02em; margin-bottom:8px; }
@@ -121,8 +121,9 @@ const CSS = `
 .rallit-root .cert-issuer { font-size:11px; color:var(--ink-2); margin-top:2px; }
 .rallit-root .skills { display:flex; flex-wrap:wrap; gap:7px; }
 .rallit-root .skill { font-size:12.5px; font-weight:600; color:var(--ink); background:var(--bg-soft); border-radius:999px; padding:7px 15px; }
-.rallit-root .foot { margin-top:26px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.03em; }
-@media (max-width:760px) { .rallit-root .sheet { width:auto; margin:0; } .rallit-root .highlights { flex-wrap:wrap; } .rallit-root .hl { min-width:50%; } }
+.rallit-root .foot { margin-top:18px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.03em; }
+/* Sheet stays fixed A4 width at every viewport - small screens scroll horizontally,
+   content never reflows (deterministic pagination). */
 `;
 
 const GAP = 28; // px - height of the gray page-gap bar
@@ -158,8 +159,10 @@ export function ResumeDocument() {
     // too tall to fit (e.g. the projects section). Document order lists coarser
     // units first, so the first crossing unit that fits is always the coarsest.
     // Sections that fit are kept whole (never cut); the oversized projects section
-    // flows block by block (a project may span pages, but a block is never cut).
-    const KEEP = '.sec, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
+    // flows project by project. A whole `.proj` is kept together so it never spans
+    // a page boundary; only a project too tall for one page falls back to its inner
+    // blocks (.proj-head/.proj-ach-row), which are still never cut.
+    const KEEP = '.sec, .proj, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -315,7 +318,6 @@ export function ResumeDocument() {
                 <p className="sm-body">{s.body}</p>
               </div>
             ))}
-            {P.summaryClose && <p className="sm-close">{P.summaryClose}</p>}
           </div>
 
           <div className="sec">
@@ -372,7 +374,12 @@ export function ResumeDocument() {
           </div>
 
           <div className="sec">
-            <div className="sec-h"><span className="no">03</span><span className="t">대외활동</span></div>
+            <div className="sec-h"><span className="no">03</span><span className="t">기술 스택</span></div>
+            <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
+          </div>
+
+          <div className="sec">
+            <div className="sec-h"><span className="no">04</span><span className="t">대외활동</span></div>
             {P.activities.map((a, i) => (
               <div key={i} className="act-item">
                 <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
@@ -384,7 +391,7 @@ export function ResumeDocument() {
           <div className="sec">
             <div className="two-col">
               <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">04</span><span className="t">교육</span></div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">05</span><span className="t">교육</span></div>
                 {P.education.map((e, i) => (
                   <div key={i} className="edu-item">
                     <div className="edu-school">{e.school}</div>
@@ -394,7 +401,7 @@ export function ResumeDocument() {
                 ))}
               </div>
               <div>
-                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">05</span><span className="t">자격증</span></div>
+                <div className="sec-h" style={{ marginBottom: 12 }}><span className="no">06</span><span className="t">자격증</span></div>
                 {P.certs.map((c, i) => (
                   <div key={i} className="cert-item">
                     <div className="cert-top"><span className="cert-name">{c.name}</span><span className="cert-date">{c.date}</span></div>
@@ -404,13 +411,6 @@ export function ResumeDocument() {
               </div>
             </div>
           </div>
-
-          <div className="sec">
-            <div className="sec-h"><span className="no">06</span><span className="t">기술 스택</span></div>
-            <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
-          </div>
-
-          <div className="foot"><span>{P.name} · {P.role}</span><span>{P.email}</span></div>
         </div>
       </div>
     </div>

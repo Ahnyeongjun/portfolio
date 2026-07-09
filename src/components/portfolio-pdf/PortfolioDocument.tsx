@@ -100,7 +100,8 @@ const CSS = `
 .wanted-root .cert-issuer { font-size:11px; color:var(--ink-2); margin-top:2px; }
 .wanted-root .w-sec-title { font-size:19px; font-weight:800; letter-spacing:-0.03em; margin:34px 0 16px; padding-bottom:9px; border-bottom:2px solid var(--ink); }
 .wanted-root .foot { margin-top:26px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.03em; }
-@media (max-width:760px) { .wanted-root .sheet { width:auto; margin:0; } .wanted-root .w-cards, .wanted-root .w-shots, .wanted-root .w-two { grid-template-columns:1fr; } }
+/* Sheet stays fixed A4 width at every viewport - small screens scroll horizontally,
+   content never reflows (deterministic pagination). */
 `;
 
 const MARK_RE = new RegExp(
