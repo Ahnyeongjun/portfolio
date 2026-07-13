@@ -73,17 +73,9 @@ export const PROFILE = {
         ],
       },
       {
-        title: "AI 모델 학습·추론",
-        items: [
-          "객체탐지·세그멘테이션 모델 학습·서빙 - mAP50 0.644, mIoU 0.7205",
-          "추론 가용성 확보 - GPU 4장 70파드 동시 운영, 처리량 200→3,000건/일",
-        ],
-      },
-      {
         title: "사내 자동화 에이전트 개발",
         items: [
           "FastMCP 에이전트 - Git·캘린더·HRWeb 통합, 문서 자동화",
-          "ML 실험 자율화 에이전트 - cronjob으로 학습 루프 자동 실행·기록, Claude Skill·Hook 기반 실험기록 표 자동 생성, Slack 알림",
         ],
       },
     ],
@@ -154,26 +146,6 @@ export const PROFILE = {
             "재배포 월 10건→1건, 배포 속도 4분→30초",
           ],
         },
-        {
-          label: "멀티 배포 뷰어·레거시 프론트 재설계",
-          situation: "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가",
-          cause: "컴포넌트 추상화 없는 SSR 방식으로 재사용 불가, 지구 변화탐지·달지도 두 모드를 별도 배포해야 함",
-          actions: [
-            "Next.js 15 + FSD 전면 마이그레이션, 지구 변화탐지·지역통계·달지도를 독립 feature slice로 분리",
-            "동일 Docker 이미지를 K8s env(MAP_TYPE: EARTH|MOON)만 바꿔 배포판 분리, dynamic import로 달지도 청크 지연 로드",
-            "CesiumJS 커스텀 ImageryProvider - MVT·MBTiles·ImageLayer·달지도 이종 레이어 단일 인터페이스 추상화",
-          ],
-          result: "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
-          brief: [
-            "jQuery·Thymeleaf 레거시 프론트는 컴포넌트 추상화가 없어 기능 경계가 모호했고, 지구 변화탐지·달지도 두 모드를 별도로 배포해야 했습니다.",
-            "Next.js 15·FSD로 feature slice를 분리해 동일 Docker 이미지를 K8s 환경변수만으로 여러 배포판으로 나눴고, CesiumJS 커스텀 ImageryProvider로 이종 레이어를 단일 인터페이스로 추상화했습니다.",
-          ],
-          lines: [
-            "Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가, 지구/달지도 두 모드 배포 필요",
-            "Next.js 15 + FSD로 feature slice 분리, K8s env(MAP_TYPE)만으로 멀티 배포, CesiumJS ImageryProvider로 이종 레이어 단일 인터페이스 추상화",
-            "신규 레이어 추가 시 기존 코드 수정 0건, 환경변수만으로 지구/달 모드 배포 분리",
-          ],
-        },
       ],
     },
     {
@@ -184,42 +156,33 @@ export const PROFILE = {
       desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
       blocks: [
         {
-          label: "부하 테스트 기반 성능·보안 개선",
-          situation: "국가기관 납품으로 보안 요구사항 엄격, k6 50VU 부하테스트에서 에러율 11.22% 발생",
-          cause: "32개 매퍼에 SQL injection 취약점 존재, 페이지네이션·조건 없는 쿼리로 3가지 성능 병목(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점) 발생",
+          label: "부하 테스트 기반 성능·보안·인프라 안정화",
+          situation: "국가기관 납품으로 보안 요구사항 엄격, k6 50VU 부하테스트에서 에러율 11.22% 발생. 같은 시기 SaltStack master 파드도 반복적으로 CrashLoopBackOff에 빠짐",
+          cause: "32개 매퍼에 SQL injection 취약점 존재, 페이지네이션·조건 없는 쿼리로 3가지 성능 병목(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점) 발생. CrashLoopBackOff는 livenessProbe가 전체 minion을 순회하며 kubectl exec까지 수행하는 무거운 스크립트였고 probe timeout(1초)과 충돌한 것이 원인",
           actions: [
             "보안 체크리스트 선반영, JUnit 통합 테스트 작성",
             "SQL injection 취약점을 화이트리스트 검증으로 교체",
             "조건부 PostGIS 실행, 페이지네이션, BLOB 컬럼 분리, Redis 캐싱 적용",
+            "SaltStack master 파드의 헬스체크를 프로세스 생존 확인(pgrep)만으로 경량화하고 timeoutSeconds·periodSeconds 재조정",
           ],
-          result: "위성 메타 목록 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+          result: "위성 메타 목록 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s. 불필요한 파드 재시작 유발 로직도 제거해 인프라 안정성 확보",
           brief: [
-            "국가기관 납품 특성상 보안 요구사항이 엄격했는데, 32개 매퍼에 SQL injection 취약점이 있었고 k6 50VU 부하테스트 에러율도 11.22%에 달했습니다.",
-            "보안 체크리스트·JUnit 통합 테스트를 선반영하고 SQL injection을 화이트리스트 검증으로 교체했습니다. 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 병목도 해소했습니다.",
-          ],
-          lines: [
-            "보안 요구사항 엄격 + SQL injection 취약점 + k6 50VU 에러율 11.22%(PostGIS 미조건 실행·카테시안 곱·BLOB의 커넥션 독점)",
-            "보안 체크리스트·JUnit 통합 테스트 선반영, SQL injection 화이트리스트 검증 교체, 조건부 실행·페이지네이션·BLOB 분리·Redis 캐싱",
-            "위성 메타 38초→159ms, 수집 현황 46초→181ms, 알람 목록 25초→104ms(캐시 20ms), 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+            "국가기관 납품 특성상 보안 요구사항이 엄격했는데, 32개 매퍼에 SQL injection 취약점이 있었고 k6 50VU 부하테스트 에러율도 11.22%에 달했습니다. 같은 시기 SaltStack master 파드도 무거운 헬스체크와 probe timeout 충돌로 반복 재시작되고 있었습니다.",
+            "보안 체크리스트·JUnit 통합 테스트를 선반영하고 SQL injection을 화이트리스트 검증으로 교체했습니다. 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 병목을 해소했고, 헬스체크도 프로세스 생존 확인만으로 경량화해 파드 안정성을 함께 확보했습니다.",
           ],
         },
         {
-          label: "파일 기반 양방향 DB 동기화",
-          situation: "외부망↔폐쇄망 물리 분리 환경에서 DB 양방향 동기화·분산 ID 발급 필요",
-          cause: "Debezium CDC의 replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
+          label: "Debezium CDC 안정화 - Outbox 전환 및 자가치유 운영",
+          situation: "외부망↔폐쇄망 물리 분리 환경에서 DB 양방향 동기화·분산 ID 발급이 필요했고, 유지되는 CDC 파이프라인에서도 Debezium replication slot이 반복 파손됨",
+          cause: "Debezium CDC는 slot 파손 시 전체 재동기화가 필요해 안정성이 낮았고 UUID v4로는 발생 망·서버 역추적이 불가했으며, 상태 판정 우선순위 오류로 WAL 완전 유실 상황도 '비활성'으로 오판해 필요한 slot 재생성을 건너뛰는 버그도 있었음",
           actions: [
-            "Debezium CDC 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현",
-            "Snowflake 알고리즘 직접 구현, worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
+            "폐쇄망 동기화 용도로는 Debezium CDC를 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현, Snowflake 알고리즘으로 worker ID 비트 영역에 망 정보(외부망·내부망·분리망) 인코딩",
+            "그래도 유지해야 하는 CDC 파이프라인은 상태 판정 순서를 NOT_FOUND→WAL lost→inactive→healthy로 재정렬하고, 강제종료→slot 삭제→재생성→검증 4단계 복구 함수로 자가치유 자동화(연속 3회 실패 시에만 트리거)",
           ],
-          result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 전역 유일 ID 발급·망 추적 확보",
+          result: "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 전역 유일 ID 발급·망 추적 확보. 유지되는 CDC 파이프라인도 재시도 폭주 없는 자가치유 구조 확보",
           brief: [
-            "외부망↔폐쇄망이 물리 분리된 환경에서 Debezium CDC의 replication slot이 반복 파손됐고, UUID v4로는 발생 망·서버를 역추적할 수 없었습니다.",
-            "MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현하고, Snowflake 알고리즘으로 worker ID에 망 정보를 인코딩했습니다.",
-          ],
-          lines: [
-            "포트·외부 솔루션 사용 불가한 폐쇄망 환경에서 Debezium CDC 도입 - replication slot 반복 파손, UUID v4로는 발생 망·서버 역추적 불가",
-            "Debezium 제거, MyBatis Executor 인터셉터 기반 Outbox 라이브러리 직접 구현, Snowflake 알고리즘으로 worker ID에 망 정보 인코딩",
-            "이벤트 유실 없이 안정적으로 운영, 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적 동시 확보",
+            "외부망↔폐쇄망이 물리 분리된 환경에서 Debezium CDC의 replication slot이 반복 파손됐고, 유지되는 CDC 파이프라인에서도 상태 판정 우선순위 버그로 slot 복구가 누락되고 있었습니다.",
+            "폐쇄망 동기화용은 자체 Outbox 라이브러리+Snowflake로 Debezium 의존을 걷어냈고, 유지해야 하는 CDC 파이프라인은 상태 판정 순서를 재정렬해 자가치유 자동 복구 스크립트로 안정화했습니다.",
           ],
         },
         {
@@ -243,23 +206,54 @@ export const PROFILE = {
           ],
         },
         {
-          label: "관심정보 객체탐지·변화탐지 세그멘테이션 성능 향상",
-          situation: "위성 나디르(직하방) 고정 촬영 특성상 회전 augmentation이 오히려 역효과, 땅과 도로 색상이 유사해 세그멘테이션 픽셀 분류가 까다로움",
-          cause: "객체 방향이 이미 정렬돼 있어 45도 회전 augmentation 적용 시 mAP50 0.644→0.577로 하락, DINOv2·HRNet 백본은 목표 mIoU 0.72에 미달",
+          label: "Redis 기반 인증·인가 강화 - Rate Limiting 및 즉시 권한 회수",
+          situation: "업로드·삭제 등 고위험 API가 단순 조회 API와 동일하게 무제한 호출 가능했고 로그인 무차별 대입 공격 방어 장치도 없었으며, Spring Security 6에서 기존 URL 접근제어 방식이 deprecated돼 권한 변경이 이미 로그인된 세션에 즉시 반영되지 않는 문제도 있었음",
+          cause: "다중 스레드 환경에서 카운터를 락으로 보호하면 성능 저하, 방치하면 경쟁조건 발생. 또한 프론트와 API 서버가 분리된 멀티모듈 구조에서 인가 판단의 단일 기준점이 없었음",
           actions: [
-            "회전 방향이 중요한 대형 15클래스는 OBB(YOLOv11m-obb, ProBIoU 메모리 이슈로 mosaic만 적용), 위치만 중요한 소형 5클래스는 HBB(YOLOv11m, mosaic+mixup+copy_paste)로 이원화",
-            "회전 augmentation 실험으로 mAP50 하락 확인·제거",
-            "DINOv2 ViT-B/14(mIoU 0.6656)·HRNet-W48(0.6857) 대비 실험 후 ConvNeXt-Base(ImageNet-22k)+UPerNet에 도로 중심선 보조 학습(Skeleton Head) 추가",
+            "필터+AOP 이중 계층으로 위험도(HIGH/MEDIUM/LOW)별 차등 제한, ConcurrentHashMap<RiskLevel, AtomicInteger> 기반 락-프리 카운팅. 로그인 실패는 Redis INCR 원자적 증가로 처리, Redis 장애 시에도 로그인은 막지 않는 fail-open 정책 명시적 적용",
+            "AuthorizationManager를 직접 구현해 URL-권한 매핑을 DB에서 런타임 조회, 인가 판단을 API 서버로 일원화. Redis를 세션·방문자·로그인실패 용도별로 분리하고 사용자별 활성 세션을 인덱싱해 권한 변경 시 해당 세션의 SecurityContext를 즉시 재작성",
           ],
-          result: "HBB mAP50 0.644 / OBB mAP50 0.604, 세그멘테이션 mIoU 0.7205(DINOv2·HRNet 대비 최종 채택)",
+          result: "고위험 API 5회/분·일반 API 20회/분 차등 제한, 로그인 실패 4회/10분 차단, 로그아웃 없이 권한 회수가 즉시 반영되는 구조 확보",
           brief: [
-            "위성 나디르 고정 촬영 특성상 회전 augmentation이 오히려 mAP50을 떨어뜨렸고, 땅과 도로 색상이 유사해 세그멘테이션 픽셀 분류가 까다로웠습니다.",
-            "20클래스를 OBB/HBB로 이원화하고 회전 augmentation을 제거했으며, DINOv2·HRNet 대비 실험을 거쳐 ConvNeXt-Base+UPerNet에 Skeleton Head를 추가해 mIoU 0.7205를 달성했습니다.",
+            "업로드·삭제 등 고위험 API가 무제한 호출 가능했고 로그인 무차별 대입 공격 방어도 없었으며, Spring Security 6 마이그레이션으로 권한 변경이 기존 세션에 즉시 반영되지 않는 문제도 있었습니다.",
+            "필터+AOP 위험도 기반 Rate Limiting과 Redis INCR 락-프리 로그인 실패 카운팅을 구현하고, DB 기반 동적 URL 인가를 API 서버로 일원화해 권한 변경 시 활성 세션의 SecurityContext를 즉시 재작성하도록 만들었습니다.",
           ],
-          lines: [
-            "나디르 고정 촬영으로 회전 augmentation 역효과(mAP50 0.644→0.577), 땅·도로 색상 유사로 세그멘테이션 분류 어려움",
-            "20클래스 OBB(대형)/HBB(소형) 이원화, 회전 augmentation 제거, DINOv2·HRNet 대비 실험 후 ConvNeXt-Base+UPerNet+Skeleton Head 채택",
-            "HBB mAP50 0.644 / OBB 0.604, 세그멘테이션 mIoU 0.7205(DINOv2·HRNet 대비 최종 채택)",
+        },
+        {
+          label: "대용량 산출물 다운로드 재설계",
+          situation: "goroutine+channel 기반 다운로드 압축 로직에서 타임아웃 시 채널 close와 결과 전송이 경쟁해 panic 위험",
+          cause: "압축 결과를 메모리로 한 번에 스트리밍해 Range(재개 다운로드) 요청도 지원 불가",
+          actions: [
+            "압축 결과를 임시파일로 만든 뒤 원자적 rename으로 캐싱(TTL 1시간)",
+            "채널 기반 동시성 코드를 제거하고 HTTP Range 요청(재개 다운로드) 지원 방식으로 재작성",
+          ],
+          result: "채널 경쟁조건 제거, 캐시 응답으로 재압축 회피, 재개 다운로드 지원",
+          brief: [
+            "goroutine+channel로 구현된 다운로드 압축 로직에 타임아웃 시 채널 close와 결과 전송이 경쟁하는 panic 위험이 있었고, Range 재개 다운로드도 지원하지 않았습니다.",
+            "압축 결과를 원자적 rename으로 캐싱하고 HTTP Range 요청을 지원하는 파일 기반 스트리밍으로 재설계해 동시성 버그를 제거하고 재개 다운로드를 지원했습니다.",
+          ],
+        },
+      ],
+    },
+    {
+      title: "국가보안기관 위성영상 AI 처리 플랫폼 운영 및 기능 개선",
+      company: "한컴인스페이스",
+      period: "2021.10. ~ 2023.12.",
+      stack: ["Spring Boot", "MyBatis", "PostgreSQL"],
+      desc: "외부 인터넷이 차단된 폐쇄망 환경에 납품된 위성영상 AI 분석 플랫폼입니다. 레거시 시스템 운영과 신규 기능 개발을 담당했습니다.",
+      blocks: [
+        {
+          label: "HWP 판독보고서 연동 파이프라인",
+          situation: "외부 판독지원시스템(IBS)이 생성한 HWP 판독보고서를 등록→썸네일 생성→조건부 내부망 배포하는 과정에 수작업 개입 필요",
+          cause: "초기 구현은 파일 경로 하드코딩과 원본 move(삭제) 방식이라 외부 연동 실패 시 원본 유실 위험",
+          actions: [
+            "등록일자+문서ID 기반 디렉터리 파티셔닝으로 전환, move를 copy로 변경해 원본 유실 방지",
+            "외부 시스템 3종을 어댑터로 분리해 썸네일 생성→조건부 배포 체인 구현",
+          ],
+          result: "외부 연동 실패 시에도 원본 데이터가 보존되는 안정적인 문서 산출물 파이프라인 확보",
+          brief: [
+            "외부 판독지원시스템이 생성한 HWP 보고서를 등록·배포하는 과정이 자동화되지 않았고, 초기 구현은 원본을 이동(삭제)하는 방식이라 연동 실패 시 유실 위험이 있었습니다.",
+            "디렉터리 파티셔닝과 move→copy 전환으로 원본 유실을 방지하고, 외부 시스템 3종을 어댑터로 분리해 썸네일 생성→조건부 배포 체인을 구현했습니다.",
           ],
         },
       ],
@@ -294,37 +288,6 @@ export const PROFILE = {
         },
       ],
     },
-    {
-      title: "ML 실험 자율 오케스트레이터 - Claude Code 에이전트 설계",
-      company: "한컴인스페이스",
-      period: "2026.05. ~ 2026.06.",
-      badge: "사내 개인",
-      stack: ["Claude Code", "Python", "Shell Script", "Slack API"],
-      desc: "Claude Code를 ML 실험 루프 오케스트레이터로 설계해 반복 엔지니어링을 AI에 위임했습니다. cronjob·Skill·Hook·work_history를 조합해 실험 판단→실행→기록→재판단 사이클을 자율 운영합니다.",
-      blocks: [
-        {
-          label: "ML 실험 자율 루프",
-          situation: "ML 실험 루프(초기화→학습→검증→기록→다음 실험 결정)를 엔지니어가 수동으로 순환",
-          cause: "각 단계 완료 후 사람이 결과를 보고 다음 실험을 결정해야 해 자리를 비우면 실험이 멈춤",
-          actions: [
-            "cronjob으로 Claude Code Skill을 주기적으로 실행, work_history를 읽고 다음 실험 판단",
-            "Hook+sh로 학습 프로세스 자동 실행",
-            "실험 결과를 work_history에 기록 → 다음 판단 인풋으로 재투입하는 자율 루프 구성",
-            "Slack WebHook으로 완료·에러 실시간 알림",
-          ],
-          result: "엔지니어 개입 없는 연속 실험 가능 - AI를 코드 보조가 아닌 반복 엔지니어링 위임 에이전트로 운영",
-          brief: [
-            "ML 실험 루프의 각 단계마다 사람이 결과를 보고 다음 실험을 결정해야 해서, 자리를 비우면 실험이 멈추고 재개할 때 맥락을 다시 파악해야 했습니다.",
-            "cronjob으로 Claude Code Skill을 주기적으로 실행해 work_history를 읽고 다음 실험을 판단하게 하고, Hook으로 학습을 자동 실행·기록·재투입하는 자율 루프를 구성해 엔지니어 개입 없는 연속 실험을 가능하게 했습니다.",
-          ],
-          lines: [
-            "ML 실험 루프를 엔지니어가 수동 순환 - 자리 비우면 실험 멈추고 재개까지 맥락 재파악 필요",
-            "cronjob으로 Claude Code Skill 주기 실행 → work_history 읽고 다음 실험 판단, Hook+sh 학습 자동 실행, 결과 재기록 → 재판단 자율 루프 - Slack 완료·에러 실시간 알림",
-            "엔지니어 개입 없는 연속 실험 가능 - AI를 코드 보조가 아닌 반복 엔지니어링 자체를 위임하는 자율 에이전트로 운영",
-          ],
-        },
-      ],
-    },
   ] as DocProject[],
 
   activities: [
@@ -336,15 +299,6 @@ export const PROFILE = {
         "[동시성] 동시 신청 시 maxMembers 초과 가능 → PESSIMISTIC_WRITE 락 + Batch UPDATE로 원자적 증감 처리",
         "[강결합] 알림 실패가 모임 데이터에 영향 → @TransactionalEventListener(AFTER_COMMIT)로 이벤트 분리, fault tolerance 확보",
         "[성과] 51개 테스트 파일(단위·통합·E2E 3-layer 피라미드) + GitHub Actions CI 구성",
-      ],
-    },
-    {
-      title: "제4회 블레이버스 MVP 개발 해커톤",
-      org: "블레이버스", year: "2026",
-      desc: "기계공학 3D 학습 플랫폼 SIMVEX 개발 - @react-three/fiber 기반 3D 분해·조립 시뮬레이션 및 SSE 스트리밍 AI 어시스턴트 구현.",
-      notes: [
-        "부품이 같은 방향으로 분해되어 겹치는 문제를 피보나치 스피어 알고리즘으로 해결 - 균일한 분해 애니메이션 구현",
-        "SSE 스트리밍 AI 응답으로 학습 흐름 끊김 없이 실시간 표시",
       ],
     },
     {
@@ -365,12 +319,6 @@ export const PROFILE = {
         "[분산 트랜잭션] Redis 대기열 → Kafka 전환, Choreography Saga + DLQ로 일관성 확보",
       ],
     },
-    {
-      title: "AI 커리어스쿨",
-      org: "멋쟁이사자처럼", year: "2024",
-      desc: "Python 기반 데이터 분석 및 시각화 학습 - 위성 영상 데이터 파이프라인·AI 모델 서빙 업무의 데이터 처리 흐름 이해에 기반이 됨.",
-      notes: [],
-    },
   ],
 
   education: [
@@ -378,7 +326,7 @@ export const PROFILE = {
     { school: "대덕소프트웨어마이스터고등학교", degree: "고등학교 · 소프트웨어개발과", period: "2020.03. ~ 2022.03.", status: "졸업" },
   ],
 
-  skills: ["Spring Boot", "Java", "Kotlin", "Python", "Go", "FastAPI", "PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "Kubernetes", "Docker", "SaltStack", "Zabbix", "Next.js"],
+  skills: ["Spring Boot", "Java", "Kotlin", "Python", "Go", "FastAPI", "PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "Kubernetes", "Docker", "SaltStack", "Zabbix"],
 
   certs: [
     { name: "SQL개발자(SQLD)", issuer: "한국데이터산업진흥원", date: "2025.12.", status: "합격" },
@@ -535,6 +483,34 @@ export const PROFILE_PLATFORM = {
           brief: [
             "외부망·폐쇄망 DB를 동기화해야 했지만 망연계 솔루션이 파일 기반 전송만 지원해 API 폴링이 불가능했습니다.",
             "Debezium CDC로 WAL 레벨 변경분을 JSON 파일로 반출·반입하는 망 분리 우회형 아키텍처를 구축해 보안을 지키면서 실시간성을 확보했습니다.",
+          ],
+        },
+        {
+          label: "K8s CrashLoopBackOff 근본원인 진단",
+          situation: "SaltStack master 파드가 반복적으로 CrashLoopBackOff에 빠졌습니다.",
+          cause: "livenessProbe가 전체 minion 목록을 조회하고 각 minion에 kubectl exec까지 수행하는 무거운 스크립트였고, probe timeout(1초)에 가까워 정상 상황에서도 타임아웃이 잦았습니다.",
+          actions: [
+            "헬스체크를 프로세스 생존 여부(pgrep)만 확인하는 경량 체크로 축소",
+            "timeoutSeconds·periodSeconds를 재조정하고 기존 minion 자동 재시작 로직을 probe에서 분리",
+          ],
+          result: "불필요한 재시작을 유발하던 무거운 체크 로직 제거, 파드 안정성 확보",
+          brief: [
+            "SaltStack master 파드의 livenessProbe가 전체 minion을 순회하며 kubectl exec까지 수행하는 무거운 스크립트라 probe timeout과 충돌해 CrashLoopBackOff가 반복됐습니다.",
+            "헬스체크를 프로세스 생존 확인만으로 경량화하고 probe 타이밍을 재조정해 문제를 해결했습니다.",
+          ],
+        },
+        {
+          label: "Debezium 자가치유 운영 스크립트",
+          situation: "PostgreSQL logical replication slot이 WAL 유실·비활성 상태로 남아 CDC가 정지하는 장애가 반복됐습니다.",
+          cause: "상태 판정 우선순위가 잘못되어 WAL 완전 유실 상황도 '비활성'으로 오판, 필요한 slot 재생성을 건너뛰는 버그가 있었습니다.",
+          actions: [
+            "상태 판정 순서를 NOT_FOUND→WAL lost→inactive→healthy로 재정렬",
+            "강제종료→slot 삭제→재생성→검증까지 이어지는 자가치유 함수 구현, 연속 3회 실패 시에만 복구 트리거",
+          ],
+          result: "반복적인 재시도 폭주 없이 CDC 파이프라인 자가치유 구조 확보",
+          brief: [
+            "PostgreSQL replication slot이 WAL 유실로 CDC가 정지하는 장애가 반복됐고, 상태 판정 우선순위 버그로 필요한 slot 재생성이 누락되고 있었습니다.",
+            "상태 판정 순서를 재정렬하고 강제종료→재생성→검증까지 자동화한 자가치유 스크립트를 구현했습니다.",
           ],
         },
         {

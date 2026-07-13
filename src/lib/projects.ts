@@ -99,6 +99,11 @@ export const projects: Project[] = [
       "[AI 모델] YOLOv11m OBB/HBB 이원 탐지 20클래스 (HBB mAP50 0.644 / OBB 0.604), UPerNet+ConvNeXt 세그멘테이션 mIoU 0.7205 - 회전 augmentation 역효과 확인·제거, 색감 도메인 매칭 전처리 구현",
       "[위성 소스 통합] 소스별 하드코딩으로 신규 위성 추가 시 파이프라인 전체 수정 → janus H_BASE/S_BASE 추상화, 10+ 소스 단일 파이프라인 - 신규 소스 추가 코드 수정 0건",
       "[API 성능] PostGIS 전수 연산으로 위성 메타 API 38초 소요 → 조건부 실행 + 페이징 + Redis 캐싱 - 159ms (239배), 50VU 에러율 11.22%→0%",
+      "[Rate Limiting] 업로드·삭제 등 고위험 API가 단순 조회 API와 동일하게 무제한 호출 가능, 로그인 무차별 대입 공격 방어 장치 부재 → 필터+AOP 이중 계층 위험도별 차등 제한, Redis INCR 원자적 증가로 로그인 실패 카운팅(Redis 장애 시 fail-open 명시적 적용) - 고위험 API 5회/분·로그인 실패 4회/10분 차단",
+      "[권한 즉시 회수] Spring Security 6에서 기존 URL 접근제어 방식이 deprecated, 관리자가 권한을 바꿔도 기존 로그인 세션엔 즉시 반영 안 됨 → DB 기반 동적 URL 인가를 API 서버로 일원화, 사용자별 활성 세션을 Redis에 인덱싱 - 로그아웃 없이 권한 회수가 즉시 반영되는 구조 확보",
+      "[Debezium 자가치유] PostgreSQL replication slot이 WAL 유실·비활성 상태로 남아 CDC가 정지하는 장애 반복, 상태 판정 우선순위 버그로 필요한 slot 재생성이 누락됨 → 상태 판정 순서 재정렬, 강제종료→slot 재생성→검증까지 자동 복구하는 자가치유 함수 구현 - 재시도 폭주 없는 CDC 파이프라인 자가치유 구조 확보",
+      "[CrashLoopBackOff 진단] SaltStack master 파드가 반복적으로 CrashLoopBackOff → livenessProbe가 전체 minion을 순회하며 kubectl exec까지 수행하는 무거운 스크립트라 probe timeout(1초)과 충돌하는 게 원인, 프로세스 생존 확인(pgrep)만으로 헬스체크 경량화 - 불필요한 재시작 유발 로직 제거, 파드 안정성 확보",
+      "[다운로드 동시성 버그] goroutine+channel 기반 산출물 압축 다운로드가 타임아웃 시 채널 close와 결과 전송이 경쟁해 panic 위험, Range(재개 다운로드) 요청도 미지원 → 압축 결과를 임시파일 원자적 rename으로 캐싱, 채널 기반 동시성 코드를 제거하고 HTTP Range 지원 방식으로 재작성 - 경쟁조건 제거, 캐시 응답으로 재압축 회피, 재개 다운로드 지원",
     ],
     achievementsEn: [
       "[Event Loss] Repeated Debezium replication slot failures triggered full snapshots → Developed AOP + MyBatis Outbox library in-house - eliminated CDC infrastructure dependency, 0 event losses",
@@ -106,6 +111,11 @@ export const projects: Project[] = [
       "[AI Model] YOLOv11m dual OBB/HBB detection 20 classes (HBB mAP50 0.644 / OBB 0.604), UPerNet+ConvNeXt segmentation mIoU 0.7205 - identified and removed rotation augmentation side effects, implemented color domain matching preprocessing",
       "[Satellite Source Integration] Per-source hardcoding required full pipeline rewrite for each new satellite → janus H_BASE/S_BASE abstraction, 10+ sources on single pipeline - 0 code changes needed for new source additions",
       "[API Performance] PostGIS full-scan satellite metadata API took 38s → Conditional execution + pagination + Redis caching - 159ms (239×), 50VU error rate 11.22%→0%",
+      "[Rate Limiting] High-risk APIs (upload/delete) were callable without limit just like read-only endpoints, and login brute-force had no defense → dual-layer filter+AOP rate limiting by risk tier, lock-free Redis INCR for login-failure counting (explicit fail-open on Redis outage) - 5 calls/min for high-risk APIs, login lockout after 4 failures/10min",
+      "[Instant Permission Revocation] Spring Security 6 deprecated the existing URL access-control approach, and revoking a user's permission didn't apply to their already-active session → centralized dynamic URL authorization in the API server via a custom AuthorizationManager, indexed each user's active sessions in Redis - permission changes now take effect immediately without requiring logout",
+      "[Debezium Self-Healing] PostgreSQL replication slots repeatedly went WAL-lost/inactive, halting CDC, due to a state-priority bug that skipped required slot recreation → reordered the state-priority check and implemented an automated force-disconnect → recreate → verify recovery routine - self-healing CDC pipeline with no retry storms",
+      "[CrashLoopBackOff Root Cause] A SaltStack master pod kept crash-looping → traced it to a heavy livenessProbe (iterating every minion and running kubectl exec) colliding with the probe timeout, then slimmed the healthcheck to a plain process-liveness (pgrep) check - eliminated the unnecessary restarts and stabilized the pod",
+      "[Download Concurrency Bug] A goroutine+channel-based artifact-download/compression path risked a panic from a close-vs-send race on timeout, and had no support for resumable Range requests → cached compressed output via atomic temp-file rename and rewrote the concurrency away in favor of HTTP Range support - eliminated the race condition, avoided recompression via cache hits, and enabled resumable downloads",
     ],
     resources: [
       { label: "로고", url: "/kari_logo.svg", type: "image" },
