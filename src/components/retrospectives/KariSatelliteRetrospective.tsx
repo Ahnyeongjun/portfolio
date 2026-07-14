@@ -423,13 +423,6 @@ def generate(self) -> int:
           </p>
         </AccordionSection>
 
-      </div>
-
-      <div className="border-t border-border" />
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">AI</h2>
-
         {/* OD/SEG */}
         <AccordionSection
           title="관심정보 객체탐지 · 변화탐지 세그멘테이션 성능 향상"

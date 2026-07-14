@@ -207,7 +207,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
 
 
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
+        <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
         {/* 1. Keycloak OIDC */}
         <AccordionSection
@@ -323,6 +323,78 @@ def callback(ch, method, properties, body):
           </p>
         </AccordionSection>
 
+        {/* AI 탐지 품질 개선 */}
+        <AccordionSection
+          title="AI 탐지 품질 개선"
+          hint="조명·색상 차이와 그림자가 변화로 오탐 → 전처리 색상 정규화 · 후처리 필터링"
+          module="변화탐지 AI"
+        >
+          <p>
+            완성된 AI 모듈을 그대로 연동하던 기존 방식에서는, 전후 영상의{" "}
+            <Highlight>조명·색상 차이와 그림자</Highlight>가 변화로 오탐되는 문제가
+            누적됐습니다. 모델 출력을 후처리 없이 그대로 사용해 노이즈가 결과에
+            그대로 반영됐습니다.
+          </p>
+          <p>
+            모델 출력을 직접 분석해 <Highlight>전처리</Highlight>에 그림자 제거와 색상
+            정규화를 추가하고, <Highlight>후처리</Highlight>에 면적 기반 필터링과 모폴로지
+            연산을 적용해 픽셀 단위 노이즈를 제거했습니다.
+          </p>
+          <CompareTable
+            headers={["단계", "적용 기법", "목적"]}
+            rows={[
+              { cells: ["전처리", "그림자 제거 · 색상 정규화", "조명·색상 차이로 인한 오탐 방지"], highlight: true },
+              { cells: ["후처리", "면적 기반 필터링", "작은 노이즈 폴리곤 제거"], highlight: true },
+              { cells: ["후처리", "모폴로지 연산", "변화 폴리곤 경계 정제"], highlight: true },
+            ]}
+          />
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
+
+        {/* 단계별 큐 분리 · 워커 수평 확장 */}
+        <AccordionSection
+          title="단계별 큐 분리와 워커 수평 확장"
+          hint="단일 큐로는 병목 단계만 골라 확장 불가 → 처리 워커 1개 → 15개 수평 확장"
+          module="처리 파이프라인"
+        >
+          <p>
+            큐를 하나만 두고 워커를 늘리는 방법도 있었지만, 파이프라인 단계마다 부하 특성이
+            달랐습니다. AI 추론은 무겁고 후처리는 가벼운데, 단일 큐로는 <Highlight>병목 구간만
+            골라 확장</Highlight>할 수 없었습니다.
+          </p>
+          <p>
+            그래서 <Highlight>수집 → 전처리 → 추론 → 후처리</Highlight> 단계별로 큐를 분리했습니다.
+            각 단계 워커는 자기 큐에서 메시지를 consume하고, 끝나면 결과를 다음 큐에 publish합니다.
+            단계 간 직접 통신 없이 큐로만 데이터를 넘기는 구조라, 한 단계가 일시적으로 느려져도
+            큐가 버퍼 역할을 해서 앞뒤 단계가 영향을 받지 않습니다.
+          </p>
+          <CompareTable
+            headers={["", "단일 큐", "단계별 큐 분리"]}
+            rows={[
+              { cells: ["확장 단위", "전체 워커 일괄 확장", "병목 단계 워커만 선택 확장"], highlight: true },
+              { cells: ["결합도", "한 단계 지연이 전체 파이프라인에 전파", "큐가 버퍼 역할 - 앞뒤 단계 영향 차단"], highlight: true },
+              { cells: ["DB 의존", "작업 상태 조회를 위해 DB 폴링 필요", "작업 상태가 큐에 있어 폴링 불필요"] },
+            ]}
+          />
+          <p>
+            추론 단계가 병목이면 추론 워커만 늘리고, 후처리가 가벼우면 워커를 줄이는 식으로
+            단계마다 자원을 따로 조절할 수 있게 되면서, 처리 워커 컨테이너를
+            <Highlight>1개에서 15개로 수평 확장</Highlight>했습니다. 요청을 큐로 받아 워커에
+            분산하는 이 패턴은 더 큰 트래픽의 AI 추론 인프라에도 그대로 적용됩니다.
+          </p>
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">프론트엔드</h2>
+
         {/* 4. FSD + YAML 조합 뷰어 */}
         <AccordionSection
           title="Next.js 15 FSD · 멀티 배포 뷰어 · 달지도 · 지역 통계"
@@ -384,71 +456,6 @@ export function ViewerWidget({ mapType }: { mapType: string }) {
             MVT·MBTiles·ImageLayer·달지도 등 이종 레이어를 <Highlight>단일 인터페이스</Highlight>로 추상화해
             신규 레이어 타입 추가 시 기존 코드 수정 없이 확장 가능했습니다.
           </p>
-        </AccordionSection>
-
-      </div>
-
-      <div className="border-t border-border" />
-
-      <div className="space-y-2">
-        {/* 단계별 큐 분리 · 워커 수평 확장 */}
-        <AccordionSection
-          title="단계별 큐 분리와 워커 수평 확장"
-          hint="단일 큐로는 병목 단계만 골라 확장 불가 → 처리 워커 1개 → 15개 수평 확장"
-          module="처리 파이프라인"
-        >
-          <p>
-            큐를 하나만 두고 워커를 늘리는 방법도 있었지만, 파이프라인 단계마다 부하 특성이
-            달랐습니다. AI 추론은 무겁고 후처리는 가벼운데, 단일 큐로는 <Highlight>병목 구간만
-            골라 확장</Highlight>할 수 없었습니다.
-          </p>
-          <p>
-            그래서 <Highlight>수집 → 전처리 → 추론 → 후처리</Highlight> 단계별로 큐를 분리했습니다.
-            각 단계 워커는 자기 큐에서 메시지를 consume하고, 끝나면 결과를 다음 큐에 publish합니다.
-            단계 간 직접 통신 없이 큐로만 데이터를 넘기는 구조라, 한 단계가 일시적으로 느려져도
-            큐가 버퍼 역할을 해서 앞뒤 단계가 영향을 받지 않습니다.
-          </p>
-          <CompareTable
-            headers={["", "단일 큐", "단계별 큐 분리"]}
-            rows={[
-              { cells: ["확장 단위", "전체 워커 일괄 확장", "병목 단계 워커만 선택 확장"], highlight: true },
-              { cells: ["결합도", "한 단계 지연이 전체 파이프라인에 전파", "큐가 버퍼 역할 - 앞뒤 단계 영향 차단"], highlight: true },
-              { cells: ["DB 의존", "작업 상태 조회를 위해 DB 폴링 필요", "작업 상태가 큐에 있어 폴링 불필요"] },
-            ]}
-          />
-          <p>
-            추론 단계가 병목이면 추론 워커만 늘리고, 후처리가 가벼우면 워커를 줄이는 식으로
-            단계마다 자원을 따로 조절할 수 있게 되면서, 처리 워커 컨테이너를
-            <Highlight>1개에서 15개로 수평 확장</Highlight>했습니다. 요청을 큐로 받아 워커에
-            분산하는 이 패턴은 더 큰 트래픽의 AI 추론 인프라에도 그대로 적용됩니다.
-          </p>
-        </AccordionSection>
-
-        {/* AI 탐지 품질 개선 */}
-        <AccordionSection
-          title="AI 탐지 품질 개선"
-          hint="조명·색상 차이와 그림자가 변화로 오탐 → 전처리 색상 정규화 · 후처리 필터링"
-          module="변화탐지 AI"
-        >
-          <p>
-            완성된 AI 모듈을 그대로 연동하던 기존 방식에서는, 전후 영상의{" "}
-            <Highlight>조명·색상 차이와 그림자</Highlight>가 변화로 오탐되는 문제가
-            누적됐습니다. 모델 출력을 후처리 없이 그대로 사용해 노이즈가 결과에
-            그대로 반영됐습니다.
-          </p>
-          <p>
-            모델 출력을 직접 분석해 <Highlight>전처리</Highlight>에 그림자 제거와 색상
-            정규화를 추가하고, <Highlight>후처리</Highlight>에 면적 기반 필터링과 모폴로지
-            연산을 적용해 픽셀 단위 노이즈를 제거했습니다.
-          </p>
-          <CompareTable
-            headers={["단계", "적용 기법", "목적"]}
-            rows={[
-              { cells: ["전처리", "그림자 제거 · 색상 정규화", "조명·색상 차이로 인한 오탐 방지"], highlight: true },
-              { cells: ["후처리", "면적 기반 필터링", "작은 노이즈 폴리곤 제거"], highlight: true },
-              { cells: ["후처리", "모폴로지 연산", "변화 폴리곤 경계 정제"], highlight: true },
-            ]}
-          />
         </AccordionSection>
       </div>
     </div>
