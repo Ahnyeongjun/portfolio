@@ -264,42 +264,17 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           />
         </AccordionSection>
 
-        {/* 2. 망연계 + Debezium 자가치유 */}
+        {/* 2. 망연계: Snowflake ID → Debezium 에러 → 자가치유 → Outbox 전환 */}
         <AccordionSection
-          title="Debezium CDC 안정화 - Outbox 전환 및 자가치유 운영"
-          hint="replication slot 반복 파손 → 메인 동기화는 Outbox 직접 구현(이벤트 유실 0건), 별도 CDC 구간은 자가치유 스크립트로 자동 복구"
+          title="파일 기반 양방향 DB 동기화 - Debezium 에러를 Outbox로 근본 해결"
+          hint="Snowflake ID로 분산 ID 구현 · Debezium replication slot 반복 파손 → 자가치유 스크립트로 응급 대응 → Outbox 직접 구현으로 근본 해결"
           module="API 서버 · 망연계"
         >
           <p>
             국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리됐습니다.
             위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요했습니다.
           </p>
-          <p className="font-medium text-foreground">Outbox 직접 구현 - Debezium CDC 대체</p>
-          <p>
-            앱 코드 수정 없이 DB 변경 로그를 읽는 Debezium CDC를 초기 도입했습니다.
-            그러나 운영 중 <Highlight>replication slot 반복 파손</Highlight>으로 매번 전체 스냅샷 재수행이 필요했습니다.
-          </p>
-          <p>
-            CDC 의존을 제거하고 MyBatis Executor 인터셉터 기반 Outbox 라이브러리를 직접 구현했습니다.
-            <Highlight>beforeCommit()</Highlight>으로 비즈니스 트랜잭션과 Outbox 저장을 원자적으로 묶고,
-            <Highlight>ThreadLocal OutboxContext</Highlight>로 폐쇄망 수신 데이터 재발행 시 무한 루프를 방지해
-            이벤트 유실 없이 안정적으로 운영할 수 있었습니다.
-          </p>
-          <CodeBlock>{`@Intercepts({ @Signature(type = Executor.class, method = "update", ...) })
-public class OutboxInterceptor implements Interceptor {
-    public Object intercept(Invocation inv) throws Throwable {
-        Object result = inv.proceed();
-        if (OutboxContext.isReplay()) return result; // 무한루프 방지
-        captureOutboxEvent(inv);
-        return result;
-    }
-}
-
-@Override
-public void beforeCommit(boolean readOnly) {
-    outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
-}`}</CodeBlock>
-          <p className="font-medium text-foreground">폐쇄망 분산 ID - Snowflake 알고리즘 직접 구현</p>
+          <p className="font-medium text-foreground">1. Snowflake ID 도입 - 폐쇄망 분산 ID 직접 구현</p>
           <p>
             외부망↔폐쇄망 물리 분리 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
             UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.
@@ -323,20 +298,43 @@ def generate(self) -> int:
                 | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
                 | self.worker_id << SEQUENCE_BITS
                 | self.sequence)`}</CodeBlock>
-          <p className="font-medium text-foreground">Debezium 자가치유 운영 스크립트 - 별도 CDC 연동 구간</p>
+          <p className="font-medium text-foreground">2. Debezium CDC 에러 → 자가치유 스크립트 → Outbox로 근본 해결</p>
           <p>
-            메인 DB 동기화는 Outbox 라이브러리로 대체했지만, 그와는 별도로 운영하던
-            CDC 연동 구간에서도 PostgreSQL logical replication slot이{" "}
-            <Highlight>WAL 유실·비활성 상태</Highlight>로 남아 CDC가 정지하는 장애가
-            반복됐습니다. 원인은 상태 판정 우선순위 오류로, WAL이 완전히 유실된
-            상황도 단순 "비활성"으로 오판해 필요한 slot 재생성을 건너뛰고 있었습니다.
+            앱 코드 수정 없이 DB 변경 로그를 읽는 <Highlight>Debezium CDC</Highlight>를 초기 도입했습니다.
+            그러나 운영 중 logical replication slot이 <Highlight>WAL 유실·비활성 상태</Highlight>로
+            반복 파손되며 CDC가 정지하는 장애가 계속됐습니다. 원인은 상태 판정 우선순위
+            오류로, WAL이 완전히 유실된 상황도 단순 "비활성"으로 오판해 필요한 slot
+            재생성을 건너뛰고 있었습니다.
           </p>
           <p>
-            상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
+            우선 상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
             재정렬하고, 강제종료→slot 삭제→재생성→검증까지 이어지는 4단계 복구 함수를
-            자동화했습니다. 연속 3회 실패했을 때만 복구를 트리거하도록 해 일시적인
+            자동화한 <Highlight>자가치유 스크립트</Highlight>로 장애가 나도 자동 복구되도록
+            응급 대응했습니다. 연속 3회 실패했을 때만 복구를 트리거하도록 해 일시적인
             지연까지 복구로 오인해 재시도가 폭주하는 것도 막았습니다.
           </p>
+          <p>
+            다만 이는 근본 원인인 slot 파손 자체를 없애지는 못했기 때문에, CDC 의존을
+            완전히 제거하고 MyBatis Executor 인터셉터 기반 <Highlight>Outbox 라이브러리를
+            직접 구현</Highlight>했습니다. <Highlight>beforeCommit()</Highlight>으로 비즈니스
+            트랜잭션과 Outbox 저장을 원자적으로 묶고, <Highlight>ThreadLocal
+            OutboxContext</Highlight>로 폐쇄망 수신 데이터 재발행 시 무한 루프를 방지해
+            이벤트 유실 없이 안정적으로 운영할 수 있었습니다.
+          </p>
+          <CodeBlock>{`@Intercepts({ @Signature(type = Executor.class, method = "update", ...) })
+public class OutboxInterceptor implements Interceptor {
+    public Object intercept(Invocation inv) throws Throwable {
+        Object result = inv.proceed();
+        if (OutboxContext.isReplay()) return result; // 무한루프 방지
+        captureOutboxEvent(inv);
+        return result;
+    }
+}
+
+@Override
+public void beforeCommit(boolean readOnly) {
+    outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
+}`}</CodeBlock>
         </AccordionSection>
 
         {/* 3. 영상 서빙 */}
