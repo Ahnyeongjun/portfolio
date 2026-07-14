@@ -312,17 +312,16 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           </p>
         </AccordionSection>
 
-        {/* 2. 망연계: Snowflake ID → Debezium 에러 → 자가치유 → Outbox 전환 → 멱등키 설계 */}
+        {/* Snowflake ID - 폐쇄망 분산 ID */}
         <AccordionSection
-          title="파일 기반 양방향 DB 동기화 - Debezium 에러를 Outbox·멱등키 설계로 근본 해결"
-          hint="Snowflake ID로 분산 ID 구현 · replication slot 반복 파손 → 자가치유 스크립트 응급 대응 → Outbox 전환 · 이벤트 재전달 중복 반영은 멱등키 설계로 해결"
+          title="Snowflake ID 도입 - 폐쇄망 분산 ID 직접 구현"
+          hint="ZooKeeper·etcd 등 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보"
           module="API 서버 · 망연계"
         >
           <p>
-            국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리됐습니다.
-            위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요했습니다.
+            국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리돼, 이 경계를 넘나드는
+            데이터에 안전하게 ID를 부여할 방법이 필요했습니다.
           </p>
-          <p className="font-medium text-foreground">1. Snowflake ID 도입 - 폐쇄망 분산 ID 직접 구현</p>
           <p>
             외부망↔폐쇄망 물리 분리 환경에서는 ZooKeeper·etcd 같은 외부 코디네이터에 접근할 수 없습니다.
             UUID v4는 완전 랜덤이라 ID만으로 어느 망·서버에서 생성됐는지 역추적이 불가능했습니다.
@@ -346,7 +345,19 @@ def generate(self) -> int:
                 | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
                 | self.worker_id << SEQUENCE_BITS
                 | self.sequence)`}</CodeBlock>
-          <p className="font-medium text-foreground">2. Debezium CDC 에러 → 자가치유 스크립트 → Outbox로 근본 해결</p>
+        </AccordionSection>
+
+        {/* CDC 안정화: Debezium 자가치유 → Outbox 전환 → 멱등키 설계 → BLOB 정합성 */}
+        <AccordionSection
+          title="CDC 안정화 - 자가치유 스크립트 · Outbox 전환 · 멱등키 설계"
+          hint="replication slot 반복 파손 → 자가치유 스크립트 응급 대응 → Outbox로 근본 해결 · 이벤트 재전달 중복 반영은 멱등키 설계로 해결"
+          module="API 서버 · 망연계"
+        >
+          <p>
+            위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부)를
+            물리적으로 분리된 두 망 사이에서 동기화해야 했습니다.
+          </p>
+          <p className="font-medium text-foreground">1. Debezium CDC 에러 → 자가치유 스크립트 → Outbox로 근본 해결</p>
           <p>
             앱 코드 수정 없이 DB 변경 로그를 읽는 <Highlight>Debezium CDC</Highlight>를 초기 도입했습니다.
             그러나 운영 중 logical replication slot이 <Highlight>WAL 유실·비활성 상태</Highlight>로
@@ -430,7 +441,7 @@ public class OutboxInterceptor implements Interceptor {
 public void beforeCommit(boolean readOnly) {
     outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
-          <p className="font-medium text-foreground">3. CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계</p>
+          <p className="font-medium text-foreground">2. CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계</p>
           <p>
             Kafka 없이 Debezium Server(HTTP Sink) → 웹훅 → 파일 릴레이 → 워커로 이어지는
             구조에서, 동일 CDC 이벤트가 재전달·재시도될 때 <Highlight>중복 INSERT/UPDATE</Highlight>가
@@ -457,7 +468,7 @@ public void beforeCommit(boolean readOnly) {
             이 단일 dedup 로직을 <Highlight>23개 테이블</Highlight>의 CDC 반영이 공유하도록
             정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다.
           </p>
-          <p className="font-medium text-foreground">4. CDC 이진 데이터(BLOB) 파이프라인 정합성 확보</p>
+          <p className="font-medium text-foreground">3. CDC 이진 데이터(BLOB) 파이프라인 정합성 확보</p>
           <p>
             공지 첨부파일·팝업 이미지 컬럼이 SQLAlchemy 모델에 <code>String</code>으로
             잘못 선언돼 Postgres <code>bytea</code> 원본과 타입이 어긋났고, 1차 수정도 실제{" "}
