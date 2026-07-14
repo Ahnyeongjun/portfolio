@@ -779,6 +779,11 @@ code, pre {
 .pf-chip { font-size: 14.5px; font-weight: 600; color: var(--pf-text-dim); background: var(--pf-bg-soft); border-radius: 10px; padding: 9px 15px; transition: all 0.16s var(--pf-ease); }
 .pf-chip:hover { background: var(--pf-ac-soft); color: var(--pf-ac-strong); transform: translateY(-2px); }
 
+.pf-cat-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.pf-cat-btn { font-size: 13.5px; font-weight: 600; color: var(--pf-text-dim); background: var(--pf-surface); border: 1px solid var(--pf-bdr); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: all 0.16s var(--pf-ease); }
+.pf-cat-btn:hover { border-color: var(--pf-ac-line); color: var(--pf-ac-strong); }
+.pf-cat-btn.active { background: var(--pf-ac); border-color: var(--pf-ac); color: #fff; }
+
 /* marquee */
 .pf-marquee {
   margin-top: 30px; overflow: hidden; position: relative;

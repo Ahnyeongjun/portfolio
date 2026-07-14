@@ -16,7 +16,7 @@ export interface Project {
   link?: string;
   status: "live" | "beta" | "development" | "deployed";
   type: "company" | "team" | "personal";
-  category: ("fullstack" | "backend" | "frontend" | "ai")[];
+  category: ("fullstack" | "backend" | "frontend" | "infra" | "ai")[];
   company?: string;
   period: string;
   role: string;
@@ -45,7 +45,7 @@ export const projects: Project[] = [
     imageUrl: "/nipa_logo.svg",
     status: "deployed",
     type: "company",
-    category: ["backend", "ai"],
+    category: ["backend", "frontend", "infra", "ai"],
     company: "한컴인스페이스",
     period: "2025.07 ~ 진행중",
     role: "백엔드 엔지니어",
@@ -83,7 +83,7 @@ export const projects: Project[] = [
     imageUrl: "/kari_logo.svg",
     status: "deployed",
     type: "company",
-    category: ["backend", "ai"],
+    category: ["backend", "infra", "ai"],
     company: "한컴인스페이스",
     period: "2023.10 ~ 2025.07",
     role: "백엔드 엔지니어",
@@ -130,7 +130,7 @@ export const projects: Project[] = [
     imageUrl: "/hancominpsace_logo.png",
     status: "deployed",
     type: "company",
-    category: ["fullstack", "backend"],
+    category: ["fullstack", "infra"],
     company: "한컴인스페이스",
     period: "2022.05 ~ 진행중",
     role: "풀스택 개발 → 시스템 운영·인프라 구축",
