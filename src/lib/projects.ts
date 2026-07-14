@@ -140,8 +140,7 @@ export const projects: Project[] = [
     details: [],
     roleDetails: [],
     achievements: [
-      "[인증·인가 설계] 엔드포인트가 늘수록 컨트롤러마다 권한 체크 코드가 흩어져 누락·중복 위험 증가 → 인증은 Spring Security 필터 체인에서 일괄 처리하고 인가는 커스텀 어노테이션+AOP로 선언적으로 분리 - 신규 API는 어노테이션만 붙이면 권한 검증 적용, 인가 로직 중앙화로 누락 구조적 방지",
-      "[Redis 세션 관리] 토큰 단방향 저장만으로는 사용자별 활성 세션 수를 답할 수 없어 동시 로그인 통제·로그인 시도 공격 방어 불가 → user→token 역색인을 Redis에 저장해 세션 즉시 조회·통제, 로그인 실패는 IP·계정 단위로 카운트해 5회 초과 시 TTL 자동 만료로 차단",
+      "[인증·인가 체계 설계] 엔드포인트가 늘수록 컨트롤러마다 권한 체크 코드가 흩어져 누락·중복 위험 증가, 토큰 단방향 저장만으로는 사용자별 활성 세션 수를 답할 수 없어 동시 로그인 통제·로그인 시도 방어도 불가 → 인증은 Spring Security 필터 체인, 인가는 커스텀 어노테이션+AOP로 선언적 분리, user→token 역색인을 Redis에 저장해 세션 즉시 조회·통제·로그인 실패 IP/계정 단위 카운트 후 TTL 자동 차단 - 신규 API는 어노테이션만 붙이면 권한 검증 적용",
       "[판독보고서] 별도 문서 도구 없이 영상 판독과 보고서 작성을 한 화면에서 끝낼 수 있게 구현(분석관 호평) → 페이지별 3D globe 화면 캡처가 그대로 HWP 배경으로 삽입되는 구조라 CesiumJS 카메라 rect 계산 기반 뷰 북마크·복귀 기능 구현",
       "[대용량 다운로드] ins-file-svr에서 이어받기(Range) 요청마다 DRM 재암호화가 일어나 조각마다 바이트 구조가 달라지며 파일이 깨짐 → synchronized 처리 + 암호화 파일 캐싱으로 최초 요청에만 암호화하도록 수정",
       "[컴포넌트 매니저] 팝업·iframe·인페이지 컴포넌트마다 통신 방식이 달라 호출 코드가 제각각 → execute() 하나로 위치와 무관하게 호출 가능한 공통 매니저 활용·개선, 창 경계를 넘는 함수 호출을 RPC처럼 추상화",
@@ -153,8 +152,7 @@ export const projects: Project[] = [
       "[베어메탈 신규 구축] 관리형 인프라 없이 베어메탈부터 시작해야 하는 신규 구축 프로젝트 → 물리 서버 설치, K8s 클러스터 구성, 다종 수집기 통합·DB 기반 중복 체크·zst/tar.gz 포맷 변환 자동화까지 전 과정 직접 주도 - 베어메탈에서 운영 가능한 시스템까지 인프라 전 과정을 완주",
     ],
     achievementsEn: [
-      "[Auth Design] As endpoints grew, permission checks scattered across controllers risked omission and duplication → handled authentication in one Spring Security filter chain and split authorization out declaratively via a custom annotation+AOP - new endpoints get permission checks just by adding the annotation, centralizing authorization logic",
-      "[Redis Session Management] Unidirectional token storage alone couldn't answer 'how many sessions is this user in,' blocking concurrent-login control and brute-force defense → stored a user→token reverse index in Redis for instant session lookup/control, and counted login failures per IP/account, locking out after 5 with TTL-based auto-expiry",
+      "[Auth & Session Design] Permission checks scattered across controllers as endpoints grew, and unidirectional token storage couldn't answer 'how many sessions is this user in,' blocking concurrent-login control and brute-force defense → authentication in one Spring Security filter chain, authorization split out declaratively via custom annotation+AOP, and a Redis user→token reverse index for instant session lookup/control with per-IP/account login-failure counting and TTL-based auto-expiry lockout - new endpoints get permission checks just by adding the annotation",
       "[Interpretation Report] Built a report-authoring flow letting analysts go from imagery interpretation to a finished report in one screen, without a separate document tool (well received by analysts) → each page embeds a captured 3D globe screenshot as its HWP background, so implemented camera-rectangle-based view bookmarking/restore in CesiumJS",
       "[Large File Download] In ins-file-svr, each resumed Range request re-ran DRM encryption, so chunks landed with different byte layouts and corrupted the reassembled file → fixed by serializing downloads with synchronized and caching the encrypted file so encryption only runs on the first chunk",
       "[Component Manager] Popups, iframes, and in-page components each communicated differently, fragmenting call code → leveraged and improved a shared manager exposing one execute() call regardless of component location, abstracting cross-window function calls like an RPC",

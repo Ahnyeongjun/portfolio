@@ -215,16 +215,19 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 2. 인증·인가 계층 설계 */}
+        {/* 2. 인증·인가 체계 설계 */}
         <AccordionSection
-          title="인증·인가 계층 설계 - Spring Security 필터 + 커스텀 어노테이션 AOP"
-          hint="인증은 필터 체인에서 일괄 처리, 인가는 어노테이션 하나로 선언 - 권한 검증 로직 중앙화"
+          title="인증·인가 체계 설계 - Spring Security 필터 + AOP + Redis 세션"
+          hint="인증은 필터 체인, 인가는 어노테이션 하나로 선언 - 세션은 Redis 역색인으로 사용자 단위 통제"
           module="ins-auth-svr"
         >
           <p>
             엔드포인트가 늘어날수록 컨트롤러마다 권한 체크 코드를 개별적으로 넣다 보니,
             신규 API를 추가할 때 권한 검증을 <Highlight>깜빡 빠뜨리거나</Highlight> 서로 다른
-            방식으로 중복 구현하는 위험이 커졌습니다.
+            방식으로 중복 구현하는 위험이 커졌습니다. 여기에 더해 사용자별 동시 로그인을
+            통제하고 로그인 시도 공격을 막아야 했는데, 토큰을 단방향으로만 저장하면{" "}
+            <Highlight>"이 사용자가 지금 몇 세션에 접속 중인가"</Highlight>를 답할 방법이
+            없었습니다.
           </p>
           <p>
             인증은 <Highlight>Spring Security 필터 체인</Highlight>에서 일괄 처리하고, 인가는
@@ -239,22 +242,9 @@ export function InsopsRetrospective() {
               { cells: ["어노테이션 + AOP", "AOP 어드바이스 한 곳", "어노테이션만 부착 - 로직 재작성 불필요"], highlight: true },
             ]}
           />
-        </AccordionSection>
-
-        {/* 3. Redis 기반 인증·세션 관리 */}
-        <AccordionSection
-          title="Redis 기반 인증·세션 관리 - 역색인으로 사용자별 활성 세션 통제"
-          hint="user→token 역색인으로 동시 로그인 통제, 로그인 실패는 IP·계정 단위로 카운트 후 TTL 자동 차단"
-          module="ins-auth-svr"
-        >
           <p>
-            사용자별 동시 로그인을 통제하고 로그인 시도 공격을 막아야 했는데, 토큰을
-            단방향으로만 저장하면 <Highlight>"이 사용자가 지금 몇 세션에 접속 중인가"</Highlight>를
-            답할 방법이 없었습니다.
-          </p>
-          <p>
-            토큰 저장과 함께 <code>user → token</code> 역색인을 Redis에 함께 저장해 사용자
-            기준으로 활성 세션을 즉시 조회·통제할 수 있게 했습니다. 로그인 실패는
+            세션은 토큰 저장과 함께 <code>user → token</code> 역색인을 Redis에 함께 저장해
+            사용자 기준으로 활성 세션을 즉시 조회·통제할 수 있게 했습니다. 로그인 실패는
             IP·계정 단위로 카운트해 <Highlight>5회 초과 시 차단</Highlight>하고, 차단 해제는
             별도 배치 없이 Redis TTL 만료로 자동 처리했습니다.
           </p>
@@ -271,7 +261,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 4. 다운로드 엔드포인트 통합 */}
+        {/* 3. 다운로드 엔드포인트 통합 */}
         <AccordionSection
           title="다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로"
           hint="파일 크기·전송 방식과 무관하게 /download.do 하나 - 파라미터 유무로 일반/대용량 자동 분기"
@@ -299,7 +289,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 5. 컴포넌트 매니저 */}
+        {/* 4. 컴포넌트 매니저 */}
         <AccordionSection
           title="공통 컴포넌트 매니저 - 팝업·iframe·인페이지 통신 통합"
           hint="팝업·iframe 등 서로 다른 window의 함수를 execute() 하나로 통일 - 창 경계를 넘는 이름+인자 기반 호출 추상화"
@@ -340,7 +330,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 6. MyBatis mapper/entity 자동생성 도구 */}
+        {/* 5. MyBatis mapper/entity 자동생성 도구 */}
         <AccordionSection
           title="DB 스키마 기반 MyBatis mapper·entity 자동생성 도구"
           hint="information_schema 조회 → 테이블 40여 개의 Entity·XML mapper를 자동 생성"
@@ -377,7 +367,7 @@ export function InsopsRetrospective() {
       <div className="border-t border-border" />
 
       <div className="space-y-2">
-        {/* 7. NVMe 펌웨어 장애 근본원인 추적 */}
+        {/* 6. NVMe 펌웨어 장애 근본원인 추적 */}
         <AccordionSection
           title="가시화 전면 실패 장애 - 컨테이너에서 NVMe 펌웨어까지 추적"
           hint="'No space left on device'인데 마운트 용량은 충분 - 컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 추적"
@@ -406,7 +396,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 8. 대용량 영상 OOM 대응 */}
+        {/* 7. 대용량 영상 OOM 대응 */}
         <AccordionSection
           title="대용량 위성영상 OOM 대응 - 픽셀 수 기준 처리 경로 분기"
           hint="수억 픽셀 영상을 통째로 메모리에 올리면 컨테이너가 OOM으로 강제 종료"
@@ -423,7 +413,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 9. Zabbix 장애 사전 감지 */}
+        {/* 8. Zabbix 장애 사전 감지 */}
         <AccordionSection
           title="Zabbix 장애 사전 감지 체계 구축"
           hint="인터넷 차단 환경 - 장애를 사후가 아니라 사전에 인지하도록"
@@ -437,7 +427,7 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 10. DB 접근 계층 중앙화 + 베어메탈 신규 구축 */}
+        {/* 9. DB 접근 계층 중앙화 + 베어메탈 신규 구축 */}
         <AccordionSection
           title="다종위성 플랫폼 신규 구축 - DB 접근 계층 중앙화 · 베어메탈 인프라"
           hint="물리 서버 설치부터 K8s 클러스터 구성, DB 접근을 Go API 한 곳으로 중앙화하는 신규 구축"
