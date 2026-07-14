@@ -221,6 +221,43 @@ export function DflowRetrospective() {
           </p>
         </AccordionSection>
 
+        {/* 4. Webhook 존재 여부 캐싱 + 추가 SQLite 튜닝 */}
+        <AccordionSection
+          title="Webhook 조회 캐싱 & 추가 SQLite 튜닝"
+          hint="organization당 활성 webhook 존재 여부를 캐싱해 DB 쿼리 자체를 스킵 · mmap/WAL 체크포인트 튜닝"
+          module="Webhook · ML 백엔드"
+        >
+          <p>
+            라벨링·작업 이벤트마다 <Highlight>활성 webhook 조회 쿼리</Highlight>가 매번
+            실행되는데, 정작 webhook을 하나도 등록하지 않은 organization이 대부분이라
+            대부분의 쿼리가 빈 결과만 확인하고 버려지는 낭비였습니다.
+          </p>
+          <p>
+            organization 단위로 "활성 webhook이 있는지" 여부만 <Highlight>Django
+            cache</Highlight>에 TTL 120초로 저장해, 캐시가 <code>False</code>면 DB 쿼리
+            자체를 건너뛰도록 했습니다. API 응답 후 webhook을 트리거하는{" "}
+            <code>api_webhook</code> 데코레이터에도 같은 캐시를 넣어, 인스턴스 재조회 같은
+            부가 작업 전에 조기 반환하도록 했습니다. 최초 1회만 실제 쿼리를 실행해 그 결과를
+            캐시에 채웁니다.
+          </p>
+          <CodeBlock>{`org_key = f'wh_exist_{organization.pk}'
+org_has_webhooks = cache.get(org_key)
+if org_has_webhooks is False:
+    return Webhook.objects.none()   # DB 쿼리 자체를 스킵
+
+qs = Webhook.objects.filter(...).distinct()
+if org_has_webhooks is None:
+    cache.set(org_key, qs.exists(), _NO_WEBHOOK_TTL)  # 최초 1회만 채움
+return qs`}</CodeBlock>
+          <p>
+            SQLite 튜닝도 한 단계 더 진행해 <code>mmap_size</code>(256MB 메모리 매핑 I/O)와{" "}
+            <code>wal_autocheckpoint</code>(1000)를 앱 연결 시점에 추가로 적용했습니다.
+            WAL 파일이 무한정 커지는 것을 막고 읽기 처리량을 높이는 목적입니다. 함께
+            리워크한 k6 스크립트는 인증 토큰을 필수로 요구하고, 테스트가 만든 프로젝트를
+            종료 시 정리하며, 로컬 포트 설정 오류도 바로잡았습니다.
+          </p>
+        </AccordionSection>
+
       </div>
     </div>
   );

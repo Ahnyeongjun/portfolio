@@ -227,7 +227,7 @@ export const projects: Project[] = [
     internal: true,
     category: ["backend"],
     company: "한컴인스페이스",
-    period: "2026.06",
+    period: "2026.06 ~ 2026.07",
     role: "성능 개선",
     roleEn: "Performance Engineering",
     longDescription: "라벨링 후 학습·추론까지 이어지는 사내 MLOps 플랫폼 DFLOW의 ML 백엔드 API에 k6·Locust 부하테스트를 도입했습니다. torch 의존성 없는 Flask mock 서버로 GPU 없이도 반복 테스트가 가능한 환경을 만들고, 부하테스트로 드러난 SQLite 동시 쓰기 병목을 캐싱과 WAL 모드로 해결했습니다.",
@@ -238,11 +238,13 @@ export const projects: Project[] = [
       "[테스트 인프라] GPU 필요한 torch 의존성 때문에 반복 부하테스트가 어려움 → torch 없이 동작하는 Flask ML mock 서버 직접 구현, k6 인증 테스트용 유저·토큰 생성 스크립트 작성",
       "[병목 진단] k6 4개 시나리오로 ML 백엔드 API 부하테스트 - 초기 실패율 23.8%를 API 스펙 오류로 특정해 0.5%까지 수정, 이후 SQLite 동시 쓰기 직렬화를 실제 병목으로 확정",
       "[성능 개선] ML 백엔드 상태를 매번 DB에서 조회·저장하던 구조 → LocMemCache(TTL 30s)로 캐싱하고 값 불변 시 저장 생략, SQLite WAL 모드 적용 - api_load p95 4,239ms→2,106ms(-50%), VU당 DB 쓰기 5회→2회(-60%)",
+      "[Webhook 쿼리 스킵] 대부분의 organization이 webhook을 등록하지 않았는데도 이벤트마다 활성 webhook 조회 쿼리가 매번 실행됨 → organization당 활성 webhook 존재 여부를 캐시(TTL 120s)에 저장해 없으면 DB 쿼리 자체를 스킵, mmap_size·wal_autocheckpoint 추가 튜닝으로 SQLite 읽기 처리량 개선",
     ],
     achievementsEn: [
       "[Test Infrastructure] Repeated load testing was blocked by torch's GPU dependency → built a torch-free Flask ML mock server and scripts to provision test users/tokens for k6 auth",
       "[Bottleneck Diagnosis] Ran k6 across 4 scenarios against the ML backend API - traced an initial 23.8% failure rate to API spec mismatches and fixed it down to 0.5%, then confirmed SQLite concurrent-write serialization as the real bottleneck",
       "[Performance Fix] Replaced per-request DB reads/writes for ML backend state checks with LocMemCache (30s TTL) that skips saves when unchanged, plus SQLite WAL mode - api_load p95 4,239ms→2,106ms (-50%), DB writes per VU 5→2 (-60%)",
+      "[Webhook Query Skip] Most organizations had zero webhooks registered, yet an active-webhook lookup ran on every event anyway → cached a per-organization has-webhooks flag (120s TTL) to skip the DB query entirely when empty, plus added mmap_size/wal_autocheckpoint tuning for SQLite read throughput",
     ],
   },
   {
