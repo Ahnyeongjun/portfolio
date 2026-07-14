@@ -193,18 +193,22 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
 
       {/* 도입부 */}
       <p>
-        NIPA(정보통신산업진흥원) 지원으로 구축한, 두 시점의 위성 영상을 비교해 지표 변화를 AI로 탐지하는 변화탐지 플랫폼입니다.
+        NIPA(정보통신산업진흥원) 지원 사업으로, 서로 다른 두 시점의 위성 영상을 비교해
+        지표 변화를 자동으로 탐지하는 AI 플랫폼입니다. <Highlight>9개 서비스</Highlight>로
+        구성된 MSA 구조를 백엔드·인프라·프론트엔드까지 처음부터 설계·구현했습니다.
       </p>
       <p>
-        기능 하나를 수정해도 전체를 재배포해야 했던 모놀리식 구조를 MSA로 분리했습니다.
-        백엔드는 서비스별 독립 배포가 가능해졌지만, 프론트엔드는 굳이 서비스를 나눌 필요가 없었습니다.
-        대신 동일한 이미지를 환경변수(<code>MAP_TYPE: EARTH | MOON</code>)만 바꿔
-        지구 변화탐지 / 달지도 모드로 분기하는 구조를 택했습니다.
-        RabbitMQ 비동기 파이프라인과 Next.js 15 FSD도 처음 도입해
-        지역별 변화 통계·달지도(아폴로 탐사 경로·크레이터) 등 도메인 특화 뷰어 기능을 구현했습니다.
+        이전 시스템은 기능 하나만 고쳐도 전체를 재배포해야 하는 모놀리식 구조였습니다.
+        서비스를 <Highlight>FastAPI 기반 독립 배포 단위</Highlight>로 쪼개고, 수집 → 전처리
+        → 추론 → 후처리로 이어지는 처리 파이프라인은 <Highlight>RabbitMQ ack/nack 비동기 큐</Highlight>로
+        처음 도입해 병목 단계만 골라 확장할 수 있게 만들었습니다.
       </p>
-
-
+      <p>
+        반면 프론트엔드는 굳이 서비스를 나눌 이유가 없어, 하나의 Next.js 15 코드베이스를
+        K8s 환경변수(<code>MAP_TYPE: EARTH | MOON</code>)만 바꿔 지구 변화탐지·달지도
+        두 배포판으로 나누는 방식을 택했습니다. 이 구조 위에서 지역별 변화 통계, 달지도
+        (아폴로 탐사 경로·크레이터) 같은 도메인 특화 뷰어 기능을 구현했습니다.
+      </p>
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
