@@ -216,7 +216,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
       </p>
 
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">핵심 기능</h2>
+        <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
         {/* 1. 성능·보안 */}
         <AccordionSection
@@ -380,43 +380,6 @@ def generate(self) -> int:
           </p>
         </AccordionSection>
 
-        {/* 4. OD/SEG */}
-        <AccordionSection
-          title="관심정보 객체탐지 · 변화탐지 세그멘테이션 성능 향상"
-          hint="객체탐지 mAP50 0.644 · 세그멘테이션 mIoU 0.7205"
-          module="AI 추론"
-        >
-          <p>
-            <strong className="text-foreground">객체탐지</strong>는 20클래스를 OBB·HBB로 이원화했습니다.
-            회전 방향이 식별에 중요한 함선·항공기 등 대형 15cls는 OBB(YOLOv11m-obb),
-            위치만 중요한 차량·트럭 소형 5cls는 HBB(YOLOv11m)로 분리했습니다.
-            위성은 나디르(직하방) 고정 촬영이라 객체 방향이 이미 정렬되어 있어
-            45° 회전 augmentation 적용 시 mAP50이 오히려 하락했습니다.
-          </p>
-          <CompareTable
-            headers={["모델", "타입", "augmentation", "mAP50"]}
-            rows={[
-              { cells: ["YOLOv11m", "HBB", "mosaic + mixup + copy_paste", "0.644"], highlight: true },
-              { cells: ["YOLOv11m", "HBB", "+ degrees=45 회전", "0.577 ↓"], muted: true },
-              { cells: ["YOLOv11m-obb", "OBB", "mosaic only (ProBIoU OOM 방지)", "0.604"], highlight: true },
-            ]}
-          />
-          <p>
-            <strong className="text-foreground">세그멘테이션</strong>은 땅(나지)과 도로가 색상이 유사해 픽셀 분류 자체가 까다로웠습니다.
-            DINOv2 ViT-B/14를 적용했으나 목표 mIoU 0.72에 미달해 조기 종료했습니다.
-            ImageNet-22k ConvNeXt-Base에 도로 중심선 보조 학습(Skeleton Head)을 추가해
-            최종 <Highlight>mIoU 0.7205</Highlight>를 달성했습니다.
-          </p>
-          <CompareTable
-            headers={["backbone", "decoder", "mIoU", "비고"]}
-            rows={[
-              { cells: ["ConvNeXt-Base (ImageNet-22k)", "UPerNet + Skeleton Head", "0.7205", "✓ 최종 채택"], highlight: true },
-              { cells: ["HRNet-W48 (ImageNet-1k)", "UPerNet", "0.6857", ""] },
-              { cells: ["DINOv2 ViT-B/14", "UPerNet", "0.6656", "조기 종료"], muted: true },
-            ]}
-          />
-        </AccordionSection>
-
         {/* 5. Debezium 자가치유 */}
         <AccordionSection
           title="Debezium 자가치유 운영 스크립트"
@@ -465,6 +428,51 @@ def generate(self) -> int:
       <div className="border-t border-border" />
 
       <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">AI</h2>
+
+        {/* OD/SEG */}
+        <AccordionSection
+          title="관심정보 객체탐지 · 변화탐지 세그멘테이션 성능 향상"
+          hint="객체탐지 mAP50 0.644 · 세그멘테이션 mIoU 0.7205"
+          module="AI 추론"
+        >
+          <p>
+            <strong className="text-foreground">객체탐지</strong>는 20클래스를 OBB·HBB로 이원화했습니다.
+            회전 방향이 식별에 중요한 함선·항공기 등 대형 15cls는 OBB(YOLOv11m-obb),
+            위치만 중요한 차량·트럭 소형 5cls는 HBB(YOLOv11m)로 분리했습니다.
+            위성은 나디르(직하방) 고정 촬영이라 객체 방향이 이미 정렬되어 있어
+            45° 회전 augmentation 적용 시 mAP50이 오히려 하락했습니다.
+          </p>
+          <CompareTable
+            headers={["모델", "타입", "augmentation", "mAP50"]}
+            rows={[
+              { cells: ["YOLOv11m", "HBB", "mosaic + mixup + copy_paste", "0.644"], highlight: true },
+              { cells: ["YOLOv11m", "HBB", "+ degrees=45 회전", "0.577 ↓"], muted: true },
+              { cells: ["YOLOv11m-obb", "OBB", "mosaic only (ProBIoU OOM 방지)", "0.604"], highlight: true },
+            ]}
+          />
+          <p>
+            <strong className="text-foreground">세그멘테이션</strong>은 땅(나지)과 도로가 색상이 유사해 픽셀 분류 자체가 까다로웠습니다.
+            DINOv2 ViT-B/14를 적용했으나 목표 mIoU 0.72에 미달해 조기 종료했습니다.
+            ImageNet-22k ConvNeXt-Base에 도로 중심선 보조 학습(Skeleton Head)을 추가해
+            최종 <Highlight>mIoU 0.7205</Highlight>를 달성했습니다.
+          </p>
+          <CompareTable
+            headers={["backbone", "decoder", "mIoU", "비고"]}
+            rows={[
+              { cells: ["ConvNeXt-Base (ImageNet-22k)", "UPerNet + Skeleton Head", "0.7205", "✓ 최종 채택"], highlight: true },
+              { cells: ["HRNet-W48 (ImageNet-1k)", "UPerNet", "0.6857", ""] },
+              { cells: ["DINOv2 ViT-B/14", "UPerNet", "0.6656", "조기 종료"], muted: true },
+            ]}
+          />
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
+
         {/* Kubernetes 도입 배경 */}
         <AccordionSection
           title="Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩"
