@@ -304,10 +304,8 @@ export function ResumeDocument() {
                 <div className="row"><span className="ck">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="row"><span className="ck">GITHUB</span><span className="v">{P.github}</span></div>
                 <div className="row"><span className="ck">BASE</span><span className="v">{P.location}</span></div>
-                <div className="row"><span className="ck">병역</span><span className="v">{P.military}</span></div>
               </div>
             </div>
-            <div className="hd-photo"><img src="/profile-photo.jpg" alt={P.name} /></div>
           </div>
           <div className="hd-rule" />
 
