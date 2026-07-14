@@ -66,40 +66,92 @@ export const PROFILE = {
       {
         title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
         period: "2022.05 ~ 진행 중",
-        items: [
-          "인증·다운로드 API를 2년간 end-to-end 개발",
-          "Spring Security 필터+AOP 선언적 인가 설계, Redis 세션 통제·위험도별 Rate Limiting으로 보안 체계 직접 구축",
-          "외부 보안 진단 지적사항(CSP·SQL Injection 등 10건 이상) 전량 대응 완료",
-          "information_schema 기반 Entity·MyBatis mapper 자동 생성 도구 - 40여 테이블 보일러플레이트 제거",
-          "에어갭 환경 수십 대 서버 클러스터 무중단 운영 - NVMe 펌웨어 레벨 장애 추적, 수억 픽셀 영상 OOM 대응, Zabbix 사전 감지",
-          "신규 플랫폼 DB 접근 계층 Go API 중앙화 · 다중 레이어 타일 서버 동시성 재설계 - 베어메탈부터 전 과정 신규 구축",
+        sections: [
+          {
+            label: "보안·인증·다운로드 API 개발 (API 100여 개 개발)",
+            items: [
+              "Spring Security 필터+AOP 선언적 인가 설계",
+              "Redis 세션 통제·위험도별 Rate Limiting으로 보안 체계 직접 구축",
+              "외부 보안 진단 지적사항(CSP·SQL Injection 등 10건 이상) 전량 대응 완료",
+            ],
+          },
+          {
+            label: "자동화 개발",
+            items: [
+              "information_schema 기반 Entity·MyBatis mapper 자동 생성 도구 - 40여 테이블 보일러플레이트 제거",
+            ],
+          },
+          {
+            label: "에어갭 환경 8대 서버 클러스터 무중단 운영",
+            items: [
+              "NVMe 펌웨어 레벨 장애 추적, 수억 픽셀 영상 OOM 대응, Zabbix 사전 감지",
+            ],
+          },
+          {
+            label: "신규 플랫폼 DB 접근 계층 Go API 중앙화 · 다중 레이어 타일 서버 동시성 재설계 - 베어메탈부터 전 과정 신규 구축",
+            items: [],
+          },
         ],
       },
       {
         title: "항공우주연구원(KARI) 위성영상 처리 플랫폼 구축",
         period: "2023.10 ~ 2025.07",
-        items: [
-          "k6 부하테스트 기반 API 최적화 - PostGIS 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
-          "외래키 없는 스키마 설계 - 샤딩을 염두에 둔 트레이드오프, 유저 생성 트랜잭션 경계 버그 수정",
-          "Spring AOP + MyBatis Executor 인터셉터 Outbox 라이브러리 직접 개발, CDC 이벤트 멱등키 재설계 - 이벤트 유실 0건·23개 테이블 dedup",
-          "Go 영상 서빙 서버(WMS·WMTS·MVT) - 객체탐지 오버레이 응답 약 5분→1초 이내",
-          "GPU 4장 70파드 추론 운영 - 일 처리량 200건→3,000건",
+        sections: [
+          {
+            label: "테스트 도입",
+            items: [
+              "유닛테스트 도입",
+              "k6 부하테스트 기반 API 최적화 - PostGIS 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+            ],
+          },
+          {
+            label: "양방향 DB 동기화",
+            items: [
+              "Spring AOP + MyBatis Executor 인터셉터 Outbox 라이브러리 직접 개발, CDC 이벤트 멱등키 재설계 - 이벤트 유실 0건·23개 테이블 dedup",
+            ],
+          },
+          {
+            label: "서비스 개선",
+            items: [
+              "Go 영상 서빙 서버(WMS·WMTS·MVT) - 객체탐지 오버레이 응답 약 5분→1초 이내",
+            ],
+          },
+          {
+            label: "DB 재설계",
+            items: [
+              "외래키 없는 스키마 설계 - 샤딩을 염두에 둔 트레이드오프, 유저 생성 트랜잭션 경계 버그 수정",
+            ],
+          },
+          {
+            label: "인프라 재설계",
+            items: [
+              "GPU 4장 70파드 추론 운영 - 일 처리량 200건→3,000건",
+            ],
+          },
         ],
       },
       {
         title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
         period: "2025.07 ~ 진행 중",
-        items: [
-          "모놀리식을 도메인 단위 9개 서비스로 분리 - 재배포 월 10건→1건, 배포 4분→30초",
-          "RabbitMQ ack/nack + DLQ 비동기 파이프라인 - 작업 유실 0건",
-          "Keycloak OIDC + Envoy Gateway 게이트웨이 레벨 인증 - 정책 변경 시 SecurityPolicy 1개 수정",
+        sections: [
+          {
+            label: "아키텍처 마이그레이션",
+            items: [
+              "RabbitMQ ack/nack + DLQ 비동기 파이프라인 - 작업 유실 0건",
+              "모놀리식을 도메인 단위 9개 서비스로 분리 - 재배포 월 10건→1건, 배포 4분→30초",
+              "Keycloak OIDC + Envoy Gateway 게이트웨이 레벨 인증 - 정책 변경 시 SecurityPolicy 1개 수정",
+            ],
+          },
         ],
       },
       {
         title: "사내 자동화",
         period: "2026.03 ~ 2026.04",
-        items: [
-          "FastMCP 기반 Git·캘린더·HRWeb 통합 에이전트 - 1인 담당 서비스 1개→5개",
+        sections: [
+          {
+            label: "FastMCP 기반 Git·캘린더·HRWeb 통합 에이전트 - 1인 담당 서비스 1개→5개",
+            items: [],
+          },
         ],
       },
     ],
@@ -484,28 +536,28 @@ export const PROFILE_PLATFORM = {
       {
         title: "인프라 설계·구축·운영",
         period: "2021.07 ~ 진행 중",
-        items: [
-          "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩",
-          "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단",
-          "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터 무중단 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축",
-          "컨테이너 → 마운트 → 디바이스 → 펌웨어 경계를 넘나든 NVMe 장애 근본원인 추적",
+        sections: [
+          { label: "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩", items: [] },
+          { label: "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단", items: [] },
+          { label: "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터 무중단 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축", items: [] },
+          { label: "컨테이너 → 마운트 → 디바이스 → 펌웨어 경계를 넘나든 NVMe 장애 근본원인 추적", items: [] },
         ],
       },
       {
         title: "AI 워크로드 스케줄링 & 비동기 파이프라인",
         period: "2023.10 ~ 2025.07",
-        items: [
-          "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론",
-          "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장",
-          "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건",
+        sections: [
+          { label: "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론", items: [] },
+          { label: "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장", items: [] },
+          { label: "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건", items: [] },
         ],
       },
       {
         title: "베어메탈 신규 구축 & DB 접근 계층 설계",
         period: "2025.06 ~ 2025.12",
-        items: [
-          "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정",
-          "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소",
+        sections: [
+          { label: "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정", items: [] },
+          { label: "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소", items: [] },
         ],
       },
     ],

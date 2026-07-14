@@ -82,6 +82,12 @@ const CSS = `
 .rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
 .rallit-root .cg-item { font-size:11.5px; color:var(--ink-2); line-height:1.6; padding-left:12px; position:relative; }
 .rallit-root .cg-item::before { content:""; position:absolute; left:0; top:8px; width:3px; height:3px; border-radius:50%; background:var(--ink-3); }
+.rallit-root .cg-section { margin-top:2px; }
+.rallit-root .cg-section-label { font-size:11.5px; font-weight:700; color:var(--ink); line-height:1.6; padding-left:12px; position:relative; }
+.rallit-root .cg-section-label::before { content:""; position:absolute; left:0; top:8px; width:3px; height:3px; border-radius:50%; background:var(--ink-3); }
+.rallit-root .cg-sub-items { list-style:none; display:flex; flex-direction:column; gap:2px; margin-top:3px; padding-left:16px; }
+.rallit-root .cg-sub-item { font-size:11px; color:var(--ink-2); line-height:1.55; padding-left:11px; position:relative; }
+.rallit-root .cg-sub-item::before { content:"–"; position:absolute; left:0; color:var(--ink-3); }
 .rallit-root .career-projs { margin-top:0; display:flex; flex-direction:column; }
 .rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
@@ -334,7 +340,18 @@ export function ResumeDocument() {
                     {g.period && <span className="cg-period">{g.period}</span>}
                   </div>
                   <ul className="cg-items">
-                    {g.items.map((item, j) => <li key={j} className="cg-item">{item}</li>)}
+                    {g.sections.map((sec, j) => (
+                      sec.items.length > 0 ? (
+                        <li key={j} className="cg-section">
+                          <div className="cg-section-label">{sec.label}</div>
+                          <ul className="cg-sub-items">
+                            {sec.items.map((it, k) => <li key={k} className="cg-sub-item">{it}</li>)}
+                          </ul>
+                        </li>
+                      ) : (
+                        <li key={j} className="cg-item">{sec.label}</li>
+                      )
+                    ))}
                   </ul>
                 </div>
               ))}
