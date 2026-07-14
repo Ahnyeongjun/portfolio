@@ -67,7 +67,7 @@ export const PROFILE = {
         title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
         period: "2022.05 ~ 진행 중",
         items: [
-          "Spring Boot·MyBatis·PostGIS 기반 9개 모듈 시스템의 REST API·인증·다운로드 컨트롤러를 2년간 end-to-end 개발",
+          "Spring Boot·MyBatis·PostGIS 기반 9개 모듈 시스템에서 인증·다운로드 API를 2년간 end-to-end 개발",
           "Spring Security 필터+AOP 선언적 인가 설계, Redis 세션 통제·위험도별 Rate Limiting으로 보안 체계 직접 구축",
           "외부 보안 진단 지적사항(CSP·SQL Injection 등 10건 이상) 전량 대응 완료",
           "information_schema 기반 Entity·MyBatis mapper 자동 생성 도구 - 40여 테이블 보일러플레이트 제거",
