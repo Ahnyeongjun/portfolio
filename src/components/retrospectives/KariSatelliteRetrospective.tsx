@@ -337,6 +337,40 @@ public void beforeCommit(boolean readOnly) {
 }`}</CodeBlock>
         </AccordionSection>
 
+        {/* CDC 이벤트 중복 처리 버그 - 멱등키 설계 */}
+        <AccordionSection
+          title="CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계"
+          hint="재전달된 이벤트가 타임스탬프 차이로 매번 다른 값 취급 → 휘발성 컬럼 제외 정렬 payload를 자연키로 - 23개 테이블 공용 dedup"
+          module="망연계"
+        >
+          <p>
+            Kafka 없이 Debezium Server(HTTP Sink) → 웹훅 → 파일 릴레이 → 워커로 이어지는
+            구조에서, 동일 CDC 이벤트가 재전달·재시도될 때 <Highlight>중복 INSERT/UPDATE</Highlight>가
+            발생하는 문제를 발견했습니다. payload를 정렬·직렬화해 자연키로 쓰는 멱등키
+            설계 자체에 결함이 있었습니다 - 타임스탬프 컬럼까지 서명에 포함되어 있어 완전히
+            같은 이벤트도 재전달마다 다른 서명이 만들어졌고, 원본 payload를 얕은 참조로
+            들고 있다 보니 처리 도중 원본이 오염되는 문제도 함께 있었습니다.
+          </p>
+          <p>
+            <code>dt</code>/<code>date</code>/<code>time</code> 등 휘발성 컬럼을 제외하고
+            정렬해 정규화하는 서명 로직을 확정하고, 원본 payload는 <Highlight>deepcopy</Highlight>로
+            전환해 참조를 분리했습니다. 같은 정규화 로직을 수신 계층과 처리 계층
+            양쪽에 독립 구현하고, <Highlight>complete_yn</Highlight> 상태값으로 "처리 중인
+            재시도만 차단하고 완료 후 재유입은 정상 처리한다"는 범위를 명확히 했습니다.
+          </p>
+          <CompareTable
+            headers={["멱등키 설계", "문제"]}
+            rows={[
+              { cells: ["타임스탬프 포함 전체 payload 서명", "재전달마다 다른 서명 → dedup 무력화"], muted: true },
+              { cells: ["휘발성 컬럼 제외 + 정렬 payload 서명 + deepcopy", "동일 이벤트는 항상 동일 서명, 원본 오염 없음"], highlight: true },
+            ]}
+          />
+          <p>
+            이 단일 dedup 로직을 <Highlight>23개 테이블</Highlight>의 CDC 반영이 공유하도록
+            정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다.
+          </p>
+        </AccordionSection>
+
         {/* 3. 영상 서빙 */}
         <AccordionSection
           title="영상 서빙 속도 개선"

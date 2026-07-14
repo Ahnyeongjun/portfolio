@@ -198,6 +198,77 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
+        {/* 계층형 Rate Limiting + 로그인 실패 방어 */}
+        <AccordionSection
+          title="계층형 Rate Limiting + 로그인 실패 방어"
+          hint="필터+AOP 2계층 위험도 기반 제한, Redis INCR 락-프리 카운팅 - Redis 장애 시 로그인은 막지 않는 fail-open"
+          module="ins-auth-svr"
+        >
+          <p>
+            업로드·삭제 같은 고위험 엔드포인트와 단순 조회 API가 동일하게 무제한 호출
+            가능했고, 로그인 무차별 대입을 걸러낼 장치도 없었습니다. 다중 스레드 환경에서
+            흔한 <Highlight>read-modify-write 카운팅</Highlight> 방식은 경쟁조건 위험이 있었습니다.
+          </p>
+          <p>
+            필터(<code>ConcurrentHashMap&lt;RiskLevel, Map&lt;IP, AtomicInteger&gt;&gt;</code> +{" "}
+            <code>incrementAndGet()</code>으로 락 없이 스레드 안전하게 카운팅)와 AOP(
+            <code>@RateLimit</code> 어노테이션)를 2계층으로 분리하고, 엔드포인트 위험도를
+            HIGH/MEDIUM/LOW로 나눠 분당 5~20회로 차등 제한했습니다. 로그인 실패 카운트는
+            Redis <Highlight>INCR</Highlight>(원자적 증가)로 경쟁조건을 원천 차단했고, Redis
+            장애 시에는 로그인을 막지 않는 <Highlight>fail-open</Highlight>을 명시적으로
+            선택했습니다.
+          </p>
+          <CompareTable
+            headers={["위험도", "제한", "예시"]}
+            rows={[
+              { cells: ["HIGH", "5회/분", "업로드·삭제 등 고위험 엔드포인트"], highlight: true },
+              { cells: ["MEDIUM", "20회/분", "일반 쓰기 API"], highlight: true },
+              { cells: ["로그인 실패", "4회 초과 시 10분 차단", "Redis INCR + TTL 자동 해제"], highlight: true },
+            ]}
+          />
+          <p>
+            인메모리 카운터라 다중 인스턴스로 확장하면 카운터가 공유되지 않는 한계는
+            남아있지만, 로그인 실패 카운팅만큼은 Redis 기반이라 인스턴스 수와 무관하게
+            정확합니다.
+          </p>
+        </AccordionSection>
+
+        {/* 보안 진단 대응: CSP·SQL Injection */}
+        <AccordionSection
+          title="보안 진단 대응 - 동적 CSP 생성 · SQL Injection 제거"
+          hint="외부 보안 진단 지적 10건 이상 - CesiumJS eval 의존성 직접 패치, 매퍼 13개 SQL Injection 전환"
+          module="ins-auth-svr · inops-api-svr"
+        >
+          <p>
+            외부 보안 진단에서 서버 정보 노출, CSP 미비(인라인/eval 허용), MyBatis{" "}
+            <code>{"${}"}</code> 방식 SQL Injection 등 <Highlight>10건 이상</Highlight>을
+            지적받았습니다. 문제는 지도 라이브러리(CesiumJS)가 <code>eval</code>과 인라인
+            스타일에 의존해, CSP를 강하게 걸면 지도 화면 자체가 깨지는 제약이 있었다는
+            점이었습니다.
+          </p>
+          <p>
+            CSP를 API origin 기반으로 <Highlight>런타임 동적 생성</Highlight>하도록 바꾸고,
+            CesiumJS 라이브러리의 <code>eval</code> 패턴을 소스 레벨에서 직접 패치해 CSP
+            위반 없이 동작하도록 만들었습니다(서드파티 라이브러리 제약을 소스 패치로 우회).
+            Nginx <code>proxy_hide_header</code>로 보안 헤더 관리를 한 곳으로 모으고,{" "}
+            <Highlight>13개 매퍼</Highlight>의 <code>{"${}"}</code>를 <code>{"#{}"}</code>로
+            전환해 SQL Injection을 제거했습니다.
+          </p>
+          <CompareTable
+            headers={["항목", "이전", "이후"]}
+            rows={[
+              { cells: ["CSP", "인라인/eval 허용 - 사실상 무방비", "API origin 기반 런타임 동적 생성"], highlight: true },
+              { cells: ["CesiumJS eval 의존", "CSP 강화 시 화면 깨짐", "라이브러리 eval 패턴 직접 패치"], highlight: true },
+              { cells: ["매퍼 SQL", "13개 매퍼 ${} 파라미터 삽입", "#{} 바인딩으로 전환"], highlight: true },
+            ]}
+          />
+          <p>
+            다만 동적 정렬(<code>ORDER BY {"${sidx}"}</code>)에 쓰이는 컬럼은 34개 매퍼에서
+            여전히 <code>{"${}"}</code> 치환을 쓰고 화이트리스트 검증이 없어, 잔존 리스크로
+            남아있다는 것도 정직하게 인지하고 있습니다.
+          </p>
+        </AccordionSection>
+
         {/* 3. 다운로드 엔드포인트 통합 */}
         <AccordionSection
           title="다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로"
@@ -348,7 +419,53 @@ export function InsopsRetrospective() {
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
               <span><Highlight>Cleaner 서비스</Highlight> - 등록일 기준 자동 삭제 워크플로우 구축</span>
             </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span>모놀리식 db-api를 <Highlight>models·services·api 3계층</Highlight>으로 리팩토링해 이후 표적 검색·페이지네이션 등 기능이 이 구조 위에서 확장되도록 정리</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span>위성 메타 조회 API를 <Highlight>컬럼 프로젝션</Highlight>·중복 SRID 변환 제거로 최적화하고, ORM 모델 속성 존재 여부로 검증하는 화이트리스트 방식 동적 쿼리와 <Highlight>페이지네이션</Highlight>을 추가</span>
+            </li>
           </ul>
+        </AccordionSection>
+
+        {/* Go 이미지 타일 서버 동시성 재설계 */}
+        <AccordionSection
+          title="Go 이미지 타일 서버 동시성 재설계 - 무제한 고루틴 실패 후 세마포어로 안정화"
+          hint="위성·항공·월면 다중 레이어 GDAL 워핑 - 무제한 병렬화 2회 원복 끝에 CPU 코어 기반 동적 세마포어로 정착"
+          module="신규 구축"
+        >
+          <p>
+            위성·항공·월면(KPLO) 다중 레이어 위성영상을 GDAL로 워핑·합성해 응답하는 WMS
+            엔드포인트가 순차 처리로 레이어가 늘수록 응답 지연이 커졌습니다. 처음에는{" "}
+            <Highlight>무제한 goroutine 병렬화</Highlight>를 도입했지만 문제가 생겨 전체
+            원복했고, 세마포어 기반 버전을 다시 넣었다가도 원복되는 등 두 차례 시행착오를
+            거쳤습니다.
+          </p>
+          <p>
+            최종적으로 레이어별 이미지 로딩을 고루틴으로 병렬화하되{" "}
+            <Highlight>CPU 코어 수 기반 동적 세마포어</Highlight>(코어×3, 20~100 클램프)로
+            동시 실행 수를 제한했습니다. 레이어 검증은 별도 세마포어(코어×2, 20~50)로
+            분리하고, <code>context.WithTimeout(30초)</code>로 전체 요청 상한을 걸었습니다.
+            <code>sync.Map</code> 기반 TTL 캐시(1분)로 재연산을 줄이고 5분 주기로 캐시를
+            청소했으며, <code>sync.Pool</code>로 버퍼를 재사용하고 500레이어를 넘으면 수동
+            GC를 트리거했습니다.
+          </p>
+          <CompareTable
+            headers={["단계", "방식", "결과"]}
+            rows={[
+              { cells: ["1차", "무제한 goroutine 병렬화", "문제 발생 - 전체 원복"], muted: true },
+              { cells: ["2차", "세마포어 기반 재도입", "다시 원복"], muted: true },
+              { cells: ["최종", "CPU 코어 기반 동적 세마포어 + 타임아웃 + TTL 캐시", "동시성 제한된 안전한 병렬 처리로 정착"], highlight: true },
+            ]}
+          />
+          <p>
+            <code>WarpThenTranslate</code>는 SHA-512 캐시 키로 동일 워핑 연산의 GDAL
+            재연산을 회피하도록 했습니다. 두 번의 원복 이력 자체가 "무제한 병렬화의
+            위험성을 인지하고 세마포어 기반 제어로 전환했다"는 트레이드오프 판단
+            과정입니다.
+          </p>
         </AccordionSection>
       </div>
 
