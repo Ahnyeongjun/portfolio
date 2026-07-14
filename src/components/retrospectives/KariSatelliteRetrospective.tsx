@@ -264,16 +264,17 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           />
         </AccordionSection>
 
-        {/* 2. 망연계 */}
+        {/* 2. 망연계 + Debezium 자가치유 */}
         <AccordionSection
-          title="파일 기반 양방향 DB 동기화"
-          hint="Debezium slot 반복 파손 → Outbox 직접 구현 · 이벤트 유실 0건"
+          title="Debezium CDC 안정화 - Outbox 전환 및 자가치유 운영"
+          hint="replication slot 반복 파손 → 메인 동기화는 Outbox 직접 구현(이벤트 유실 0건), 별도 CDC 구간은 자가치유 스크립트로 자동 복구"
           module="API 서버 · 망연계"
         >
           <p>
             국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리됐습니다.
             위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부) 양방향 동기화가 필요했습니다.
           </p>
+          <p className="font-medium text-foreground">Outbox 직접 구현 - Debezium CDC 대체</p>
           <p>
             앱 코드 수정 없이 DB 변경 로그를 읽는 Debezium CDC를 초기 도입했습니다.
             그러나 운영 중 <Highlight>replication slot 반복 파손</Highlight>으로 매번 전체 스냅샷 재수행이 필요했습니다.
@@ -322,6 +323,20 @@ def generate(self) -> int:
                 | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
                 | self.worker_id << SEQUENCE_BITS
                 | self.sequence)`}</CodeBlock>
+          <p className="font-medium text-foreground">Debezium 자가치유 운영 스크립트 - 별도 CDC 연동 구간</p>
+          <p>
+            메인 DB 동기화는 Outbox 라이브러리로 대체했지만, 그와는 별도로 운영하던
+            CDC 연동 구간에서도 PostgreSQL logical replication slot이{" "}
+            <Highlight>WAL 유실·비활성 상태</Highlight>로 남아 CDC가 정지하는 장애가
+            반복됐습니다. 원인은 상태 판정 우선순위 오류로, WAL이 완전히 유실된
+            상황도 단순 "비활성"으로 오판해 필요한 slot 재생성을 건너뛰고 있었습니다.
+          </p>
+          <p>
+            상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
+            재정렬하고, 강제종료→slot 삭제→재생성→검증까지 이어지는 4단계 복구 함수를
+            자동화했습니다. 연속 3회 실패했을 때만 복구를 트리거하도록 해 일시적인
+            지연까지 복구로 오인해 재시도가 폭주하는 것도 막았습니다.
+          </p>
         </AccordionSection>
 
         {/* 3. 영상 서빙 */}
@@ -377,27 +392,6 @@ def generate(self) -> int:
             <code>upstream keepalive</code> 설정으로 커넥션을 재사용하도록 바꿔 핸드셰이크
             오버헤드를 제거했고, 동시에 K8s 레플리카를 늘려도 그대로 스케일되는 구조를
             확보했습니다.
-          </p>
-        </AccordionSection>
-
-        {/* 5. Debezium 자가치유 */}
-        <AccordionSection
-          title="Debezium 자가치유 운영 스크립트"
-          hint="별도 CDC 연동 구간의 replication slot 반복 파손을 상태 판정 재정렬 + 자동 복구로 해소"
-          module="API 서버 · 망연계"
-        >
-          <p>
-            메인 DB 동기화는 Outbox 라이브러리로 대체했지만, 그와는 별도로 운영하던
-            CDC 연동 구간에서도 PostgreSQL logical replication slot이{" "}
-            <Highlight>WAL 유실·비활성 상태</Highlight>로 남아 CDC가 정지하는 장애가
-            반복됐습니다. 원인은 상태 판정 우선순위 오류로, WAL이 완전히 유실된
-            상황도 단순 "비활성"으로 오판해 필요한 slot 재생성을 건너뛰고 있었습니다.
-          </p>
-          <p>
-            상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
-            재정렬하고, 강제종료→slot 삭제→재생성→검증까지 이어지는 4단계 복구 함수를
-            자동화했습니다. 연속 3회 실패했을 때만 복구를 트리거하도록 해 일시적인
-            지연까지 복구로 오인해 재시도가 폭주하는 것도 막았습니다.
           </p>
         </AccordionSection>
 
