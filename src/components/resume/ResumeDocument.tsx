@@ -76,7 +76,9 @@ const CSS = `
 .rallit-root .proj:last-child { margin-bottom:0; }
 .rallit-root .career-groups { margin-top:12px; padding-left:14px; display:flex; flex-direction:column; gap:10px; }
 .rallit-root .career-group {}
-.rallit-root .cg-title { font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; }
+.rallit-root .cg-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:5px; }
+.rallit-root .cg-title { font-size:12px; font-weight:700; color:var(--ink); }
+.rallit-root .cg-period { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); white-space:nowrap; }
 .rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
 .rallit-root .cg-item { font-size:11.5px; color:var(--ink-2); line-height:1.6; padding-left:12px; position:relative; }
 .rallit-root .cg-item::before { content:""; position:absolute; left:0; top:8px; width:3px; height:3px; border-radius:50%; background:var(--ink-3); }
@@ -327,7 +329,10 @@ export function ResumeDocument() {
             <div className="career-groups">
               {P.career.groups.map((g, i) => (
                 <div key={i} className="career-group">
-                  <div className="cg-title">{g.title}</div>
+                  <div className="cg-top">
+                    <span className="cg-title">{g.title}</span>
+                    {g.period && <span className="cg-period">{g.period}</span>}
+                  </div>
                   <ul className="cg-items">
                     {g.items.map((item, j) => <li key={j} className="cg-item">{item}</li>)}
                   </ul>

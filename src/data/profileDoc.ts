@@ -65,6 +65,7 @@ export const PROFILE = {
     groups: [
       {
         title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
+        period: "2022.05 ~ 진행 중",
         items: [
           "Spring Boot·MyBatis·PostGIS 기반 9개 모듈 시스템의 REST API·인증·다운로드 컨트롤러를 2년간 end-to-end 개발",
           "Spring Security 필터+AOP 선언적 인가 설계, Redis 세션 통제·위험도별 Rate Limiting으로 보안 체계 직접 구축",
@@ -76,6 +77,7 @@ export const PROFILE = {
       },
       {
         title: "항공우주연구원(KARI) 위성영상 처리 플랫폼 구축",
+        period: "2023.10 ~ 2025.07",
         items: [
           "k6 부하테스트 기반 API 최적화 - PostGIS 38초→159ms(239배), 50VU 에러율 11.22%→0%, 처리량 392→1,177 req/s",
           "외래키 없는 스키마 설계 - 샤딩을 염두에 둔 트레이드오프, 유저 생성 트랜잭션 경계 버그 수정",
@@ -86,6 +88,7 @@ export const PROFILE = {
       },
       {
         title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
+        period: "2025.07 ~ 진행 중",
         items: [
           "모놀리식을 도메인 단위 9개 서비스로 분리 - 재배포 월 10건→1건, 배포 4분→30초",
           "RabbitMQ ack/nack + DLQ 비동기 파이프라인 - 작업 유실 0건",
@@ -94,6 +97,7 @@ export const PROFILE = {
       },
       {
         title: "사내 자동화",
+        period: "2026.03 ~ 2026.04",
         items: [
           "FastMCP 기반 Git·캘린더·HRWeb 통합 에이전트 - 1인 담당 서비스 1개→5개",
         ],
@@ -479,6 +483,7 @@ export const PROFILE_PLATFORM = {
     groups: [
       {
         title: "인프라 설계·구축·운영",
+        period: "2021.07 ~ 진행 중",
         items: [
           "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩",
           "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단",
@@ -488,6 +493,7 @@ export const PROFILE_PLATFORM = {
       },
       {
         title: "AI 워크로드 스케줄링 & 비동기 파이프라인",
+        period: "2023.10 ~ 2025.07",
         items: [
           "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론",
           "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장",
@@ -496,6 +502,7 @@ export const PROFILE_PLATFORM = {
       },
       {
         title: "베어메탈 신규 구축 & DB 접근 계층 설계",
+        period: "2025.06 ~ 2025.12",
         items: [
           "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정",
           "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소",
