@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useLang } from '@/context/lang';
 import type { Project } from '@/lib/projects';
@@ -12,16 +11,6 @@ interface CareerSectionProps {
   company: string;
   period: string;
 }
-
-type CategoryFilter = "all" | Project["category"][number];
-
-const CATEGORY_OPTIONS: { value: CategoryFilter; ko: string; en: string }[] = [
-  { value: "all", ko: "전체", en: "All" },
-  { value: "backend", ko: "백엔드", en: "Backend" },
-  { value: "frontend", ko: "프론트엔드", en: "Frontend" },
-  { value: "infra", ko: "인프라", en: "Infra" },
-  { value: "ai", ko: "AI", en: "AI" },
-];
 
 
 function ArrowIcon() {
@@ -43,13 +32,9 @@ function SparkIcon() {
 export function CareerSection({ projects, company, period }: CareerSectionProps) {
   const t = useTranslations('career');
   const { lang } = useLang();
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>("all");
 
-  const matchesCategory = (p: Project) =>
-    activeCategory === "all" || p.category?.includes(activeCategory);
-
-  const regularProjects = projects.filter((p) => !p.internal && matchesCategory(p));
-  const internalProjects = projects.filter((p) => p.internal && matchesCategory(p));
+  const regularProjects = projects.filter((p) => !p.internal);
+  const internalProjects = projects.filter((p) => p.internal);
 
   function renderCard(proj: Project, i: number) {
     const maxTags = 5;
@@ -156,19 +141,6 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
             {t('tenureYears')}<br />
             <span style={{ color: 'var(--pf-text-mute)' }}>{t('tenureRole')}</span>
           </div>
-        </div>
-
-        <div className="pf-cat-filter reveal">
-          {CATEGORY_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={`pf-cat-btn${activeCategory === opt.value ? ' active' : ''}`}
-              onClick={() => setActiveCategory(opt.value)}
-            >
-              {lang === 'en' ? opt.en : opt.ko}
-            </button>
-          ))}
         </div>
 
         <div className="pf-proj-grid">
