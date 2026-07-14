@@ -232,7 +232,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           </p>
           <p>
             부하 테스트는 실제 위성 데이터가 있어야 유효해 운영과 동일한 구성의 격리 클러스터를 별도 구축했습니다.
-            k6 50VU로 테스트하자 에러율 11.22%가 나왔고, 병목 원인은 세 가지였습니다.
+            k6 50VU로 테스트하자 에러율 11.22%가 나왔고, 병목 원인은 네 가지였습니다.
           </p>
           <ul className="space-y-2 list-none">
             <li className="flex gap-2">
@@ -247,11 +247,20 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">③</span>
               <span><Highlight>알람 팝업 목록</Highlight> - base64 PNG BLOB을 목록 쿼리에 포함, HikariCP 커넥션 30개 독점 → 전체 요청 연쇄 타임아웃</span>
             </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">④</span>
+              <span><Highlight>반복적 트랜잭션 생성</Highlight> - 하나의 조회 API 안에서 여러 테이블을 조회할 때마다 개별 트랜잭션이 열려 HikariCP 커넥션을 추가로 점유, 동시 요청이 몰릴수록 커넥션 풀이 먼저 고갈</span>
+            </li>
           </ul>
           <p>
             조건부 PostGIS 실행, 기본 페이지네이션, BLOB 컬럼 목록·상세 분리, Redis 캐싱으로 수정했습니다.
-            이 과정에서 32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에 직접 삽입되는
-            <Highlight>SQL injection</Highlight> 취약점도 발견해 화이트리스트 검증으로 교체했습니다.
+            알람 팝업 목록은 조회 조건(일련번호·등록일시)에 인덱스(<code>idx_alam_log_sno</code>,{" "}
+            <code>idx_reg_dt</code>)도 추가해 캐시가 없는 최초 조회도 함께 빨라지도록 했습니다.
+            반복적으로 열리던 트랜잭션은 하나의 조회 API 안의 여러 테이블 조회를{" "}
+            <Highlight>단일 트랜잭션</Highlight>으로 묶어, 요청당 필요한 커넥션·트랜잭션 수
+            자체를 줄였습니다. 이 과정에서 32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에
+            직접 삽입되는 <Highlight>SQL injection</Highlight> 취약점도 발견해 화이트리스트
+            검증으로 교체했습니다.
           </p>
           <CompareTable
             headers={["", "전", "후"]}
@@ -263,6 +272,44 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
               { cells: ["처리량", "392 req/s", "1,177 req/s"] },
             ]}
           />
+        </AccordionSection>
+
+        {/* 외래키 없는 스키마 설계 */}
+        <AccordionSection
+          title="외래키 없는 스키마 설계 - 샤딩을 염두에 둔 선제적 트레이드오프"
+          hint="위성 메타·추론 결과 테이블 로우 증가 → 향후 샤딩 여지를 위해 FK 제약 자체를 두지 않음"
+          module="API 서버"
+        >
+          <p>
+            위성 메타·추론 결과처럼 계속 쌓이는 테이블의 로우 수가 늘어나면서, 나중에{" "}
+            <Highlight>샤딩·파티셔닝</Highlight>이 필요해질 가능성을 염두에 뒀습니다.
+            외래키 제약은 참조 대상 테이블이 다른 샤드로 옮겨가는 순간 걸림돌이 되기
+            때문에, 처음부터 <Highlight>외래키를 아예 두지 않는</Highlight> 방향으로
+            스키마를 설계했습니다.
+          </p>
+          <p>
+            이 판단이 가능했던 이유는 대상 데이터의 성격 때문이었습니다. 관측·추론
+            결과성 데이터라 일부 레코드의 참조가 깨지더라도 시스템 전체에 치명적인
+            영향을 주지 않는 데이터였고, 그래서 DB 레벨의 엄격한 정합성 보장보다{" "}
+            <Highlight>스키마 유연성</Highlight>을 우선하는 쪽을 선택했습니다. 모든
+            테이블에 일괄 적용한 규칙이 아니라, 데이터 성격을 보고 정합성 요구 수준이
+            낮은 테이블에 한해 적용한 판단입니다.
+          </p>
+          <p className="font-medium text-foreground">실제 사례 - 유저 생성 시 정합성이 깨진 버그</p>
+          <p>
+            외래키가 없다 보니 정합성을 트랜잭션 경계로 대신 지켜야 하는데, 유저 생성
+            경로에서 이 경계가 잘못 잡혀 있었습니다. 유저 레코드 insert와 권한 레코드
+            insert가 <Highlight>각각 별도의 트랜잭션</Highlight>으로 실행되고 있어서,
+            둘 중 하나만 실패해도 <Highlight>유저는 있는데 권한이 없거나, 권한만 있고
+            유저가 없는</Highlight> 정합성 깨짐이 발생할 수 있었습니다. 외래키가
+            없으니 DB가 이 불일치를 막아주지도 못했습니다.
+          </p>
+          <p>
+            유저·권한 insert를 <Highlight>하나의 트랜잭션</Highlight>으로 묶어 둘 다
+            성공하거나 둘 다 롤백되도록 고쳤습니다. 스키마 레벨에서 포기한 정합성
+            보장을, 정말 필요한 경로(유저 생성)에서는 트랜잭션 경계로 다시 확보한
+            사례입니다.
+          </p>
         </AccordionSection>
 
         {/* 2. 망연계: Snowflake ID → Debezium 에러 → 자가치유 → Outbox 전환 → 멱등키 설계 */}
