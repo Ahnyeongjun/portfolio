@@ -221,7 +221,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
 
         {/* 1. 성능·보안 */}
         <AccordionSection
-          title="부하 테스트 기반 성능·보안 개선"
+          title="어드민 페이지 성능 개선 - 부하 테스트 기반 병목 진단"
           hint="보안 체크리스트 선행 · JUnit 통합 테스트 · k6 50VU 에러율 11.22% → 0%"
           module="API 서버"
         >
@@ -272,6 +272,62 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
               { cells: ["처리량", "392 req/s", "1,177 req/s"] },
             ]}
           />
+        </AccordionSection>
+
+        {/* 3. 영상 서빙 */}
+        <AccordionSection
+          title="영상 서빙 속도 개선"
+          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현"
+          module="타일 / 파일 서버"
+        >
+          <p>
+            수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어가 렌더링하지 못합니다.
+            Go로 영상 서빙 서버를 구현하고, 조회 목적에 따라 세 가지 프로토콜을 지원했습니다.
+          </p>
+          <CompareTable
+            headers={["프로토콜", "방식", "용도"]}
+            rows={[
+              { cells: ["WMS", "임의 BBOX 단일 이미지 렌더링", "고정 단일 영역 조회 - BBOX가 매번 달라 캐시 히트율 0%에 수렴, 인터랙티브 탐색 불적합"] },
+              { cells: ["WMTS", "256×256 고정 격자 타일 사전 생성 · 디스크 캐싱", "베이스맵 전체 영역 · 줌 레벨별 점진적 로드 (2.4s → 0.4s) - tile URL 고정으로 캐시 히트율 높음"], highlight: true },
+              { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
+            ]}
+          />
+          <p className="font-medium text-foreground">GeoJSON → MVT 전환</p>
+          <p>
+            기존에는 객체탐지 결과를 <Highlight>GeoJSON으로 요청마다 동적 생성</Highlight>해 내려줬습니다.
+            영역 기반 조회 특성상 캐시 히트율이 낮아 캐싱 효과도 없었고,
+            GeoJSON은 줌 레벨과 무관하게 항상 풀 디테일로 직렬화되기 때문에
+            멀리서 볼 때도 수십만 개 좌표를 전부 전송했습니다.
+          </p>
+          <p>
+            ETL 파이프라인에서 탐지 결과를 <Highlight>MVT(Mapbox Vector Tile)로 사전 생성</Highlight>하도록 바꿨습니다.
+            MVT는 줌 레벨별로 형상을 자동 단순화해 멀리서는 적은 데이터만, 확대할수록 정밀한 형상을 전송합니다.
+            요청 시 생성 없이 미리 만들어진 타일을 바로 서빙하므로 체감 속도가 완전히 달라졌습니다.
+          </p>
+          <CompareTable
+            headers={["구분", "GeoJSON 동적 생성", "MVT 사전 생성"]}
+            rows={[
+              { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
+              { cells: ["클라이언트 사양", "i5 이상 필요", "펜티엄급에서도 동작"], highlight: true },
+              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화 - 확대해도 보이는 영역만"], highlight: true },
+              { cells: ["캐시 효율", "영역 기반 - 히트율 낮음", "타일 단위 - 재사용 가능"] },
+              { cells: ["생성 시점", "요청마다 실시간", "ETL 완료 시 자동"] },
+            ]}
+          />
+          <p>
+            MVT는 확대할수록 디테일이 올라가지만 <Highlight>가시 영역 자체가 좁아지기 때문에</Highlight>
+            전송·렌더링해야 할 데이터량은 오히려 일정하게 유지됩니다.
+            GeoJSON처럼 전체 탐지 결과를 한 번에 내려주지 않아 클라이언트 메모리 부담이 크게 줄었고,
+            사양 제약이 있는 현장 운용 환경에서도 원활하게 동작하게 됐습니다.
+          </p>
+          <p className="font-medium text-foreground">Nginx Ingress keepalive 튜닝</p>
+          <p>
+            타일 요청이 트래픽 대부분을 차지하는데, 매 요청마다 <Highlight>TCP 핸드셰이크가
+            반복</Highlight>되는 오버헤드가 있었습니다. Nginx Ingress의{" "}
+            <code>upstream keepalive</code> 설정으로 커넥션을 재사용하도록 바꿔 핸드셰이크
+            오버헤드를 제거했고, 동시에 K8s 레플리카를 늘려도 그대로 스케일되는 구조를
+            확보했습니다.
+          </p>
         </AccordionSection>
 
         {/* 외래키 없는 스키마 설계 */}
@@ -469,62 +525,6 @@ public void beforeCommit(boolean readOnly) {
             정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다. 같은
             파이프라인에서 첨부파일 BLOB 컬럼의 타입 선언·인코딩 방식이 어긋나
             이미지가 깨지던 문제도 함께 바로잡았습니다.
-          </p>
-        </AccordionSection>
-
-        {/* 3. 영상 서빙 */}
-        <AccordionSection
-          title="영상 서빙 속도 개선"
-          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현"
-          module="타일 / 파일 서버"
-        >
-          <p>
-            수십~수백 MB GeoTIFF 원본을 그대로 내려주면 뷰어가 렌더링하지 못합니다.
-            Go로 영상 서빙 서버를 구현하고, 조회 목적에 따라 세 가지 프로토콜을 지원했습니다.
-          </p>
-          <CompareTable
-            headers={["프로토콜", "방식", "용도"]}
-            rows={[
-              { cells: ["WMS", "임의 BBOX 단일 이미지 렌더링", "고정 단일 영역 조회 - BBOX가 매번 달라 캐시 히트율 0%에 수렴, 인터랙티브 탐색 불적합"] },
-              { cells: ["WMTS", "256×256 고정 격자 타일 사전 생성 · 디스크 캐싱", "베이스맵 전체 영역 · 줌 레벨별 점진적 로드 (2.4s → 0.4s) - tile URL 고정으로 캐시 히트율 높음"], highlight: true },
-              { cells: ["MVT", "ETL 사전 생성 · 줌 레벨별 자동 단순화", "객체탐지 결과 오버레이 (~5분 → 1초 이내)"], highlight: true },
-            ]}
-          />
-          <p className="font-medium text-foreground">GeoJSON → MVT 전환</p>
-          <p>
-            기존에는 객체탐지 결과를 <Highlight>GeoJSON으로 요청마다 동적 생성</Highlight>해 내려줬습니다.
-            영역 기반 조회 특성상 캐시 히트율이 낮아 캐싱 효과도 없었고,
-            GeoJSON은 줌 레벨과 무관하게 항상 풀 디테일로 직렬화되기 때문에
-            멀리서 볼 때도 수십만 개 좌표를 전부 전송했습니다.
-          </p>
-          <p>
-            ETL 파이프라인에서 탐지 결과를 <Highlight>MVT(Mapbox Vector Tile)로 사전 생성</Highlight>하도록 바꿨습니다.
-            MVT는 줌 레벨별로 형상을 자동 단순화해 멀리서는 적은 데이터만, 확대할수록 정밀한 형상을 전송합니다.
-            요청 시 생성 없이 미리 만들어진 타일을 바로 서빙하므로 체감 속도가 완전히 달라졌습니다.
-          </p>
-          <CompareTable
-            headers={["구분", "GeoJSON 동적 생성", "MVT 사전 생성"]}
-            rows={[
-              { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
-              { cells: ["클라이언트 사양", "i5 이상 필요", "펜티엄급에서도 동작"], highlight: true },
-              { cells: ["줌 대응", "풀 디테일 고정", "줌 레벨별 자동 단순화 - 확대해도 보이는 영역만"], highlight: true },
-              { cells: ["캐시 효율", "영역 기반 - 히트율 낮음", "타일 단위 - 재사용 가능"] },
-              { cells: ["생성 시점", "요청마다 실시간", "ETL 완료 시 자동"] },
-            ]}
-          />
-          <p>
-            MVT는 확대할수록 디테일이 올라가지만 <Highlight>가시 영역 자체가 좁아지기 때문에</Highlight>
-            전송·렌더링해야 할 데이터량은 오히려 일정하게 유지됩니다.
-            GeoJSON처럼 전체 탐지 결과를 한 번에 내려주지 않아 클라이언트 메모리 부담이 크게 줄었고,
-            사양 제약이 있는 현장 운용 환경에서도 원활하게 동작하게 됐습니다.
-          </p>
-          <p className="font-medium text-foreground">Nginx Ingress keepalive 튜닝</p>
-          <p>
-            타일 요청이 트래픽 대부분을 차지하는데, 매 요청마다 <Highlight>TCP 핸드셰이크가
-            반복</Highlight>되는 오버헤드가 있었습니다. Nginx Ingress의{" "}
-            <code>upstream keepalive</code> 설정으로 커넥션을 재사용하도록 바꿔 핸드셰이크
-            오버헤드를 제거했고, 동시에 K8s 레플리카를 늘려도 그대로 스케일되는 구조를
-            확보했습니다.
           </p>
         </AccordionSection>
 
