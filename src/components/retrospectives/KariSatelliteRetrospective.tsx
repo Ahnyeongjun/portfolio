@@ -417,6 +417,49 @@ def generate(self) -> int:
           />
         </AccordionSection>
 
+        {/* 5. Debezium 자가치유 */}
+        <AccordionSection
+          title="Debezium 자가치유 운영 스크립트"
+          hint="별도 CDC 연동 구간의 replication slot 반복 파손을 상태 판정 재정렬 + 자동 복구로 해소"
+          module="API 서버 · 망연계"
+        >
+          <p>
+            메인 DB 동기화는 Outbox 라이브러리로 대체했지만, 그와는 별도로 운영하던
+            CDC 연동 구간에서도 PostgreSQL logical replication slot이{" "}
+            <Highlight>WAL 유실·비활성 상태</Highlight>로 남아 CDC가 정지하는 장애가
+            반복됐습니다. 원인은 상태 판정 우선순위 오류로, WAL이 완전히 유실된
+            상황도 단순 "비활성"으로 오판해 필요한 slot 재생성을 건너뛰고 있었습니다.
+          </p>
+          <p>
+            상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
+            재정렬하고, 강제종료→slot 삭제→재생성→검증까지 이어지는 4단계 복구 함수를
+            자동화했습니다. 연속 3회 실패했을 때만 복구를 트리거하도록 해 일시적인
+            지연까지 복구로 오인해 재시도가 폭주하는 것도 막았습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 6. 대용량 다운로드 재설계 */}
+        <AccordionSection
+          title="대용량 산출물 다운로드 재설계 - 채널 경쟁조건 제거"
+          hint="goroutine+channel의 close/send 경쟁 panic 위험을 원자적 캐싱 + HTTP Range로 해결"
+          module="타일 / 파일 서버"
+        >
+          <p>
+            산출물 압축 다운로드를 goroutine과 channel로 구현했는데, 타임아웃이
+            발생하면 채널을 <code>close</code>하는 쪽과 압축 결과를 <code>send</code>하는
+            쪽이 경쟁해 이미 닫힌 채널에 값을 보내려다 <Highlight>panic</Highlight>이
+            날 수 있는 구조였습니다. 압축 결과를 메모리로 한 번에 스트리밍하다 보니
+            Range 기반 재개 다운로드도 지원하지 못했습니다.
+          </p>
+          <p>
+            채널 기반 동시성 코드를 걷어내고, 압축 결과를 임시파일로 만든 뒤{" "}
+            <Highlight>원자적 rename</Highlight>으로 캐싱(TTL 1시간)하는 방식으로
+            재작성했습니다. 파일 기반으로 바뀌면서 <Highlight>HTTP Range 요청</Highlight>도
+            자연스럽게 지원하게 돼, 대용량 파일 다운로드 중 끊겨도 처음부터 다시 받을
+            필요가 없어졌습니다.
+          </p>
+        </AccordionSection>
+
       </div>
 
       <div className="border-t border-border" />
@@ -480,6 +523,26 @@ def generate(self) -> int:
               { cells: ["결과", "특정 노드 OOM 반복", "노드 과부하·OOM 사전 차단"], highlight: true },
             ]}
           />
+        </AccordionSection>
+
+        {/* K8s CrashLoopBackOff 진단 */}
+        <AccordionSection
+          title="K8s CrashLoopBackOff 근본원인 진단 (SaltStack master 파드)"
+          hint="무거운 livenessProbe가 probe timeout과 충돌 - 프로세스 생존 확인만으로 경량화"
+          module="인프라"
+        >
+          <p>
+            SaltStack master 파드가 반복적으로 <Highlight>CrashLoopBackOff</Highlight>에
+            빠졌습니다. livenessProbe가 전체 minion 목록을 조회하고 각 minion에{" "}
+            <code>kubectl exec</code>까지 수행하는 무거운 스크립트였는데, 이 실행 시간이
+            probe timeout(1초)에 가까워 정상 동작 중에도 타임아웃이 잦았습니다.
+          </p>
+          <p>
+            헬스체크를 <Highlight>프로세스 생존 여부(pgrep)</Highlight>만 확인하는 경량
+            체크로 축소하고, <code>timeoutSeconds</code>·<code>periodSeconds</code>를
+            재조정해 기존 minion 자동 재시작 로직을 probe에서 분리했습니다. 불필요한
+            재시작을 유발하던 무거운 체크 로직을 걷어내 파드 안정성을 확보했습니다.
+          </p>
         </AccordionSection>
 
         {/* GPU 자원 공유 */}
