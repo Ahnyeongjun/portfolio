@@ -375,16 +375,23 @@ export function InsopsRetrospective() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">인프라·운영</h2>
 
-        {/* NVMe 펌웨어 장애 근본원인 추적 */}
+        {/* 가시화 장애 대응: NVMe 펌웨어 추적 + 대용량 영상 OOM */}
         <AccordionSection
-          title="가시화 전면 실패 장애 - 컨테이너에서 NVMe 펌웨어까지 추적"
-          hint="'No space left on device'인데 마운트 용량은 충분 - 컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 추적"
+          title="가시화 장애 대응 - NVMe 펌웨어 근본원인 추적 & 대용량 영상 OOM 처리"
+          hint="'No space left on device' 컨테이너→마운트→디바이스→펌웨어 추적 / 수억 픽셀 영상 OOM 처리 경로 분기"
           module="에어갭 운영"
         >
           <p>
+            가시화 파이프라인에서 서로 다른 원인의 실패가 두 갈래로 반복됐습니다. 하나는
             어느 날 가시화 작업이 전부 <code>No space left on device</code>로 실패하기
-            시작했습니다. 로그만 보면 단순 디스크 부족처럼 보였지만, 마운트된 스토리지의
-            용량을 확인하니 여유가 충분히 남아 있었습니다. <Highlight>명령어로 본 용량과
+            시작한 것이었고, 다른 하나는 일부 위성영상이 수억 픽셀 규모라 영상 전체를
+            메모리에 올리는 것조차 불가능해 컨테이너가 <Highlight>OOM으로 강제 종료</Highlight>되는
+            문제였습니다.
+          </p>
+          <p className="font-medium text-foreground">스토리지 장애 - NVMe 펌웨어까지 추적</p>
+          <p>
+            로그만 보면 단순 디스크 부족처럼 보였지만, 마운트된 스토리지의 용량을
+            확인하니 여유가 충분히 남아 있었습니다. <Highlight>명령어로 본 용량과
             실제 동작이 어긋나 있었습니다.</Highlight>
           </p>
           <CompareTable
@@ -402,18 +409,7 @@ export function InsopsRetrospective() {
             컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 따라 내려가지 않았다면
             며칠은 더 헤맸을 장애였습니다.
           </p>
-        </AccordionSection>
-
-        {/* 7. 대용량 영상 OOM 대응 */}
-        <AccordionSection
-          title="대용량 위성영상 OOM 대응 - 픽셀 수 기준 처리 경로 분기"
-          hint="수억 픽셀 영상을 통째로 메모리에 올리면 컨테이너가 OOM으로 강제 종료"
-          module="에어갭 운영"
-        >
-          <p>
-            일부 위성영상은 수억 픽셀 규모라, 기존 단일 처리 방식으로는 영상 전체를
-            메모리에 올리는 것조차 불가능해 컨테이너가 <Highlight>OOM으로 강제 종료</Highlight>됐습니다.
-          </p>
+          <p className="font-medium text-foreground">대용량 영상 OOM - 픽셀 수 기준 처리 경로 분기</p>
           <p>
             픽셀 수를 기준으로 일반용·대용량용 처리 방식을 분기하고, 대용량 영상은{" "}
             <code>GDAL</code> 파이프라인으로 먼저 축소한 뒤 폴리곤화하는 방식을 도입해
