@@ -659,18 +659,10 @@ export function InsopsRetrospective() {
             실제로는 미등록 컴포넌트 재요청을 막는 가드가 카메라 이동처럼 정상적인 반복
             호출까지 막던 부작용을, 차단 기준을 컴포넌트+함수명 단위로 세분화해 고쳤습니다.
           </p>
-          <p className="font-medium text-foreground">유지보수 중 발견한 버그 2건</p>
           <p>
-            창 참조를 <code>windws.winId</code>처럼 점 표기법으로 동적 조회해 항상{" "}
-            <code>undefined</code>를 반환하던 버그를 <code>windws[winId]</code> 브래킷
-            표기법으로 고쳤고, 창이 이미 닫혔는지(<code>win?.window</code>) 확인하지 않아{" "}
-            <Highlight>닫힌 팝업을 살아있는 것으로 오인</Highlight>하던 null 체크 누락도
-            함께 수정했습니다.
-          </p>
-          <p>
-            창 참조 정리(<code>delete windws[compId]</code>) 시점을 두고는 "정리하면
-            재오픈 시 참조가 소실되고, 정리하지 않으면 iframe 재오픈 시 콜백이 실행되지
-            않는다"는 두 가지 실패 모드가 서로 충돌하는 트레이드오프를 직접 겪었습니다.
+            유지보수 중에는 창 참조를 점 표기법으로 동적 조회해 항상 <code>undefined</code>를
+            반환하던 버그와, 닫힌 팝업을 살아있는 것으로 오인하던 null 체크 누락도
+            함께 발견해 고쳤습니다.
           </p>
         </AccordionSection>
       </div>
