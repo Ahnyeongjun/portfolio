@@ -133,11 +133,12 @@ export function InsopsRetrospective() {
 
       {/* 도입부 */}
       <p>
-        국가보안기관 위성영상 시스템을 <Highlight>4년째</Highlight> 담당하고 있습니다.
-        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module)
-        구조이며, 프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·인증
-        서버(ins-auth-svr)·다운로드 컨트롤러(ins-file-svr)를 2022.05~2024.05 약 2년간
-        담당해 end-to-end로 구현했습니다.
+        국가보안기관 위성영상 시스템을 <Highlight>4년째 책임지고</Highlight> 있습니다.
+        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈 중 프론트엔드(inops-cms/
+        inops-das)·API(inops-api-svr)·인증 서버(ins-auth-svr)·다운로드
+        컨트롤러(ins-file-svr) 4개를 2022.05~2024.05 약 2년간{" "}
+        <Highlight>처음부터 끝까지</Highlight> 만들었고, 이후 에어갭 운영과 신규
+        플랫폼 구축까지 이어서 맡았습니다.
       </p>
       <p>
         이 위에서 분석관은 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 주석을

@@ -205,10 +205,10 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
 
       {/* 도입부 */}
       <p>
-        항공우주연구원이 발사한 초소형위성 20기의 군집위성 데이터를 수집·처리·가시화하는
-        통합 플랫폼입니다. <Highlight>API 200여 개·테이블 35개</Highlight> 규모의 시스템을
-        6개 서비스 모듈(API 서버·Auth 서버·타일/파일 서버·프론트엔드·AI 추론)로 구성했으며,
-        ETL 파이프라인을 제외한 나머지 모듈 전체를 처음부터 설계·구현했습니다.
+        항공우주연구원이 발사한 초소형위성 20기의 데이터를 수집·처리·가시화하는{" "}
+        <Highlight>API 200여 개·테이블 35개</Highlight> 규모의 플랫폼을, ETL
+        파이프라인을 제외한 6개 서비스 모듈(API 서버·Auth 서버·타일/파일 서버·
+        프론트엔드·AI 추론) 전체를 <Highlight>혼자 설계하고 구현</Highlight>했습니다.
       </p>
       <p>
         사용자는 이 위에서 객체탐지·변화탐지·영상분할 등 AI 분석을 신청하고 CesiumJS

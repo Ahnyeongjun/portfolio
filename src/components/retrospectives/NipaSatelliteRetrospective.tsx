@@ -195,7 +195,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       <p>
         NIPA(정보통신산업진흥원) 지원 사업으로, 서로 다른 두 시점의 위성 영상을 비교해
         지표 변화를 자동으로 탐지하는 AI 플랫폼입니다. <Highlight>9개 서비스</Highlight>로
-        구성된 MSA 구조를 백엔드·인프라·프론트엔드까지 처음부터 설계·구현했습니다.
+        구성된 MSA 구조를 백엔드·인프라·프론트엔드까지 <Highlight>혼자 설계·구현</Highlight>했습니다.
       </p>
       <p>
         이전 시스템은 기능 하나만 고쳐도 전체를 재배포해야 하는 모놀리식 구조였습니다.
