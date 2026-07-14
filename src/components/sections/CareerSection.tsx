@@ -151,12 +151,12 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
           <>
             <div className="pf-career-subhead reveal">
               <span className="pf-career-subtitle">
-                {lang === 'en' ? 'Internal Tools · Personal Work' : '사내 도구 · 개인 작업'}
+                {lang === 'en' ? 'Self-Initiated Internal Automation & Improvements' : '주도적으로 만든 사내 자동화·개선 작업'}
               </span>
               <span className="pf-career-subnote">
                 {lang === 'en'
-                  ? 'Not client deliverables - tools built and shared in-house'
-                  : '발주처 납품물이 아닌, 사내에서 직접 만들어 공유한 작업'}
+                  ? 'Not client deliverables - built voluntarily and contributed in-house'
+                  : '발주처 납품물이 아닌, 자발적으로 만들어 사내에 기여한 작업'}
               </span>
             </div>
             <div className="pf-proj-grid">
