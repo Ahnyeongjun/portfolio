@@ -264,10 +264,10 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           />
         </AccordionSection>
 
-        {/* 2. 망연계: Snowflake ID → Debezium 에러 → 자가치유 → Outbox 전환 */}
+        {/* 2. 망연계: Snowflake ID → Debezium 에러 → 자가치유 → Outbox 전환 → 멱등키 설계 */}
         <AccordionSection
-          title="파일 기반 양방향 DB 동기화 - Debezium 에러를 Outbox로 근본 해결"
-          hint="Snowflake ID로 분산 ID 구현 · Debezium replication slot 반복 파손 → 자가치유 스크립트로 응급 대응 → Outbox 직접 구현으로 근본 해결"
+          title="파일 기반 양방향 DB 동기화 - Debezium 에러를 Outbox·멱등키 설계로 근본 해결"
+          hint="Snowflake ID로 분산 ID 구현 · replication slot 반복 파손 → 자가치유 스크립트 응급 대응 → Outbox 전환 · 이벤트 재전달 중복 반영은 멱등키 설계로 해결"
           module="API 서버 · 망연계"
         >
           <p>
@@ -306,6 +306,53 @@ def generate(self) -> int:
             오류로, WAL이 완전히 유실된 상황도 단순 "비활성"으로 오판해 필요한 slot
             재생성을 건너뛰고 있었습니다.
           </p>
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide">이전 - Debezium CDC (logical replication slot 기반)</p>
+            <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+              {([
+                ["DB WAL", "PostgreSQL 변경 로그"],
+                ["replication slot", "WAL 유실·비활성 시 정지 지점"],
+                ["Debezium Server", "HTTP Sink"],
+                ["웹훅 → 파일 릴레이", "JSON 파일로 전달"],
+                ["처리 워커", "폐쇄망 반영"],
+              ] as [string, string][]).map(([name, desc], i, arr) => (
+                <li key={i} className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs">
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-muted-foreground/20 text-muted-foreground text-[10px] font-semibold shrink-0">{i + 1}</span>
+                    <span className="font-medium text-foreground">{name}</span>
+                    <span className="text-muted-foreground font-normal">{desc}</span>
+                  </span>
+                  {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+                </li>
+              ))}
+            </ol>
+            <p className="text-[11px] font-medium text-muted-foreground/70 tracking-wide pt-1">이후 - Outbox (트랜잭션 커밋 이벤트 직접 캡처)</p>
+            <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+              {([
+                ["비즈니스 트랜잭션", "MyBatis Executor.update()"],
+                ["OutboxInterceptor", "SQL 실행을 가로채 이벤트 캡처"],
+                ["beforeCommit()", "같은 트랜잭션에 원자적 저장"],
+                ["Outbox 테이블", "커밋된 이벤트만 존재"],
+                ["배치 발행", "폐쇄망 반영, 재유입 무한루프 방지"],
+              ] as [string, string][]).map(([name, desc], i, arr) => (
+                <li key={i} className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-primary/30 bg-primary/10 text-xs">
+                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-semibold shrink-0">{i + 1}</span>
+                    <span className="font-medium text-primary">{name}</span>
+                    <span className="text-muted-foreground font-normal">{desc}</span>
+                  </span>
+                  {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+                </li>
+              ))}
+            </ol>
+          </div>
+          <p>
+            Debezium 방식은 <Highlight>DB 바깥의 별도 프로세스</Highlight>(replication slot)가
+            변경분을 감시하다 보니 그 프로세스 자체가 죽거나 slot이 깨지면 감시가 통째로
+            멈췄습니다. Outbox는 감시를 아예 없애고, <Highlight>같은 트랜잭션 안에서
+            이벤트를 직접 캡처</Highlight>하는 방식이라 별도 프로세스의 상태에 의존하지
+            않습니다.
+          </p>
           <p>
             우선 상태 판정 순서를 <code>NOT_FOUND → WAL lost → inactive → healthy</code>로
             재정렬하고, 강제종료→slot 삭제→재생성→검증까지 이어지는 4단계 복구 함수를
@@ -335,14 +382,7 @@ public class OutboxInterceptor implements Interceptor {
 public void beforeCommit(boolean readOnly) {
     outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
-        </AccordionSection>
-
-        {/* CDC 이벤트 중복 처리 버그 - 멱등키 설계 */}
-        <AccordionSection
-          title="CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계"
-          hint="재전달된 이벤트가 타임스탬프 차이로 매번 다른 값 취급 → 휘발성 컬럼 제외 정렬 payload를 자연키로 - 23개 테이블 공용 dedup"
-          module="망연계"
-        >
+          <p className="font-medium text-foreground">3. CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계</p>
           <p>
             Kafka 없이 Debezium Server(HTTP Sink) → 웹훅 → 파일 릴레이 → 워커로 이어지는
             구조에서, 동일 CDC 이벤트가 재전달·재시도될 때 <Highlight>중복 INSERT/UPDATE</Highlight>가
