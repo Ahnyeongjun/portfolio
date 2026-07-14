@@ -66,15 +66,12 @@ export const PROFILE = {
       {
         title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
         items: [
-          "Spring Boot·MyBatis·PostGIS 기반 9개 모듈 시스템의 REST API 서버·JWT 인증·다운로드 컨트롤러 개발",
-          "Spring Security 필터 기반 인증 + 커스텀 어노테이션·AOP 선언적 인가 설계 - 권한 검증 로직 중앙화",
-          "Redis 역색인 기반 세션 통제·로그인 시도 차단(TTL 자동 만료), 위험도별 Rate Limiting + Redis INCR 락-프리 카운팅",
-          "외부 보안 진단 대응 - CSP 런타임 동적 생성, 13개 매퍼 SQL Injection을 파라미터 바인딩으로 전환",
-          "에러 로그 DB 적재 체계 구축 - 서버 접속 없이 장애 원인 1차 추적 가능",
-          "MyBatis 동적 쿼리 기반 다중 조건 검색 API, 일반/대용량(INNORIX) 다운로드 단일 엔드포인트 통합",
+          "Spring Boot·MyBatis·PostGIS 기반 9개 모듈 시스템의 REST API·인증·다운로드 컨트롤러를 2년간 end-to-end 개발",
+          "Spring Security 필터+AOP 선언적 인가 설계, Redis 세션 통제·위험도별 Rate Limiting으로 보안 체계 직접 구축",
+          "외부 보안 진단 지적사항(CSP·SQL Injection 등 10건 이상) 전량 대응 완료",
           "information_schema 기반 Entity·MyBatis mapper 자동 생성 도구 - 40여 테이블 보일러플레이트 제거",
-          "에어갭 환경 수십 대 서버 클러스터 무중단 운영 - NVMe 펌웨어 레벨 장애 추적, 수억 픽셀 영상 OOM 대응",
-          "신규 플랫폼 DB 접근 계층을 Go API로 중앙화, 다중 레이어 타일 서버는 동적 세마포어 기반 동시성으로 재설계",
+          "에어갭 환경 수십 대 서버 클러스터 무중단 운영 - NVMe 펌웨어 레벨 장애 추적, 수억 픽셀 영상 OOM 대응, Zabbix 사전 감지",
+          "신규 플랫폼 DB 접근 계층 Go API 중앙화 · 다중 레이어 타일 서버 동시성 재설계 - 베어메탈부터 전 과정 신규 구축",
         ],
       },
       {
