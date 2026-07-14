@@ -133,14 +133,15 @@ export function InsopsRetrospective() {
 
       {/* 도입부 */}
       <p>
-        INSOPS는 국가보안기관이 위성영상을 수집·판독해 정식 보고서로 만들어내는 시스템입니다.
-        분석관은 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 주석을 달아 판독보고서를
-        작성하고, 완성된 보고서를 정부 표준 문서(HWP)로 내려받습니다.
+        국가보안기관 위성영상 시스템을 <Highlight>4년째</Highlight> 담당하고 있습니다.
+        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module)
+        구조이며, 프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·인증
+        서버(ins-auth-svr)·다운로드 컨트롤러(ins-file-svr)를 2022.05~2024.05 약 2년간
+        담당해 end-to-end로 구현했습니다.
       </p>
       <p>
-        Spring Boot·MyBatis·PostGIS·CesiumJS 기반 9개 모듈의 멀티모듈(Multi-module) 구조이며,
-        프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·다운로드 컨트롤러(ins-file-svr)를
-        2022.05~2024.05 약 2년간 담당하며 분석관이 매일 쓰는 화면을 end-to-end로 구현했습니다.
+        이 위에서 분석관은 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 주석을
+        달아 판독보고서를 작성하고, 완성된 보고서를 정부 표준 문서(HWP)로 내려받습니다.
       </p>
       <p>
         이후 국가보안기관 대상 위성영상 AI 처리 플랫폼의 <Highlight>운영</Highlight>을 이어받아
