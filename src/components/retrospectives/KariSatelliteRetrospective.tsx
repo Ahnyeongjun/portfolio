@@ -565,12 +565,13 @@ public void beforeCommit(boolean readOnly) {
           </p>
         </AccordionSection>
 
-        {/* 노드 자원 인지형 스케줄링 */}
+        {/* SaltStack 기반 K8s 운영 안정화: 자원 인지형 스케줄링 + CrashLoopBackOff 진단 */}
         <AccordionSection
-          title="노드 자원 인지형 스케줄링 (SaltStack)"
-          hint="K8s 기본 스케줄러가 실제 메모리 사용률을 반영 못해 OOM 발생 → 메모리 50% 미만 노드에만 자동 할당"
+          title="SaltStack 기반 K8s 운영 안정화 - 자원 인지형 스케줄링 & CrashLoopBackOff 진단"
+          hint="K8s 기본 스케줄러가 메모리 사용률을 못 봐서 OOM 발생 → SaltStack 배치 제어 / SaltStack master 파드 자체의 CrashLoopBackOff는 무거운 livenessProbe가 원인"
           module="Salt-Stack"
         >
+          <p className="font-medium text-foreground">1. 노드 자원 인지형 스케줄링</p>
           <p>
             K8s 기본 스케줄러는 파드에 선언된 리소스 요청·한도 값만 보고 배치를 결정할 뿐,
             노드의 <Highlight>실제 메모리 사용률</Highlight>은 반영하지 않습니다.
@@ -590,19 +591,13 @@ public void beforeCommit(boolean readOnly) {
               { cells: ["결과", "특정 노드 OOM 반복", "노드 과부하·OOM 사전 차단"], highlight: true },
             ]}
           />
-        </AccordionSection>
-
-        {/* K8s CrashLoopBackOff 진단 */}
-        <AccordionSection
-          title="K8s CrashLoopBackOff 근본원인 진단 (SaltStack master 파드)"
-          hint="무거운 livenessProbe가 probe timeout과 충돌 - 프로세스 생존 확인만으로 경량화"
-          module="인프라"
-        >
+          <p className="font-medium text-foreground">2. K8s CrashLoopBackOff 근본원인 진단 (SaltStack master 파드)</p>
           <p>
-            SaltStack master 파드가 반복적으로 <Highlight>CrashLoopBackOff</Highlight>에
-            빠졌습니다. livenessProbe가 전체 minion 목록을 조회하고 각 minion에{" "}
-            <code>kubectl exec</code>까지 수행하는 무거운 스크립트였는데, 이 실행 시간이
-            probe timeout(1초)에 가까워 정상 동작 중에도 타임아웃이 잦았습니다.
+            정작 배치를 담당하는 SaltStack master 파드 자체가 반복적으로{" "}
+            <Highlight>CrashLoopBackOff</Highlight>에 빠졌습니다. livenessProbe가 전체
+            minion 목록을 조회하고 각 minion에 <code>kubectl exec</code>까지 수행하는
+            무거운 스크립트였는데, 이 실행 시간이 probe timeout(1초)에 가까워 정상 동작
+            중에도 타임아웃이 잦았습니다.
           </p>
           <p>
             헬스체크를 <Highlight>프로세스 생존 여부(pgrep)</Highlight>만 확인하는 경량

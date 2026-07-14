@@ -152,12 +152,13 @@ export function InsopsRetrospective() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
-        {/* 인증·인가 체계 설계 */}
+        {/* 보안 체계 설계 및 강화: 인증·인가 + Rate Limiting + CSP·SQLi 대응 */}
         <AccordionSection
-          title="인증·인가 체계 설계 - Spring Security 필터 + AOP + Redis 세션"
-          hint="인증은 필터 체인, 인가는 어노테이션 하나로 선언 - 세션은 Redis 역색인으로 사용자 단위 통제"
+          title="보안 체계 설계 및 강화 - 인증·인가 · Rate Limiting · CSP·SQL Injection 대응"
+          hint="Spring Security 필터+AOP+Redis 세션 / 위험도별 Rate Limiting·로그인 방어 / 외부 보안 진단 10건 이상 해소"
           module="ins-auth-svr"
         >
+          <p className="font-medium text-foreground">1. 인증·인가 체계 설계 - Spring Security 필터 + AOP + Redis 세션</p>
           <p>
             엔드포인트가 늘어날수록 컨트롤러마다 권한 체크 코드를 개별적으로 넣다 보니,
             신규 API를 추가할 때 권한 검증을 <Highlight>깜빡 빠뜨리거나</Highlight> 서로 다른
@@ -196,14 +197,7 @@ export function InsopsRetrospective() {
             세션 상태를 앱 메모리가 아니라 Redis로 외부화했기 때문에, 서버를 증설해도
             세션 통제 로직은 그대로 동작합니다.
           </p>
-        </AccordionSection>
-
-        {/* 계층형 Rate Limiting + 로그인 실패 방어 */}
-        <AccordionSection
-          title="계층형 Rate Limiting + 로그인 실패 방어"
-          hint="필터+AOP 2계층 위험도 기반 제한, Redis INCR 락-프리 카운팅 - Redis 장애 시 로그인은 막지 않는 fail-open"
-          module="ins-auth-svr"
-        >
+          <p className="font-medium text-foreground">2. 계층형 Rate Limiting + 로그인 실패 방어</p>
           <p>
             업로드·삭제 같은 고위험 엔드포인트와 단순 조회 API가 동일하게 무제한 호출
             가능했고, 로그인 무차별 대입을 걸러낼 장치도 없었습니다. 다중 스레드 환경에서
@@ -231,14 +225,7 @@ export function InsopsRetrospective() {
             남아있지만, 로그인 실패 카운팅만큼은 Redis 기반이라 인스턴스 수와 무관하게
             정확합니다.
           </p>
-        </AccordionSection>
-
-        {/* 보안 진단 대응: CSP·SQL Injection */}
-        <AccordionSection
-          title="보안 진단 대응 - 동적 CSP 생성 · SQL Injection 제거"
-          hint="외부 보안 진단 지적 10건 이상 - CesiumJS eval 의존성 직접 패치, 매퍼 13개 SQL Injection 전환"
-          module="ins-auth-svr · inops-api-svr"
-        >
+          <p className="font-medium text-foreground">3. 외부 보안 진단 대응 - 동적 CSP 생성 · SQL Injection 제거</p>
           <p>
             외부 보안 진단에서 서버 정보 노출, CSP 미비(인라인/eval 허용), MyBatis{" "}
             <code>{"${}"}</code> 방식 SQL Injection 등 <Highlight>10건 이상</Highlight>을
@@ -385,12 +372,13 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 9. DB 접근 계층 중앙화 + 베어메탈 신규 구축 */}
+        {/* 9. 다종위성 플랫폼 신규 구축: DB 중앙화 + 베어메탈 인프라 + 타일 서버 동시성 */}
         <AccordionSection
-          title="다종위성 플랫폼 신규 구축 - DB 접근 계층 중앙화 · 베어메탈 인프라"
-          hint="물리 서버 설치부터 K8s 클러스터 구성, DB 접근을 Go API 한 곳으로 중앙화하는 신규 구축"
+          title="다종위성 플랫폼 신규 구축 - DB 접근 계층 중앙화 · 베어메탈 인프라 · 타일 서버 동시성"
+          hint="물리 서버 설치부터 K8s 클러스터 구성, DB 접근 Go API 중앙화, 위성·항공·월면 타일 서버 동시성까지 신규 구축 전 과정"
           module="신규 구축"
         >
+          <p className="font-medium text-foreground">1. DB 접근 계층 중앙화 · 베어메탈 인프라</p>
           <p>
             기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로
             DB에 직접 접근하는 구조였습니다. DB 접근 로직과 자격증명이 모든 서비스에
@@ -409,33 +397,7 @@ export function InsopsRetrospective() {
             다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화까지
             베어메탈에서 운영 가능한 시스템까지의 인프라 전 과정을 직접 결정했습니다.
           </p>
-          <p className="font-medium text-foreground">기타 기여</p>
-          <ul className="space-y-2 list-none">
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
-              <span><Highlight>히스토그램 스트레칭 자동화</Highlight>, <Highlight>COG 포맷</Highlight> 적용으로 가시화 성능 개선</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
-              <span><Highlight>Cleaner 서비스</Highlight> - 등록일 기준 자동 삭제 워크플로우 구축</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
-              <span>모놀리식 db-api를 <Highlight>models·services·api 3계층</Highlight>으로 리팩토링해 이후 표적 검색·페이지네이션 등 기능이 이 구조 위에서 확장되도록 정리</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
-              <span>위성 메타 조회 API를 <Highlight>컬럼 프로젝션</Highlight>·중복 SRID 변환 제거로 최적화하고, ORM 모델 속성 존재 여부로 검증하는 화이트리스트 방식 동적 쿼리와 <Highlight>페이지네이션</Highlight>을 추가</span>
-            </li>
-          </ul>
-        </AccordionSection>
-
-        {/* Go 이미지 타일 서버 동시성 재설계 */}
-        <AccordionSection
-          title="Go 이미지 타일 서버 동시성 재설계 - 무제한 고루틴 실패 후 세마포어로 안정화"
-          hint="위성·항공·월면 다중 레이어 GDAL 워핑 - 무제한 병렬화 2회 원복 끝에 CPU 코어 기반 동적 세마포어로 정착"
-          module="신규 구축"
-        >
+          <p className="font-medium text-foreground">2. Go 이미지 타일 서버 동시성 재설계 - 무제한 고루틴 실패 후 세마포어로 안정화</p>
           <p>
             위성·항공·월면(KPLO) 다중 레이어 위성영상을 GDAL로 워핑·합성해 응답하는 WMS
             엔드포인트가 순차 처리로 레이어가 늘수록 응답 지연이 커졌습니다. 처음에는{" "}
@@ -466,6 +428,25 @@ export function InsopsRetrospective() {
             위험성을 인지하고 세마포어 기반 제어로 전환했다"는 트레이드오프 판단
             과정입니다.
           </p>
+          <p className="font-medium text-foreground">기타 기여</p>
+          <ul className="space-y-2 list-none">
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span><Highlight>히스토그램 스트레칭 자동화</Highlight>, <Highlight>COG 포맷</Highlight> 적용으로 가시화 성능 개선</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span><Highlight>Cleaner 서비스</Highlight> - 등록일 기준 자동 삭제 워크플로우 구축</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span>모놀리식 db-api를 <Highlight>models·services·api 3계층</Highlight>으로 리팩토링해 이후 표적 검색·페이지네이션 등 기능이 이 구조 위에서 확장되도록 정리</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span>위성 메타 조회 API를 <Highlight>컬럼 프로젝션</Highlight>·중복 SRID 변환 제거로 최적화하고, ORM 모델 속성 존재 여부로 검증하는 화이트리스트 방식 동적 쿼리와 <Highlight>페이지네이션</Highlight>을 추가</span>
+            </li>
+          </ul>
         </AccordionSection>
       </div>
 
