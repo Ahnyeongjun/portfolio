@@ -409,6 +409,16 @@ public void beforeCommit(boolean readOnly) {
             이 단일 dedup 로직을 <Highlight>23개 테이블</Highlight>의 CDC 반영이 공유하도록
             정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다.
           </p>
+          <p className="font-medium text-foreground">4. CDC 이진 데이터(BLOB) 파이프라인 정합성 확보</p>
+          <p>
+            공지 첨부파일·팝업 이미지 컬럼이 SQLAlchemy 모델에 <code>String</code>으로
+            잘못 선언돼 Postgres <code>bytea</code> 원본과 타입이 어긋났고, 1차 수정도 실제{" "}
+            <Highlight>base64 디코딩 없이</Highlight> 문자열을 그대로 UTF-8 바이트로 처리해
+            이미지가 깨졌습니다. 컬럼 타입을 <code>LargeBinary</code>로 재정의하고{" "}
+            <code>base64.b64decode()</code>로 정정한 뒤, Debezium 소스 설정에{" "}
+            <code>binary.handling.mode=base64</code>를 명시해 상류부터 인코딩 방식을
+            고정하고 실패 시 hex 디코딩으로 폴백하도록 방어했습니다.
+          </p>
         </AccordionSection>
 
         {/* 3. 영상 서빙 */}
@@ -522,6 +532,29 @@ public void beforeCommit(boolean readOnly) {
               { cells: ["ConvNeXt-Base (ImageNet-22k)", "UPerNet + Skeleton Head", "0.7205", "✓ 최종 채택"], highlight: true },
               { cells: ["HRNet-W48 (ImageNet-1k)", "UPerNet", "0.6857", ""] },
               { cells: ["DINOv2 ViT-B/14", "UPerNet", "0.6656", "조기 종료"], muted: true },
+            ]}
+          />
+          <p className="font-medium text-foreground">GPU 자원 경합 방지 & 타일 경계 객체 탐지 안정화</p>
+          <p>
+            단일 GPU 노드에서 gunicorn worker 5개가 각각 모델을 GPU에 올려{" "}
+            <Highlight>VRAM 경합</Highlight>이 발생했습니다. 위성 스캔 이미지는 모델
+            입력보다 커서 슬라이딩 윈도우로 타일링해야 하는데, 타일 경계에 걸친 대형
+            객체가 겹치는 두 타일에서 각각 낮은 confidence로 누락·중복 검출되는 문제도
+            있었습니다.
+          </p>
+          <p>
+            worker를 5개에서 <Highlight>1개로 축소</Highlight>해 GPU당 단일 모델
+            인스턴스만 상주하도록 바꿨습니다. nodata 90% 이상인 타일은 스킵하고 overlap을
+            128px에서 384px로 넓힌 뒤 3-way TTA 추론 결과를 NMS로 병합했으며, 타일 간
+            클래스별 AABB 기반 <Highlight>cross-tile NMS</Highlight>를 추가해 경계 겹침
+            객체의 중복 검출을 제거했습니다.
+          </p>
+          <CompareTable
+            headers={["항목", "이전", "이후"]}
+            rows={[
+              { cells: ["worker", "5 (VRAM 경합)", "1 (GPU당 단일 인스턴스)"], highlight: true },
+              { cells: ["overlap", "128px", "384px"], highlight: true },
+              { cells: ["타일 경계 객체", "겹치는 두 타일에서 각각 낮은 confidence로 검출", "cross-tile NMS로 중복 제거"], highlight: true },
             ]}
           />
         </AccordionSection>

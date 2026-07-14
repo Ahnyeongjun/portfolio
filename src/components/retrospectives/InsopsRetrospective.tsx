@@ -256,12 +256,13 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 3. 다운로드 엔드포인트 통합 */}
+        {/* 3. 파일 다운로드 안정화: 엔드포인트 통합 + CORS + XHR 바이너리 + 스트리밍 UX */}
         <AccordionSection
-          title="다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로"
-          hint="파일 크기·전송 방식과 무관하게 /download.do 하나 - 파라미터 유무로 일반/대용량 자동 분기"
+          title="파일 다운로드 안정화 - 엔드포인트 통합 · CORS 재설계 · 스트리밍 UX 개선"
+          hint="일반/INNORIX 대용량 전송을 엔드포인트 하나로 · 크로스오리진 CORS 재설계 · XHR 바이너리 처리 · 청크 스트리밍 다운로더"
           module="ins-file-svr"
         >
+          <p className="font-medium text-foreground">1. 다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로</p>
           <p>
             일반 다운로드와 위성영상처럼 큰 파일의 <Highlight>INNORIX</Highlight> 대용량 전송을
             엔드포인트를 따로 두지 않고 <code>/download.do</code> 하나로 처리했습니다. 분기 기준은
@@ -281,6 +282,52 @@ export function InsopsRetrospective() {
             재암호화되면서 조각별로 바이트 구조가 달라져 파일이 깨지는 버그도 발견해,
             다운로드 요청을 <code>synchronized</code>로 직렬화하고 암호화된 파일이 이미
             있으면 재사용하도록 고쳤습니다.
+          </p>
+          <p className="font-medium text-foreground">2. 크로스 오리진 CORS 정책 재설계</p>
+          <p>
+            기존 CORS 설정은 전체 오리진을 허용(<code>allowedOrigins("*")</code>)해 자격증명
+            포함 요청을 처리할 수 없었고, 브라우저가 <code>Content-Disposition</code> 커스텀
+            헤더를 JS에서 읽지 못하게 막아 다른 오리진에서 파일을 받을 때{" "}
+            <Highlight>파일명 자체를 추출하지 못하는</Highlight> 문제가 있었습니다.
+          </p>
+          <p>
+            프로파일별 허용 도메인 화이트리스트를 외부 설정으로 분리하고{" "}
+            <code>allowCredentials(true)</code>와 <code>exposedHeaders("Content-Disposition")</code>를
+            추가했습니다. 와일드카드+자격증명 조합이 만드는 CORS 오류를 없애고, 배포 환경마다
+            재빌드 없이 도메인을 교체할 수 있게 됐습니다.
+          </p>
+          <p className="font-medium text-foreground">3. XHR 기반 대용량·바이너리 파일 다운로드 처리</p>
+          <p>
+            공통 Ajax 모듈이 모든 응답을 <code>JSON.parse</code>하도록 만들어져 있어 바이너리
+            응답(다운로드 API)에서 파싱 실패가 발생했습니다. 진행률 콜백은{" "}
+            <code>this</code> 바인딩이 어긋나 동작하지 않았고, 응답 래핑 구조가 바뀐 뒤로{" "}
+            <code>Blob</code> 생성 코드도 래퍼 객체 전체를 Blob으로 만들어버리는 버그가
+            있었습니다.
+          </p>
+          <p>
+            <code>XHR.responseType = 'blob'</code>과 <code>overrideMimeType</code>으로 바이너리를
+            안전하게 처리하고, <code>this</code> 바인딩은 클로저 패턴으로 고정했으며, Blob
+            생성부가 <code>res.data</code>를 참조하도록 고쳤습니다. 대용량 ISO 파일로 다운로드
+            시나리오를 재현·검증했습니다.
+          </p>
+          <p className="font-medium text-foreground">4. 대용량 스트리밍 다운로드 UX 재설계 - 서버 구현 갭까지 직접 발견</p>
+          <p>
+            전체 파일을 한 번에 받는 구조라 네트워크가 끊기면 처음부터 다시 받아야 했고
+            진행률 표시도 없었습니다. 업로드 확장자 검증도 컨트롤러마다 개별 구현되거나
+            아예 없어 임의 확장자 업로드가 가능했습니다.
+          </p>
+          <p>
+            <Highlight>File System Access API</Highlight>로 서버 응답을 64KB 청크 단위로 읽어
+            디스크에 직접 기록하고, Range 지원 여부를 사전 탐지해 이어받기, 실패 시 최대 3회
+            재시도를 구현했습니다. 업로드 확장자 검증은 <code>@FileUploadValidation</code>{" "}
+            커스텀 애노테이션 + AOP로 횡단 관심사를 분리했습니다.
+          </p>
+          <p>
+            다운로드 UX를 다 만든 뒤 서버 코드를 다시 들여다보니, <code>folderDownload()</code>가{" "}
+            <code>Accept-Ranges: bytes</code>를 선언하면서도 실제 Range 헤더 파싱 코드가 없어{" "}
+            <Highlight>클라이언트가 이어받기를 시도해도 서버는 매번 파일 전체를 재전송</Highlight>한다는
+            구현 갭을 코드 리뷰로 직접 발견했습니다. 확장자 검증도 매직바이트 검증 없이
+            문자열 비교뿐이라는 점을 함께 정리해 다음 개선 과제로 남겼습니다.
           </p>
         </AccordionSection>
 
@@ -313,6 +360,70 @@ export function InsopsRetrospective() {
           />
           <p>
             스키마가 바뀌면서 생성기도 두 세대(Es→Tobe)로 갈아탔습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 표적 데이터 관리: 즐겨찾기 재정렬 + 생명주기 감사로그 + 첨부파일 동시성 */}
+        <AccordionSection
+          title="표적(Target) 데이터 관리 - 즐겨찾기 재정렬 · 생명주기 감사로그 · 첨부파일 동시성"
+          hint="부분 시프트 + 윈도우 함수 재정렬 / CUD마다 이력 기록 + 참조 무결성 · 계단식 정리 / MAX()+1 채번 경쟁조건 수정"
+          module="inops-api-svr"
+        >
+          <p className="font-medium text-foreground">1. 즐겨찾기·관심표적 우선순위 재정렬</p>
+          <p>
+            사용자별 드래그앤드롭 정렬에 정수 순번 컬럼을 쓰다 보니, 전체 재정렬 UPDATE
+            비용과 삭제 시 <Highlight>순번 gap</Highlight>이 쌓이는 문제가 있었습니다.
+          </p>
+          <p>
+            이동 구간만 범위 UPDATE하는 부분 시프트 로직과{" "}
+            <code>ROW_NUMBER() OVER()</code> 윈도우 함수 기반 순번 재계산(defragmentation)을
+            그룹·아이템 2단 계층에 재사용해, reorder 연산이 전체 행이 아니라{" "}
+            <Highlight>이동 구간만</Highlight> UPDATE하도록 만들었습니다.
+          </p>
+          <p className="font-medium text-foreground">2. 표적 생명주기 감사로그 + 삭제 시 계단식 무결성 처리</p>
+          <p>
+            표적 데이터는 여러 사용자가 생성·수정·삭제·이관할 수 있는데 변경 이력이 없어
+            원인 추적이 불가능했습니다. 보고서가 참조 중인 표적을 삭제하면 참조 무결성이
+            깨지고, 삭제된 표적을 가리키는 즐겨찾기가 <Highlight>고아 레코드</Highlight>로
+            남는 문제도 있었습니다.
+          </p>
+          <p>
+            insert/update/delete마다 트랜잭션유형코드(C/U/D)를 포함한 이력 레코드를 같은
+            서비스 메서드 안에서 기록하는 수동 감사로그 패턴을 도입했습니다. 삭제 시 보고서
+            참조 카운트를 사전 검증해 참조 중인 표적의 삭제를 애플리케이션 레벨에서
+            차단하고, 표적 삭제·이관 시 연관 즐겨찾기·관심표적을 함께 정리하고 순번을
+            재정렬하도록(위 1번과 연동) 만들었습니다.
+          </p>
+          <p className="font-medium text-foreground">3. 첨부파일 등록 동시성 버그 수정 - MAX()+1 채번의 한계</p>
+          <p>
+            첨부파일 일련번호를 DB 시퀀스가 아니라 <code>SELECT MAX(sno)+1</code> 서브쿼리로
+            계산해, 동일 사용자가 짧은 시간에 여러 파일을 동시 업로드하면 두 요청이 같은
+            MAX 값을 읽어 <Highlight>같은 번호로 INSERT</Highlight>를 시도하는 경쟁 상태가
+            발생할 수 있었습니다.
+          </p>
+          <p>
+            컨트롤러의 insert 메서드에 Lombok <code>@Synchronized</code>(인스턴스 단위 락)를
+            추가해 동일 인스턴스 내 요청을 직렬화했습니다. 서비스 배포 환경이 단일
+            인스턴스였기 때문에, 이 최소 변경만으로 경쟁 상태를 완전히 제거할 수 있었습니다
+            (다중 인스턴스로 확장한다면 DB 차원의 시퀀스·유니크 제약이 필요하다는 한계는
+            인지하고 있습니다).
+          </p>
+        </AccordionSection>
+
+        {/* CTE 리팩터링 */}
+        <AccordionSection
+          title="CTE 리팩터링으로 반복 테이블 스캔 제거"
+          hint="동일 조인·필터 조건으로 5번 UNION ALL 반복 실행 → CTE로 한 번만 계산해 재사용"
+          module="inops-api-svr"
+        >
+          <p>
+            하나의 통계 API가 서로 다른 5개 집계 기준을 위해 동일한 조인과 WHERE 조건을{" "}
+            <code>UNION ALL</code>로 <Highlight>5번 반복 실행</Highlight>하는 구조였습니다.
+          </p>
+          <p>
+            <code>WITH base_data AS (...)</code> CTE로 조인·필터링을 한 번만 수행하고, 5개의
+            집계 쿼리가 이 결과를 재사용하도록 리팩터링했습니다. 원본 테이블 스캔·조인
+            횟수가 구조적으로 <Highlight>5회 → 1회</Highlight>로 줄었습니다.
           </p>
         </AccordionSection>
 
@@ -369,6 +480,26 @@ export function InsopsRetrospective() {
             사용자 신고 전까지는 인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로
             호스트·서비스 상태를 실시간 모니터링하는 커스텀 대시보드를 직접 구축해
             장애를 사전에 감지할 수 있는 체계를 확보했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 클라우드 배포 프로파일 신설 - 반복 장애 대응 */}
+        <AccordionSection
+          title="클라우드 배포 프로파일 신설 - 리버스 프록시 경유 연동 반복 장애 대응"
+          hint="배포 때마다 내부 API 연동이 끊기는 장애를 8회에 걸쳐 대응 → application-cloud.yml로 환경별 분리 정착"
+          module="ins-auth-svr"
+        >
+          <p>
+            발주 기관의 별도 클라우드 환경에 대응하는 Spring Profile이 없었고, Nginx
+            리버스 프록시(TLS 종료) 뒤에 서비스가 위치하는 구조에서 내부 API 호출의
+            스킴·포트·호스트 불일치가 <Highlight>배포 때마다 반복</Highlight> 발생했습니다.
+          </p>
+          <p>
+            같은 설정 항목을 6일~2개월 간격으로 <Highlight>총 8회</Highlight> 수정한 끝에,{" "}
+            <code>application-cloud.yml</code>을 신설해 context-path·로그 경로·외부 API
+            host를 dev/prod와 분리 관리했습니다. cloud 환경에서는 내부 API 호출을{" "}
+            <Highlight>localhost + 서비스별 path prefix</Highlight>로 우회하는 방식으로
+            정착시켜, 이후 같은 환경을 추가할 때 반복 장애가 재발하지 않도록 만들었습니다.
           </p>
         </AccordionSection>
 
@@ -445,6 +576,10 @@ export function InsopsRetrospective() {
             <li className="flex gap-2">
               <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
               <span>위성 메타 조회 API를 <Highlight>컬럼 프로젝션</Highlight>·중복 SRID 변환 제거로 최적화하고, ORM 모델 속성 존재 여부로 검증하는 화이트리스트 방식 동적 쿼리와 <Highlight>페이지네이션</Highlight>을 추가</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">·</span>
+              <span>항공·위성·월면탐사 등 23종 이기종 산출물을 처리하던 배치 파이프라인(Cataloger·Collector)의 동적 로딩 아키텍처 위에 <Highlight>24번째 제품 타입(다중분광카메라)</Highlight> 처리기를 추가 - 기존 23종 구현체를 건드리지 않고 파일 추가만으로 통합</span>
             </li>
           </ul>
         </AccordionSection>
@@ -556,6 +691,19 @@ export function InsopsRetrospective() {
           <p>
             실제로는 미등록 컴포넌트 재요청을 막는 가드가 카메라 이동처럼 정상적인 반복
             호출까지 막던 부작용을, 차단 기준을 컴포넌트+함수명 단위로 세분화해 고쳤습니다.
+          </p>
+          <p className="font-medium text-foreground">유지보수 중 발견한 버그 2건</p>
+          <p>
+            창 참조를 <code>windws.winId</code>처럼 점 표기법으로 동적 조회해 항상{" "}
+            <code>undefined</code>를 반환하던 버그를 <code>windws[winId]</code> 브래킷
+            표기법으로 고쳤고, 창이 이미 닫혔는지(<code>win?.window</code>) 확인하지 않아{" "}
+            <Highlight>닫힌 팝업을 살아있는 것으로 오인</Highlight>하던 null 체크 누락도
+            함께 수정했습니다.
+          </p>
+          <p>
+            창 참조 정리(<code>delete windws[compId]</code>) 시점을 두고는 "정리하면
+            재오픈 시 참조가 소실되고, 정리하지 않으면 iframe 재오픈 시 콜백이 실행되지
+            않는다"는 두 가지 실패 모드가 서로 충돌하는 트레이드오프를 직접 겪었습니다.
           </p>
         </AccordionSection>
       </div>
