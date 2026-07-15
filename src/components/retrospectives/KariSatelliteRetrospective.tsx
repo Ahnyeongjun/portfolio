@@ -522,9 +522,39 @@ public void beforeCommit(boolean readOnly) {
           />
           <p>
             이 단일 dedup 로직을 <Highlight>23개 테이블</Highlight>의 CDC 반영이 공유하도록
-            정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다. 같은
-            파이프라인에서 첨부파일 BLOB 컬럼의 타입 선언·인코딩 방식이 어긋나
-            이미지가 깨지던 문제도 함께 바로잡았습니다.
+            정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다.
+          </p>
+          <p className="font-medium text-foreground">이진 데이터(BLOB) 정합성 - 타입 불일치·잘못된 디코딩</p>
+          <p>
+            같은 파이프라인에서 공지 첨부파일·팝업 이미지 같은 <code>bytea</code> 컬럼이
+            CDC를 거치며 이미지가 깨지는 문제도 있었습니다. 원인은 두 겹이었습니다 -
+            SQLAlchemy 모델에 이 컬럼이 <code>String</code>으로 잘못 선언돼 Postgres 원본과
+            타입이 어긋났고, 1차 수정도 실제 <code>base64</code> 디코딩 없이 문자열을
+            UTF-8 바이트로만 변환해 여전히 깨졌습니다.
+          </p>
+          <p>
+            컬럼 타입을 <Highlight>LargeBinary</Highlight>로 재정의하고{" "}
+            <code>base64.b64decode()</code>로 정정한 뒤, Debezium 소스 설정에{" "}
+            <code>binary.handling.mode=base64</code>를 명시해 상류부터 인코딩 방식을
+            고정했습니다. base64 디코딩이 실패하는 경우를 대비해 hex 디코딩 폴백도
+            추가해, 타입 선언 → 전송 인코딩 → 디코딩 3단 계층이 일관되게 처리되도록
+            정리했습니다.
+          </p>
+          <p className="font-medium text-foreground">EWKB 지오메트리 파싱 안정화</p>
+          <p>
+            PostGIS <code>EWKB</code>를 일반 <code>WKB</code> 파서로 처리하면서 SRID
+            유무를 바이트 오프셋·비트마스크로 직접 잘라내는 임시방편을 쓰고 있었는데,
+            지오메트리 타입·엔디안 조합에 따라 간헐적으로 파싱이 실패했습니다. 좌표
+            소수점 표현도 Go·Python 양쪽에서 통일돼 있지 않아, 위에서 다룬 CDC{" "}
+            <Highlight>멱등키</Highlight>에 쓰이는 좌표 문자열 매칭까지 깨뜨릴 수 있는
+            구조였습니다.
+          </p>
+          <p>
+            Go는 <code>go-geom</code>의 <code>wkb</code> 디코더를{" "}
+            <code>ewkb</code>로 교체해 SRID 파싱을 라이브러리에 위임하고, Python은{" "}
+            <code>shapely.wkb</code> + <code>rounding_precision=16</code>으로 좌표
+            포맷을 양쪽에서 통일했습니다. 수동 바이너리 파싱 코드를 제거하면서 파싱
+            실패 시 재시도하던 분기도 함께 걷어냈습니다.
           </p>
         </AccordionSection>
 

@@ -327,6 +327,46 @@ def callback(ch, method, properties, body):
           </p>
         </AccordionSection>
 
+        <AccordionSection
+          title="db-api 계층화 · 위성영상 메타 조회 성능 개선"
+          hint="models·crud·router 단일 파일 → 3계층 분리 / 컬럼 프로젝션·페이지네이션 도입"
+          module="db-api"
+        >
+          <p>
+            초기 db-api는 FastAPI 튜토리얼 구조를 그대로 사용해 테이블이 늘어날 때마다{" "}
+            <code>models.py</code>·<code>crud.py</code>·<code>router.py</code> 각 1개
+            파일에 로직이 계속 쌓이는 구조였습니다. 리소스별 관심사가 한 파일에
+            뒤섞여 있어 변경 영향 범위를 파악하기 어려웠습니다.
+          </p>
+          <p>
+            테이블(엔티티) 단위로 <Highlight>models</Highlight>를, CRUD 로직을{" "}
+            <Highlight>services</Highlight>의 서비스 클래스로, HTTP 라우팅을{" "}
+            <Highlight>api</Highlight>의 라우터 모듈로 분리했습니다. 이후 즐겨찾기·
+            페이지네이션 같은 신규 리소스는 이 3계층 패턴을 그대로 따라 확장됐습니다.
+          </p>
+          <p className="font-medium text-foreground">위성영상 메타 조회 성능 개선</p>
+          <p>
+            메타데이터 조회 API는 ORM 풀 엔티티를 하이드레이션한 뒤 재직렬화하는
+            구조였고, 이미 4326 SRID로 저장된 컬럼에 불필요한{" "}
+            <code>ST_SetSRID</code>를 매번 재적용하고 있었습니다. 페이지네이션도
+            없어 대량 결과를 한 번에 반환했습니다.
+          </p>
+          <CompareTable
+            headers={["항목", "이전", "이후"]}
+            rows={[
+              { cells: ["조회 방식", "ORM 풀 엔티티 하이드레이션·재직렬화", "필요한 컬럼만 select하는 컬럼 프로젝션"], highlight: true },
+              { cells: ["SRID 변환", "이미 4326인 컬럼에 매번 재적용", "불필요한 ST_SetSRID 제거"], highlight: true },
+              { cells: ["필터", "필드 검증 없음", "모델에 실제 존재하는 컬럼만 허용하는 화이트리스트"], highlight: true },
+              { cells: ["응답 크기", "페이지네이션 없이 전체 반환", "page/limit 페이지네이션, 기본 1000건"], highlight: true },
+            ]}
+          />
+          <p>
+            반복 파싱되던 datetime 값도 행마다 재계산하지 않도록 루프 밖에서 한 번만
+            계산하도록 바꾸고, fetch·serialize 단계를 분리 계측할 수 있는 타이밍
+            로그를 추가했습니다.
+          </p>
+        </AccordionSection>
+
         {/* AI 탐지 품질 개선 */}
         <AccordionSection
           title="AI 탐지 품질 개선"
