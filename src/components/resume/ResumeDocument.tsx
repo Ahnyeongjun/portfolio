@@ -38,7 +38,7 @@ const CSS = `
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .rallit-root .sheet-inner { padding:12mm 12mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .sec, .rallit-root .proj, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .career-group, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
+  .rallit-root .proj, .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .career-group, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
   .rallit-root .sec-h { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -159,15 +159,15 @@ export function ResumeDocument() {
     const pageH = 297 * pxPerMm;
 
     // Rule: flow continuously, but never cut a unit across a page boundary.
-    // Keep the coarsest unit that still fits on a page whole - a whole section
-    // first, then a whole project/item, falling back to inner blocks for anything
-    // too tall to fit (e.g. the projects section). Document order lists coarser
-    // units first, so the first crossing unit that fits is always the coarsest.
-    // Sections that fit are kept whole (never cut); the oversized projects section
-    // flows project by project. A whole `.proj` is kept together so it never spans
-    // a page boundary; only a project too tall for one page falls back to its inner
-    // blocks (.proj-head/.proj-ach-row), which are still never cut.
-    const KEEP = '.sec, .proj, .career-group, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
+    // Sections themselves are allowed to span pages (otherwise one tall section,
+    // e.g. 경력/프로젝트, drags everything after it onto a fresh page and leaves a
+    // large blank gap). Only the finer units below a section are kept whole - a
+    // whole project/item first, falling back to inner blocks for anything too
+    // tall to fit (e.g. a single oversized project). A whole `.proj` is kept
+    // together so it never spans a page boundary; only a project too tall for
+    // one page falls back to its inner blocks (.proj-head/.proj-ach-row), which
+    // are still never cut.
+    const KEEP = '.proj, .career-group, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
