@@ -85,12 +85,7 @@ export const PROFILE = {
               "일반/대용량(INNORIX) 엔드포인트 통합, 스트리밍 기반 이어받기",
             ],
           },
-          {
-            text: "비효율적인 업무 개선 → 업무 시간 효율화",
-            sub: [
-              "base 모듈 개발 - CRUD controller·service·mapper·entity 제네릭 추상화(상속 구조), MyBatis mapper·entity 자동 생성 도구, AOP 기반 에러 로깅",
-            ],
-          },
+          { text: "비효율적인 업무 개선 → 업무 시간 효율화 - base 모듈 개발(CRUD controller·service·mapper·entity 제네릭 추상화, 상속 구조), MyBatis mapper·entity 자동 생성 도구, AOP 기반 에러 로깅" },
           {
             text: "에어갭 환경 운영 및 배포 환경 수립",
             sub: [
@@ -151,7 +146,7 @@ export const PROFILE = {
         period: "2025.07 ~ 진행 중",
         items: [
           {
-            text: "인프라 업데이트",
+            text: "MSA·CI/CD 마이그레이션",
             sub: [
               "모놀리식을 9개 서비스로 분리하는 MSA 마이그레이션",
               "RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조를 ArgoCD·Argo Workflows 기반으로 전환",
@@ -159,16 +154,16 @@ export const PROFILE = {
               "CI/CD Jenkins → ArgoCD 전환",
             ],
           },
-          { text: "Envoy Gateway·Keycloak 기반 게이트웨이 레벨 인증" },
           {
-            text: "인프라 주요 성과",
+            text: "클러스터 인프라 고도화",
             sub: [
-              "Cilium(eBPF) CNI로 kube-proxy 대체 → 서비스 처리 경량화 및 L3~L7 정책 일원화, Hubble로 egress 관측해 에어갭 비인가 통신 탐지",
-              "3노드 control-plane HA를 kube-vip VIP로 구성 → 노드 장애 시에도 API 서버 무중단",
-              "Prometheus·Grafana·Tempo·OpenSearch 관측 스택 구축 → MSA 9개 서비스 장애 원인분석 시간 단축",
-              "Argo Events(webhook→NATS 큐→Sensor)·Workflows에 OPA 정책 게이트 통합 → 배포 전 정책 검증 자동화",
+              "Cilium(eBPF) CNI로 kube-proxy 대체 - L3~L7 정책 일원화, Hubble 기반 egress 관측으로 비인가 통신 탐지",
+              "3노드 control-plane HA 구성(kube-vip VIP) - 노드 장애 시에도 API 서버 무중단",
+              "Prometheus·Grafana·Tempo·OpenSearch 관측 스택 구축 - 장애 원인분석 시간 단축",
+              "Argo Events(webhook→NATS→Sensor)·Workflows에 OPA 정책 게이트 통합 - 배포 전 정책 검증 자동화",
             ],
           },
+          { text: "Envoy Gateway·Keycloak 기반 게이트웨이 레벨 인증" },
           {
             text: "프론트엔드 레거시 마이그레이션 주도로 코드 활용도 증가",
             sub: [
