@@ -240,22 +240,20 @@ export function InsopsRetrospective() {
             CesiumJS 라이브러리의 <code>eval</code> 패턴을 소스 레벨에서 직접 패치해 CSP
             위반 없이 동작하도록 만들었습니다(서드파티 라이브러리 제약을 소스 패치로 우회).
             Nginx <code>proxy_hide_header</code>로 보안 헤더 관리를 한 곳으로 모으고,{" "}
-            <Highlight>13개 매퍼</Highlight>의 <code>{"${}"}</code>를 <code>{"#{}"}</code>로
-            전환해 SQL Injection을 제거했습니다.
+            <Highlight>47개 매퍼</Highlight>의 SQL Injection을 해소했습니다 - 정적 쿼리
+            13개는 <code>{"${}"}</code>를 <code>{"#{}"}</code>로 바꾸는 파라미터 바인딩으로,
+            동적 정렬(<code>ORDER BY {"${sidx}"}</code>)에 쓰이는 나머지 34개는 컬럼명을
+            허용된 목록과 대조하는 화이트리스트 검증으로 각각 전환했습니다.
           </p>
           <CompareTable
             headers={["항목", "이전", "이후"]}
             rows={[
               { cells: ["CSP", "인라인/eval 허용 - 사실상 무방비", "API origin 기반 런타임 동적 생성"], highlight: true },
               { cells: ["CesiumJS eval 의존", "CSP 강화 시 화면 깨짐", "라이브러리 eval 패턴 직접 패치"], highlight: true },
-              { cells: ["매퍼 SQL", "13개 매퍼 ${} 파라미터 삽입", "#{} 바인딩으로 전환"], highlight: true },
+              { cells: ["정적 쿼리 매퍼", "13개 매퍼 ${} 파라미터 삽입", "#{} 바인딩으로 전환"], highlight: true },
+              { cells: ["동적 정렬 컬럼 매퍼", "34개 매퍼 ${} 컬럼명 치환, 검증 없음", "화이트리스트 검증으로 전환"], highlight: true },
             ]}
           />
-          <p>
-            다만 동적 정렬(<code>ORDER BY {"${sidx}"}</code>)에 쓰이는 컬럼은 34개 매퍼에서
-            여전히 <code>{"${}"}</code> 치환을 쓰고 화이트리스트 검증이 없어, 잔존 리스크로
-            남아있다는 것도 정직하게 인지하고 있습니다.
-          </p>
         </AccordionSection>
 
         {/* 3. 파일 다운로드 안정화: 엔드포인트 통합 + CORS + XHR 바이너리 + 스트리밍 UX */}
