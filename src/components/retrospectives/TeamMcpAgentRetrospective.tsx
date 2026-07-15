@@ -305,6 +305,19 @@ def generate_report(start_date: str, end_date: str) -> str:
           </p>
         </AccordionSection>
 
+        <AccordionSection
+          title="Jira·Bitbucket 연동 자동 브랜치·PR 문화 정착"
+          hint="티켓 상태 변경 시 브랜치 자동 생성 → PR까지 자동화"
+        >
+          <p>
+            같은 사내 자동화의 연장선으로, Jira 티켓을 발급받은 뒤 브랜치를 만들고 PR을
+            여는 흐름도 매번 수작업으로 반복되고 있었습니다. 티켓 상태가 바뀌면 규칙에
+            따라 브랜치를 <Highlight>자동으로 생성</Highlight>하고, 작업이 끝나면 PR
+            생성까지 이어지는 자동화를 구축해 팀 내 브랜치·PR 명명 규칙과 작업 흐름을
+            정착시켰습니다.
+          </p>
+        </AccordionSection>
+
       </div>
     </div>
   );

@@ -321,10 +321,10 @@ export function InsopsRetrospective() {
           </p>
         </AccordionSection>
 
-        {/* 5. MyBatis mapper/entity 자동생성 도구 */}
+        {/* 5. MyBatis mapper/entity 자동생성 도구 + base 모듈 */}
         <AccordionSection
-          title="DB 스키마 기반 MyBatis mapper·entity 자동생성 도구"
-          hint="information_schema 조회 → 테이블 40여 개의 Entity·XML mapper를 자동 생성"
+          title="DB 스키마 기반 MyBatis mapper·entity 자동생성 도구 · 공통 base 모듈"
+          hint="information_schema 조회 → 테이블 40여 개의 Entity·XML mapper를 자동 생성 / 제네릭 기반 CRUD base 모듈로 반복 계층 자체를 축소"
           module="inops-api-svr"
         >
           <p>
@@ -353,6 +353,15 @@ export function InsopsRetrospective() {
             통계 API가 5개 집계 기준마다 동일 조인·필터를 <code>UNION ALL</code>로
             반복 실행하던 것도 <code>WITH</code> CTE로 한 번만 계산하도록 리팩터링해
             테이블 스캔 횟수를 5회에서 1회로 줄였습니다.
+          </p>
+          <p className="font-medium text-foreground">공통 base 모듈 - Controller·Service·Mapper·Entity 제네릭 추상화</p>
+          <p>
+            코드 생성기가 <Highlight>초기 코드를 빠르게 찍어내는</Highlight> 접근이라면, 반복
+            코드 자체를 줄이는 접근도 병행했습니다. Controller·Service·Mapper·Entity 네 계층을
+            제네릭 기반으로 추상화한 <Highlight>base 모듈</Highlight>을 구현해, 신규 테이블은
+            이 모듈을 상속하는 것만으로 기본 CRUD 계층을 갖추도록 만들었습니다. 에러 로깅도
+            서비스 로직마다 개별적으로 넣는 대신 <Highlight>AOP</Highlight>로 base 모듈에 공통
+            적용해, 로깅 누락을 구조적으로 방지했습니다.
           </p>
         </AccordionSection>
 
@@ -441,12 +450,15 @@ export function InsopsRetrospective() {
             <code>GDAL</code> 파이프라인으로 먼저 축소한 뒤 폴리곤화하는 방식을 도입해
             자원이 부족한 환경에서도 구조적으로 작업이 진행되도록 개선했습니다.
           </p>
-          <p className="font-medium text-foreground">Zabbix 장애 사전 감지 체계 구축</p>
+          <p className="font-medium text-foreground">Zabbix 장애 사전 감지 체계 · 에러 검색 서비스</p>
           <p>
             외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도
             사용자 신고 전까지는 인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로
             호스트·서비스 상태를 실시간 모니터링하는 커스텀 대시보드를 직접 구축해
-            장애를 사전에 감지할 수 있는 체계를 확보했습니다.
+            장애를 사전에 감지할 수 있는 체계를 확보했습니다. 감지 이후의 원인 추적도
+            외부 검색 없이 해결해야 했기 때문에, 로그에서 바로 에러를 찾아볼 수 있는{" "}
+            <Highlight>에러 검색 서비스</Highlight>와 <code>sh</code> 스크립트 기반 에러 감지를
+            함께 마련해, Zabbix의 사전 감지와 로그 레벨의 사후 추적을 한 세트로 갖췄습니다.
           </p>
         </AccordionSection>
 
