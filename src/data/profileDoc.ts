@@ -161,6 +161,15 @@ export const PROFILE = {
           },
           { text: "Envoy Gateway·Keycloak 기반 게이트웨이 레벨 인증" },
           {
+            text: "인프라 주요 성과",
+            sub: [
+              "Cilium(eBPF) CNI로 kube-proxy 대체 → 서비스 처리 경량화 및 L3~L7 정책 일원화, Hubble로 egress 관측해 에어갭 비인가 통신 탐지",
+              "3노드 control-plane HA를 kube-vip VIP로 구성 → 노드 장애 시에도 API 서버 무중단",
+              "Prometheus·Grafana·Tempo·OpenSearch 관측 스택 구축 → MSA 9개 서비스 장애 원인분석 시간 단축",
+              "Argo Events(webhook→NATS 큐→Sensor)·Workflows에 OPA 정책 게이트 통합 → 배포 전 정책 검증 자동화",
+            ],
+          },
+          {
             text: "프론트엔드 레거시 마이그레이션 주도로 코드 활용도 증가",
             sub: [
               "Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
