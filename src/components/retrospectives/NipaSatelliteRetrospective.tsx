@@ -136,7 +136,19 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="flex justify-center">
-          <FlowNode sub="OIDC 인증 · 경로 라우팅 · TLS (Keycloak)">Envoy Gateway</FlowNode>
+          <FlowNode sub="고정 VIP 진입점 · 3노드 control-plane HA">kube-vip</FlowNode>
+        </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+        <div className="flex items-center gap-2">
+          <FlowNode sub="L7 라우팅 · TLS 종료">Envoy Gateway</FlowNode>
+          <span className="text-muted-foreground text-xs shrink-0">→</span>
+          <FlowNode sub="OIDC 인증 · SSO">Keycloak</FlowNode>
+        </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+        <div className="flex items-center gap-2">
+          <FlowNode sub="Pod 네트워킹 · eBPF 보안 정책 (kube-proxy 대체)">Cilium</FlowNode>
+          <span className="text-muted-foreground text-xs shrink-0">←</span>
+          <FlowNode sub="시크릿 저장 · 자동 주입">OpenBao + ESO</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="grid grid-cols-2 gap-3">
@@ -161,6 +173,10 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             <FlowNode highlight sub="ECT · MambaCD · MINIMA - 모델 선정 진행 중">변화탐지 AI</FlowNode>
           </div>
         </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↕</div>
+        <div className="flex justify-center">
+          <FlowNode sub="PostgreSQL 클러스터 (오퍼레이터 자체 운영)">CloudNativePG</FlowNode>
+        </div>
         {/* 변화탐지 AI 호출 흐름 */}
         <div className="pt-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">변화탐지 AI 호출 흐름</p>
@@ -184,9 +200,32 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             ))}
           </ol>
         </div>
+        {/* CI/CD 파이프라인 */}
+        <div className="pt-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">CI/CD 파이프라인</p>
+          <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+            {([
+              ["Bitbucket", "코드 커밋 & 푸시"],
+              ["Argo Events", "webhook → NATS → Sensor 트리거"],
+              ["Argo Workflows", "빌드 · 테스트 · 이미지 생성 · OPA 게이트"],
+              ["Pulp", "이미지 · 패키지 저장소"],
+              ["ArgoCD", "Git 선언 상태 ↔ 클러스터 동기화"],
+              ["클러스터 배포", "새 버전 롤아웃"],
+            ] as [string, string][]).map(([name, desc], i, arr) => (
+              <li key={i} className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-background text-xs">
+                  <span className="flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-semibold shrink-0">{i + 1}</span>
+                  <span className="font-medium text-foreground">{name}</span>
+                  <span className="text-muted-foreground font-normal">{desc}</span>
+                </span>
+                {i < arr.length - 1 && <span className="text-muted-foreground text-xs">→</span>}
+              </li>
+            ))}
+          </ol>
+        </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex-1 border-t border-dashed border-border" />
-          <span className="shrink-0 px-2">RabbitMQ · PostgreSQL · Kubernetes</span>
+          <span className="shrink-0 px-2">OTel 계측 → Prometheus · Grafana · Tempo · OpenSearch (전 구간 관측)</span>
           <div className="flex-1 border-t border-dashed border-border" />
         </div>
       </div>
@@ -399,6 +438,84 @@ def callback(ch, method, properties, body):
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">인프라</h2>
+
+        {/* CI/CD - Jenkins/Nexus → ArgoCD/Pulp 전환 */}
+        <AccordionSection
+          title="CI/CD - Jenkins/Nexus → Argo Events·Workflows·ArgoCD·Pulp 전환"
+          hint="웹훅 트리거부터 클러스터 동기화까지 GitOps로 일원화"
+          module="CI/CD"
+        >
+          <p>
+            기존에는 <Highlight>Jenkins</Highlight>가 빌드·배포를 함께 수행하고
+            아티팩트는 <Highlight>Nexus</Highlight>에 저장했습니다. 파이프라인 정의가 Jenkins UI·스크립트에
+            흩어져 있어 변경 이력 추적이 어렵고, 배포 상태가 클러스터 실제 상태와 어긋나도
+            감지할 방법이 없었습니다.
+          </p>
+          <p>
+            Bitbucket 푸시를 <Highlight>Argo Events</Highlight>(webhook → NATS → Sensor)가 감지해
+            <Highlight>Argo Workflows</Highlight>를 트리거하고, 빌드·테스트·이미지 생성을 수행합니다.
+            생성된 이미지·패키지는 <Highlight>Pulp</Highlight>에 저장하고,
+            <Highlight>ArgoCD</Highlight>가 Git에 선언된 상태와 클러스터 실제 상태를 지속적으로 동기화합니다.
+            배포 전에는 Workflows에 <Highlight>OPA 정책 게이트</Highlight>를 통합해 정책 위반 이미지가
+            클러스터에 반영되기 전에 차단합니다.
+          </p>
+          <CompareTable
+            headers={["구분", "이전 (Jenkins·Nexus)", "이후 (Argo·Pulp)"]}
+            rows={[
+              { cells: ["빌드·배포 트리거", "Jenkins 스케줄/수동 트리거", "Bitbucket 웹훅 → Argo Events"], highlight: true },
+              { cells: ["빌드 정의", "Jenkinsfile·UI 설정 혼재", "Argo Workflows 선언적 정의"], highlight: true },
+              { cells: ["아티팩트 저장소", "Nexus", "Pulp"], highlight: true },
+              { cells: ["배포 상태", "클러스터 상태와 어긋나도 미감지", "ArgoCD가 Git↔클러스터 상태 지속 동기화·자동 교정"], highlight: true },
+              { cells: ["정책 검증", "배포 후 수동 확인", "Workflows 단계에 OPA 게이트 통합"] },
+            ]}
+          />
+        </AccordionSection>
+
+        {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao·CloudNativePG */}
+        <AccordionSection
+          title="클러스터 네트워킹·보안 - Cilium · kube-vip · OpenBao · CloudNativePG"
+          hint="kube-proxy 대체, control-plane HA, 시크릿 중앙 관리, DB 자체 운영"
+          module="클러스터 인프라"
+        >
+          <p>
+            <Highlight>Cilium(eBPF)</Highlight>을 CNI로 도입해 kube-proxy를 대체하고
+            L3~L7 네트워크 정책을 하나의 계층으로 일원화했습니다. Hubble 기반 egress 관측으로
+            비인가 통신을 탐지할 수 있게 됐습니다. control-plane은 3노드 HA로 구성하고
+            <Highlight>kube-vip</Highlight>로 고정 VIP를 두어, 특정 노드가 죽어도 API 서버 진입점이
+            바뀌지 않도록 했습니다.
+          </p>
+          <p>
+            시크릿은 <Highlight>OpenBao</Highlight>(Vault 계열)에 중앙 저장하고
+            <Highlight>External Secrets Operator</Highlight>가 이를 각 네임스페이스의 Kubernetes Secret으로
+            동기화·주입합니다. 서비스 코드가 시크릿 저장소를 직접 호출하지 않아도 되고,
+            시크릿 로테이션 시 배포 재시작만으로 반영됩니다.
+          </p>
+          <p>
+            데이터베이스는 <Highlight>CloudNativePG</Highlight> 오퍼레이터로 PostgreSQL 클러스터를
+            클러스터 내부에서 직접 운영합니다. 외부 관리형 DB 없이도 failover·백업을 오퍼레이터가
+            선언적으로 관리합니다.
+          </p>
+        </AccordionSection>
+
+        {/* 관측 스택 */}
+        <AccordionSection
+          title="관측 스택 - OTel · Prometheus · Grafana · Tempo · OpenSearch"
+          hint="CI/CD·게이트웨이·앱·DB 전 구간 계측 - 장애 원인분석 시간 단축"
+          module="observability"
+        >
+          <p>
+            <Highlight>OTel(OpenTelemetry)</Highlight>로 계측 표준을 통일해 메트릭·트레이스·로그를
+            CI/CD 파이프라인부터 게이트웨이, 앱 Pod, DB까지 전 구간에서 수집합니다.
+            수집된 데이터는 <Highlight>Prometheus</Highlight>(메트릭)·<Highlight>Tempo</Highlight>(분산 트레이싱)·
+            <Highlight>OpenSearch</Highlight>(로그)로 각각 적재되고, <Highlight>Grafana</Highlight>에서
+            하나의 대시보드로 조회합니다.
+          </p>
+          <p>
+            서비스가 9개로 분리되며 장애 시 어느 단계에서 문제가 발생했는지 파악하는 데 걸리는 시간이
+            길어질 위험이 있었는데, 요청 하나를 트레이스 ID로 전 구간(Envoy Gateway → 앱 Pod → DB)에서
+            추적할 수 있게 되면서 장애 원인분석 시간을 단축했습니다.
+          </p>
+        </AccordionSection>
 
         {/* 단계별 큐 분리 · 워커 수평 확장 */}
         <AccordionSection

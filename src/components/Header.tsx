@@ -63,10 +63,11 @@ export function Header() {
                 <FileText size={15} aria-hidden="true" />
                 {lang === 'ko' ? '이력서' : 'Resume'}
               </Link>
-              <Link href="/portfolio-pdf" role="menuitem">
+              <span className="pf-pdf-menu-disabled" role="menuitem" aria-disabled="true">
                 <Download size={15} aria-hidden="true" />
                 {lang === 'ko' ? '포트폴리오' : 'Portfolio'}
-              </Link>
+                <span className="pf-pdf-soon">{lang === 'ko' ? '준비중' : 'Soon'}</span>
+              </span>
             </div>
           </div>
 

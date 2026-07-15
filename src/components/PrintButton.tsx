@@ -38,14 +38,16 @@ export function PrintButton() {
             <FileText className="w-4 h-4 shrink-0" />
             이력서
           </Link>
-          <Link
-            href="/portfolio-pdf"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+          <span
+            aria-disabled="true"
+            className="flex items-center gap-2.5 px-4 py-2 text-sm text-muted-foreground/50 cursor-not-allowed"
           >
             <LayoutTemplate className="w-4 h-4 shrink-0" />
             포트폴리오
-          </Link>
+            <span className="ml-auto text-[10px] font-semibold tracking-wide bg-muted-foreground/10 rounded-full px-1.5 py-0.5">
+              준비중
+            </span>
+          </span>
         </div>
       )}
     </div>

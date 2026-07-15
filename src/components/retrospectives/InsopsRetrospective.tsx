@@ -410,55 +410,17 @@ export function InsopsRetrospective() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">인프라·운영</h2>
 
-        {/* 장애 대응: NVMe 펌웨어 추적 + 대용량 영상 OOM + Zabbix 사전 감지 */}
+        {/* Zabbix 사전 감지 */}
         <AccordionSection
-          title="장애 대응 - NVMe 펌웨어 근본원인 추적 · 대용량 영상 OOM 처리 · Zabbix 사전 감지"
-          hint="'No space left on device' 컨테이너→마운트→디바이스→펌웨어 추적 / 수억 픽셀 영상 OOM 처리 경로 분기 / 에어갭 환경 장애 사전 감지 체계"
+          title="Zabbix 기반 장애 사전 감지 체계 구축"
+          hint="에어갭 환경 - 외부 검색 없이 호스트·서비스 상태를 실시간 모니터링"
           module="에어갭 운영"
         >
-          <p>
-            가시화 파이프라인에서 서로 다른 원인의 실패가 두 갈래로 반복됐습니다. 하나는
-            어느 날 가시화 작업이 전부 <code>No space left on device</code>로 실패하기
-            시작한 것이었고, 다른 하나는 일부 위성영상이 수억 픽셀 규모라 영상 전체를
-            메모리에 올리는 것조차 불가능해 컨테이너가 <Highlight>OOM으로 강제 종료</Highlight>되는
-            문제였습니다.
-          </p>
-          <p className="font-medium text-foreground">스토리지 장애 - NVMe 펌웨어까지 추적</p>
-          <p>
-            로그만 보면 단순 디스크 부족처럼 보였지만, 마운트된 스토리지의 용량을
-            확인하니 여유가 충분히 남아 있었습니다. <Highlight>명령어로 본 용량과
-            실제 동작이 어긋나 있었습니다.</Highlight>
-          </p>
-          <CompareTable
-            headers={["단계", "확인한 것", "결과"]}
-            rows={[
-              { cells: ["로그", "No space left on device", "단순 디스크 부족처럼 보임"] },
-              { cells: ["마운트 용량", "df -h 등으로 확인", "여유 공간 충분 - 모순 발견"] },
-              { cells: ["마운트 경로 쓰기 테스트", "빈 파일 직접 생성", "단순 쓰기조차 실패 - 컨테이너가 아닌 스토리지 자체 문제로 특정"], highlight: true },
-              { cells: ["스토리지 장비 NVMe 상태", "장비에 원격 접속해 직접 확인", "실제 여유 용량이 0"], highlight: true },
-              { cells: ["업체 운영 코드 검토", "펌웨어 업그레이드 로직 추적", "NVMe → system pool 데이터 이동 로직 누락이 근본 원인"], highlight: true },
-            ]}
-          />
-          <p>
-            임시 패치로 서비스를 즉시 복구한 뒤 업체 정식 패치 연동까지 마무리했습니다.
-            컨테이너 → 마운트 → 디바이스 → 펌웨어로 경계를 넘어 따라 내려가지 않았다면
-            며칠은 더 헤맸을 장애였습니다.
-          </p>
-          <p className="font-medium text-foreground">대용량 영상 OOM - 픽셀 수 기준 처리 경로 분기</p>
-          <p>
-            픽셀 수를 기준으로 일반용·대용량용 처리 방식을 분기하고, 대용량 영상은{" "}
-            <code>GDAL</code> 파이프라인으로 먼저 축소한 뒤 폴리곤화하는 방식을 도입해
-            자원이 부족한 환경에서도 구조적으로 작업이 진행되도록 개선했습니다.
-          </p>
-          <p className="font-medium text-foreground">Zabbix 장애 사전 감지 체계 · 에러 검색 서비스</p>
           <p>
             외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도
             사용자 신고 전까지는 인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로
             호스트·서비스 상태를 실시간 모니터링하는 커스텀 대시보드를 직접 구축해
-            장애를 사전에 감지할 수 있는 체계를 확보했습니다. 감지 이후의 원인 추적도
-            외부 검색 없이 해결해야 했기 때문에, 로그에서 바로 에러를 찾아볼 수 있는{" "}
-            <Highlight>에러 검색 서비스</Highlight>와 <code>sh</code> 스크립트 기반 에러 감지를
-            함께 마련해, Zabbix의 사전 감지와 로그 레벨의 사후 추적을 한 세트로 갖췄습니다.
+            장애를 사전에 감지할 수 있는 체계를 확보했습니다.
           </p>
         </AccordionSection>
 

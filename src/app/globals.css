@@ -521,6 +521,17 @@ code, pre {
 .pf-pdf-menu a svg { color: var(--pf-text-mute); transition: color 0.14s; }
 .pf-pdf-menu a:hover { background: rgba(15,23,42,0.05); color: var(--pf-ac); }
 .pf-pdf-menu a:hover svg { color: var(--pf-ac); }
+.pf-pdf-menu-disabled {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13.5px; font-weight: 600; color: var(--pf-text-mute);
+  padding: 9px 12px; border-radius: 8px; white-space: nowrap;
+  opacity: 0.5; cursor: not-allowed; pointer-events: none;
+}
+.pf-pdf-soon {
+  margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--pf-text-mute); background: rgba(15,23,42,0.06);
+  border-radius: 999px; padding: 2px 7px;
+}
 
 /* ============================================================ SECTION NAV (right side) */
 .pf-snav {
