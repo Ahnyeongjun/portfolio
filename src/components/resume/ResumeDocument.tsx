@@ -82,6 +82,9 @@ const CSS = `
 .rallit-root .cg-items { list-style:none; display:flex; flex-direction:column; gap:3px; }
 .rallit-root .cg-item { font-size:11.5px; color:var(--ink-2); line-height:1.6; padding-left:12px; position:relative; }
 .rallit-root .cg-item::before { content:""; position:absolute; left:0; top:8px; width:3px; height:3px; border-radius:50%; background:var(--ink-3); }
+.rallit-root .cg-sub-items { list-style:none; display:flex; flex-direction:column; gap:2px; margin-top:3px; }
+.rallit-root .cg-sub-item { font-size:10.5px; color:var(--ink-3); line-height:1.5; padding-left:12px; position:relative; }
+.rallit-root .cg-sub-item::before { content:"−"; position:absolute; left:0; top:0; font-size:10px; color:var(--ink-3); }
 .rallit-root .career-projs { margin-top:0; display:flex; flex-direction:column; }
 .rallit-root .proj-head { margin-bottom:10px; }
 .rallit-root .proj-top { display:flex; justify-content:space-between; align-items:baseline; gap:14px; }
@@ -334,7 +337,16 @@ export function ResumeDocument() {
                     {g.period && <span className="cg-period">{g.period}</span>}
                   </div>
                   <ul className="cg-items">
-                    {g.items.map((item, j) => <li key={j} className="cg-item">{item}</li>)}
+                    {g.items.map((item, j) => (
+                      <li key={j} className="cg-item">
+                        {item.text}
+                        {item.sub && item.sub.length > 0 && (
+                          <ul className="cg-sub-items">
+                            {item.sub.map((s, k) => <li key={k} className="cg-sub-item">{s}</li>)}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               ))}

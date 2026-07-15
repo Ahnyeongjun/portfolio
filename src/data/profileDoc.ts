@@ -12,6 +12,15 @@ export interface DocBlock {
   lines?: string[];  // 이력서용 다중 줄: [문제, 해결·선택근거, 결과]
   brief?: [string, string]; // 이력서용 2줄: [현상·원인, 해결·결과]
 }
+export interface CareerItem {
+  text: string;
+  sub?: string[];
+}
+export interface CareerGroup {
+  title: string;
+  period?: string;
+  items: CareerItem[];
+}
 export interface DocProject {
   title: string;
   company: string;
@@ -68,43 +77,107 @@ export const PROFILE = {
         title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
         period: "2022.05 ~ 진행 중",
         items: [
-          "핵심 서비스 개발·운영 - AI 분석·추론, 웹 파워포인트, 어드민 서비스, 위성 이미지 ETL(수집·전처리·적재) 로직",
-          "점진적 모듈 분리 주도 - 장애 전파 최소화·코드 재활용 증가, 인증/인가 API 세션·쿠키 기반→토큰 기반 마이그레이션, 일반/대용량(INNORIX) 다운로드 엔드포인트 통합 및 스트리밍 이어받기 구현",
-          "공통 base 모듈 개발 - CRUD controller·service·mapper·entity 제네릭 추상화(상속 구조), MyBatis mapper·entity 자동 생성 도구, AOP 기반 에러 로깅으로 반복 업무 효율화",
-          "에어갭 환경 운영·배포 체계 수립 - 인터넷 미연결 환경 대응 판단 체계 확립, 에러 검색 서비스·Zabbix·sh 스크립트 기반 에러 사전 감지",
+          { text: "AI 분석·추론 서비스, 웹 파워포인트, 어드민 서비스, 위성 이미지 ETL 로직(수집·전처리·적재) 개발 및 운영" },
+          {
+            text: "점진적 모듈 분리 주도 - 장애 전파 최소화 → 코드 재활용 증가",
+            sub: [
+              "인증/인가 API 재개발 및 마이그레이션(세션·쿠키 기반 → 토큰 기반)",
+              "일반/대용량(INNORIX) 엔드포인트 통합, 스트리밍 기반 이어받기",
+            ],
+          },
+          {
+            text: "비효율적인 업무 개선 → 업무 시간 효율화",
+            sub: [
+              "base 모듈 개발 - CRUD controller·service·mapper·entity 제네릭 추상화(상속 구조), MyBatis mapper·entity 자동 생성 도구, AOP 기반 에러 로깅",
+            ],
+          },
+          {
+            text: "에어갭 환경 운영 및 배포 환경 수립",
+            sub: [
+              "인터넷이 되지 않는 환경에서의 대응 판단 체계 수립",
+              "에러 검색 서비스, Zabbix 사전 감지 및 sh 기반 에러 감지",
+            ],
+          },
         ],
       },
       {
         title: "항공우주연구원(KARI) 위성영상 처리 플랫폼 구축",
         period: "2023.10 ~ 2025.07",
         items: [
-          "API 300여 개·테이블 35개 규모 시스템을 ETL 파이프라인을 제외한 전 모듈 혼자 설계·구현",
-          "영상 서빙 서비스 신규 개발 - Go 기반 서버(WMS·WMTS·MVT), 대용량 산출물 다운로드 재설계",
-          "테스트 코드 작성 문화 정착 - 유닛테스트 도입, 기존 sh 스크립트 부하테스트를 k6로 전환",
-          "에어갭 환경 개선·망연계 - 외래키 없는 스키마 설계, 트랜잭션 경계 버그 수정, CDC 이벤트 멱등키 설계, Debezium 자가치유 스크립트 도입 후 자체 Outbox 모듈 전환 주도",
-          "서비스 안정화 인프라 업데이트 - SaltStack 기반 동기 워크플로우를 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환, Aliyun GPUShare 기반 GPU 분할·파드 생명주기 관리, 파드 다중화로 에러 복구·서비스 효율화, 서버 클러스터링 중앙집중화, Nginx 기반 보안·게이트웨이 구성",
-          "AI 모델·추론 - 객체탐지(YOLOv11)·세그멘테이션(UPerNet) 모델 학습, GPU 자원 경합 방지·타일 경계 탐지 안정화",
+          { text: "API 300여 개·테이블 35개 규모 시스템을 ETL 파이프라인을 제외한 전 모듈 혼자 설계·구현" },
+          {
+            text: "영상 서빙 서비스 신규 개발",
+            sub: [
+              "Go 기반 영상 서빙 서버(WMS·WMTS·MVT)",
+              "대용량 산출물 다운로드 재설계",
+            ],
+          },
+          {
+            text: "테스트 코드 작성 문화 정착",
+            sub: [
+              "API 300여 개·테이블 35개 규모 시스템 유닛테스트",
+              "기존 sh 스크립트 부하테스트를 k6로 전환",
+            ],
+          },
+          {
+            text: "에어갭 환경 개선 및 망연계",
+            sub: [
+              "외래키 없는 스키마 설계, 트랜잭션 경계 버그 수정",
+              "CDC 이벤트 멱등키 설계",
+              "Debezium 도입(자가치유 스크립트 포함) → 자체 Outbox 모듈 전환을 주도해 안전성·확장성 향상",
+            ],
+          },
+          {
+            text: "서비스 안정화를 위한 인프라 업데이트",
+            sub: [
+              "SaltStack 기반 동기 방식 → RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환",
+              "Aliyun GPUShare를 통한 GPU 분할 사용 효율화(파드 연동 생명주기 관리)",
+              "파드 다중화를 통한 에러 복구 및 서비스 효율화",
+              "서버 클러스터링으로 중앙 집중화",
+              "Nginx 기준 보안 및 게이트웨이 역할 구현",
+            ],
+          },
+          {
+            text: "서버 개발 AI 모델·추론",
+            sub: [
+              "객체탐지(YOLOv11)·세그멘테이션(UPerNet) 모델 학습",
+              "GPU 자원 경합 방지·타일 경계 탐지 안정화",
+            ],
+          },
         ],
       },
       {
         title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
         period: "2025.07 ~ 진행 중",
         items: [
-          "인프라 업데이트 - 모놀리식을 도메인 단위 9개 서비스로 분리하는 MSA 마이그레이션, RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조를 ArgoCD·Argo Workflows 기반으로 전환, 아티팩트 저장소 Nexus→Pulp, CI/CD Jenkins→ArgoCD 전환",
-          "Envoy Gateway·Keycloak 기반 게이트웨이 레벨 인증",
-          "프론트엔드 레거시 마이그레이션 주도 - Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포), 코드 활용도 증가",
+          {
+            text: "인프라 업데이트",
+            sub: [
+              "모놀리식을 9개 서비스로 분리하는 MSA 마이그레이션",
+              "RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조를 ArgoCD·Argo Workflows 기반으로 전환",
+              "아티팩트 저장소 Nexus → Pulp 전환",
+              "CI/CD Jenkins → ArgoCD 전환",
+            ],
+          },
+          { text: "Envoy Gateway·Keycloak 기반 게이트웨이 레벨 인증" },
+          {
+            text: "프론트엔드 레거시 마이그레이션 주도로 코드 활용도 증가",
+            sub: [
+              "Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
+            ],
+          },
         ],
       },
       {
         title: "사내 자동화",
         period: "2026.03 ~ 2026.04",
         items: [
-          "FastMCP 기반 Git·캘린더·HRWeb 통합 에이전트 개발 - 사내 주간보고 자동화",
-          "Claude 기반 스킬·훅을 활용한 작업 계획·평가 에이전트 개발",
-          "Jira·Bitbucket 연동 자동 브랜치 생성 및 PR 문화 정착",
+          { text: "FastMCP 기반 Git·캘린더·HRWeb 통합 사내 주간보고 자동화" },
+          { text: "Claude 기반 스킬·훅을 활용한 작업 계획·평가 에이전트 개발" },
+          { text: "Jira·Bitbucket 연동 자동 브랜치 생성 및 PR 문화 정착" },
         ],
       },
-    ],
+    ] as CareerGroup[],
   },
 
   projects: [
@@ -487,30 +560,30 @@ export const PROFILE_PLATFORM = {
         title: "인프라 설계·구축·운영",
         period: "2021.07 ~ 진행 중",
         items: [
-          "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩",
-          "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단",
-          "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터 무중단 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축",
-          "컨테이너 → 마운트 → 디바이스 → 펌웨어 경계를 넘나든 NVMe 장애 근본원인 추적",
+          { text: "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩" },
+          { text: "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단" },
+          { text: "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터 무중단 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축" },
+          { text: "컨테이너 → 마운트 → 디바이스 → 펌웨어 경계를 넘나든 NVMe 장애 근본원인 추적" },
         ],
       },
       {
         title: "AI 워크로드 스케줄링 & 비동기 파이프라인",
         period: "2023.10 ~ 2025.07",
         items: [
-          "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론",
-          "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장",
-          "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건",
+          { text: "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론" },
+          { text: "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장" },
+          { text: "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건" },
         ],
       },
       {
         title: "베어메탈 신규 구축 & DB 접근 계층 설계",
         period: "2025.06 ~ 2025.12",
         items: [
-          "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정",
-          "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소",
+          { text: "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 전 과정 직접 결정" },
+          { text: "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소" },
         ],
       },
-    ],
+    ] as CareerGroup[],
   },
 
   projects: [
