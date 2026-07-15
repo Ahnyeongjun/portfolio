@@ -85,7 +85,14 @@ export const PROFILE = {
               "일반/대용량(INNORIX) 엔드포인트 통합, 스트리밍 기반 이어받기",
             ],
           },
-          { text: "비효율적인 업무 개선 → 업무 시간 효율화 - base 모듈 개발(CRUD controller·service·mapper·entity 제네릭 추상화, 상속 구조), MyBatis mapper·entity 자동 생성 도구, AOP 기반 에러 로깅" },
+          {
+            text: "비효율적인 업무 개선 → 업무 시간 효율화",
+            sub: [
+              "base 모듈 개발(CRUD controller·service·mapper·entity 제네릭 추상화, 상속 구조)",
+              "MyBatis mapper·entity 자동 생성 도구",
+              "AOP 기반 에러 로깅",
+            ],
+          },
           {
             text: "에어갭 환경 운영 및 배포 환경 수립",
             sub: [

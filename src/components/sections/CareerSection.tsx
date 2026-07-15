@@ -102,7 +102,7 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
           <div className="pf-proj-foot">
             <span className="pf-proj-achieve">
               {achieveTags.length > 0 ? (
-                <><SparkIcon /> {achieveTags.join(' · ')}</>
+                <><SparkIcon /> <span className="pf-proj-achieve-txt">{achieveTags.join(' · ')}</span></>
               ) : (
                 <span style={{ color: 'var(--pf-text-mute)', fontWeight: 500 }}>{proj.company}</span>
               )}
