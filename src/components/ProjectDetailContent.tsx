@@ -17,7 +17,6 @@ import { TeamMcpAgentRetrospective } from "@/components/retrospectives/TeamMcpAg
 import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
 import { BooksightRetrospective } from "@/components/retrospectives/BooksightRetrospective";
 import { PillCareRetrospective } from "@/components/retrospectives/PillCareRetrospective";
-import { DflowRetrospective } from "@/components/retrospectives/DflowRetrospective";
 import { InsopsRetrospective } from "@/components/retrospectives/InsopsRetrospective";
 import { MlOrchestratorRetrospective } from "@/components/retrospectives/MlOrchestratorRetrospective";
 import { RosDetectionRetrospective } from "@/components/retrospectives/RosDetectionRetrospective";
@@ -27,7 +26,7 @@ const RETROSPECTIVE_IDS = [
   "kari-satellite", "nipa-satellite", "team-mcp-agent",
   "momentier", "chugjibup", "wedding", "mapin",
   "simvex", "deadline-mate", "booksight", "pillcare",
-  "dflow-perf", "insops-satellite", "ml-experiment-orchestrator",
+  "insops-satellite", "ml-experiment-orchestrator",
   "ros-detection",
 ];
 
@@ -198,7 +197,6 @@ export function ProjectDetailContent({ project }: Props) {
             {project.id === "deadline-mate" && <DeadlineMateRetrospective />}
             {project.id === "booksight" && <BooksightRetrospective />}
             {project.id === "pillcare" && <PillCareRetrospective />}
-            {project.id === "dflow-perf" && <DflowRetrospective />}
             {project.id === "insops-satellite" && <InsopsRetrospective />}
             {project.id === "ml-experiment-orchestrator" && <MlOrchestratorRetrospective />}
             {project.id === "ros-detection" && <RosDetectionRetrospective />}

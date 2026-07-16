@@ -38,7 +38,7 @@ const CSS = `
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .rallit-root .sheet-inner { padding:12mm 12mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .career-group, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
+  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
   .rallit-root .sec-h, .rallit-root .cg-top { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -167,7 +167,12 @@ export function ResumeDocument() {
     // together so it never spans a page boundary; only a project too tall for
     // one page falls back to its inner blocks (.proj-head/.proj-ach-row), which
     // are still never cut.
-    const KEEP = '.career-group, .cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
+    // .career-group is intentionally NOT kept whole: a group (국가보안기관 등) can be
+    // taller than the space left after 자기소개, and forcing it whole pushed the
+    // whole 경력 section (title included) to the next page, leaving a gap. Instead we
+    // keep each .cg-item whole and let a group flow across the page boundary; the
+    // group title (.cg-top) stays with its first item (handled below).
+    const KEEP = '.cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -176,7 +181,7 @@ export function ResumeDocument() {
     // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const scope = header.parentElement; // same column/section body as the header
-      return scope ? (scope.querySelector('.proj-ach-row, .career-group, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+      return scope ? (scope.querySelector('.proj-ach-row, .cg-top, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
     };
 
     // push an element to the top of the next page so that its visible content

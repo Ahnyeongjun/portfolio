@@ -222,7 +222,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
         {/* 1. 성능·보안 */}
         <AccordionSection
           title="어드민 페이지 성능 개선 - 부하 테스트 기반 병목 진단"
-          hint="보안 체크리스트 선행 · JUnit 통합 테스트 · k6 50VU 에러율 11.22% → 0%"
+          hint="k6 50VU 에러율 11.22% → 0% · 위성 메타 38초 → 159ms(239배)"
           module="API 서버"
         >
           <p>
@@ -276,8 +276,8 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
 
         {/* 3. 영상 서빙 */}
         <AccordionSection
-          title="영상 서빙 속도 개선"
-          hint="WMTS 타일 캐싱 2.4s → 0.4s · MVT 신규 구현"
+          title="영상 서빙 속도 개선 - 프로토콜 선택·캐싱·워핑 동시성 제어"
+          hint="WMTS 캐싱 2.4s → 0.4s · MVT 신규 · 다중 레이어 워핑 세마포어 제어"
           module="타일 / 파일 서버"
         >
           <p>
@@ -328,52 +328,38 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
             오버헤드를 제거했고, 동시에 K8s 레플리카를 늘려도 그대로 스케일되는 구조를
             확보했습니다.
           </p>
+          <p className="font-medium text-foreground">다중 레이어 GDAL 워핑 동시성 - 무제한 고루틴 실패 후 세마포어로 안정화</p>
+          <p>
+            위성·항공·월면(KPLO) 다중 레이어 영상을 GDAL로 워핑·합성해 응답하는 WMS 엔드포인트가 순차
+            처리로 레이어가 늘수록 응답 지연이 커졌습니다. 처음에는 <Highlight>무제한 goroutine 병렬화</Highlight>를
+            도입했지만 문제가 생겨 전체 원복했고, 세마포어 기반 버전을 다시 넣었다가도 원복되는 등 두 차례
+            시행착오를 거쳤습니다.
+          </p>
+          <p>
+            최종적으로 레이어별 이미지 로딩을 고루틴으로 병렬화하되 <Highlight>CPU 코어 수 기반 동적 세마포어</Highlight>(코어×3,
+            20~100 클램프)로 동시 실행 수를 제한했습니다. 레이어 검증은 별도 세마포어(코어×2, 20~50)로 분리하고,{" "}
+            <code>context.WithTimeout(30초)</code>로 전체 요청 상한을 걸었습니다. <code>sync.Map</code> 기반 TTL
+            캐시(1분)로 재연산을 줄이고 5분 주기로 청소했으며, <code>sync.Pool</code>로 버퍼를 재사용하고
+            500레이어를 넘으면 수동 GC를 트리거했습니다. <code>WarpThenTranslate</code>는 SHA-512 캐시 키로 동일
+            워핑의 GDAL 재연산을 회피하도록 했습니다.
+          </p>
+          <CompareTable
+            headers={["단계", "방식", "결과"]}
+            rows={[
+              { cells: ["1차", "무제한 goroutine 병렬화", "문제 발생 - 전체 원복"], muted: true },
+              { cells: ["2차", "세마포어 기반 재도입", "다시 원복"], muted: true },
+              { cells: ["최종", "CPU 코어 기반 동적 세마포어 + 타임아웃 + TTL 캐시", "동시성 제한된 안전한 병렬 처리로 정착"], highlight: true },
+            ]}
+          />
         </AccordionSection>
 
-        {/* 외래키 없는 스키마 설계 */}
+        {/* 에어갭 망연계 개선: Snowflake 분산 ID · CDC 자가치유·Outbox·멱등키·BLOB */}
         <AccordionSection
-          title="외래키 없는 스키마 설계 - 샤딩을 염두에 둔 선제적 트레이드오프"
-          hint="위성 메타·추론 결과 테이블 로우 증가 → 향후 샤딩 여지를 위해 FK 제약 자체를 두지 않음"
-          module="API 서버"
-        >
-          <p>
-            위성 메타·추론 결과처럼 계속 쌓이는 테이블의 로우 수가 늘어나면서, 나중에{" "}
-            <Highlight>샤딩·파티셔닝</Highlight>이 필요해질 가능성을 염두에 뒀습니다.
-            외래키 제약은 참조 대상 테이블이 다른 샤드로 옮겨가는 순간 걸림돌이 되기
-            때문에, 처음부터 <Highlight>외래키를 아예 두지 않는</Highlight> 방향으로
-            스키마를 설계했습니다.
-          </p>
-          <p>
-            이 판단이 가능했던 이유는 대상 데이터의 성격 때문이었습니다. 관측·추론
-            결과성 데이터라 일부 레코드의 참조가 깨지더라도 시스템 전체에 치명적인
-            영향을 주지 않는 데이터였고, 그래서 DB 레벨의 엄격한 정합성 보장보다{" "}
-            <Highlight>스키마 유연성</Highlight>을 우선하는 쪽을 선택했습니다. 모든
-            테이블에 일괄 적용한 규칙이 아니라, 데이터 성격을 보고 정합성 요구 수준이
-            낮은 테이블에 한해 적용한 판단입니다.
-          </p>
-          <p className="font-medium text-foreground">실제 사례 - 유저 생성 시 정합성이 깨진 버그</p>
-          <p>
-            외래키가 없다 보니 정합성을 트랜잭션 경계로 대신 지켜야 하는데, 유저 생성
-            경로에서 이 경계가 잘못 잡혀 있었습니다. 유저 레코드 insert와 권한 레코드
-            insert가 <Highlight>각각 별도의 트랜잭션</Highlight>으로 실행되고 있어서,
-            둘 중 하나만 실패해도 <Highlight>유저는 있는데 권한이 없거나, 권한만 있고
-            유저가 없는</Highlight> 정합성 깨짐이 발생할 수 있었습니다. 외래키가
-            없으니 DB가 이 불일치를 막아주지도 못했습니다.
-          </p>
-          <p>
-            유저·권한 insert를 <Highlight>하나의 트랜잭션</Highlight>으로 묶어 둘 다
-            성공하거나 둘 다 롤백되도록 고쳤습니다. 스키마 레벨에서 포기한 정합성
-            보장을, 정말 필요한 경로(유저 생성)에서는 트랜잭션 경계로 다시 확보한
-            사례입니다.
-          </p>
-        </AccordionSection>
-
-        {/* Snowflake ID - 폐쇄망 분산 ID */}
-        <AccordionSection
-          title="Snowflake ID 도입 - 폐쇄망 분산 ID 직접 구현"
-          hint="ZooKeeper·etcd 등 외부 코디네이터 없이 단조 증가·전역 유일성·망 추적을 동시에 확보"
+          title="에어갭 망연계 개선 - 분산 ID·CDC 동기화 안정화"
+          hint="Snowflake 망 인코딩 ID · Debezium 자가치유 → Outbox 전환 · 이벤트 유실 0건"
           module="API 서버 · 망연계"
         >
+          <p className="font-medium text-foreground">1. Snowflake 분산 ID - 폐쇄망 직접 구현</p>
           <p>
             국가기관 납품 환경으로 외부망↔폐쇄망이 물리 분리돼, 이 경계를 넘나드는
             데이터에 안전하게 ID를 부여할 방법이 필요했습니다.
@@ -401,19 +387,11 @@ def generate(self) -> int:
                 | self.datacenter_id << (WORKER_BITS + SEQUENCE_BITS)
                 | self.worker_id << SEQUENCE_BITS
                 | self.sequence)`}</CodeBlock>
-        </AccordionSection>
-
-        {/* CDC 안정화: Debezium 자가치유 → Outbox 전환 → 멱등키 설계 → BLOB 정합성 */}
-        <AccordionSection
-          title="CDC 안정화 - 자가치유 스크립트 · Outbox 전환 · 멱등키 설계"
-          hint="replication slot 반복 파손 → 자가치유 스크립트 응급 대응 → Outbox로 근본 해결 · 이벤트 재전달 중복 반영은 멱등키 설계로 해결"
-          module="API 서버 · 망연계"
-        >
+          <p className="font-medium text-foreground">2. CDC 동기화 - Debezium 자가치유 → Outbox 근본 전환</p>
           <p>
             위성 메타·추론 결과(외부→폐쇄)와 사용자 요청·처리 상태(폐쇄→외부)를
             물리적으로 분리된 두 망 사이에서 동기화해야 했습니다.
           </p>
-          <p className="font-medium text-foreground">1. Debezium CDC 에러 → 자가치유 스크립트 → Outbox로 근본 해결</p>
           <p>
             앱 코드 수정 없이 DB 변경 로그를 읽는 <Highlight>Debezium CDC</Highlight>를 초기 도입했습니다.
             그러나 운영 중 logical replication slot이 <Highlight>WAL 유실·비활성 상태</Highlight>로
@@ -497,7 +475,7 @@ public class OutboxInterceptor implements Interceptor {
 public void beforeCommit(boolean readOnly) {
     outboxRepository.saveAll(OutboxContext.flush()); // 같은 트랜잭션, 원자적 저장
 }`}</CodeBlock>
-          <p className="font-medium text-foreground">2. CDC 이벤트 중복 처리 버그 수정 - 멱등키(idempotent key) 설계</p>
+          <p className="font-medium text-foreground">3. CDC 이벤트 중복 처리 - 멱등키(idempotent key) 설계</p>
           <p>
             Kafka 없이 Debezium Server(HTTP Sink) → 웹훅 → 파일 릴레이 → 워커로 이어지는
             구조에서, 동일 CDC 이벤트가 재전달·재시도될 때 <Highlight>중복 INSERT/UPDATE</Highlight>가
@@ -524,7 +502,7 @@ public void beforeCommit(boolean readOnly) {
             이 단일 dedup 로직을 <Highlight>23개 테이블</Highlight>의 CDC 반영이 공유하도록
             정리해, 재처리 안전성을 한 곳에서 보장하는 구조로 만들었습니다.
           </p>
-          <p className="font-medium text-foreground">이진 데이터(BLOB) 정합성 - 타입 불일치·잘못된 디코딩</p>
+          <p className="font-medium text-foreground">4. 이진 데이터(BLOB) 정합성 - 타입 불일치·잘못된 디코딩</p>
           <p>
             같은 파이프라인에서 공지 첨부파일·팝업 이미지 같은 <code>bytea</code> 컬럼이
             CDC를 거치며 이미지가 깨지는 문제도 있었습니다. 원인은 두 겹이었습니다 -
@@ -555,28 +533,6 @@ public void beforeCommit(boolean readOnly) {
             <code>shapely.wkb</code> + <code>rounding_precision=16</code>으로 좌표
             포맷을 양쪽에서 통일했습니다. 수동 바이너리 파싱 코드를 제거하면서 파싱
             실패 시 재시도하던 분기도 함께 걷어냈습니다.
-          </p>
-        </AccordionSection>
-
-        {/* 6. 대용량 다운로드 재설계 */}
-        <AccordionSection
-          title="대용량 산출물 다운로드 재설계 - 채널 경쟁조건 제거"
-          hint="goroutine+channel의 close/send 경쟁 panic 위험을 원자적 캐싱 + HTTP Range로 해결"
-          module="타일 / 파일 서버"
-        >
-          <p>
-            산출물 압축 다운로드를 goroutine과 channel로 구현했는데, 타임아웃이
-            발생하면 채널을 <code>close</code>하는 쪽과 압축 결과를 <code>send</code>하는
-            쪽이 경쟁해 이미 닫힌 채널에 값을 보내려다 <Highlight>panic</Highlight>이
-            날 수 있는 구조였습니다. 압축 결과를 메모리로 한 번에 스트리밍하다 보니
-            Range 기반 재개 다운로드도 지원하지 못했습니다.
-          </p>
-          <p>
-            채널 기반 동시성 코드를 걷어내고, 압축 결과를 임시파일로 만든 뒤{" "}
-            <Highlight>원자적 rename</Highlight>으로 캐싱(TTL 1시간)하는 방식으로
-            재작성했습니다. 파일 기반으로 바뀌면서 <Highlight>HTTP Range 요청</Highlight>도
-            자연스럽게 지원하게 돼, 대용량 파일 다운로드 중 끊겨도 처음부터 다시 받을
-            필요가 없어졌습니다.
           </p>
         </AccordionSection>
 
@@ -621,6 +577,67 @@ public void beforeCommit(boolean readOnly) {
             128px→384px로 넓히고 <Highlight>cross-tile NMS</Highlight>를 추가해 제거했습니다.
           </p>
         </AccordionSection>
+
+        {/* 6. 대용량 다운로드 재설계 */}
+        <AccordionSection
+          title="대용량 산출물 다운로드 재설계 - 채널 경쟁조건 제거"
+          hint="채널 close/send 경쟁 panic → 원자적 캐싱 + HTTP Range"
+          module="타일 / 파일 서버"
+        >
+          <p>
+            산출물 압축 다운로드를 goroutine과 channel로 구현했는데, 타임아웃이
+            발생하면 채널을 <code>close</code>하는 쪽과 압축 결과를 <code>send</code>하는
+            쪽이 경쟁해 이미 닫힌 채널에 값을 보내려다 <Highlight>panic</Highlight>이
+            날 수 있는 구조였습니다. 압축 결과를 메모리로 한 번에 스트리밍하다 보니
+            Range 기반 재개 다운로드도 지원하지 못했습니다.
+          </p>
+          <p>
+            채널 기반 동시성 코드를 걷어내고, 압축 결과를 임시파일로 만든 뒤{" "}
+            <Highlight>원자적 rename</Highlight>으로 캐싱(TTL 1시간)하는 방식으로
+            재작성했습니다. 파일 기반으로 바뀌면서 <Highlight>HTTP Range 요청</Highlight>도
+            자연스럽게 지원하게 돼, 대용량 파일 다운로드 중 끊겨도 처음부터 다시 받을
+            필요가 없어졌습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 외래키 없는 스키마 설계 */}
+        <AccordionSection
+          title="외래키 없는 스키마 설계 - 샤딩을 염두에 둔 선제적 트레이드오프"
+          hint="샤딩 대비 FK 제약 배제 - 정합성보다 스키마 유연성 우선"
+          module="API 서버"
+        >
+          <p>
+            위성 메타·추론 결과처럼 계속 쌓이는 테이블의 로우 수가 늘어나면서, 나중에{" "}
+            <Highlight>샤딩·파티셔닝</Highlight>이 필요해질 가능성을 염두에 뒀습니다.
+            외래키 제약은 참조 대상 테이블이 다른 샤드로 옮겨가는 순간 걸림돌이 되기
+            때문에, 처음부터 <Highlight>외래키를 아예 두지 않는</Highlight> 방향으로
+            스키마를 설계했습니다.
+          </p>
+          <p>
+            이 판단이 가능했던 이유는 대상 데이터의 성격 때문이었습니다. 관측·추론
+            결과성 데이터라 일부 레코드의 참조가 깨지더라도 시스템 전체에 치명적인
+            영향을 주지 않는 데이터였고, 그래서 DB 레벨의 엄격한 정합성 보장보다{" "}
+            <Highlight>스키마 유연성</Highlight>을 우선하는 쪽을 선택했습니다. 모든
+            테이블에 일괄 적용한 규칙이 아니라, 데이터 성격을 보고 정합성 요구 수준이
+            낮은 테이블에 한해 적용한 판단입니다.
+          </p>
+          <p className="font-medium text-foreground">실제 사례 - 유저 생성 시 정합성이 깨진 버그</p>
+          <p>
+            외래키가 없다 보니 정합성을 트랜잭션 경계로 대신 지켜야 하는데, 유저 생성
+            경로에서 이 경계가 잘못 잡혀 있었습니다. 유저 레코드 insert와 권한 레코드
+            insert가 <Highlight>각각 별도의 트랜잭션</Highlight>으로 실행되고 있어서,
+            둘 중 하나만 실패해도 <Highlight>유저는 있는데 권한이 없거나, 권한만 있고
+            유저가 없는</Highlight> 정합성 깨짐이 발생할 수 있었습니다. 외래키가
+            없으니 DB가 이 불일치를 막아주지도 못했습니다.
+          </p>
+          <p>
+            유저·권한 insert를 <Highlight>하나의 트랜잭션</Highlight>으로 묶어 둘 다
+            성공하거나 둘 다 롤백되도록 고쳤습니다. 스키마 레벨에서 포기한 정합성
+            보장을, 정말 필요한 경로(유저 생성)에서는 트랜잭션 경계로 다시 확보한
+            사례입니다.
+          </p>
+        </AccordionSection>
+
       </div>
 
       <div className="border-t border-border" />
