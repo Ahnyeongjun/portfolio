@@ -154,7 +154,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">FastAPI</p>
-            <FlowNode highlight sub="CRUD · 인증 · 작업 관리 · Snowflake ID">API 서버</FlowNode>
+            <FlowNode highlight sub="CRUD · 인증 · 작업 관리">API 서버</FlowNode>
           </div>
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Go</p>
@@ -348,7 +348,7 @@ def callback(ch, method, properties, body):
           <CompareTable
             headers={["역할", "기술", "담당", "API"]}
             rows={[
-              { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리 · Snowflake ID", "28개"], highlight: true },
+              { cells: ["API 서버", "FastAPI", "CRUD · 인증 · 작업 관리", "28개"], highlight: true },
               { cells: ["영상 서빙", "Go", "위성 영상 서빙 · WMS/WMTS · 타일 캐싱", "8개"], highlight: true },
               { cells: ["수집", "Python", "위성 영상 수집 · 스케줄링", "4개"], highlight: true },
               { cells: ["카탈로깅", "Python", "전처리 · DB 카탈로깅", "3개"], highlight: true },

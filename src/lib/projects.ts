@@ -60,7 +60,6 @@ export const projects: Project[] = [
       "[배포 효율] 모놀리식으로 기능 하나 배포 시 전체 재시작 → MSA 분리, 전 서비스 FastAPI 전환, Nginx 라우팅 - 재배포 월 10건→1건, 배포 속도 4분→30초",
       "[메타 조회 성능] 위성영상 메타 조회 API가 ORM 풀 엔티티 하이드레이션과 중복 SRID 변환, 페이지네이션 부재로 대량 조회 시 응답이 느리고 크기도 예측 불가능 → 컬럼 프로젝션 전환, 중복 공간연산 제거, 화이트리스트 기반 동적 필터, page/limit 페이지네이션 도입 - 응답 속도·크기 통제 가능",
       "[db-api 계층화] FastAPI 튜토리얼 구조 그대로 사용해 테이블이 늘 때마다 models·crud·router 각 1개 파일에 로직이 누적 → 엔티티 단위 models·서비스 클래스 services·라우터 api 3계층으로 분리 - 이후 신규 리소스가 이 구조 위에서 확장",
-      "[폐쇄망 분산 ID] 분리망 환경에서 외부 코디네이터 접근 불가, UUID로는 발생 서버 추적 불가 → Snowflake 알고리즘 직접 구현, worker ID에 망 정보 인코딩",
       "[프론트 유지보수] Thymeleaf 레거시에 기능 경계 없어 수정 영향 범위 예측 불가 → Next.js 15 + FSD 전면 마이그레이션, CesiumJS 커스텀 ImageryProvider - MVT·MBTiles·ImageLayer 이종 레이어 단일 인터페이스 추상화",
     ],
     achievementsEn: [
@@ -69,7 +68,6 @@ export const projects: Project[] = [
       "[Deploy Efficiency] Monolithic deployment required full restart per feature → Split into 9 MSA, migrated all services to FastAPI, routed via Nginx - deployments reduced from 10/month to 1, deploy time 4min→30s",
       "[Metadata Query Performance] Satellite metadata query API suffered from full ORM entity hydration, redundant SRID conversion, and no pagination, making response time and size unpredictable at scale → switched to column projection, removed redundant spatial ops, added whitelist-based dynamic filtering and page/limit pagination - made response speed and size controllable",
       "[db-api Layering] db-api kept the original FastAPI tutorial structure, piling logic into single models/crud/router files as tables grew → split into 3 layers - per-entity models, service classes in services, routers in api - later features scaled on top of this pattern",
-      "[Isolated-network Distributed ID] No external coordinator in air-gapped network, UUID couldn't identify originating server → Implemented Snowflake algorithm from scratch, encoded network info into worker ID",
       "[Frontend Maintainability] Thymeleaf legacy with no feature boundaries made change impact unpredictable → Full migration to Next.js 15 + FSD, CesiumJS custom ImageryProvider - MVT·MBTiles·ImageLayer abstracted into single interface",
     ],
     resources: [
@@ -161,7 +159,7 @@ export const projects: Project[] = [
       "[클라우드 배포 안정화] 리버스 프록시 뒤에서 클라우드 환경 배포 때마다 내부 API 연동이 끊기는 장애가 6일~2개월 간격으로 8회 반복 → application-cloud.yml 신설로 context-path·외부 API host를 환경별 분리, 내부 호출을 localhost+path prefix로 우회 - 반복 장애 재발 차단",
       "[컴포넌트 매니저] 팝업·iframe·인페이지 컴포넌트마다 통신 방식이 달라 호출 코드가 제각각 → execute() 하나로 위치와 무관하게 호출 가능한 공통 매니저 활용·개선, 창 경계를 넘는 함수 호출을 RPC처럼 추상화",
       "[base 모듈 · MyBatis 코드 생성] 테이블 수가 많아(40여 개) 신규 테이블마다 Entity·MyBatis XML mapper와 CRUD 계층을 손으로 반복 작성해야 함 → CRUD Controller·Service·Mapper·Entity를 제네릭 기반으로 추상화한 base 모듈을 구현해 상속만으로 재사용하도록 구성, DB information_schema를 조회해 컬럼 타입·PK·주석 기반으로 Entity(Entity/ReqData/Result/Search)와 CRUD·검색 XML mapper를 자동 생성하는 도구까지 팀 내부에 구축 - AOP 기반 공통 에러 로깅도 함께 적용",
-      "[인증 마이그레이션] 세션·쿠키 기반 인증은 팝업·iframe 등 다중 창 구조에서 세션 공유가 번거롭고 신규 서비스 분리에도 제약 → 인증/인가 API를 토큰 기반으로 재개발·마이그레이션하며 점진적으로 모듈을 분리해 장애 전파를 최소화 - 코드 재활용 증가",
+      "[인증 마이그레이션] 세션·쿠키 기반 인증은 팝업·iframe 등 다중 창 구조에서 세션 공유가 번거롭고 신규 서비스 분리에도 제약 → 인증/인가 API를 토큰 기반으로 재개발·마이그레이션하며 점진적으로 모듈을 분리해 장애 전파를 최소화",
       "[장애 사전 감지] 인터넷이 차단된 환경이라 장애를 사후에야 인지하는 구조 → Zabbix 커스텀 대시보드로 호스트·서비스 모니터링 체계 구축 - 장애 사전 감지 체계 확보",
       "[DB 접근 계층 중앙화] 서비스마다 ORM으로 DB에 직접 접근해 스키마 변경 시 여러 서비스를 동시 수정해야 했고, Python ORM과 Go의 접근 패턴도 서로 어긋남 → 신규 구축 프로젝트에서 DB 접근을 Go 기반 API 한 곳으로 중앙화, 모든 서비스가 HTTP로만 DB에 접근하도록 재설계 - 스키마 변경 영향 범위를 API 레이어 한 곳으로 축소, 언어와 무관하게 동일한 방식으로 DB 접근",
       "[베어메탈 신규 구축] 관리형 인프라 없이 베어메탈부터 시작해야 하는 신규 구축 프로젝트 → 물리 서버 설치, K8s 클러스터 구성, 다종 수집기 통합·DB 기반 중복 체크·zst/tar.gz 포맷 변환 자동화까지 전 과정 직접 주도 - 베어메탈에서 운영 가능한 시스템까지 인프라 전 과정을 완주",
@@ -178,7 +176,7 @@ export const projects: Project[] = [
       "[Cloud Deployment Stabilization] Deploying behind a reverse proxy into the client's cloud environment kept breaking internal API connectivity, requiring 8 fixes over 6-day-to-2-month intervals → introduced application-cloud.yml to separate context-path and external API hosts per environment, routing internal calls through localhost + path prefixes - stopped the recurring failure for good",
       "[Component Manager] Popups, iframes, and in-page components each communicated differently, fragmenting call code → leveraged and improved a shared manager exposing one execute() call regardless of component location, abstracting cross-window function calls like an RPC",
       "[base Module · MyBatis Code Generation] Manually writing an Entity class, MyBatis XML mapper, and full CRUD layer for every new table (of ~40) didn't scale → built a generic base module abstracting CRUD controller/service/mapper/entity for reuse via inheritance, plus an internal tool that queries the DB's information_schema (column types, PK, comments) to auto-generate Entity classes (Entity/ReqData/Result/Search) and CRUD/search XML mappers - also applied common AOP-based error logging across the base module",
-      "[Auth Migration] Session/cookie-based auth made session sharing across popups/iframes cumbersome and constrained splitting out new services → redeveloped and migrated the auth/authorization API to token-based auth, progressively splitting modules to minimize failure propagation - increased code reuse",
+      "[Auth Migration] Session/cookie-based auth made session sharing across popups/iframes cumbersome and constrained splitting out new services → redeveloped and migrated the auth/authorization API to token-based auth, progressively splitting modules to minimize failure propagation",
       "[Proactive Incident Detection] The air-gapped environment meant incidents were only discovered after the fact → built a Zabbix host/service monitoring setup with custom dashboards - established proactive incident detection",
       "[DB Access Layer Centralization] Each service accessed the DB directly via its own ORM, so schema changes required touching multiple services at once, and Python's ORM and Go's access patterns diverged → on the greenfield build, centralized all DB access behind a single Go-based API, redesigning every service to talk to the DB only over HTTP - narrowed the blast radius of schema changes to one API layer and unified DB access across languages",
       "[Greenfield Infrastructure] A new-build project starting from bare metal with no managed infrastructure → drove the entire process directly - physical server setup, K8s cluster configuration, multi-collector integration, DB-based duplicate detection, and zst/tar.gz format conversion automation - carried infrastructure end-to-end from bare metal to an operable system",

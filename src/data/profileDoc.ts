@@ -79,22 +79,22 @@ export const PROFILE = {
         items: [
           { text: "핵심 도메인 서비스 개발·운영 - AI 분석·추론·웹PPT·어드민·위성 ETL(수집·전처리·적재) 전반 담당" },
           {
-            text: "점진적 모듈 분리 주도 - 장애 전파 최소화 → 코드 재활용 증가",
+            text: "레거시 모듈 점진적 전환 주도 - 인증·다운로드 안정화 → 장애 전파 최소화",
             sub: [
-              "인증/인가 API 재개발 및 마이그레이션(세션·쿠키 기반 → 토큰 기반)",
-              "일반/대용량(INNORIX) 엔드포인트 통합, 스트리밍 기반 이어받기",
+              "인증/인가 API 토큰 기반 재구현 - 세션·쿠키 기반에서 토큰 기반으로 재개발·마이그레이션",
+              "파일 다운로드 안정화 - 일반/대용량(INNORIX) 엔드포인트 통합 및 스트리밍 기반 이어받기 지원",
             ],
           },
           {
-            text: "공통 base 모듈·자동화 도구 개발 - 반복 CRUD·수동 로깅 제거 → 업무 시간 효율화",
+            text: "공통 base 모듈·자동화 도구 개발 - 반복 개발 작업 제거 → 신규 테이블 온보딩 효율화",
             sub: [
-              "base 모듈 개발(CRUD controller·service·mapper·entity 제네릭 추상화, 상속 구조)",
-              "MyBatis mapper·entity 자동 생성 도구",
-              "AOP 기반 에러 로깅",
+              "40여 개 테이블 CRUD controller·service·mapper·entity 제네릭 추상화 base 모듈 구현(상속 재사용)",
+              "DB information_schema 기반 Entity·mapper 자동 생성 도구 구축",
+              "AOP 기반 공통 에러 로깅 적용으로 일관된 기록 확보",
             ],
           },
           {
-            text: "에어갭 무중단 운영·배포 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지",
+            text: "에어갭 무중단 운영 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지",
             sub: [
               "인터넷이 되지 않는 환경에서의 대응 판단 체계 수립",
               "Zabbix 기반 장애 사전 감지 체계 구축",
@@ -107,43 +107,52 @@ export const PROFILE = {
         period: "2023.10 ~ 2025.07",
         items: [
           {
-            text: "Go 영상 서빙 서비스 신규 개발 - 표준 프로토콜(WMS·WMTS·MVT) 지원 → 대용량 다운로드 재설계",
+            text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원",
             sub: [
-              "Go 기반 영상 서빙 서버(WMS·WMTS·MVT)",
-              "대용량 산출물 다운로드 재설계",
+              "Go 기반 영상 서빙 서버 - WMS·MVT(MBTiles 기반) 지원",
             ],
           },
           {
-            text: "테스트 문화 정착 주도 - 사후적 sh 스크립트 한계 → k6·유닛테스트 도입",
+            text: "테스트 문화 정착 주도 - k6·유닛테스트 도입 → 배포 후 에러율 11%→0%",
             sub: [
               "API 300여 개·테이블 35개 규모 시스템 유닛테스트",
               "기존 sh 스크립트 부하테스트를 k6로 전환",
             ],
           },
           {
-            text: "에어갭 망연계 개선 - CDC replication slot 불안정 → 자체 Outbox 모듈 전환",
+            text: "에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건",
             sub: [
-              "외래키 없는 스키마 설계, 트랜잭션 경계 버그 수정",
               "CDC 이벤트 멱등키 설계",
-              "Debezium 도입(자가치유 스크립트 포함) → 자체 Outbox 모듈 전환을 주도해 안전성·확장성 향상",
+              "Debezium 도입(자가치유 스크립트 포함) 후 자체 Outbox 모듈 전환 주도",
             ],
           },
           {
-            text: "서비스 안정화 인프라 개편 - 동기 폴링 → RabbitMQ 비동기·GPU 분할 → GPU 4장 70파드",
+            text: "K8s 워크로드 관리 고도화 - GPU 자원 공유·파드 자동관리 → 자원 효율화·장애 자동 복구",
             sub: [
-              "SaltStack 기반 동기 방식 → RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환",
-              "Aliyun GPUShare를 통한 GPU 분할 사용 효율화(파드 연동 생명주기 관리)",
-              "파드 다중화를 통한 에러 복구 및 서비스 효율화",
-              "서버 클러스터링으로 중앙 집중화",
-              "Nginx 기준 보안 및 게이트웨이 역할 구현",
+              "Aliyun GPUShare로 GPU 분할 사용 효율화 - GPU 4장 70파드 병렬 추론",
+              "K8s Job → Deployment 전환으로 파드 다중화",
             ],
           },
           {
-            text: "AI 모델 직접 학습·서빙 - 객체탐지(YOLOv11)·세그멘테이션(UPerNet) → GPU 경합·타일 경계 안정화",
+            text: "보안 방어 체계 강화 - Nginx 게이트웨이 구축·Burp Suite 브루트포스 검증",
             sub: [
-              "객체탐지(YOLOv11)·세그멘테이션(UPerNet) 모델 학습",
-              "GPU 자원 경합 방지·타일 경계 탐지 안정화",
+              "Nginx 게이트웨이 구축 - 보안 및 라우팅 역할 구현",
+              "Burp Suite로 IP·시도 횟수를 지정한 로그인 브루트포스 시뮬레이션 - 5회 초과 시 차단 확인",
+              "Wireshark로 패킷 레벨 트래픽 분석",
             ],
+          },
+          {
+            text: "AI 모델 직접 학습·서빙 - 객체탐지(YOLOv11)·세그멘테이션(UPerNet) → AI 성능 개선",
+            sub: [
+              "YOLOv11m OBB/HBB 이원 탐지 20클래스(HBB mAP50 0.644·OBB 0.604), UPerNet+ConvNeXt 세그멘테이션(mIoU 0.7205)",
+              "회전 augmentation 역효과 확인 후 제거, 색감 도메인 매칭 전처리 구현",
+            ],
+          },
+          {
+            text: "데이터 정합성 강화 - 무외래키 스키마 설계 → 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능",
+          },
+          {
+            text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환",
           },
         ],
       },
@@ -152,30 +161,38 @@ export const PROFILE = {
         period: "2025.07 ~ 진행 중",
         items: [
           {
-            text: "MSA·CI/CD 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 배포 파이프라인 현대화",
+            text: "MSA 주도 및 CI/CD·GitOps 마이그레이션 참여 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건",
             sub: [
               "모놀리식을 9개 서비스로 분리하는 MSA 마이그레이션",
-              "RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조를 ArgoCD·Argo Workflows 기반으로 전환",
-              "아티팩트 저장소 Nexus → Pulp 전환",
-              "CI/CD Jenkins → ArgoCD 전환",
+              "Jenkins 명령형 배포에서 ArgoCD·Argo Events·Workflows 기반 GitOps로 전환",
+              "포맷별로 흩어져 있던 저장소를 Pulp로 통합 전환 - 멀티 포맷 지원·미러링 특화 설계로 에어갭 패키지 동기화 일원화",
             ],
           },
           {
-            text: "클러스터 인프라 고도화 - eBPF·control-plane HA·시크릿·관측 일원화 → 장애 원인분석 시간 단축",
+            text: "클러스터 인프라 고도화 - eBPF·control-plane HA·시크릿·관측 일원화",
             sub: [
-              "Cilium(eBPF) CNI로 kube-proxy 대체 - L3~L7 정책 일원화, Hubble 기반 egress 관측으로 비인가 통신 탐지",
-              "3노드 control-plane HA 구성(kube-vip VIP) - 노드 장애 시에도 API 서버 무중단",
+              "Cilium(eBPF) CNI로 kube-proxy 대체(서비스 처리 경량화, L3~L7 정책 일원화), Hubble 기반 egress 관측으로 비인가 통신 탐지",
+              "kube-vip로 3노드 control-plane HA VIP 구성(노드 장애 시에도 API 서버 무중단)",
               "OpenBao + External Secrets Operator로 시크릿 중앙 저장·자동 주입, CloudNativePG로 PostgreSQL 클러스터 자체 운영",
-              "OTel 기반 Prometheus·Grafana·Tempo·OpenSearch 관측 스택을 CI/CD·게이트웨이·앱·DB 전 구간에 구축 - 장애 원인분석 시간 단축",
-              "Argo Events(webhook→NATS→Sensor)·Workflows에 OPA 정책 게이트 통합 - 배포 전 정책 검증 자동화",
+              "Prometheus·OpenSearch·Tempo를 OpenTelemetry로 수집·통합, Grafana 단일 대시보드로 로그·트레이스 조회 및 MSA 서비스 간 요청 흐름 추적 - 장애 원인분석 시간 단축",
             ],
           },
-          { text: "Envoy Gateway·Keycloak 게이트웨이 인증 - 서비스별 JWT 중복 제거 → 인증 정책 1곳 관리" },
           {
-            text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → 코드 활용도 증가",
+            text: "Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화",
             sub: [
-              "Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
+              "서비스별 도메인 일원화(*.instation...) + OIDC SSO로 중복 인증 로직 제거",
+              "cert-manager + Let's Encrypt로 와일드카드 인증서 자동 발급·갱신",
             ],
+          },
+          {
+            text: "Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응",
+            sub: [
+              "여러 prod_type을 서버에서 합성해 반환하는 WMTS 컴포지트 타일 엔드포인트 구현",
+              "달 표면 피처(크레이터·구덩이·아폴로 착륙지) NDJSON 레이어 서빙",
+            ],
+          },
+          {
+            text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
           },
         ],
       },
@@ -183,7 +200,7 @@ export const PROFILE = {
         title: "사내 자동화",
         period: "2026.03 ~ 2026.04",
         items: [
-          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주간보고 자동화" },
+          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
         ],
@@ -196,7 +213,7 @@ export const PROFILE = {
       title: "NIPA 위성 변화탐지 AI 플랫폼 - MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
-      stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes", "Envoy Gateway", "Keycloak"],
+      stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes", "Envoy Gateway", "Keycloak", "Cilium", "ArgoCD", "Pulp", "OpenTelemetry", "OpenBao"],
       desc: "두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계하며 RabbitMQ 비동기 파이프라인과 Next.js 15 FSD 프론트엔드를 처음 도입했습니다.",
       blocks: [
         {
@@ -300,14 +317,14 @@ export const PROFILE = {
           cause: "인증과 인가 로직이 분리되지 않고 각 컨트롤러에 개별 구현되어 있어 신규 API마다 권한 체크를 매번 새로 작성해야 했고, 토큰 저장 구조도 검증만 가능할 뿐 사용자 기준 역조회가 불가능했음. 지도 라이브러리(CesiumJS)가 eval·인라인 스타일에 의존해 CSP를 강하게 걸면 화면이 깨지는 제약도 있었음",
           actions: [
             "인증은 Spring Security 필터 체인에서 일괄 처리, 인가는 커스텀 어노테이션 + AOP로 선언적으로 분리 - 신규 API는 어노테이션만 붙이면 권한 검증 적용",
-            "토큰과 함께 user→token 역색인을 Redis에 저장해 사용자별 활성 세션을 즉시 조회·통제, 로그인 실패는 IP·계정 단위로 카운트해 5회 초과 시 차단 - 차단 해제는 TTL 자동 만료로 처리",
+            "앞서 구축한 Redis user→token 역색인을 활용해 로그인 실패를 IP·계정 단위로 카운트, 5회 초과 시 차단 - 차단 해제는 TTL 자동 만료로 처리",
             "필터+AOP 2계층 위험도 기반 Rate Limiting(HIGH 5회/분~MEDIUM 20회/분) 도입, 로그인 실패 카운트는 Redis INCR로 락-프리 처리하고 Redis 장애 시 로그인은 막지 않는 fail-open 정책 채택",
             "CSP를 API origin 기반 런타임 동적 생성으로 전환, CesiumJS의 eval 패턴을 소스 레벨에서 직접 패치해 CSP 위반 없이 동작하도록 우회, 47개 매퍼의 SQL Injection 해소 - 정적 쿼리 13개는 파라미터 바인딩, 동적 정렬에 쓰이는 34개는 컬럼명 화이트리스트 검증으로 전환",
           ],
           result: "권한 적용 누락 구조적 방지, 위험도별 요청 제한, 보안 진단 지적사항 10건 이상 해소, 47개 매퍼 SQL Injection 전량 해소",
           brief: [
             "컨트롤러마다 권한 체크 코드가 분산돼 누락·중복 위험이 컸고, 고위험 엔드포인트도 무제한 호출 가능, 외부 보안 진단에서 CSP 미비·SQL Injection 등 10건 이상 지적",
-            "인증은 Spring Security 필터, 인가는 커스텀 어노테이션+AOP로 분리, Redis 역색인 세션·위험도 기반 Rate Limiting 구축, CSP 런타임 동적 생성, 47개 매퍼 SQL Injection을 파라미터 바인딩·화이트리스트 검증으로 해소",
+            "인증은 Spring Security 필터, 인가는 커스텀 어노테이션+AOP로 분리, 기존 Redis 역색인을 활용한 위험도 기반 Rate Limiting 구축, CSP 런타임 동적 생성, 47개 매퍼 SQL Injection을 파라미터 바인딩·화이트리스트 검증으로 해소",
           ],
         },
         {
@@ -336,7 +353,7 @@ export const PROFILE = {
       desc: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트입니다. 주간보고 작성·공수 입력 등 반복 수작업을 자동화해 팀 전체에 공유했습니다.",
       blocks: [
         {
-          label: "반복 수작업 자동화",
+          label: "Git·캘린더·HRWeb 통합 자동화 - FastMCP 8개 도구 개발 → 주 30~60분 수작업 제거",
           situation: "주간보고 작성·HRWeb 공수 입력에 매주 30~60분 소요",
           cause: "Git·캘린더·HR 시스템이 분리되어 수집·작성 모두 수동",
           actions: [
@@ -488,7 +505,7 @@ export const PROFILE_PLATFORM = {
       desc: "회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
       blocks: [
         {
-          label: "Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩",
+          label: "Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩 → 노드 장애 자동 복구",
           situation: "위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 처음엔 Docker 컨테이너 몇 개로 묶는 구조를 먼저 생각했습니다. 컨테이너 하나가 죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다.",
           cause: "대안은 세 가지였습니다 - Docker Compose로 묶는 방식, 직접 스크립트로 프로세스를 관리하는 방식, K8s. 앞의 두 방식은 노드가 늘어날수록 관리 포인트가 선형으로 늘고, 노드 장애 시 수동 개입이 필요했습니다.",
           actions: [
@@ -502,7 +519,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "GPU 자원 공유 (Fractional GPU)",
+          label: "GPU 자원 공유(Fractional GPU) - Aliyun GPUShare 도입 → GPU 4장 70파드 병렬 추론",
           situation: "노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라, 대부분의 시간 동안 GPU가 유휴 상태였습니다.",
           cause: "여러 모델을 동시에 띄워야 하는 요건과 1파드=1GPU 구조가 맞지 않았고, 당시 GPU 모델은 NVIDIA MIG를 지원하지 않아 하드웨어 파티셔닝을 쓸 수 없었습니다.",
           actions: [
@@ -515,7 +532,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "Debezium CDC 안정화 - Outbox 전환 및 자가치유 운영",
+          label: "Debezium CDC 안정화 - Outbox 전환 및 자가치유 운영 → 이벤트 유실 0건",
           situation: "Debezium CDC의 replication slot이 반복 파손돼 전체 스냅샷을 재수행해야 했고, 외부망·폐쇄망 DB 동기화도 필요했지만 망연계 솔루션이 파일 기반 전송만 지원했습니다.",
           cause: "CDC 방식은 DB 로그 기반이라 slot 파손 시 외부 인프라 의존도가 높아 안정성을 보장하기 어려웠고, API 폴링은 망 구조상 불가능했으며 DB 덤프 주기 전송은 실시간성이 너무 떨어졌습니다. 망연계용으로 유지한 CDC 구간에서도 상태 판정 우선순위 오류로 WAL 완전 유실 상황을 '비활성'으로 오판해 필요한 slot 재생성을 건너뛰는 버그가 있었습니다.",
           actions: [
@@ -529,7 +546,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "K8s 운영 안정화 - 자원 인지형 스케줄링 및 CrashLoopBackOff 진단",
+          label: "K8s 운영 안정화 - 자원 인지형 스케줄링 및 CrashLoopBackOff 진단 → OOM 사전 차단",
           situation: "K8s 기본 스케줄러가 노드별 메모리 사용률을 실시간 반영하지 못해 특정 노드에 무거운 AI 작업이 몰리면 OOM이 발생했고, SaltStack master 파드도 반복적으로 CrashLoopBackOff에 빠졌습니다.",
           cause: "스케줄러가 리소스 요청·한도 값만 보고 배치할 뿐 실제 사용률은 반영하지 않는 구조였고, CrashLoopBackOff는 livenessProbe가 전체 minion 목록을 조회하고 각 minion에 kubectl exec까지 수행하는 무거운 스크립트라 probe timeout(1초)에 가까워 정상 상황에서도 타임아웃이 잦은 것이 원인이었습니다.",
           actions: [
@@ -543,7 +560,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "HTTPS 리버스 프록시·TLS 인증서 구성",
+          label: "HTTPS 리버스 프록시·TLS 인증서 구성 - Nginx 통합 → 보안 헤더·인증서 관리 일원화",
           situation: "레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했고, 서비스마다 보안 헤더 설정이 제각각이었습니다.",
           cause: "Tomcat 단독으로는 와일드카드 인증서(전체 체인 포함) 갱신·보안 헤더 통합 관리가 번거로웠고, 외부 지도 타일 API 호출을 프론트엔드에서 직접 나가면 CSP·보안 정책에 걸렸습니다.",
           actions: [
@@ -558,7 +575,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "Nginx Ingress keepalive 튜닝",
+          label: "Nginx Ingress keepalive 튜닝 → TCP 핸드셰이크 오버헤드 제거",
           situation: "위성영상 타일 요청이 트래픽 대부분을 차지하는데, 매 요청마다 TCP 핸드셰이크가 반복되는 오버헤드가 있었습니다.",
           cause: "Nginx Ingress의 기본 설정은 백엔드로의 커넥션을 요청마다 새로 맺어, 핸드셰이크 비용이 그대로 응답 지연에 더해졌습니다.",
           actions: [
@@ -580,7 +597,7 @@ export const PROFILE_PLATFORM = {
       desc: "DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를, 메시지 큐 기반 비동기 아키텍처로 전면 재설계했습니다.",
       blocks: [
         {
-          label: "RabbitMQ 도입 - Kafka 대비 선택 근거",
+          label: "RabbitMQ 도입 - Kafka 대비 선택 근거 → 확실한 전달 보장",
           situation: "DB 폴링 방식을 메시지 큐 기반으로 전환하기로 하면서, Kafka와 RabbitMQ 중 하나를 골라야 했습니다.",
           cause: "Kafka는 처리량이 높지만 운영 오버헤드가 큽니다. 위성 처리 작업은 단위가 명확해서 메시지 큐 모델이 더 적합했고, ack/nack 기반의 확실한 전달 보장이 필요했습니다.",
           actions: [
@@ -593,7 +610,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "단계별 큐 분리와 워커 수평 확장",
+          label: "단계별 큐 분리 - 파이프라인 단계별 워커 분산 → 처리 워커 1개→15개",
           situation: "기존 시스템은 DB를 일정 주기로 폴링해 작업을 가져갔습니다. 워커를 늘려도 같은 DB에 더 많은 폴링 쿼리가 몰려 락 경합으로 수평 확장 효과가 거의 없었습니다.",
           cause: "완료 콜백 구조라 노드 재시작 시 콜백이 유실되면 작업이 RUNNING 상태로 고착됐고, 폴링 주기를 짧게 잡으면 DB 부하가, 길게 잡으면 지연이 늘었습니다.",
           actions: [
@@ -643,7 +660,7 @@ export const PROFILE_PLATFORM = {
           ],
         },
         {
-          label: "DB 접근 계층 중앙화 (신규 구축)",
+          label: "DB 접근 계층 중앙화(신규 구축) → 스키마 변경 영향 API 레이어로 축소",
           situation: "이어서 주도한 다종위성 수집·처리 플랫폼 신규 구축 프로젝트에서, 기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로 DB에 직접 접근하는 구조였습니다.",
           cause: "DB 접근 로직과 자격증명이 모든 서비스에 흩어져 있어 스키마가 바뀌면 여러 서비스를 동시에 수정해야 했고, Python ORM과 Go가 같은 DB를 다룰 때 접근 패턴도 서로 어긋났습니다. 언어별로 각자의 ORM 계층을 개선하는 방법도 있었지만, 스키마가 바뀔 때마다 여러 서비스를 동시에 고쳐야 하는 근본 문제 자체는 해결되지 않는 미봉책이었습니다.",
           actions: [
