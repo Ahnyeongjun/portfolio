@@ -1,0 +1,177 @@
+---
+title: "Prometheus·Loki 관측 스택 구축과 장애 주입 실험 설계 절차"
+description: "kube-prometheus-stack 설치, Alertmanager 알림 라우팅, Loki 로그 보존 정책부터 노드 다운·OOMKill·디스크풀 장애 주입 실험과 포스트모템 템플릿까지."
+date: "2026-08-02"
+category: "DevOps"
+tags: ["Prometheus", "Grafana", "Alertmanager", "Loki", "장애 주입"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 5
+---
+
+## 목표
+
+메트릭(Prometheus)·시각화(Grafana)·알림(Alertmanager)·로그(Loki)를 클러스터에 설치하고, 의도적으로 장애를 주입해 "알림이 실제로 오는지, 얼마나 걸리는지"를 검증한다.
+
+## 실제 구축 절차
+
+### 1. kube-prometheus-stack 설치
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace \
+  --set grafana.adminPassword=<시크릿으로 관리>
+```
+
+이 차트 하나로 Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics가 함께 설치된다. `api-server`/`inference-worker`가 `/metrics`를 이미 노출하고 있다면(시리즈 2), `ServiceMonitor`로 수집 대상에 등록한다.
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-server
+  labels: {release: monitoring}     # kube-prometheus-stack의 셀렉터와 맞춰야 수집됨
+spec:
+  selector:
+    matchLabels: {app: api-server}
+  endpoints:
+    - port: http
+      path: /metrics
+```
+
+### 2. Alertmanager - 알림 라우팅
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: api-server-alerts
+  labels: {release: monitoring}
+spec:
+  groups:
+    - name: api-server
+      rules:
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+          for: 2m
+          labels: {severity: warning}
+          annotations:
+            summary: "api-server 5xx 비율이 5% 초과"
+```
+
+```yaml
+# alertmanager config
+route:
+  receiver: slack-default
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+receivers:
+  - name: slack-default
+    slack_configs:
+      - api_url: <Slack Incoming Webhook URL>
+        channel: "#alerts"
+```
+
+`group_wait`/`group_interval`이 "장애 알림이 늦게 오는" 원인이 되는 경우가 많다 - 값이 크면 초기 알림이 그만큼 지연된다. 실험 단계에서 이 값을 조정하며 지연 시간을 직접 재본다.
+
+### 3. Loki - 로그 수집 + 보존 정책
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install loki grafana/loki-stack \
+  --namespace monitoring \
+  --set promtail.enabled=true
+```
+
+보존 기간은 `limits_config`에서 설정한다 - 이 값 자체가 나중에 ISMS-P 2.9(운영관리) 증적 자료가 된다.
+
+```yaml
+limits_config:
+  retention_period: 720h   # 30일
+compactor:
+  retention_enabled: true
+  retention_delete_delay: 2h
+```
+
+### 4. 장애 주입 실험 설계 (3종 이상 택)
+
+각 실험은 **주입 → 관측 → 기록**의 순서로 진행하고, 시작 시각을 먼저 기록해야 나중에 "알림까지 걸린 시간"을 정확히 잴 수 있다.
+
+**노드 다운**
+
+```bash
+# 실험 대상 워커 노드에서
+sudo systemctl stop kubelet
+# 또는 VM 자체를 강제 종료
+
+# 관측할 것
+# - kubectl get nodes 에서 NotReady로 바뀌는 시점
+# - 해당 노드의 파드가 다른 노드로 재스케줄되기까지 걸리는 시간 (기본 pod-eviction-timeout 5분)
+# - Alertmanager 알림이 Slack에 도착하는 시점
+```
+
+**OOMKill**
+
+```yaml
+# 의도적으로 낮은 메모리 제한을 건 테스트 파드
+resources:
+  limits: {memory: "64Mi"}
+```
+```bash
+kubectl run oom-test --image=polinux/stress --limits=memory=64Mi -- \
+  stress --vm 1 --vm-bytes 256M
+# kubectl describe pod oom-test 에서 OOMKilled 상태 확인
+# Prometheus의 container_oom_events_total 메트릭에 반영되는 시점 확인
+```
+
+**디스크 풀**
+
+```bash
+# 워커 노드에서 디스크를 의도적으로 채움
+fallocate -l 10G /tmp/fillfile
+# kubelet의 disk pressure 감지 → 노드가 파드 축출(evict)을 시작하는지 확인
+# node-exporter의 node_filesystem_avail_bytes 알림이 임계치를 넘는 시점 확인
+```
+
+**RabbitMQ 장애**
+
+```bash
+kubectl delete pod rabbitmq-0 --grace-period=0 --force
+# 시리즈 2에서 만든 ack/nack 파이프라인이 이 상황에서 실제로 메시지를 보존하는지 재검증
+```
+
+### 5. 포스트모템 문서 템플릿
+
+실험마다 아래 형식으로 기록한다.
+
+```markdown
+# 포스트모템: <실험명> (YYYY-MM-DD)
+
+## 타임라인
+- 00:00 장애 주입 (구체적 명령/조작)
+- 00:XX 첫 이상 신호 감지 (메트릭/로그상 변화)
+- 00:XX 알림 도착 (Slack 등)
+- 00:XX 자동/수동 복구 완료
+
+## 원인
+(장애가 실제로 무엇 때문에 발생했는지)
+
+## 탐지 공백
+(장애 발생부터 알림 도착까지 얼마나 걸렸는지, 왜 그만큼 걸렸는지)
+
+## 재발 방지
+(알림 규칙 조정, 임계치 변경, 자동 복구 추가 등 - 실행한 조치)
+```
+
+## 검증 방법
+
+각 실험에서 반드시 남겨야 하는 숫자 3가지: **장애 발생 시각**, **첫 메트릭/로그 이상 시각**, **알림 도착 시각**. 이 세 시각의 차이가 곧 "탐지 공백"이고, 다음 단계(알림 규칙 튜닝)의 기준값이 된다.
+
+## 체크리스트
+
+- [ ] kube-prometheus-stack 설치, 서비스 메트릭 수집
+- [ ] Alertmanager 알림 라우팅 (Slack 등)
+- [ ] Loki 로그 수집 + 보존 기간 정책 설정
+- [ ] 장애 주입 실험 3종 이상 실행 (노드 다운/OOMKill/디스크풀/RabbitMQ 중 택3)
+- [ ] 실험마다 포스트모템 문서 작성

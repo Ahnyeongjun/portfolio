@@ -1,0 +1,107 @@
+---
+title: "더미 워커를 실제 ONNX 추론으로, GPU 스케줄링까지 교체하는 절차 (선택)"
+description: "sleep으로 흉내낸 inference-worker를 실제 ONNX Runtime 추론으로 바꾸고, GPU 노드 스케줄링과 모델 교체를 CI/CD에 편입하는 절차. 선택 시리즈."
+date: "2026-08-05"
+category: "DevOps"
+tags: ["ONNX", "GPU", "Kubernetes", "MLOps"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 8
+---
+
+## 목표
+
+시리즈 2에서 `time.sleep()`으로 흉내낸 `inference-worker`를 실제 ONNX Runtime 추론으로 교체하고, GPU가 있다면 GPU 노드 스케줄링까지 붙인다. 이 시리즈는 선택이다 - 인프라·파이프라인이 이미 갖춰진 상태이므로, 워크로드 내용물만 바꾸는 작업에 가깝다.
+
+## 실제 구축 절차
+
+### 1. 더미 모델 → ONNX Runtime 추론으로 교체
+
+```python
+# 교체 전 - inference-worker/app/worker.py
+def run_inference(job: dict):
+    time.sleep(180)   # 오래 걸리는 작업 흉내
+    return {"result": "dummy"}
+```
+
+```python
+# 교체 후
+import onnxruntime as ort
+import numpy as np
+
+session = ort.InferenceSession("model.onnx", providers=["CPUExecutionProvider"])
+
+def run_inference(job: dict):
+    input_tensor = preprocess(job["image_path"])
+    outputs = session.run(None, {"input": input_tensor})
+    return postprocess(outputs)
+```
+
+기존 파이프라인(RabbitMQ ack/nack, DLQ, 상태 갱신)은 그대로 둔다 - 바뀌는 건 `run_inference` 내부뿐이다. 이렇게 인터페이스를 유지해두면 나중에 모델을 다시 바꿔도 파이프라인 코드는 안 건드려도 된다.
+
+### 2. GPU 노드 스케줄링 (GPU가 있는 경우)
+
+```bash
+# NVIDIA device plugin 설치 - 노드의 GPU를 스케줄링 가능한 리소스로 노출
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/main/deployments/static/nvidia-device-plugin.yml
+```
+
+```yaml
+# inference-worker deployment
+spec:
+  containers:
+    - name: inference-worker
+      resources:
+        limits:
+          nvidia.com/gpu: 1
+      env:
+        - name: ONNX_PROVIDER
+          value: "CUDAExecutionProvider"
+```
+
+```python
+providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]  # GPU 우선, 실패 시 CPU로 폴백
+session = ort.InferenceSession("model.onnx", providers=providers)
+```
+
+GPU가 없는 환경이라면 `CPUExecutionProvider`만 쓰고 이 단계는 건너뛴다 - 파이프라인 검증이 목적이라 추론 속도 자체는 부차적이다.
+
+### 3. 모델 교체를 CI/CD에 편입
+
+모델 파일을 이미지에 굽지 않고, 별도 아티팩트로 관리해 이미지 재빌드 없이 교체할 수 있게 한다.
+
+```groovy
+// Jenkinsfile 추가 스테이지
+stage('Upload Model') {
+  steps {
+    sh '''
+      curl -T model-v2.onnx https://artifact-registry.local/models/model-v2.onnx
+    '''
+  }
+}
+```
+
+```yaml
+# inference-worker가 시작 시 모델을 내려받는 initContainer
+initContainers:
+  - name: fetch-model
+    image: curlimages/curl
+    command: ["curl", "-o", "/models/model.onnx", "https://artifact-registry.local/models/model-v2.onnx"]
+    volumeMounts:
+      - {name: model-volume, mountPath: /models}
+```
+
+모델 버전을 매니페스트(Kustomize overlay)에서 관리하면, 모델 교체도 ArgoCD의 GitOps 흐름을 그대로 탄다 - 이미지 태그를 바꾸던 것과 같은 방식으로 모델 URL만 바꿔 커밋하면 된다.
+
+## 검증 방법
+
+```bash
+# CPU/GPU 추론 결과가 동일한지 (provider만 다르고 출력은 같아야 함)
+# 모델 교체 후 초기 요청 몇 건의 결과가 이전 모델과 다르게 나오는지 (버전이 실제로 바뀌었는지 확인)
+kubectl logs <inference-worker-pod> | grep "provider"   # 어떤 provider로 실행됐는지 로그로 확인
+```
+
+## 체크리스트
+
+- [ ] 더미 워커를 실제 ONNX 추론으로 교체
+- [ ] (GPU 있으면) GPU 노드 스케줄링 적용
+- [ ] 모델 교체를 CI/CD 파이프라인에 편입 (이미지 재빌드 없이 교체 가능하게)

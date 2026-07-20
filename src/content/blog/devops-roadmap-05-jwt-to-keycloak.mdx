@@ -1,0 +1,174 @@
+---
+title: "자체 JWT 구현부터 취약점 실험, Keycloak 마이그레이션까지의 실제 절차"
+description: "HS256/RS256 발급 서버 구현, alg:none·서명 미검증 같은 취약점을 직접 뚫어보는 실험 방법, 검증 로직을 서비스마다 복붙했을 때 생기는 문제 재현, Keycloak+Envoy Gateway로 옮기는 절차까지."
+date: "2026-08-03"
+category: "Security"
+tags: ["JWT", "Keycloak", "OIDC", "인증", "보안 실험"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 6
+---
+
+## 목표
+
+이 시리즈는 순서가 고정이다 - Keycloak을 먼저 붙이지 않는다. **자체 JWT 구현 → 취약점 직접 체험 → 분산의 고통 재현 → Keycloak 마이그레이션 → ISMS-P 관점 비교** 순서로 진행해야, 왜 게이트웨이 레벨 인증이 필요한지가 몸에 남는다.
+
+## 실제 구축 절차
+
+### 1. 자체 JWT 발급 서버 (auth-server) - HS256 vs RS256
+
+**HS256 (대칭키)**: 발급자와 검증자가 같은 비밀키를 공유한다. 구현은 간단하지만, 검증하는 모든 서비스가 서명 키를 알아야 한다는 게 문제다.
+
+```python
+import jwt, datetime
+
+SECRET = "shared-secret"   # 모든 검증 서비스가 이 값을 알아야 함
+
+def issue_hs256(user_id: str):
+    payload = {
+        "sub": user_id,
+        "iss": "auth-server",
+        "aud": "api-server",
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+    }
+    return jwt.encode(payload, SECRET, algorithm="HS256")
+```
+
+**RS256 (비대칭키)**: 발급자만 개인키를 갖고, 검증자는 공개키만 있으면 된다. 공개키가 유출돼도 위조 토큰을 만들 수 없다는 게 채택 이유다.
+
+```python
+with open("private.pem") as f:
+    PRIVATE_KEY = f.read()
+
+def issue_rs256(user_id: str):
+    payload = {
+        "sub": user_id,
+        "iss": "auth-server",
+        "aud": "api-server",
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+    }
+    return jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+```
+
+```bash
+openssl genrsa -out private.pem 2048
+openssl rsa -in private.pem -pubout -out public.pem
+```
+
+이 프로젝트는 RS256으로 채택한다 - 검증 서비스가 늘어날 걸 감안하면(시리즈 2의 여러 서비스), 비밀키를 여러 곳에 뿌리는 HS256보다 공개키만 배포하면 되는 RS256이 안전하다.
+
+### 2. 취약점을 직접 뚫어보는 실험
+
+검증 로직을 제대로 구현하지 않으면 뚫리는 지점들을 의도적으로 만들고, 실제로 공격해본다.
+
+```python
+# 취약한 검증 - 이렇게 짜면 안 된다는 걸 확인하기 위한 예시
+def verify_vulnerable(token: str):
+    return jwt.decode(token, options={"verify_signature": False})  # 서명 검증 생략
+
+# alg:none 공격 재현
+import base64, json
+header = base64.urlsafe_b64encode(json.dumps({"alg": "none", "typ": "JWT"}).encode()).rstrip(b"=")
+payload = base64.urlsafe_b64encode(json.dumps({"sub": "admin", "iss": "auth-server"}).encode()).rstrip(b"=")
+forged_token = header + b"." + payload + b"."   # 서명 부분이 비어있음
+# verify_vulnerable(forged_token) 을 호출하면 서명 없이 통과되는지 확인
+```
+
+```python
+# 올바른 검증 - alg 화이트리스트, iss/aud 필수 확인
+def verify_correct(token: str):
+    return jwt.decode(
+        token,
+        PUBLIC_KEY,
+        algorithms=["RS256"],       # alg 화이트리스트 - "none"이 여기 없으면 위조 토큰은 거부됨
+        audience="api-server",
+        issuer="auth-server",
+    )
+```
+
+`verify_vulnerable`로 위조 토큰이 통과하는 걸 먼저 확인하고, `verify_correct`로 바꾸면 `InvalidAlgorithmError`가 나는 걸 대조 확인한다 - 이 순서로 해야 화이트리스트 검증이 왜 필요한지가 실감된다.
+
+### 3. 토큰 폐기 불가 문제 재현
+
+JWT는 발급 즉시 서버가 통제권을 잃는다 - 로그아웃해도 만료 전까지는 유효하다. 이걸 먼저 재현한 다음 우회 방법을 붙인다.
+
+```python
+# 문제 재현: 로그아웃 API를 호출해도 같은 토큰으로 여전히 요청이 통과하는지 확인
+# 우회: Redis 블랙리스트
+import redis
+r = redis.Redis()
+
+def logout(token: str, exp_timestamp: int):
+    ttl = exp_timestamp - int(time.time())
+    r.setex(f"blacklist:{token}", ttl, "1")   # 토큰 만료 시각까지만 블랙리스트에 유지
+
+def verify_with_blacklist(token: str):
+    if r.exists(f"blacklist:{token}"):
+        raise Exception("revoked token")
+    return verify_correct(token)
+```
+
+또는 access token은 짧게(예: 5분), refresh token으로 재발급하는 구조로 바꿔 "폐기 불가"의 영향 범위 자체를 줄이는 방법도 함께 구현해본다.
+
+### 4. 검증 로직 분산의 고통 재현
+
+`verify_correct`를 서비스 2~3개(예: api-server, inference-worker)에 그대로 복붙한 뒤, **정책을 하나 바꿔본다** - 예를 들어 `RS256`에서 키를 로테이션하거나, `aud` 값을 서비스별로 다르게 요구하도록 변경.
+
+```
+1. 서명 키 로테이션 시나리오: 새 키 쌍을 만들고, 발급 서버는 새 키로 서명하도록 바꾼다.
+2. 검증 서비스들이 여전히 예전 공개키를 하드코딩하고 있다면? → 전부 검증 실패
+3. 서비스마다 새 공개키를 수동으로 배포해야 하는 절차를 실제로 밟아본다
+4. 여기서 자연스럽게 "공개키를 서비스가 각자 들고 있지 않고, 표준 엔드포인트에서 매번 가져오면 되지 않을까"라는 질문이 나온다 → JWKS(JSON Web Key Set) 개념
+```
+
+이 실험의 목적은 "복붙된 코드 3벌을 동시에 고치는 게 얼마나 번거로운가"를 직접 재는 것이다 - 이 번거로움이 다음 단계(게이트웨이 레벨 인증)로 넘어가는 이유가 된다.
+
+### 5. Keycloak + Envoy Gateway 마이그레이션
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install keycloak bitnami/keycloak --set auth.adminPassword=<시크릿>
+```
+
+Realm과 클라이언트를 만든 뒤, Envoy Gateway의 `SecurityPolicy`로 OIDC를 붙인다.
+
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: api-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: api-route
+  oidc:
+    provider:
+      issuer: "https://keycloak.local/realms/devops-lab"
+    clientID: "api-server"
+    clientSecret:
+      name: keycloak-api-secret
+    forwardAccessToken: true
+```
+
+서비스 쪽 `verify_correct` 호출을 전부 제거하고, 게이트웨이가 전달한 헤더의 클레임만 읽도록 바꾼다. 클라이언트 시크릿은 SealedSecret으로 감싸 Git에 커밋한다.
+
+```bash
+kubeseal --format yaml < keycloak-api-secret.yaml > keycloak-api-secret.sealed.yaml
+```
+
+### 6. ISMS-P 관점 비교
+
+자체 JWT 구조로는 못 보여줬을 증적을 Keycloak Admin Console에서 확인하고 캡처해둔다 - 비밀번호 정책 화면, MFA 설정 화면, 활성 세션 목록, 로그인 시도 이력. 이게 시리즈 6(ISMS-P 매핑)에서 "2.5 인증 및 권한관리" 항목의 실제 증적이 된다.
+
+## 검증 방법
+
+- 위조 토큰(`alg:none`, 서명 없음, 만료된 토큰, 잘못된 `aud`)이 각각 어느 단계에서 거부되는지 케이스별로 확인
+- 로그아웃 후 같은 토큰으로 요청 시 거부되는지 확인
+- Keycloak 마이그레이션 후 서비스 코드에 JWT 검증 로직이 완전히 제거됐는지 grep으로 확인 (`import jwt` 등이 남아있지 않아야 함)
+
+## 체크리스트
+
+- [ ] 5-1: HS256/RS256 자체 발급 서버 구현, 취약점 실험, 토큰 폐기 우회 구현
+- [ ] 5-2: 서비스 2~3개에 검증 복붙 → 정책 변경 시나리오 → JWKS 개념 도출
+- [ ] 5-3: Keycloak + Envoy Gateway 마이그레이션, 서비스 내 검증 코드 제거, SealedSecret
+- [ ] 5-4: ISMS-P 관점 회고 - 증적 화면 캡처 정리

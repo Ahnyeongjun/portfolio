@@ -1,0 +1,192 @@
+---
+title: "kubeadm으로 온프레미스 Kubernetes 클러스터를 처음부터 세우는 절차"
+description: "VM 2~3대를 준비하는 것부터 kubeadm init, CNI(Calico), MetalLB, 스토리지까지 - 관리형 K8s 없이 클러스터를 처음부터 구축하는 실제 절차와 명령어 정리."
+date: "2026-07-30"
+category: "DevOps"
+tags: ["Kubernetes", "kubeadm", "Calico", "MetalLB", "온프레미스"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 2
+---
+
+## 목표
+
+VM 2~3대 위에 kubeadm으로 컨트롤플레인 1대 + 워커 1~2대 구성의 클러스터를 세운다. 여기에 CNI(Calico), LoadBalancer(MetalLB), 스토리지(NFS 또는 Longhorn)까지 붙여 "서비스를 배포할 수 있는 최소 상태"를 만드는 게 이 시리즈의 목표다.
+
+## 사전 준비
+
+| 항목 | 최소 사양 | 비고 |
+|---|---|---|
+| VM 수 | 3대 (컨트롤플레인 1 + 워커 2, 또는 1+1) | 컨트롤플레인/워커 겸용도 가능하지만 학습 목적상 분리 권장 |
+| OS | Ubuntu 22.04 LTS | kubeadm 공식 지원 |
+| CPU/메모리 | 컨트롤플레인 2vCPU/2GB 이상, 워커 2vCPU/4GB 이상 | |
+| 네트워크 | 노드 간 통신 가능한 사설망, 고정 IP | DHCP면 고정 임대로 전환 |
+| 스왑 | 비활성화 | kubelet은 기본적으로 스왑을 허용하지 않음 |
+
+모든 노드 공통으로 사전에 처리해야 하는 것:
+
+```bash
+# 스왑 비활성화 (영구)
+sudo swapoff -a
+sudo sed -i '/ swap / s/^/#/' /etc/fstab
+
+# 커널 모듈 + sysctl
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+sudo sysctl --system
+
+# 컨테이너 런타임(containerd) 설치
+sudo apt-get update && sudo apt-get install -y containerd
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+# SystemdCgroup = false → true 로 수정
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+sudo systemctl restart containerd
+```
+
+## 실제 구축 절차
+
+### 1. kubeadm/kubelet/kubectl 설치 (모든 노드)
+
+```bash
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | \
+  sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
+  https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | \
+  sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+```
+
+### 2. 컨트롤플레인 초기화
+
+```bash
+sudo kubeadm init \
+  --pod-network-cidr=192.168.0.0/16 \
+  --control-plane-endpoint="<컨트롤플레인 고정 IP 또는 VIP>:6443" \
+  --upload-certs
+```
+
+- `--pod-network-cidr`: Calico 기본값(`192.168.0.0/16`)과 맞춘다. 다른 CNI를 쓰면 그 CNI의 기본 CIDR을 확인한다.
+- `--control-plane-endpoint`: 지금 당장은 컨트롤플레인 1대의 IP를 쓰되, 이후 kube-vip로 이중화할 계획이면 처음부터 VIP를 넣어두는 게 낫다 - 나중에 바꾸면 인증서를 재발급해야 한다.
+- 완료 후 출력되는 `kubeadm join` 명령어(토큰 포함)를 워커 노드용으로 저장해둔다. 토큰은 24시간 후 만료되므로, 나중에 필요하면 `kubeadm token create --print-join-command`로 재생성한다.
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+### 3. 워커 노드 조인
+
+```bash
+sudo kubeadm join <컨트롤플레인 IP>:6443 \
+  --token <토큰> \
+  --discovery-token-ca-cert-hash sha256:<해시>
+```
+
+`kubectl get nodes`로 워커가 `NotReady` 상태로 나타나면 정상이다 - CNI가 아직 없어서 그렇다.
+
+### 4. CNI 설치 - Calico
+
+```bash
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
+```
+
+`custom-resources.yaml`을 적용하기 전에 `spec.calicoNetwork.ipPools[0].cidr` 값이 `kubeadm init`에 넣은 `--pod-network-cidr`과 일치하는지 반드시 확인한다. 여기가 어긋나면 파드끼리 통신이 안 되는 문제로 이어진다.
+
+```bash
+kubectl get nodes    # 모든 노드가 Ready로 바뀌는지 확인
+kubectl get pods -n calico-system
+```
+
+### 5. MetalLB - 온프레미스에서 LoadBalancer 타입 서비스 쓰기
+
+클라우드가 아니므로 `type: LoadBalancer` 서비스에 외부 IP를 배정해줄 주체가 없다. MetalLB가 그 역할을 한다.
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
+```
+
+L2 모드(가장 단순한 구성)로 IP 풀을 지정한다.
+
+```yaml
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.1.240-192.168.1.250   # 노드가 속한 네트워크 대역에서 안 쓰는 구간
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - default-pool
+```
+
+### 6. 스토리지 - NFS 또는 Longhorn
+
+**NFS (더 단순, 단일 장애점 있음)**: 별도 NFS 서버(또는 노드 중 하나)에 `nfs-kernel-server`를 띄우고, `nfs-subdir-external-provisioner`를 Helm으로 설치해 `StorageClass`를 등록한다.
+
+```bash
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+helm install nfs-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+  --set nfs.server=<NFS 서버 IP> \
+  --set nfs.path=/exported/path
+```
+
+**Longhorn (분산 블록 스토리지, 복제 지원)**: 노드마다 데이터가 복제되므로 노드 하나가 죽어도 볼륨이 살아있다는 이점이 있다. 대신 각 노드에 `open-iscsi` 등 의존성 설치가 필요하다.
+
+```bash
+helm repo add longhorn https://charts.longhorn.io
+helm install longhorn longhorn/longhorn --namespace longhorn-system --create-namespace
+```
+
+두 개 중 하나만 고르면 된다 - 이 프로젝트 규모에서는 NFS로 시작해도 충분하고, 이후 노드 장애 실험(시리즈 4)에서 스토리지 복제가 필요하다고 판단되면 Longhorn으로 바꾼다.
+
+## 검증 방법
+
+```bash
+kubectl get nodes -o wide                     # 전 노드 Ready
+kubectl get pods -A | grep -v Running         # Running이 아닌 파드가 없어야 정상
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-lb
+spec:
+  type: LoadBalancer
+  selector: {app: nonexistent}
+  ports: [{port: 80}]
+EOF
+kubectl get svc test-lb                       # EXTERNAL-IP가 MetalLB 풀에서 할당되는지 확인
+kubectl delete svc test-lb
+```
+
+스토리지는 `PersistentVolumeClaim`을 하나 만들어 `Bound` 상태로 전환되는지 확인한다.
+
+## 체크리스트
+
+- [ ] VM 2~3대에 kubeadm으로 클러스터 구축
+- [ ] CNI 설치 (Calico)
+- [ ] MetalLB, 스토리지(NFS 또는 Longhorn) 구성
+- [ ] 클러스터 파괴 후 재구축 1회 (`kubeadm reset` → 위 절차 반복)
+- [ ] (선택) 클라우드 K8s와 하이브리드 연동

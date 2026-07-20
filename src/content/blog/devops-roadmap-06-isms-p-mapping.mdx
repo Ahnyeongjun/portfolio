@@ -1,0 +1,143 @@
+---
+title: "ISMS-P 인프라 영역 심사를 가정하고 내 클러스터의 증적을 만드는 절차"
+description: "KISA 인증기준 인프라 관련 항목을 매핑표로 정리하고, NetworkPolicy·TLS·SealedSecret·Loki 보존 정책을 항목별 증적으로 연결하는 실제 작업 절차."
+date: "2026-08-04"
+category: "Security"
+tags: ["ISMS-P", "NetworkPolicy", "보안 컴플라이언스", "Kubernetes"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 7
+---
+
+## 목표
+
+이 시리즈에서 "인증"은 로그인(authentication)이 아니라 **심사(certification) 대응**이다. 지금까지 만든 인프라(NetworkPolicy, TLS, SealedSecret, Loki)를 심사원이 물었을 때 무엇을 열어 보여줄지 - 증적(evidence) 관점으로 다시 정리하는 게 목표다.
+
+## 실제 구축 절차
+
+### 1. 매핑표 작성
+
+KISA 「ISMS-P 인증기준 안내서」의 인프라 관련 항목을 확인하고(항목 번호·명칭은 원문 확인 후 정정), `security/isms-p/mapping.md`에 아래 형식으로 작성한다.
+
+```markdown
+| 인증기준 영역 | 이 프로젝트에서의 구현 | 증적(심사원에게 보여줄 것) | 상태 |
+|---|---|---|---|
+| 2.5 인증 및 권한관리 | Keycloak (정책·MFA·RBAC) | Realm 정책 화면, 클라이언트별 Role | 완료 |
+| 2.6 접근통제 | Envoy SecurityPolicy, NetworkPolicy | HTTPRoute/Policy 정의, 통신 매트릭스 | 진행중 |
+| 2.7 암호화 적용 | TLS, SealedSecret | 인증서 체계, 시크릿 관리 흐름 | 진행중 |
+| 2.9 시스템·서비스 운영관리 | Loki 로그 보존, 백업 | 보존 정책 설정, 로그 접근 통제 | 진행중 |
+| 2.10 시스템·서비스 보안관리 | 이미지 스캔, 패치 이력 | CI 스캔 결과, 업그레이드 기록 | 미착수 |
+```
+
+"구현"과 "증적"을 분리해서 적는 게 핵심이다 - NetworkPolicy를 적용했다는 사실 자체는 구현이고, 심사원에게 실제로 보여줄 것(정책 YAML, 실제 차단된 통신 로그, 통신 매트릭스 문서)은 증적이다. 구현은 있는데 증적이 정리 안 된 항목이 실제로 제일 많다.
+
+### 2. 접근통제 - NetworkPolicy로 통신 매트릭스 만들기
+
+먼저 서비스 간 통신 관계를 표로 정리한다.
+
+```
+게이트웨이 → api-server (허용)
+api-server → RabbitMQ (허용)
+api-server → PostgreSQL (허용)
+inference-worker → RabbitMQ (허용)
+inference-worker → PostgreSQL (허용)
+그 외 모든 경로 (기본 차단)
+```
+
+이 표를 그대로 NetworkPolicy로 옮긴다.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-server-ingress
+  namespace: app
+spec:
+  podSelector:
+    matchLabels: {app: api-server}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: gateway-system}
+      ports:
+        - port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  namespace: app
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+  # from을 지정하지 않음 - 명시적으로 허용되지 않은 모든 인그레스 차단
+```
+
+적용 후 반드시 **차단이 실제로 되는지** 검증한다.
+
+```bash
+# app 네임스페이스 밖에서 api-server에 직접 접근 시도 - 실패해야 정상
+kubectl run test-pod --rm -it --image=busybox -n default -- \
+  wget -qO- http://api-server.app.svc.cluster.local:8000/healthz
+```
+
+이 실패 로그(또는 허용된 통신의 성공 로그) 자체가 "통신 매트릭스가 실제로 강제되고 있다"는 증적이 된다.
+
+### 3. 암호화 - TLS와 SealedSecret 증적 정리
+
+TLS는 Envoy Gateway의 리스너 설정과 인증서 발급 이력(cert-manager 사용 시 `Certificate` 리소스 상태)을 캡처해둔다.
+
+```bash
+kubectl get certificate -A
+kubectl describe certificate <name>   # 발급자, 만료일, 갱신 이력 확인
+```
+
+SealedSecret은 "평문이 Git에 올라간 적이 없다"는 걸 증명하는 게 핵심이다.
+
+```bash
+# Git 히스토리 전체에서 평문 시크릿이 커밋된 적이 없는지 확인
+git log --all -p -- '*.yaml' | grep -i "password\|secret" | grep -v "SealedSecret\|sealedsecrets"
+```
+
+이 grep 결과가 비어있다는 것 자체를 증적 문서에 "검증 완료"로 남긴다.
+
+### 4. 로그 - Loki 보존 정책 증적
+
+시리즈 4에서 설정한 `retention_period`가 실제로 적용되고 있는지 확인한다.
+
+```bash
+# Loki 설정값 확인
+kubectl get configmap loki -n monitoring -o yaml | grep retention_period
+
+# 실제로 30일 이전 로그가 조회되지 않는지 확인
+logcli query '{namespace="app"}' --from="$(date -d '31 days ago' --iso-8601=seconds)" --limit=10
+```
+
+로그 접근 통제(누가 Grafana/Loki에 접근할 수 있는지)도 RBAC 설정을 캡처해둔다.
+
+### 5. 모의 심사 - 항목별 문답 준비
+
+각 항목마다 "심사원이 이렇게 물으면, 나는 이 화면/파일을 연다"는 형식으로 정리한다.
+
+```markdown
+Q. 서비스 간 통신이 필요한 경로로만 제한되어 있다는 걸 어떻게 증명합니까?
+A. security/isms-p/network-matrix.md의 통신 매트릭스 표 +
+   kubectl get networkpolicy -A 출력 +
+   default-deny 정책이 있다는 것 + 차단 테스트 로그
+
+Q. 시크릿이 평문으로 저장소에 노출된 적이 없다는 걸 어떻게 압니까?
+A. 전체 Git 히스토리에 대한 grep 검증 결과 (위 3번 절차) +
+   SealedSecret 컨트롤러가 클러스터 안에서만 복호화 가능하다는 아키텍처 설명
+```
+
+## 검증 방법
+
+매핑표의 "상태" 컬럼이 전부 "완료"가 될 때까지 반복한다. 각 항목은 다음 세 가지가 모두 준비됐을 때만 "완료"로 표시한다 - **구현이 실제로 적용돼 있는가, 증적 자료가 실제로 존재하는가, 그 증적을 5분 안에 찾아서 보여줄 수 있는가.**
+
+## 체크리스트
+
+- [ ] KISA 인증기준 인프라 관련 항목 정리 → mapping.md 작성
+- [ ] 접근통제: NetworkPolicy로 통신 매트릭스 구현 + 차단 검증
+- [ ] 암호화: TLS·SealedSecret 증적 정리 + Git 히스토리 검증
+- [ ] 로그: Loki 보존 정책 설정 + 접근 통제 증적 정리
+- [ ] 모의 심사: 항목별 문답 형식으로 문서화

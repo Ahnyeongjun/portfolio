@@ -1,0 +1,190 @@
+---
+title: "FastAPI 서비스 골격, RabbitMQ DLQ, Jenkins→ArgoCD 파이프라인 구축 절차"
+description: "헬스체크/메트릭을 표준화한 api-server·inference-worker 골격부터 RabbitMQ ack/nack+DLQ 설정, Jenkins 빌드와 ArgoCD GitOps 배포까지 - 실제로 만드는 순서와 설정 정리."
+date: "2026-07-31"
+category: "DevOps"
+tags: ["FastAPI", "RabbitMQ", "Jenkins", "ArgoCD", "GitOps"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 3
+---
+
+## 목표
+
+`api-server`(FastAPI)와 `inference-worker`(비동기 워커) 두 서비스를 최소 골격으로 만들고, 둘 사이를 RabbitMQ로 연결한다. 그 다음 Jenkins로 빌드하고 ArgoCD로 배포하는 파이프라인까지 연결한다.
+
+## 실제 구축 절차
+
+### 1. api-server 골격 - 헬스체크/메트릭 표준화
+
+모든 서비스가 같은 방식으로 살아있는지 확인할 수 있어야 게이트웨이 라우팅과 모니터링에 태울 수 있다. 엔드포인트 형식을 먼저 고정한다.
+
+```python
+# api-server/app/main.py
+from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
+
+app = FastAPI()
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+@app.post("/jobs")
+def create_job(payload: JobCreate):
+    job_id = save_job_as_pending(payload)
+    publish_to_queue("jobs.upload", {"job_id": job_id, **payload.dict()})
+    return {"job_id": job_id, "status": "PENDING"}
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: str):
+    return get_job_status(job_id)
+```
+
+`/healthz`는 프로세스 생존만 확인하고, DB·큐 연결까지 확인하는 `/readyz`를 별도로 두는 편이 낫다 - `/healthz`가 무거우면 kubelet의 liveness probe가 불필요하게 서비스를 재시작시킬 수 있다.
+
+### 2. RabbitMQ 배포 - StatefulSet + ack/nack + DLQ
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install rabbitmq bitnami/rabbitmq \
+  --set auth.username=app \
+  --set auth.password=<시크릿으로 관리> \
+  --set replicaCount=1
+```
+
+큐와 DLQ, 재시도 3회 격리 정책을 코드에서 선언한다.
+
+```python
+# inference-worker/app/queue_setup.py
+import pika
+
+def declare_queues(channel):
+    channel.exchange_declare("jobs.dlx", exchange_type="direct")
+    channel.queue_declare("jobs.dlq", durable=True)
+    channel.queue_bind("jobs.dlq", "jobs.dlx", routing_key="jobs.upload")
+
+    channel.queue_declare(
+        "jobs.upload",
+        durable=True,
+        arguments={
+            "x-dead-letter-exchange": "jobs.dlx",
+            "x-dead-letter-routing-key": "jobs.upload",
+        },
+    )
+```
+
+```python
+# inference-worker/app/consumer.py
+def on_message(channel, method, properties, body):
+    headers = properties.headers or {}
+    death_count = _retry_count(headers)  # x-death 배열 길이로 계산
+    try:
+        run_inference(body)
+        channel.basic_ack(delivery_tag=method.delivery_tag)
+    except Exception:
+        if death_count >= 3:
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # DLQ로
+        else:
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+```
+
+`inference-worker`는 처음엔 실제 ONNX 모델 대신 `time.sleep(180)`으로 "오래 걸리는 작업"만 흉내 낸다 - 파이프라인 자체(큐 소비, ack/nack, 상태 갱신)가 먼저 제대로 도는지 검증하는 게 우선이다.
+
+### 3. 검증 실험 설계 - 워커 강제 종료
+
+```bash
+# 작업 하나를 등록한 뒤, 처리 중인 워커 파드를 강제 종료
+kubectl delete pod <inference-worker-pod> --grace-period=0 --force
+
+# 확인할 것
+# 1) 메시지가 ack 안 된 상태로 큐에 남아있다가 재전달되는지 (RabbitMQ Management UI의 Unacked 카운트)
+# 2) 재시작된 워커(또는 다른 레플리카)가 같은 메시지를 다시 처리하는지
+# 3) 의도적으로 3회 실패하는 메시지를 만들어 DLQ로 격리되는지 (jobs.dlq 큐 확인)
+```
+
+### 4. Jenkins - 빌드 파이프라인
+
+```groovy
+// Jenkinsfile
+pipeline {
+  agent any
+  stages {
+    stage('Test') {
+      steps { sh 'pytest' }
+    }
+    stage('Build & Push') {
+      steps {
+        sh '''
+          docker build -t registry.local/api-server:${GIT_COMMIT} ./api-server
+          docker push registry.local/api-server:${GIT_COMMIT}
+        '''
+      }
+    }
+    stage('Update Manifest') {
+      steps {
+        sh '''
+          cd k8s-manifests
+          kustomize edit set image api-server=registry.local/api-server:${GIT_COMMIT}
+          git commit -am "deploy: api-server ${GIT_COMMIT}"
+          git push
+        '''
+      }
+    }
+  }
+}
+```
+
+마지막 스테이지가 핵심이다 - Jenkins가 클러스터에 직접 배포하지 않고, **매니페스트 저장소에 이미지 태그만 갱신해서 커밋**한다. 실제 배포는 ArgoCD가 담당한다.
+
+### 5. ArgoCD - GitOps 배포
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: api-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://git.local/k8s-manifests.git
+    targetRevision: main
+    path: api-server
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true    # 클러스터 상태가 Git과 달라지면 자동으로 되돌림
+```
+
+`selfHeal: true`가 push 배포와의 가장 큰 차이다 - 누군가 클러스터에서 리소스를 수동으로 고쳐도 ArgoCD가 Git 상태로 되돌린다.
+
+## 검증 방법
+
+```bash
+argocd app get api-server           # Sync/Health 상태 확인
+argocd app history api-server       # 배포 이력이 Git 커밋과 1:1로 매칭되는지 확인
+
+# drift 감지 테스트
+kubectl scale deployment api-server --replicas=5   # 수동으로 클러스터 상태 변경
+argocd app get api-server           # OutOfSync로 표시되는지, selfHeal로 원래 replica 수로 돌아오는지 확인
+```
+
+배포 소요 시간은 `git push` 시점부터 `argocd app get`이 `Synced/Healthy`가 되는 시점까지를 재서 기록해둔다 - Jenkins push 배포 방식과 비교할 수치 기준이 된다.
+
+## 체크리스트
+
+- [ ] api-server, inference-worker 최소 구현 (`/healthz`, `/metrics` 표준화)
+- [ ] RabbitMQ StatefulSet 배포, ack/nack + DLQ(재시도 3회) 구현
+- [ ] 워커 파드 강제 종료 → 메시지 재투입 검증, DLQ 격리 검증
+- [ ] Jenkins 파이프라인: 빌드 → 테스트 → 이미지 푸시
+- [ ] ArgoCD 도입, GitOps 전환
+- [ ] 배포 소요 시간 before/after 측정

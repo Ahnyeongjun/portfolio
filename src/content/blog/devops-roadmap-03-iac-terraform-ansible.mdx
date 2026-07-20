@@ -1,0 +1,164 @@
+---
+title: "Terraform과 Ansible로 클러스터를 코드에서 다시 세울 수 있게 만드는 절차"
+description: "클라우드 리소스는 Terraform, 온프레미스 노드 프로비저닝은 Ansible로 코드화하고, Day-0부터 전체를 재현 가능한지 검증하는 절차 정리."
+date: "2026-08-01"
+category: "DevOps"
+tags: ["Terraform", "Ansible", "IaC", "Kubernetes"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 4
+---
+
+## 목표
+
+시리즈 1에서 손으로 실행한 절차(VM 준비, kubeadm init/join, CNI/MetalLB/스토리지 설치)를 코드로 옮긴다. 클라우드 리소스는 Terraform, 온프레미스 노드의 OS 레벨 준비는 Ansible로 나눈다.
+
+## 역할 분담: 왜 두 도구를 같이 쓰는가
+
+| | Terraform | Ansible |
+|---|---|---|
+| 대상 | 클라우드 리소스 (VPC, VM 인스턴스, 로드밸런서 등) | 이미 존재하는 온프레미스 서버의 OS 상태 |
+| 모델 | 선언적, 상태 파일(state)로 리소스 존재 여부를 추적 | 절차적, 멱등성 있는 태스크를 순서대로 실행 |
+| 적합한 이유 | 클라우드 리소스는 "생성/삭제"가 명확한 단위 | 온프레미스 서버는 이미 물리적으로 존재 - "생성"이 아니라 "구성" 대상 |
+
+## 실제 구축 절차
+
+### 1. Terraform - 클라우드 리소스 코드화
+
+```hcl
+# terraform/main.tf
+terraform {
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  }
+}
+
+resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_subnet" "public" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+
+resource "aws_instance" "cloud_worker" {
+  ami           = "ami-0c02fb55956c7d316"
+  instance_type = "t3.medium"
+  subnet_id     = aws_subnet.public.id
+  tags          = { Name = "hybrid-cloud-worker" }
+}
+
+output "cloud_worker_public_ip" {
+  value = aws_instance.cloud_worker.public_ip
+}
+```
+
+```bash
+terraform init
+terraform plan -out=tfplan     # 무엇이 바뀌는지 먼저 확인
+terraform apply tfplan
+```
+
+state 파일은 로컬에 두지 않는다 - 여러 사람/여러 세션에서 같은 인프라를 다루려면 원격 백엔드(S3+DynamoDB 락 등)로 옮겨야 한다.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "tfstate-bucket"
+    key            = "cluster/terraform.tfstate"
+    region         = "ap-northeast-2"
+    dynamodb_table = "tfstate-lock"
+  }
+}
+```
+
+### 2. Ansible - 온프레미스 노드 프로비저닝
+
+시리즈 1에서 손으로 했던 사전 준비(스왑 비활성화, 커널 모듈, containerd, kubeadm 설치)를 플레이북으로 옮긴다.
+
+```yaml
+# ansible/inventory.ini
+[control_plane]
+node1 ansible_host=192.168.1.10
+
+[workers]
+node2 ansible_host=192.168.1.11
+node3 ansible_host=192.168.1.12
+```
+
+```yaml
+# ansible/playbook.yml
+- hosts: all
+  become: true
+  tasks:
+    - name: 스왑 비활성화
+      command: swapoff -a
+    - name: fstab에서 스왑 항목 주석 처리
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\sswap\s.*)$'
+        replace: '# \1'
+    - name: 커널 모듈 로드
+      modprobe:
+        name: "{{ item }}"
+      loop: [overlay, br_netfilter]
+    - name: containerd 설치
+      apt:
+        name: containerd
+        state: present
+    - name: kubeadm/kubelet/kubectl 설치
+      apt:
+        name: [kubelet, kubeadm, kubectl]
+        state: present
+
+- hosts: control_plane
+  become: true
+  tasks:
+    - name: kubeadm init 실행 여부 확인
+      stat: path=/etc/kubernetes/admin.conf
+      register: kubeadm_done
+    - name: kubeadm init
+      command: >
+        kubeadm init --pod-network-cidr=192.168.0.0/16
+        --control-plane-endpoint={{ control_plane_vip }}:6443
+      when: not kubeadm_done.stat.exists
+```
+
+```bash
+ansible-playbook -i inventory.ini playbook.yml
+```
+
+워커 조인은 컨트롤플레인에서 토큰을 뽑아 워커 그룹에 전달하는 태스크를 추가로 작성한다 - `kubeadm token create --print-join-command`의 출력을 `register`로 잡아 워커 호스트에 `delegate_to` 없이 전달하려면, Ansible의 `set_fact` + `hostvars`를 조합하거나 별도 스크립트로 토큰을 파일에 저장해 공유하는 방식을 쓴다.
+
+### 3. Day-0 재구축 검증
+
+코드화가 끝났다고 선언하기 전에, **실제로 전체를 처음부터 재현할 수 있는지** 검증하는 단계가 필요하다.
+
+```bash
+# 1. 기존 클러스터 완전 파괴
+ansible all -i inventory.ini -m command -a "kubeadm reset -f" --become
+terraform destroy
+
+# 2. 코드만으로 처음부터 재구축
+terraform apply
+ansible-playbook -i inventory.ini playbook.yml
+
+# 3. 소요 시간 측정
+# destroy 시작 ~ 클러스터가 다시 Ready 상태가 될 때까지 걸린 시간을 기록
+```
+
+이 재구축 중 스크립트로 처리되지 않고 사람이 개입해야 했던 지점(예: 토큰 재생성, 순서 의존성, 수동 확인이 필요했던 단계)을 전부 목록화한다 - 이게 "아직 코드화되지 않은 부분"이다.
+
+## 검증 방법
+
+```bash
+terraform plan     # apply 없이 실행해도 diff가 없어야("No changes") IaC가 실제 상태를 정확히 반영하는 것
+ansible-playbook -i inventory.ini playbook.yml --check   # dry-run으로 멱등성 확인 - 두 번째 실행부터는 변경사항이 없어야 함
+```
+
+## 체크리스트
+
+- [ ] Terraform으로 클라우드 리소스 코드화 (원격 state 백엔드 포함)
+- [ ] Ansible로 온프레미스 노드 프로비저닝 (kubeadm 사전 준비까지 자동화)
+- [ ] Day-0 재구축 실험: 전체 파괴 후 코드만으로 재현
+- [ ] 재구축 중 사람이 개입해야 했던 지점 목록화
