@@ -197,7 +197,7 @@ def inject_cells(template_path, out_path, cell_map: dict):
           hint="Blazor 비동기 렌더링 타이밍 · 부분 일치 셀렉터"
         >
           <p>
-            사내 HRWeb(아마란스)은 <Highlight>Blazor Server</Highlight> 앱입니다.
+            사내 HRWeb은 <Highlight>Blazor Server</Highlight> 앱입니다.
             일반 웹과 달리 폼 값이 SignalR을 통해 서버에서 바인딩되므로
             Playwright가 클릭 직후 바로 다음 요소를 조작하면 아직 렌더링이 끝나지 않아 입력이 무시됐습니다.
           </p>

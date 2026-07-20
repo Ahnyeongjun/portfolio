@@ -127,9 +127,12 @@ export function RosDetectionRetrospective() {
           <FlowNode highlight sub="ApproximateTimeSynchronizer">RGB/Depth 시간 동기화</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
-        <div className="grid grid-cols-2 gap-3">
-          <FlowNode sub="Faster R-CNN, GPU">객체 탐지 (팀원 작성)</FlowNode>
-          <FlowNode sub="Pinhole 역투영">3D 좌표 변환 (팀원 작성)</FlowNode>
+        <div className="flex justify-center">
+          <FlowNode sub="Faster R-CNN, GPU · RGB 프레임 입력">객체 탐지 (팀원 작성)</FlowNode>
+        </div>
+        <div className="flex justify-center text-muted-foreground text-xs">↓</div>
+        <div className="flex justify-center">
+          <FlowNode sub="Pinhole 역투영 · 탐지 bbox 중심 픽셀의 depth 샘플링">3D 좌표 변환 (팀원 작성)</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="flex justify-center">
@@ -208,8 +211,9 @@ export function RosDetectionRetrospective() {
             메시지 패키지 <code>explore_msgs</code>는 <code>package.xml</code> format2→3,
             빌드를 <code>ament_cmake</code> + <code>rosidl_generate_interfaces</code>로
             전환했습니다. <code>detector</code>는 <code>ament_python</code>{" "}
-            (setup.py/setup.cfg/resource) 구조로 바꾸고, 메인 노드를{" "}
-            <code>rclpy.node.Node</code> 상속 구조로 재작성했습니다.
+            (setup.py/setup.cfg/resource) 구조로 바꾸고, 메인 로직을{" "}
+            <code>rclpy.node.Node</code> 인스턴스를 인자로 받아 사용하는 구조로
+            재작성했습니다.
           </p>
           <CompareTable
             headers={["항목", "ROS1", "ROS2"]}

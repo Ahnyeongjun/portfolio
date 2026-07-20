@@ -169,7 +169,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           <div className="p-3 rounded-lg border border-dashed border-border bg-muted/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">FastAPI + ONNX Runtime</p>
             <FlowNode highlight sub="OD · SEG · SR · 200→3,000건/일">AI 추론</FlowNode>
-            <p className="text-xs text-muted-foreground/70">Aliyun GPUShare - GPU당 10파드 자동 분할</p>
+            <p className="text-xs text-muted-foreground/70">Aliyun GPUShare - GPU 4장 70파드 자동 분할</p>
           </div>
         </div>
 

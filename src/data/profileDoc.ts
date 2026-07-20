@@ -294,7 +294,7 @@ export const PROFILE = {
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack"],
-      desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·janus 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
+      desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·자체 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
       blocks: [
         {
           label: "k6·유닛테스트 도입 - 동시 부하 문제 사전 검출 → 에러율 11%→0%",
@@ -398,7 +398,7 @@ export const PROFILE = {
           actions: [
             "FastMCP 8개 도구 구현 - list_commits·get_trips·generate_report·upload_hrweb 등, Cursor·Claude Desktop에서 호출 가능",
             "Git 커밋+캘린더 병합 → 엑셀 생성 → Gmail 발송 단일 명령 자동화",
-            "HRWeb(아마란스) Playwright 전 흐름 자동화",
+            "HRWeb Playwright 전 흐름 자동화",
           ],
           result: "수작업 전 과정 제거, Claude Desktop·Cursor에서 팀 전체 호출 가능",
           brief: [
@@ -494,7 +494,7 @@ export const PROFILE_PLATFORM = {
 
   highlights: [
     { v: "kubeadm", l: "베어메탈 K8s 직접 부트스트랩" },
-    { v: "GPU 1장 → 70파드", l: "Aliyun GPUShare 병렬 추론" },
+    { v: "GPU 4장 → 70파드", l: "Aliyun GPUShare 병렬 추론" },
     { v: "1개 → 15개", l: "처리 워커 수평 확장" },
     { v: "이벤트 유실 0건", l: "Outbox 라이브러리 직접 개발" },
   ],
@@ -504,7 +504,7 @@ export const PROFILE_PLATFORM = {
     position: "연구원 · 플랫폼 엔지니어링 · 재직 중",
     period: "2021.07. ~ 재직 중 (5년)",
     overview: "국가기관 대상 위성영상 AI 처리 플랫폼의 인프라 설계·구축·운영을 전담해왔습니다. 관리형 K8s가 없는 온프레미스·에어갭 환경에서 kubeadm 클러스터 부트스트랩부터 노드 자원 분배·GPU 공유·비동기 파이프라인·모니터링까지 인프라 전 영역을 직접 설계·구축·운영했습니다.",
-    metrics: ["kubeadm 베어메탈 클러스터 구축", "GPU 1장 70파드 병렬 추론", "처리 워커 1→15개 수평 확장", "에어갭 무중단 운영", "이벤트 유실 0건"],
+    metrics: ["kubeadm 베어메탈 클러스터 구축", "GPU 4장 70파드 병렬 추론", "처리 워커 1→15개 수평 확장", "에어갭 무중단 운영", "이벤트 유실 0건"],
     groups: [
       {
         title: "인프라 설계·구축·운영",
@@ -519,7 +519,7 @@ export const PROFILE_PLATFORM = {
         title: "AI 워크로드 스케줄링 & 비동기 파이프라인",
         period: "2023.10 ~ 2025.07",
         items: [
-          { text: "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 1장에서 70파드 병렬 추론" },
+          { text: "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 4장에서 70파드 병렬 추론" },
           { text: "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장" },
           { text: "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건" },
         ],
@@ -700,7 +700,7 @@ export const PROFILE_PLATFORM = {
         },
         {
           label: "DB 접근 계층 중앙화(신규 구축) → 스키마 변경 영향 API 레이어로 축소",
-          situation: "이어서 주도한 다종위성 수집·처리 플랫폼 신규 구축 프로젝트에서, 기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로 DB에 직접 접근하는 구조였습니다.",
+          situation: "이어서 주도한 다종위성 수집·처리 플랫폼 신규 구축 프로젝트에서, 기존 프로젝트들은 각 서비스(카탈로깅, 작업 관리, 가시화 등)가 ORM으로 DB에 직접 접근하는 구조였습니다.",
           cause: "DB 접근 로직과 자격증명이 모든 서비스에 흩어져 있어 스키마가 바뀌면 여러 서비스를 동시에 수정해야 했고, Python ORM과 Go가 같은 DB를 다룰 때 접근 패턴도 서로 어긋났습니다. 언어별로 각자의 ORM 계층을 개선하는 방법도 있었지만, 스키마가 바뀔 때마다 여러 서비스를 동시에 고쳐야 하는 근본 문제 자체는 해결되지 않는 미봉책이었습니다.",
           actions: [
             "독립 스키마를 새로 짜는 기회를 활용해 DB 접근을 Go 기반 API 한 곳으로 중앙화",
@@ -720,12 +720,12 @@ export const PROFILE_PLATFORM = {
             "물리 서버 설치, K8s 클러스터 구성 직접 결정",
             "다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화 구현",
             "히스토그램 스트레칭 자동화, COG 포맷 적용으로 가시화 성능 개선",
-            "Cleaner 서비스로 등록일 기준 자동 삭제 워크플로우 구축",
+            "등록일 기준 자동 삭제 서비스 구축",
           ],
           result: "베어메탈에서 운영 가능한 시스템까지 인프라 전 과정을 직접 결정한 경험 확보",
           brief: [
             "관리형 인프라 없이 물리 서버 설치부터 시작해야 하는 신규 구축 프로젝트였습니다.",
-            "물리 서버·K8s 클러스터 구성부터 수집기 통합·포맷 변환 자동화·히스토그램 스트레칭·Cleaner 자동 삭제 워크플로우까지 인프라 전 과정을 직접 주도했습니다.",
+            "물리 서버·K8s 클러스터 구성부터 수집기 통합·포맷 변환 자동화·히스토그램 스트레칭·자동 삭제 워크플로우까지 인프라 전 과정을 직접 주도했습니다.",
           ],
         },
       ],

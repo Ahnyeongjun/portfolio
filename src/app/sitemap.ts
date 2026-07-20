@@ -22,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.5,
   }));
 
-  const projectPages = projects.map((project) => ({
+  const projectPages = projects.filter((project) => !project.hidden).map((project) => ({
     url: `${BASE_URL}/projects/${project.id}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,

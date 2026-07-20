@@ -373,7 +373,7 @@ export function ResumeDocument() {
           <div className="sec">
             <div className="sec-h"><span className="no">02</span><span className="t">프로젝트</span></div>
             <div className="career-projs">
-              {P.projects.filter(pr => !pr.badge).map((pr, i) => (
+              {P.projects.map((pr, i) => (
                 <div key={i} className="proj">
                   <div className="proj-head">
                     <div className="proj-top">
