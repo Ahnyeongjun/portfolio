@@ -1,6 +1,6 @@
 ---
 title: "kubeadm으로 온프레미스 Kubernetes 클러스터를 처음부터 세우는 절차"
-description: "VM 2~3대를 준비하는 것부터 kubeadm init, CNI(Calico), MetalLB, 스토리지까지 - 관리형 K8s 없이 클러스터를 처음부터 구축하는 실제 절차와 명령어 정리."
+description: "Kubernetes가 왜 필요한지부터, VM 2~3대 준비, kubeadm init, CNI(Calico), MetalLB, 스토리지, 그리고 선택 확장인 kube-vip HA·Cilium 마이그레이션까지 - 개념과 실제 절차·명령어 정리."
 date: "2026-07-30"
 category: "DevOps"
 tags: ["Kubernetes", "kubeadm", "Calico", "MetalLB", "온프레미스"]
@@ -10,7 +10,28 @@ seriesOrder: 2
 
 ## 목표
 
-VM 2~3대 위에 kubeadm으로 컨트롤플레인 1대 + 워커 1~2대 구성의 클러스터를 세운다. 여기에 CNI(Calico), LoadBalancer(MetalLB), 스토리지(NFS 또는 Longhorn)까지 붙여 "서비스를 배포할 수 있는 최소 상태"를 만드는 게 이 시리즈의 목표다.
+VM 2~3대 위에 kubeadm으로 컨트롤플레인 1대 + 워커 1~2대 구성의 클러스터를 세운다. 여기에 CNI(Calico), LoadBalancer(MetalLB), 스토리지(NFS 또는 Longhorn)까지 붙여 "서비스를 배포할 수 있는 최소 상태"를 만드는 게 이 시리즈의 목표다. (선택 확장으로 kube-vip 컨트롤플레인 HA, Calico→Cilium 마이그레이션도 다룬다.)
+
+## 개념: Kubernetes가 왜 필요한가
+
+서버 한 대에 컨테이너 몇 개를 직접 `docker run`으로 띄우는 건 어렵지 않다. 문제는 서버가 여러 대이고, 그중 하나가 죽었을 때 그 위에 있던 컨테이너를 다른 서버로 옮겨야 하고, 트래픽이 늘면 컨테이너 수를 늘려야 하고, 배포할 때마다 이 모든 걸 손으로 반복해야 한다는 것이다. **Kubernetes는 여러 대의 서버(노드)를 하나의 자원 풀처럼 묶어서, "컨테이너를 몇 개, 어떤 상태로 띄우고 싶다"고 선언만 하면 나머지(배치·재시작·복구)를 대신 해주는 시스템**이다.
+
+클러스터는 역할이 다른 두 종류의 노드로 나뉜다.
+
+```
+컨트롤플레인 (두뇌 - 무엇을 어디에 둘지 결정)
+  ├─ API Server   : 모든 요청(kubectl, kubelet 등)이 지나가는 유일한 창구
+  ├─ etcd         : 클러스터의 모든 상태를 저장하는 분산 DB (보통 홀수 개로 구성 - 과반수 투표로 장애 판단)
+  ├─ Scheduler    : 새로 뜰 파드를 어느 워커 노드에 배치할지 결정
+  └─ Controller Manager : "원하는 상태"(선언한 값)와 "실제 상태"를 계속 비교해서 맞춰나감
+
+워커 노드 (몸 - 실제로 컨테이너가 도는 곳)
+  ├─ kubelet          : 이 노드에서 컨트롤플레인의 지시대로 컨테이너를 실행·감시
+  ├─ 컨테이너 런타임(containerd) : 실제로 컨테이너를 실행하는 엔진
+  └─ kube-proxy        : Service로 들어온 트래픽을 알맞은 파드로 전달 (이 글 뒤쪽 Cilium 절에서 대체 이유를 다룸)
+```
+
+**왜 관리형 Kubernetes(EKS/GKE 등)를 안 쓰고 kubeadm으로 직접 세우는가**: 관리형 서비스는 컨트롤플레인 운영(etcd 백업, API 서버 이중화, 버전 업그레이드) 자체를 클라우드 사업자가 대신 해준다. 그 "대신 해주던 일"이 정확히 무엇이었는지는, 직접 컨트롤플레인을 세우고 고장 내보기 전까지는 실감하기 어렵다 - 이 시리즈의 핵심 학습 목표가 바로 그 부분이다.
 
 ## 사전 준비
 
@@ -69,6 +90,8 @@ sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 ```
 
+`kubeadm`은 클러스터를 세우는 도구, `kubelet`은 각 노드에서 실제로 돌아가며 컨테이너를 관리하는 에이전트, `kubectl`은 사람이 클러스터에 명령을 내리는 CLI다 - 셋은 서로 다른 역할이라 세 개 다 설치해야 한다.
+
 ### 2. 컨트롤플레인 초기화
 
 ```bash
@@ -100,6 +123,8 @@ sudo kubeadm join <컨트롤플레인 IP>:6443 \
 
 ### 4. CNI 설치 - Calico
 
+**CNI(Container Network Interface)란**: Kubernetes 자체는 "파드끼리 서로 다른 노드에 있어도 통신되게 만드는 방법"을 직접 구현하지 않는다. 대신 CNI라는 표준 인터페이스를 정의해두고, 그 구현은 플러그인에 맡긴다. Calico는 그 구현체 중 하나다 - CNI가 없으면 파드는 생성되지만 서로 다른 노드의 파드끼리는 통신할 방법이 없다(워커 노드가 계속 `NotReady`인 이유).
+
 ```bash
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
 kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
@@ -114,7 +139,7 @@ kubectl get pods -n calico-system
 
 ### 5. MetalLB - 온프레미스에서 LoadBalancer 타입 서비스 쓰기
 
-클라우드가 아니므로 `type: LoadBalancer` 서비스에 외부 IP를 배정해줄 주체가 없다. MetalLB가 그 역할을 한다.
+클라우드에서 `type: LoadBalancer` 서비스를 만들면, 클라우드 사업자가 그 뒤에서 실제 로드밸런서 장비를 붙이고 외부 IP를 배정해준다. 온프레미스에는 그 역할을 해줄 사업자가 없다 - **MetalLB가 그 역할을 소프트웨어로 흉내낸다.**
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.8/config/manifests/metallb-native.yaml
@@ -142,7 +167,11 @@ spec:
     - default-pool
 ```
 
+L2 모드는 클러스터 노드 중 하나가 ARP로 "이 IP는 나한테 있다"고 응답하는 방식이다 - 별도 라우터 설정 없이 가장 단순하게 시작할 수 있지만, 그 노드가 죽으면 잠깐의 전환 시간이 생긴다는 트레이드오프가 있다.
+
 ### 6. 스토리지 - NFS 또는 Longhorn
+
+파드는 기본적으로 상태가 없다 - 파드가 재시작되면 그 안에 쓴 파일도 함께 사라진다. DB처럼 데이터를 유지해야 하는 워크로드는 파드 바깥의 별도 저장소에 데이터를 두고, 파드가 그걸 마운트해서 쓴다. `PersistentVolumeClaim`은 "이 정도 용량과 특성의 저장공간을 달라"는 요청서고, `StorageClass`는 그 요청을 실제 저장소 구현(NFS/Longhorn 등)에 연결해주는 설정이다.
 
 **NFS (더 단순, 단일 장애점 있음)**: 별도 NFS 서버(또는 노드 중 하나)에 `nfs-kernel-server`를 띄우고, `nfs-subdir-external-provisioner`를 Helm으로 설치해 `StorageClass`를 등록한다.
 
@@ -183,6 +212,87 @@ kubectl delete svc test-lb
 
 스토리지는 `PersistentVolumeClaim`을 하나 만들어 `Bound` 상태로 전환되는지 확인한다.
 
+## (선택 확장) kube-vip로 컨트롤플레인 3노드 HA
+
+**개념**: 컨트롤플레인이 1대뿐이면, 그 노드가 죽는 순간 클러스터 전체를 조작할 방법이 사라진다 - `kubectl`도 안 되고, 새 파드 스케줄링도 멈춘다. 컨트롤플레인을 3대로 늘리면 etcd가 과반수(3개 중 2개) 투표로 정상 여부를 판단하기 때문에 1대가 죽어도 나머지 둘로 유지된다. 문제는 "3대 중 지금 어디로 접속해야 하는가"다 - 특정 노드의 IP를 그대로 쓰면 그 노드가 죽었을 때 접속 주소 자체가 사라진다.
+
+kube-vip는 3대 앞에 **고정된 가상 IP(VIP)**를 두고, 살아있는 노드 중 하나가 리더 선출(leader election)로 그 VIP를 응답하도록 자동으로 넘겨준다. 클라이언트(`kubectl`, 워커의 kubelet 등)는 항상 같은 VIP로만 접속하면 된다.
+
+```yaml
+# /etc/kubernetes/manifests/kube-vip.yaml (각 컨트롤플레인 노드에 동일하게 배치 - static pod)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-vip
+  namespace: kube-system
+spec:
+  containers:
+    - name: kube-vip
+      image: ghcr.io/kube-vip/kube-vip:v0.8.0
+      args: ["manager"]
+      env:
+        - {name: vip_arp, value: "true"}
+        - {name: address, value: "<VIP>"}
+        - {name: vip_interface, value: "eth0"}
+        - {name: cp_enable, value: "true"}
+        - {name: cp_namespace, value: "kube-system"}
+      securityContext:
+        capabilities: {add: ["NET_ADMIN", "NET_RAW"]}
+      volumeMounts:
+        - {name: kubeconfig, mountPath: /etc/kubernetes/admin.conf}
+  hostNetwork: true
+  volumes:
+    - {name: kubeconfig, hostPath: {path: /etc/kubernetes/admin.conf}}
+```
+
+컨트롤플레인 노드 2·3대째는 `kubeadm join --control-plane`(1단계에서 `--upload-certs`로 받은 인증서 키 사용)으로 추가한다.
+
+```bash
+sudo kubeadm join <VIP>:6443 \
+  --token <토큰> \
+  --discovery-token-ca-cert-hash sha256:<해시> \
+  --control-plane --certificate-key <upload-certs 키>
+```
+
+**검증 실험 - 컨트롤플레인 1대 강제 종료**:
+
+```bash
+# 리더 역할을 하고 있는 컨트롤플레인 노드를 강제 종료
+sudo shutdown -h now
+
+# 다른 노드에서 확인할 것
+kubectl get nodes                 # VIP를 통한 kubectl 접속이 계속 되는지
+kubectl -n kube-system get pods -l component=etcd   # 남은 etcd 멤버들이 여전히 정상인지
+# 죽은 노드를 되살린 뒤 etcd에 다시 합류하는지도 확인
+```
+
+## (선택 확장) Calico → Cilium 마이그레이션
+
+**개념**: CNI는 교체 가능한 표준 인터페이스이므로, 다른 구현체로 바꿀 수 있다(다만 무중단 교체는 까다로워 보통 재구축이 안전하다). 이 교체가 왜 의미 있는지 이해하려면 먼저 kube-proxy가 하는 일을 알아야 한다 - kube-proxy는 Service가 생성·변경될 때마다 **모든 노드의 iptables 규칙을 다시 계산해서 갱신**하는 방식으로 트래픽을 라우팅한다. 서비스·노드 수가 늘어날수록 이 규칙 갱신 자체가 부하가 된다.
+
+**Cilium**은 eBPF(리눅스 커널 안에서 안전하게 실행되는 프로그램)를 기반으로 하는 CNI로, kube-proxy가 iptables로 하던 일을 커널 레벨에서 직접 처리해 더 빠르고, L3/L4뿐 아니라 L7(HTTP 경로·메서드 단위)까지 네트워크 정책을 걸 수 있다.
+
+```bash
+# 기존 Calico 제거 (재구축 권장 - 무중단 교체는 리스크가 큼)
+kubectl delete -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
+kubectl delete -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+
+# Cilium 설치 (kube-proxy 완전 대체 모드)
+helm repo add cilium https://helm.cilium.io/
+helm install cilium cilium/cilium --version 1.16.0 \
+  --namespace kube-system \
+  --set kubeProxyReplacement=true \
+  --set k8sServiceHost=<컨트롤플레인 IP 또는 VIP> \
+  --set k8sServicePort=6443
+```
+
+```bash
+cilium status                 # kube-proxy replacement가 "True"로 뜨는지 확인
+cilium connectivity test      # 파드 간 통신, 정책 적용이 정상인지 종합 검증
+```
+
+Cilium의 관측 도구인 **Hubble**은 실제 트래픽 흐름을 시각화해준다 - 이건 시리즈 4(관측과 장애 대응)에서 다른 관측 스택(Prometheus/Grafana)과 함께 붙여본다.
+
 ## 체크리스트
 
 - [ ] VM 2~3대에 kubeadm으로 클러스터 구축
@@ -190,3 +300,5 @@ kubectl delete svc test-lb
 - [ ] MetalLB, 스토리지(NFS 또는 Longhorn) 구성
 - [ ] 클러스터 파괴 후 재구축 1회 (`kubeadm reset` → 위 절차 반복)
 - [ ] (선택) 클라우드 K8s와 하이브리드 연동
+- [ ] (선택 확장) kube-vip로 컨트롤플레인 3노드 HA + 강제 종료 실험
+- [ ] (선택 확장) Calico → Cilium 마이그레이션 + `cilium connectivity test` 통과

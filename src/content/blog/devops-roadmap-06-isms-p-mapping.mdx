@@ -1,9 +1,9 @@
 ---
 title: "ISMS-P 인프라 영역 심사를 가정하고 내 클러스터의 증적을 만드는 절차"
-description: "KISA 인증기준 인프라 관련 항목을 매핑표로 정리하고, NetworkPolicy·TLS·SealedSecret·Loki 보존 정책을 항목별 증적으로 연결하는 실제 작업 절차."
+description: "ISMS-P가 뭔지, 증적이 뭔지부터 KISA 인증기준 인프라 관련 항목을 매핑표로 정리하고, NetworkPolicy·TLS·SealedSecret·Loki 보존 정책을 항목별 증적으로 연결하는 절차, 선택 확장인 OpenBao+ESO 시크릿 감사 로그까지."
 date: "2026-08-04"
 category: "Security"
-tags: ["ISMS-P", "NetworkPolicy", "보안 컴플라이언스", "Kubernetes"]
+tags: ["ISMS-P", "NetworkPolicy", "보안 컴플라이언스", "Kubernetes", "OpenBao"]
 series: "DevOps 학습 로드맵"
 seriesOrder: 7
 ---
@@ -11,6 +11,14 @@ seriesOrder: 7
 ## 목표
 
 이 시리즈에서 "인증"은 로그인(authentication)이 아니라 **심사(certification) 대응**이다. 지금까지 만든 인프라(NetworkPolicy, TLS, SealedSecret, Loki)를 심사원이 물었을 때 무엇을 열어 보여줄지 - 증적(evidence) 관점으로 다시 정리하는 게 목표다.
+
+## 개념: ISMS-P란 무엇인가, 그리고 "증적"이란
+
+**ISMS-P(정보보호 및 개인정보보호 관리체계 인증)**는 조직이 정보보호·개인정보보호를 위한 관리 체계를 제대로 갖추고 운영하는지 국가 기관(KISA)이 심사해서 인증해주는 제도다. 여기서 "인증"은 로그인 인증이 아니라 **자격을 공식적으로 확인해주는 절차(certification)**를 뜻한다 - 회사가 "우리는 이런 기준들을 지키고 있다"를 스스로 주장하는 게 아니라, 외부 심사원이 실제로 확인하고 도장을 찍어주는 것이다.
+
+심사는 "이런 정책이 있다"는 말로 끝나지 않는다. 심사원은 항상 **증적(evidence)** - 그 정책이 실제로 적용되고 있다는 걸 보여주는 구체적인 자료(설정 화면, 로그, 정책 파일, 테스트 결과) - 을 요구한다. 예를 들어 "서비스 간 통신을 제한하고 있다"는 주장은 `NetworkPolicy` YAML 파일 자체, 그리고 실제로 차단되는 걸 보여주는 테스트 로그가 있어야 증적으로 인정된다. **구현이 있다는 것과 증적이 준비돼 있다는 것은 다른 문제**라는 게 이 시리즈 전체를 관통하는 전제다.
+
+**NetworkPolicy란**: Kubernetes 기본값은 "클러스터 안의 모든 파드가 서로 통신 가능"이다. NetworkPolicy는 특정 파드에 대해 "이 출발지에서 오는 트래픽만 허용한다"는 규칙을 선언하는 리소스다 - 방화벽 규칙을 파드 단위로 세밀하게 거는 것과 비슷하다. 아래 2번에서 이걸로 실제 통신 매트릭스를 강제한다.
 
 ## 실제 구축 절차
 
@@ -23,9 +31,9 @@ KISA 「ISMS-P 인증기준 안내서」의 인프라 관련 항목을 확인하
 |---|---|---|---|
 | 2.5 인증 및 권한관리 | Keycloak (정책·MFA·RBAC) | Realm 정책 화면, 클라이언트별 Role | 완료 |
 | 2.6 접근통제 | Envoy SecurityPolicy, NetworkPolicy | HTTPRoute/Policy 정의, 통신 매트릭스 | 진행중 |
-| 2.7 암호화 적용 | TLS, SealedSecret | 인증서 체계, 시크릿 관리 흐름 | 진행중 |
+| 2.7 암호화 적용 | TLS, SealedSecret, (확장) OpenBao+ESO | 인증서 체계, 시크릿 관리 흐름, 시크릿 접근 감사 로그 | 진행중 |
 | 2.9 시스템·서비스 운영관리 | Loki 로그 보존, 백업 | 보존 정책 설정, 로그 접근 통제 | 진행중 |
-| 2.10 시스템·서비스 보안관리 | 이미지 스캔, 패치 이력 | CI 스캔 결과, 업그레이드 기록 | 미착수 |
+| 2.10 시스템·서비스 보안관리 | Harbor+Trivy 이미지 스캔, 패치 이력 | CI 스캔 결과, 취약 이미지 배포 차단 정책, 업그레이드 기록 | 미착수 |
 ```
 
 "구현"과 "증적"을 분리해서 적는 게 핵심이다 - NetworkPolicy를 적용했다는 사실 자체는 구현이고, 심사원에게 실제로 보여줄 것(정책 YAML, 실제 차단된 통신 로그, 통신 매트릭스 문서)은 증적이다. 구현은 있는데 증적이 정리 안 된 항목이 실제로 제일 많다.
@@ -134,6 +142,52 @@ A. 전체 Git 히스토리에 대한 grep 검증 결과 (위 3번 절차) +
 
 매핑표의 "상태" 컬럼이 전부 "완료"가 될 때까지 반복한다. 각 항목은 다음 세 가지가 모두 준비됐을 때만 "완료"로 표시한다 - **구현이 실제로 적용돼 있는가, 증적 자료가 실제로 존재하는가, 그 증적을 5분 안에 찾아서 보여줄 수 있는가.**
 
+## (선택 확장) SealedSecret → OpenBao + ESO 마이그레이션
+
+**문제**: SealedSecret은 "암호화된 값을 Git에 안전하게 커밋하는 것"에는 강하지만, **누가 언제 그 시크릿을 열람·변경했는지에 대한 감사 로그를 남기지 않는다.** 2.7 항목의 증적으로 "시크릿 관리 흐름"까지는 보여줄 수 있어도, "시크릿 접근 이력" 같은 더 엄격한 증적을 요구받으면 SealedSecret만으로는 답이 안 된다.
+
+**개념 - 시크릿 매니저란**: OpenBao(HashiCorp Vault 계열의 오픈소스 시크릿 관리 도구)는 시크릿을 중앙에 저장하고, 누가 언제 어떤 시크릿에 접근했는지 감사 로그를 남기며, 주기적인 자동 회전(rotation)까지 지원하는 전용 시스템이다. 문제는 서비스가 이 시크릿 저장소를 직접 호출하게 만들면 코드가 특정 도구에 종속된다는 것 - 그래서 **External Secrets Operator(ESO)**가 중간에서 OpenBao의 값을 읽어 평범한 Kubernetes Secret으로 동기화해준다. 서비스 입장에서는 여전히 일반 Secret을 쓰는 것과 다르지 않다.
+
+```bash
+helm repo add openbao https://openbao.github.io/openbao-helm
+helm install openbao openbao/openbao --namespace security --create-namespace
+
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets --namespace security
+```
+
+```yaml
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: openbao-backend
+  namespace: app
+spec:
+  provider:
+    vault:
+      server: "http://openbao.security:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        tokenSecretRef:
+          name: openbao-token
+          key: token
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: api-server-db-secret
+  namespace: app
+spec:
+  secretStoreRef: {name: openbao-backend, kind: SecretStore}
+  target: {name: api-server-db-secret}
+  data:
+    - secretKey: DB_PASSWORD
+      remoteRef: {key: app/db, property: password}
+```
+
+**검증**: OpenBao에서 시크릿 값을 바꾸고, ESO의 다음 동기화 주기 후 Kubernetes Secret이 자동으로 갱신되는지 확인한다. 그리고 OpenBao의 감사 로그(audit log)를 켜서 "누가 이 시크릿을 읽었는지"가 실제로 기록되는지 확인한다 - 이 감사 로그 자체가 SealedSecret으로는 만들 수 없었던 2.7 항목의 새 증적이다.
+
 ## 체크리스트
 
 - [ ] KISA 인증기준 인프라 관련 항목 정리 → mapping.md 작성
@@ -141,3 +195,4 @@ A. 전체 Git 히스토리에 대한 grep 검증 결과 (위 3번 절차) +
 - [ ] 암호화: TLS·SealedSecret 증적 정리 + Git 히스토리 검증
 - [ ] 로그: Loki 보존 정책 설정 + 접근 통제 증적 정리
 - [ ] 모의 심사: 항목별 문답 형식으로 문서화
+- [ ] (선택 확장) OpenBao + ESO 마이그레이션 + 감사 로그로 시크릿 접근 이력 확보
