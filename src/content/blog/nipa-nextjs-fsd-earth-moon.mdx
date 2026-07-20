@@ -1,0 +1,74 @@
+---
+title: "이미지 하나로 지구 뷰어와 달 뷰어를 동시에 배포하기"
+description: "Thymeleaf SSR의 페이지 경계 문제를 Next.js 15 + FSD로 정리하고, 같은 Docker 이미지에 환경변수 하나만 바꿔 지구 변화탐지 뷰어와 달 지도 뷰어 두 종류를 배포한 방법."
+date: "2026-07-28"
+category: "Architecture"
+tags: ["Next.js", "FSD", "CesiumJS", "프론트엔드 아키텍처", "Kubernetes"]
+series: "위성 변화탐지 플랫폼 아키텍처"
+seriesOrder: 10
+---
+
+## 문제: 페이지 경계가 없는 프론트엔드
+
+기존 웹 뷰어는 Thymeleaf 기반 서버사이드 렌더링이었다. 문제는 어떤 템플릿이 어떤 데이터에 의존하는지, 한 페이지를 고치면 어디까지 영향이 가는지가 코드 구조만 봐서는 드러나지 않는다는 것이었다. 컴포넌트나 기능 단위의 경계가 없다 보니 변경 영향 범위를 예측하기 어려웠고, 타입 안정성도 없어서 데이터 모양이 바뀌면 런타임에야 문제가 드러났다.
+
+여기에 새로운 요구사항이 겹쳤다 - 같은 플랫폼에서 **지구 변화탐지 뷰어**와 **달 지도 뷰어(아폴로 임무 경로, 크레이터 카탈로그)**라는, UI는 다르지만 기반 기술(CesiumJS 3D 지도)은 같은 두 종류의 화면을 서빙해야 했다. 완전히 별도 프로젝트로 만들면 중복이 늘고, 하나의 프로젝트에 다 우겨넣으면 안 쓰는 기능(달 모드에서 지구 통계 코드, 지구 모드에서 달 카탈로그 코드)까지 번들에 딸려간다.
+
+## 시도한 것
+
+### Next.js 15 + FSD로 경계를 코드 구조에 새기기
+
+프론트엔드를 이번에 처음으로 Next.js 15 + **FSD(Feature-Sliced Design)** 구조로 새로 짰다. FSD는 기능(feature) 단위로 디렉토리를 나누고, 계층(app/pages/widgets/features/entities/shared) 간 의존 방향을 강제하는 아키텍처 패턴이다. 지구 변화탐지, 지역 통계, 달 지도를 각각 독립된 feature 슬라이스로 분리했다 - 한 슬라이스를 고쳐도 다른 슬라이스의 코드는 건드리지 않는다는 게 구조적으로 보장된다.
+
+### 같은 이미지, 다른 배포 - 환경변수 하나의 트릭
+
+지구 뷰어와 달 뷰어를 별도 레포·별도 이미지로 관리하는 대신, **같은 Docker 이미지**를 쓰고 Kubernetes 파드의 환경변수 하나로 분기하는 방식을 택했다.
+
+```yaml
+# viewer-nipa.pod.yaml (지구 변화탐지 뷰어)
+env:
+  - name: MAP_TYPE
+    value: "EARTH"
+  - name: BACKEND_API_URL
+    value: "http://api-server.nipa.svc.cluster.local"
+---
+# viewer-moon.pod.yaml (달 지도 뷰어)
+env:
+  - name: MAP_TYPE
+    value: "MOON"
+  - name: BACKEND_API_URL
+    value: "http://api-server.nipa.svc.cluster.local"
+```
+
+`BACKEND_API_URL`은 서버사이드에서만 사용되고 클라이언트에 노출되지 않는다 - 백엔드 주소를 프록시 뒤에 숨기기 위해서다. `MAP_TYPE`은 어떤 뷰어 모드로 렌더링할지를 결정하는데, 여기서 중요한 건 **번들 크기 관리**다. 두 모드의 코드가 하나의 번들에 다 들어가 있으면, 지구 모드로 접속한 사용자도 달 지도에 필요한 JS(크레이터 카탈로그, EVA 경로 렌더링 로직)를 다운로드하게 된다.
+
+```tsx
+// ViewerWidget.tsx
+const MoonViewer = dynamic(() => import("@/widgets/moon-viewer"), {
+  ssr: false,
+});
+const EarthViewer = dynamic(() => import("@/widgets/earth-viewer"), {
+  ssr: false,
+});
+
+export function ViewerWidget() {
+  const mapType = process.env.MAP_TYPE;
+  return mapType === "MOON" ? <MoonViewer /> : <EarthViewer />;
+}
+```
+
+`next/dynamic`으로 감싸두면, `MAP_TYPE=EARTH`로 배포된 인스턴스는 `MoonViewer` 청크 자체를 다운로드하지 않는다. 같은 코드베이스, 같은 이미지에서 두 종류의 배포가 서로의 번들 무게를 짊어지지 않는 구조다.
+
+### 지구 모드 - PostGIS 공간 조인으로 지역 통계
+
+지구 모드는 변화탐지 결과 폴리곤과 행정구역 경계를 PostGIS 공간 조인으로 엮어, 시·도/시·군·구/사용자 지정 영역(AOI) 단위로 변화 면적·비율을 집계한다. 지도를 클릭하면 해당 지역의 시계열 변화 추이 차트가 뜨고, 임계값을 넘는 변화가 감지된 지역은 히트맵으로 강조된다.
+
+### 달 모드 - CesiumJS의 레이어 관리 특이점
+
+달 모드는 아폴로 임무 EVA(선외활동) 경로, IAU 크레이터 카탈로그(GeoJSON), 착륙 지점을 JAXA SELENE·NASA LRO 타일과 NASA Apollo 11-17 좌표 데이터로 렌더링한다. 여기서 CesiumJS의 제약 하나를 우회해야 했다 - **레이어 순서를 네이티브하게 재정렬하는 API가 없다.** `imageryLayers` 컬렉션을 직접 조작해서 순서를 관리했고, 레이어를 껐다 켤 때도 삭제·재생성 대신 `layer.show = false`로 숨기는 방식을 썼다 - 삭제하면 WebGL 텍스처가 매번 다시 로드돼야 하기 때문이다. MVT, MBTiles, ImageLayer, 달 지도 전용 레이어처럼 서로 다른 방식의 레이어를 하나의 공통 인터페이스로 추상화해서, 새로운 레이어 종류가 추가되어도 기존 코드를 건드리지 않고 확장할 수 있게 했다.
+
+## 결과
+
+Thymeleaf에서 Next.js + FSD로 옮기면서 얻은 가장 큰 변화는 "이 코드를 고치면 어디까지 영향이 가는가"라는 질문에 구조적으로 답할 수 있게 됐다는 것이다. feature 슬라이스 경계 덕분에 지구 통계 로직을 고칠 때 달 지도 코드를 열어볼 필요가 없다.
+
+같은 이미지로 두 종류의 뷰어를 배포하는 방식은 운영 부담을 크게 줄였다 - 별도 레포·별도 CI 파이프라인 없이 파드 매니페스트의 환경변수 두 줄만 다르다. 그리고 `dynamic import` 덕분에 이 통합이 번들 크기 증가로 이어지지 않았다 - 지구 모드 사용자는 여전히 지구 모드에 필요한 코드만 받는다.
