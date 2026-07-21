@@ -1,10 +1,10 @@
 ════════════════════════════════════════
 안영준 · 인프라 엔지니어
 ════════════════════════════════════════
-EMAIL      ahn479512@gmail.com
-GITHUB     github.com/Ahnyeongjun
-PORTFOLIO  ahnyoungjun.site
-BASE       서울, Korea
+EMAIL : ahn479512@gmail.com
+GITHUB : github.com/Ahnyeongjun
+PORTFOLIO : ahnyoungjun.site
+BASE : 서울, Korea
 ────────────────────────────────────────
 
 5년차 인프라 엔지니어입니다. kubeadm으로 베어메탈 K8s를 직접 부트스트랩하고, GPUShare로 GPU 4장에서 70파드 병렬 추론, 메시지 큐 전환으로 처리 워커 1개→15개까지 수치로 증명되는 성과를 냈습니다. 관리형 서비스 없이 클러스터를 바닥부터 설계·운영합니다.
@@ -62,9 +62,9 @@ BASE       서울, Korea
 ────────────────────────────────────────
 
 ● NIPA 위성 변화탐지 플랫폼 - 클러스터·메시징 인프라 고도화
-  기간      2025.07. ~ 진행 중
-  역할      주도 (팀 5명)
-  기술스택   Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · PyTorch · Cilium · kube-vip · OpenBao · CloudNativePG · ArgoCD · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
+  기간 : 2025.07. ~ 진행 중
+  역할 : 주도 (팀 5명)
+  기술스택 : Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · PyTorch · Cilium · kube-vip · OpenBao · CloudNativePG · ArgoCD · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
 
   DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를 메시지 큐 기반 비동기 아키텍처로 재설계하고, MSA 전환에 맞춰 클러스터 네트워킹·시크릿·배포·관측성까지 인프라 전 영역을 고도화했습니다.
 
@@ -80,9 +80,9 @@ BASE       서울, Korea
 
 
 ● 항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축
-  기간      2023.10. ~ 2025.07.
-  역할      주도 (팀 3명)
-  기술스택   Kubernetes · Go · Python · SaltStack · Aliyun GPUShare · PostgreSQL · Zabbix · Nginx · Rocky Linux · Jenkins · Nexus
+  기간 : 2023.10. ~ 2025.07.
+  역할 : 주도 (팀 3명)
+  기술스택 : Kubernetes · Go · Python · SaltStack · Aliyun GPUShare · PostgreSQL · Zabbix · Nginx · Rocky Linux · Jenkins · Nexus
 
   회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.
 
@@ -113,9 +113,9 @@ BASE       서울, Korea
 
 
 ● 국가보안기관 위성영상 AI 처리 플랫폼 운영·신규 구축
-  기간      2024.07. ~ 진행 중
-  역할      주도 (팀 6명)
-  기술스택   Kubernetes · Docker · Rocky Linux · Go · PostgreSQL · GDAL · Zabbix · Shell · Jenkins · Nexus
+  기간 : 2024.07. ~ 진행 중
+  역할 : 주도 (팀 6명)
+  기술스택 : Kubernetes · Docker · Rocky Linux · Go · PostgreSQL · GDAL · Zabbix · Shell · Jenkins · Nexus
 
   인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 무중단 운영하는 위성영상 AI 처리 플랫폼 운영을 맡았고(2024.07~), 이어서 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다(2025.06~2025.12).
 
@@ -132,7 +132,7 @@ BASE       서울, Korea
   3) DB 접근 계층 중앙화(신규 구축) → 스키마 변경 영향 API 레이어로 축소
      문제  서비스마다 ORM으로 DB에 직접 접근해 스키마 변경 시 여러 서비스를 동시 수정해야 했고, 언어별 ORM 개선만으로는 이 구조적 문제가 해결되지 않았습니다.
      해결  DB 접근을 Go 기반 API 한 곳으로 중앙화해, 스키마 변경 영향 범위를 API 레이어 하나로 좁히고 언어 무관하게 동일한 방식으로 DB에 접근하도록 만들었습니다.
-     결과  스키마 변경 영향 범위가 API 레이어 한 곳으로 축소, 서비스는 언어와 무관하게 동일한 방식으�로 DB 접근 가능
+     결과  스키마 변경 영향 범위가 API 레이어 한 곳으로 축소, 서비스는 언어와 무관하게 동일한 방식으로 DB 접근 가능
 
   4) 베어메탈부터 시작한 신규 인프라 구축
      문제  관리형 인프라 없이 물리 서버 설치부터 시작해야 하는 신규 구축 프로젝트였습니다.
@@ -169,7 +169,7 @@ FESI 13기 - 백엔드 멘토링  (codeit · 2026)
 ────────────────────────────────────────
 06. 자격증
 ────────────────────────────────────────
-SQL개발자(SQLD)      · 2025.12. · 합격 · 한국데이터산업진흥원
-정보처리기사          · 2025.06. · 합격 · 한국산업인력공단
-정보기기운용기능사    · 2021.12. · 합격 · 한국산업인력공단
-프로그래밍기능사      · 2020.12. · 합격 · 한국산업인력공단
+SQL개발자(SQLD) · 2025.12. · 합격 · 한국데이터산업진흥원
+정보처리기사 · 2025.06. · 합격 · 한국산업인력공단
+정보기기운용기능사 · 2021.12. · 합격 · 한국산업인력공단
+프로그래밍기능사 · 2020.12. · 합격 · 한국산업인력공단

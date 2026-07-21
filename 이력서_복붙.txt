@@ -1,10 +1,10 @@
 ════════════════════════════════════════
 안영준 · 풀스택 개발자 (백엔드 메인)
 ════════════════════════════════════════
-EMAIL      ahn479512@gmail.com
-GITHUB     github.com/Ahnyeongjun
-PORTFOLIO  ahnyoungjun.site
-BASE       서울, Korea
+EMAIL : ahn479512@gmail.com
+GITHUB : github.com/Ahnyeongjun
+PORTFOLIO : ahnyoungjun.site
+BASE : 서울, Korea
 ────────────────────────────────────────
 
 5년차 백엔드 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.
@@ -74,9 +74,9 @@ BASE       서울, Korea
 ────────────────────────────────────────
 
 ● 국가보안기관 위성영상 시스템 - 개발·운영·신규 구축
-  기간      2022.05. ~ 진행 중
-  역할      주도 (팀 6명)
-  기술스택   Spring Boot · Java · MyBatis · PostGIS · Redis · Spring Session · Go · Kubernetes · Zabbix · Jenkins · Nexus
+  기간 : 2022.05. ~ 진행 중
+  역할 : 주도 (팀 6명)
+  기술스택 : Spring Boot · Java · MyBatis · PostGIS · Redis · Spring Session · Go · Kubernetes · Zabbix · Jenkins · Nexus
 
   위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 무중단 운영, 신규 플랫폼 구축까지 담당했습니다.
 
@@ -102,9 +102,9 @@ BASE       서울, Korea
 
 
 ● 항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축
-  기간      2023.10. ~ 2025.07.
-  역할      주도 (팀 3명)
-  기술스택   Spring Boot · Go · PyTorch · FastAPI · ONNX Runtime · Kubernetes · Aliyun GPUShare · MyBatis · Redis · Salt-Stack · Jenkins · Nexus
+  기간 : 2023.10. ~ 2025.07.
+  역할 : 주도 (팀 3명)
+  기술스택 : Spring Boot · Go · PyTorch · FastAPI · ONNX Runtime · Kubernetes · Aliyun GPUShare · MyBatis · Redis · Salt-Stack · Jenkins · Nexus
 
   다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·자체 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.
 
@@ -125,9 +125,9 @@ BASE       서울, Korea
 
 
 ● NIPA 위성 변화탐지 플랫폼 - MSA 설계
-  기간      2025.07. ~ 진행 중
-  역할      주도 (팀 5명)
-  기술스택   RabbitMQ · Next.js 15 · TypeScript · CesiumJS · FastAPI · Go · ONNX Runtime · Kubernetes · Envoy Gateway · Keycloak · Cilium · ArgoCD · Pulp · OpenTelemetry · OpenBao
+  기간 : 2025.07. ~ 진행 중
+  역할 : 주도 (팀 5명)
+  기술스택 : RabbitMQ · Next.js 15 · TypeScript · CesiumJS · FastAPI · Go · ONNX Runtime · Kubernetes · Envoy Gateway · Keycloak · Cilium · ArgoCD · Pulp · OpenTelemetry · OpenBao
 
   두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계했습니다.
 
@@ -143,9 +143,9 @@ BASE       서울, Korea
 
 
 ● 드론 객체탐지 시스템 - ROS1 → ROS2 마이그레이션
-  기간      2026.07.
-  역할      주도 (팀 2명)
-  기술스택   ROS2 · rclpy · Python · Docker · PyTorch · pytest
+  기간 : 2026.07.
+  역할 : 주도 (팀 2명)
+  기술스택 : ROS2 · rclpy · Python · Docker · PyTorch · pytest
 
   드론 탑재 RealSense 카메라로 폭발물·화재·부상자를 탐지해 GCS로 전송하는 시스템을 ROS1 Noetic에서 ROS2 Humble로 마이그레이션했습니다. 시스템 아키텍처를 역분석·문서화하고, 격리 구조 재설계부터 회귀 테스트 구축까지 담당했습니다.
 
@@ -204,7 +204,7 @@ FESI 13기 - 백엔드 멘토링  (codeit · 2026)
 ────────────────────────────────────────
 06. 자격증
 ────────────────────────────────────────
-SQL개발자(SQLD)      · 2025.12. · 합격 · 한국데이터산업진흥원
-정보처리기사          · 2025.06. · 합격 · 한국산업인력공단
-정보기기운용기능사    · 2021.12. · 합격 · 한국산업인력공단
-프로그래밍기능사      · 2020.12. · 합격 · 한국산업인력공단
+SQL개발자(SQLD) · 2025.12. · 합격 · 한국데이터산업진흥원
+정보처리기사 · 2025.06. · 합격 · 한국산업인력공단
+정보기기운용기능사 · 2021.12. · 합격 · 한국산업인력공단
+프로그래밍기능사 · 2020.12. · 합격 · 한국산업인력공단
