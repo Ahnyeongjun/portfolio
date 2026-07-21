@@ -308,6 +308,7 @@ export function PortfolioDocument() {
             <div className="w-card-h">About</div>
             <div className="w-about-row"><span className="k">EMAIL</span><span className="v">{P.email}</span></div>
             <div className="w-about-row"><span className="k">GITHUB</span><span className="v">{P.github}</span></div>
+            <div className="w-about-row"><span className="k">PORTFOLIO</span><a className="v" href={P.portfolioUrl} target="_blank" rel="noopener noreferrer">{P.portfolio}</a></div>
             <div className="w-about-row"><span className="k">BASE</span><span className="v">{P.location}</span></div>
             <div className="w-about-row"><span className="k">CAREER</span><span className="v">{P.career.company} · 5년</span></div>
           </div>

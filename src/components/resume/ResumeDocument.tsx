@@ -5,8 +5,8 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { PROFILE, PROFILE_PLATFORM } from "@/data/profileDoc";
 
 const VARIANTS = {
-  backend: { label: "백엔드", data: PROFILE },
-  platform: { label: "플랫폼", data: PROFILE_PLATFORM },
+  backend: { label: "풀스택", data: PROFILE },
+  platform: { label: "인프라", data: PROFILE_PLATFORM },
 } as const;
 type Variant = keyof typeof VARIANTS;
 
@@ -325,6 +325,7 @@ export function ResumeDocument() {
               <div className="hd-contact">
                 <div className="row"><span className="ck">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="row"><span className="ck">GITHUB</span><span className="v">{P.github}</span></div>
+                <div className="row"><span className="ck">PORTFOLIO</span><a className="v" href={P.portfolioUrl} target="_blank" rel="noopener noreferrer">{P.portfolio}</a></div>
                 <div className="row"><span className="ck">BASE</span><span className="v">{P.location}</span></div>
               </div>
             </div>
