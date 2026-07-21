@@ -54,6 +54,7 @@ const CSS = `
 .rallit-root .hd-photo { width:110px; height:110px; flex-shrink:0; border-radius:50%; overflow:hidden; box-shadow:0 2px 12px rgba(20,22,28,0.14); }
 .rallit-root .hd-photo img { display:block; width:100%; height:100%; object-fit:cover; }
 .rallit-root .hd-rule { height:2px; background:var(--ink); margin:13px 0 0; }
+.rallit-root .tagline { margin-top:14px; padding-bottom:14px; border-bottom:1px solid var(--line); font-size:14.5px; font-weight:700; color:var(--ink); line-height:1.6; letter-spacing:-0.02em; }
 .rallit-root .summary { margin-top:15px; display:flex; flex-direction:column; gap:12px; }
 .rallit-root .sm-head { font-size:14.5px; font-weight:800; color:var(--ink); line-height:1.5; letter-spacing:-0.025em; margin-bottom:6px; }
 .rallit-root .sm-body { font-size:13px; color:var(--ink-2); line-height:1.75; }
@@ -331,6 +332,7 @@ export function ResumeDocument() {
             </div>
           </div>
           <div className="hd-rule" />
+          <div className="tagline">{P.tagline}</div>
 
           <div className="summary">
             {P.summary.map((s, i) => (

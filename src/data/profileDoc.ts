@@ -42,7 +42,7 @@ export const PROFILE = {
   location: "서울, Korea",
   military: "면제",
 
-  tagline: "5년간 국가기관 납품 플랫폼의 백엔드를 중심으로 프론트엔드·인프라까지 전 영역을 직접 맡아, 구조적 병목을 파고들어 아키텍처 개선으로 수치를 바꿔온 풀스택 개발자입니다.",
+  tagline: "5년차 백엔드 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.",
   summary: [
     {
       head: "대규모 요청에도 무너지지 않는 API를 만듭니다",
@@ -100,6 +100,9 @@ export const PROFILE = {
             text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환",
           },
           {
+            text: "CDC·Outbox 아키텍처 팀 내 설명 - 신규 도입 배경·개념 전파",
+          },
+          {
             text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원",
           },
           {
@@ -141,15 +144,9 @@ export const PROFILE = {
           {
             text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
           },
-        ],
-      },
-      {
-        title: "사내 자동화",
-        period: "2026.03 ~ 진행 중",
-        items: [
-          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
-          { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
-          { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
+          {
+            text: "MSA·메시지 큐·FSD 프론트 아키텍처 팀 내 설명 - 신규 아키텍처 도입 배경 공유",
+          },
         ],
       },
       {
@@ -159,6 +156,15 @@ export const PROFILE = {
           { text: "ROS1(catkin/rospy) → ROS2(colcon/rclpy) 전체 패키지 마이그레이션 설계·구현" },
           { text: "ROS_DOMAIN_ID 기반 멀티 드론 격리 재설계 - 순수 로직 모듈화 + 단위 테스트 검증" },
           { text: "실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과" },
+        ],
+      },
+      {
+        title: "사내 자동화",
+        period: "2026.03 ~ 진행 중",
+        items: [
+          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
+          { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
+          { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
         ],
       },
     ] as CareerGroup[],
@@ -522,12 +528,10 @@ export const PROFILE_PLATFORM = {
         title: "KARI 클러스터 인프라·비동기 파이프라인 구축",
         period: "2023.10 ~ 2025.07",
         items: [
-          { text: "관리형 K8s 없는 온프레미스 환경에 kubeadm으로 클러스터 직접 부트스트랩" },
-          { text: "SaltStack Minion 기반 노드 자원 인지형 워크로드 배치 - 메모리 50% 미만 노드에만 할당, OOM 사전 차단" },
+          { text: "Kubernetes 클러스터 구축 - kubeadm 베어메탈 부트스트랩, Aliyun GPUShare로 GPU 4장 70파드 병렬 추론" },
           { text: "Nginx 게이트웨이 구축 - HTTPS 리버스 프록시·TLS 인증서·보안 헤더 통합, Wireshark 패킷 분석으로 정보 노출 여부 점검" },
           { text: "Nginx Ingress keepalive 튜닝 - 백엔드 커넥션 재사용 → TCP 핸드셰이크 오버헤드 제거" },
           { text: "CI 파이프라인에 k6 부하테스트·유닛테스트 도입 → 배포 후 에러율 11%→0%" },
-          { text: "Aliyun GPUShare로 GPU 메모리 fraction 단위 분할 - GPU 4장에서 70파드 병렬 추론" },
           { text: "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건" },
         ],
       },
@@ -605,30 +609,17 @@ export const PROFILE_PLATFORM = {
       desc: "회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
       blocks: [
         {
-          label: "Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩 → 노드 장애 자동 복구",
-          situation: "위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 처음엔 Docker 컨테이너 몇 개로 묶는 구조를 먼저 생각했습니다. 컨테이너 하나가 죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다.",
-          cause: "대안은 세 가지였습니다 - Docker Compose로 묶는 방식, 직접 스크립트로 프로세스를 관리하는 방식, K8s. 앞의 두 방식은 노드가 늘어날수록 관리 포인트가 선형으로 늘고, 노드 장애 시 수동 개입이 필요했습니다.",
+          label: "Kubernetes 클러스터 구축 - kubeadm 베어메탈 부트스트랩 + GPUShare 자원 공유",
+          situation: "위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 컨테이너 하나가 죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다. 게다가 노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라 대부분의 시간 동안 GPU가 유휴 상태였습니다.",
+          cause: "워크로드가 여러 노드에 걸쳐 자동 복구돼야 하는데 Docker Compose·스크립트 관리로는 노드가 늘수록 관리 포인트가 선형으로 늘었고, 여러 모델을 동시에 띄워야 하는 요건과 1파드=1GPU 구조도 맞지 않았습니다(당시 GPU는 NVIDIA MIG 미지원).",
           actions: [
-            "워크로드가 여러 노드에 걸쳐 돌아야 하고 자동 복구가 필요한 상황이라 K8s를 선택",
             "관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩",
-          ],
-          result: "노드 장애 시에도 워크로드가 자동 복구되는 구조 확보, 이후 모든 K8s 기반 AI 처리 플랫폼의 출발점이 됨",
-          brief: [
-            "컨테이너 하나가 죽으면 작업이 사라지는 구조로는 운영이 불가능했고, Docker Compose·스크립트 기반 관리는 노드가 늘수록 관리 포인트가 선형으로 늘고 장애 시 수동 개입이 필요했습니다.",
-            "워크로드가 여러 노드에 걸쳐 자동 복구돼야 하는 요건에 맞춰 K8s를 선택하고, 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
-          ],
-        },
-        {
-          label: "GPU 자원 공유(Fractional GPU) - Aliyun GPUShare 도입 → GPU 4장 70파드 병렬 추론",
-          situation: "노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라, 대부분의 시간 동안 GPU가 유휴 상태였습니다.",
-          cause: "여러 모델을 동시에 띄워야 하는 요건과 1파드=1GPU 구조가 맞지 않았고, 당시 GPU 모델은 NVIDIA MIG를 지원하지 않아 하드웨어 파티셔닝을 쓸 수 없었습니다.",
-          actions: [
             "Aliyun GPUShare를 도입해 여러 컨테이너가 하나의 GPU를 fraction 단위로 나눠 쓰는 소프트웨어 레벨 공유 구성",
           ],
-          result: "GPU 4장에서 70파드 병렬 추론, 한정된 GPU로 더 많은 워크로드 처리",
+          result: "노드 장애 시에도 워크로드가 자동 복구되는 구조 확보(이후 모든 K8s 기반 AI 처리 플랫폼의 출발점이 됨), GPU 4장에서 70파드 병렬 추론",
           brief: [
-            "노드당 GPU 하나를 컨테이너 하나가 점유해 대부분의 시간 동안 GPU가 유휴 상태였고, 당시 GPU는 NVIDIA MIG도 지원하지 않았습니다.",
-            "Aliyun GPUShare로 GPU 메모리를 fraction 단위로 나누는 소프트웨어 레벨 공유를 도입해, GPU 4장에서 70파드 병렬 추론을 달성했습니다.",
+            "컨테이너 하나가 죽으면 작업이 사라지는 구조로는 운영이 불가능했고, 노드당 GPU 하나를 컨테이너 하나가 점유해 대부분의 시간 동안 GPU가 유휴 상태였습니다.",
+            "kubeadm으로 클러스터를 직접 부트스트랩하고, Aliyun GPUShare로 GPU를 fraction 단위로 나눠 GPU 4장에서 70파드 병렬 추론을 달성했습니다.",
           ],
         },
         {
@@ -643,20 +634,6 @@ export const PROFILE_PLATFORM = {
           brief: [
             "Debezium CDC의 replication slot이 반복 파손돼 전체 스냅샷 재수행이 필요했고, 망연계 솔루션은 파일 기반 전송만 지원해 API 폴링도 불가능했습니다.",
             "일반 이벤트는 Outbox 라이브러리로 CDC 의존 자체를 걷어냈고, 망연계용으로 유지한 Debezium 구간은 상태 판정 순서를 재정렬해 자가치유 자동 복구 스크립트로 안정화했습니다.",
-          ],
-        },
-        {
-          label: "K8s 운영 안정화 - 자원 인지형 스케줄링 및 CrashLoopBackOff 진단 → OOM 사전 차단",
-          situation: "K8s 기본 스케줄러가 노드별 메모리 사용률을 실시간 반영하지 못해 특정 노드에 무거운 AI 작업이 몰리면 OOM이 발생했고, SaltStack master 파드도 반복적으로 CrashLoopBackOff에 빠졌습니다.",
-          cause: "스케줄러가 리소스 요청·한도 값만 보고 배치할 뿐 실제 사용률은 반영하지 않는 구조였고, CrashLoopBackOff는 livenessProbe가 전체 minion 목록을 조회하고 각 minion에 kubectl exec까지 수행하는 무거운 스크립트라 probe timeout(1초)에 가까워 정상 상황에서도 타임아웃이 잦은 것이 원인이었습니다.",
-          actions: [
-            "SaltStack Minion으로 각 노드의 연결 상태와 메모리 사용률을 실시간 점검, 메모리 50% 미만 노드에만 AI 워크로드를 자동 할당하는 자원 인지형 배치 구조 구현",
-            "SaltStack master 파드의 헬스체크를 프로세스 생존 여부(pgrep)만 확인하는 경량 체크로 축소하고 timeoutSeconds·periodSeconds를 재조정, 기존 minion 자동 재시작 로직은 probe에서 분리",
-          ],
-          result: "특정 서버 과부하와 OOM 사전 차단, 불필요한 재시작을 유발하던 무거운 체크 로직 제거로 파드 안정성 확보",
-          brief: [
-            "K8s 기본 스케줄러가 노드별 메모리 사용률을 반영하지 못해 OOM이 발생했고, SaltStack master 파드도 무거운 헬스체크와 probe timeout 충돌로 반복 재시작됐습니다.",
-            "SaltStack Minion으로 노드 메모리 사용률을 점검해 50% 미만 노드에만 워크로드를 할당했고, 헬스체크도 프로세스 생존 확인만으로 경량화해 두 문제 모두 해결했습니다.",
           ],
         },
         {
@@ -777,5 +754,5 @@ export const PROFILE_PLATFORM = {
   education: PROFILE.education,
   certs: PROFILE.certs,
 
-  skills: ["Kubernetes", "Docker", "SaltStack", "Zabbix", "Go", "Python", "RabbitMQ", "PostgreSQL", "GDAL", "FastAPI", "Redis", "MySQL", "Kafka"],
+  skills: ["Kubernetes", "Docker", "Cilium", "kube-vip", "ArgoCD", "SaltStack", "Zabbix", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao", "CloudNativePG", "OpenTelemetry", "Prometheus", "Grafana", "Go", "Python", "RabbitMQ", "PostgreSQL", "GDAL", "FastAPI", "Redis", "MySQL", "Kafka", "Jenkins", "Nexus"],
 };
