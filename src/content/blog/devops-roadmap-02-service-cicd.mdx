@@ -118,7 +118,11 @@ helm install harbor harbor/harbor \
   --set trivy.enabled=true
 ```
 
+![Harbor 로그인 화면 - 사설 레지스트리에 직접 접속해 확인한다](/harbor_login.png)
+
 Harbor 프로젝트(네임스페이스 개념)를 하나 만들고, 그 프로젝트에 **"취약점이 발견되면 배포 차단"** 정책을 건다.
+
+![Harbor 프로젝트 목록 - app(비공개)/library(공개) 프로젝트가 저장소 수·사용량과 함께 표시된다](/harbor_main.png)
 
 ```bash
 # Harbor 프로젝트별 정책 - Critical/High 취약점 발견 시 pull 자체를 차단
@@ -128,6 +132,8 @@ curl -X PUT "https://harbor.local/api/v2.0/projects/app/scanner" \
 ```
 
 이 정책이 바로 ISMS-P 2.10(시스템·서비스 보안관리)에서 요구하는 "취약한 이미지의 배포를 막는 절차"에 대한 증적이 된다.
+
+![Harbor의 api-server 아티팩트 목록 - 빌드(ci-5~ci-13)마다 Trivy가 취약점 개수를 자동 집계한다](/harbor_app.png)
 
 ### 5. Jenkins - 빌드 파이프라인
 
