@@ -993,8 +993,8 @@ code, pre {
 .pf-accordion { background: var(--pf-bg-soft); border: 1px solid var(--pf-bdr); border-radius: 14px; margin: 1.5rem 0; overflow: hidden; }
 .pf-accordion-head { display: flex; align-items: center; gap: 8px; padding: 13px 18px; cursor: pointer; user-select: none; list-style: none; font-size: 0.95rem; font-weight: 600; color: var(--pf-ac); }
 .pf-accordion-head::-webkit-details-marker { display: none; }
+.pf-accordion-head::marker { content: ""; display: none; }
 .pf-accordion-head:hover { background: var(--pf-surface-2, var(--pf-bg-soft)); }
-.pf-accordion-icon { flex-shrink: 0; }
 .pf-accordion[open] > .pf-accordion-head { border-bottom: 1px solid var(--pf-bdr); }
 .pf-accordion-title { flex: 1; }
 .pf-accordion-toggle { color: var(--pf-text-mute); flex-shrink: 0; transition: transform 0.2s var(--pf-ease); }
