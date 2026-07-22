@@ -36,6 +36,7 @@ BASE : 서울, Korea
   - OpenBao+ESO 시크릿 중앙화, CloudNativePG PostgreSQL 운영 - 서비스별 개별 관리 부담 해소
   - Jenkins → ArgoCD GitOps 전환, Pulp 패키지 저장소 통합 - 배포 드리프트 추적성 확보
   - Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축
+  - Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득
 
 ● KARI 클러스터 인프라·비동기 파이프라인 구축   (2023.10 ~ 2025.07)
   - Kubernetes 클러스터 구축 - kubeadm 베어메탈 부트스트랩, Aliyun GPUShare로 GPU 4장 70파드 병렬 추론
@@ -143,7 +144,12 @@ BASE : 서울, Korea
 ────────────────────────────────────────
 03. 기술 스택
 ────────────────────────────────────────
-Kubernetes · Docker · Cilium · kube-vip · ArgoCD · SaltStack · Zabbix · Nginx · Envoy Gateway · Keycloak · OpenBao · CloudNativePG · OpenTelemetry · Prometheus · Grafana · Go · Python · RabbitMQ · PostgreSQL · GDAL · FastAPI · Redis · MySQL · Kafka · Jenkins · Nexus
+언어·프레임워크 : Go · Python · FastAPI
+오케스트레이션 : Kubernetes · Docker · SaltStack
+네트워킹·보안 : Cilium · kube-vip · Nginx · Envoy Gateway · Keycloak · OpenBao
+데이터·메시징 : PostgreSQL · MySQL · Redis · RabbitMQ · Kafka · CloudNativePG · GDAL
+관측성 : OpenTelemetry · Prometheus · Grafana · Zabbix
+CI/CD : ArgoCD · Jenkins · Nexus
 
 
 ────────────────────────────────────────

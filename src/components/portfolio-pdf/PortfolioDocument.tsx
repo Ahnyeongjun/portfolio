@@ -314,9 +314,9 @@ export function PortfolioDocument() {
           </div>
           <div className="w-card">
             <div className="w-card-h">Skills</div>
-            <div className="w-skill-line"><b>Backend</b> · Spring Boot, Java, Kotlin, Python, FastAPI, Go</div>
-            <div className="w-skill-line"><b>Data</b> · PostgreSQL, MySQL, Redis, RabbitMQ, Kafka</div>
-            <div className="w-skill-line"><b>Infra</b> · Kubernetes, Docker, GitHub Actions, Nginx</div>
+            {P.skills.map((g) => (
+              <div key={g.category} className="w-skill-line"><b>{g.category}</b> · {g.items.join(", ")}</div>
+            ))}
           </div>
         </div>
 

@@ -38,7 +38,7 @@ const CSS = `
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .rallit-root .sheet-inner { padding:12mm 12mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skills { break-inside:avoid; }
+  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skill-group { break-inside:avoid; }
   .rallit-root .sec-h, .rallit-root .cg-top { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -125,6 +125,9 @@ const CSS = `
 .rallit-root .cert-name { font-size:14px; font-weight:700; }
 .rallit-root .cert-date { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); }
 .rallit-root .cert-issuer { font-size:12px; color:var(--ink-2); margin-top:2px; }
+.rallit-root .skill-group { margin-bottom:11px; }
+.rallit-root .skill-group:last-child { margin-bottom:0; }
+.rallit-root .skill-cat { font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--ink-3); letter-spacing:0.03em; margin-bottom:6px; }
 .rallit-root .skills { display:flex; flex-wrap:wrap; gap:7px; }
 .rallit-root .skill { font-size:13.5px; font-weight:600; color:var(--ink); background:var(--bg-soft); border-radius:999px; padding:7px 15px; }
 .rallit-root .foot { margin-top:18px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--ink-3); letter-spacing:0.03em; }
@@ -173,7 +176,7 @@ export function ResumeDocument() {
     // whole 경력 section (title included) to the next page, leaving a gap. Instead we
     // keep each .cg-item whole and let a group flow across the page boundary; the
     // group title (.cg-top) stays with its first item (handled below).
-    const KEEP = '.cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skills, .proj-head, .proj-ach-row, .sec-h';
+    const KEEP = '.cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skill-group, .proj-head, .proj-ach-row, .sec-h';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -182,7 +185,7 @@ export function ResumeDocument() {
     // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const scope = header.parentElement; // same column/section body as the header
-      return scope ? (scope.querySelector('.proj-ach-row, .cg-top, .act-item, .edu-item, .cert-item, .skills') as HTMLElement | null) : null;
+      return scope ? (scope.querySelector('.proj-ach-row, .cg-top, .act-item, .edu-item, .cert-item, .skill-group') as HTMLElement | null) : null;
     };
 
     // push an element to the top of the next page so that its visible content
@@ -410,7 +413,12 @@ export function ResumeDocument() {
 
           <div className="sec">
             <div className="sec-h"><span className="no">03</span><span className="t">기술 스택</span></div>
-            <div className="skills">{P.skills.map((s) => <span key={s} className="skill">{s}</span>)}</div>
+            {P.skills.map((g) => (
+              <div key={g.category} className="skill-group">
+                <div className="skill-cat">{g.category}</div>
+                <div className="skills">{g.items.map((s) => <span key={s} className="skill">{s}</span>)}</div>
+              </div>
+            ))}
           </div>
 
           <div className="sec">
@@ -420,9 +428,9 @@ export function ResumeDocument() {
                 <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
                 <div className="act-desc">{a.desc}</div>
                 {a.notes && a.notes.length > 0 && (
-                  <ul className="cg-sub-items" style={{ marginTop: 5 }}>
-                    {a.notes.map((n, j) => <li key={j} className="cg-sub-item">{n}</li>)}
-                  </ul>
+                  <div className="act-notes">
+                    {a.notes.map((n, j) => <div key={j} className="act-note">{n}</div>)}
+                  </div>
                 )}
               </div>
             ))}

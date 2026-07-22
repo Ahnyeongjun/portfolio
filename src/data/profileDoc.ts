@@ -30,6 +30,10 @@ export interface DocProject {
   blocks: DocBlock[];
   badge?: string; // 예: "사내 개인", "납품"
 }
+export interface SkillGroup {
+  category: string;
+  items: string[];
+}
 
 export const PROFILE = {
   name: "안영준",
@@ -145,7 +149,7 @@ export const PROFILE = {
             text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
           },
           {
-            text: "MSA·메시지 큐·FSD 프론트 아키텍처 팀 내 설명 - 신규 아키텍처 도입 배경 공유",
+            text: "WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득",
           },
         ],
       },
@@ -456,7 +460,12 @@ export const PROFILE = {
     { school: "대덕소프트웨어마이스터고등학교", degree: "고등학교 · 소프트웨어개발과", period: "2020.03. ~ 2022.03.", status: "졸업" },
   ],
 
-  skills: ["Spring Boot", "Java", "Kotlin", "Python", "Go", "FastAPI", "MyBatis", "PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kubernetes", "Docker", "SaltStack", "Zabbix"],
+  skills: [
+    { category: "언어", items: ["Java", "Kotlin", "Python", "Go"] },
+    { category: "프레임워크", items: ["Spring Boot", "FastAPI", "MyBatis"] },
+    { category: "데이터", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ"] },
+    { category: "인프라", items: ["Kubernetes", "Docker", "SaltStack", "Zabbix"] },
+  ] as SkillGroup[],
 
   certs: [
     { name: "SQL개발자(SQLD)", issuer: "한국데이터산업진흥원", date: "2025.12.", status: "합격" },
@@ -522,6 +531,7 @@ export const PROFILE_PLATFORM = {
           { text: "OpenBao+ESO 시크릿 중앙화, CloudNativePG PostgreSQL 운영 - 서비스별 개별 관리 부담 해소" },
           { text: "Jenkins → ArgoCD GitOps 전환, Pulp 패키지 저장소 통합 - 배포 드리프트 추적성 확보" },
           { text: "Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축" },
+          { text: "Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득" },
         ],
       },
       {
@@ -784,5 +794,12 @@ export const PROFILE_PLATFORM = {
   education: PROFILE.education,
   certs: PROFILE.certs,
 
-  skills: ["Kubernetes", "Docker", "Cilium", "kube-vip", "ArgoCD", "SaltStack", "Zabbix", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao", "CloudNativePG", "OpenTelemetry", "Prometheus", "Grafana", "Go", "Python", "RabbitMQ", "PostgreSQL", "GDAL", "FastAPI", "Redis", "MySQL", "Kafka", "Jenkins", "Nexus"],
+  skills: [
+    { category: "언어·프레임워크", items: ["Go", "Python", "FastAPI"] },
+    { category: "오케스트레이션", items: ["Kubernetes", "Docker", "SaltStack"] },
+    { category: "네트워킹·보안", items: ["Cilium", "kube-vip", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao"] },
+    { category: "데이터·메시징", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "CloudNativePG", "GDAL"] },
+    { category: "관측성", items: ["OpenTelemetry", "Prometheus", "Grafana", "Zabbix"] },
+    { category: "CI/CD", items: ["ArgoCD", "Jenkins", "Nexus"] },
+  ] as SkillGroup[],
 };
