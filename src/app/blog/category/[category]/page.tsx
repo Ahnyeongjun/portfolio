@@ -18,6 +18,9 @@ export async function generateMetadata({ params }: { params: Promise<{ category:
   return {
     title: `${decodedCategory} - 블로그`,
     description: `${decodedCategory} 카테고리의 블로그 글 목록입니다.`,
+    alternates: {
+      canonical: `https://www.ahnyoungjun.site/blog/category/${encodeURIComponent(decodedCategory)}`,
+    },
     openGraph: {
       title: `${decodedCategory} | 블로그 | 안영준`,
       description: `${decodedCategory} 카테고리의 블로그 글 목록입니다.`,

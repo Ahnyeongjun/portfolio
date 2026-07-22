@@ -9,6 +9,9 @@ import Link from "next/link";
 export const metadata = {
   title: "블로그",
   description: "개발과 일상에 대한 이야기를 기록합니다. 딥러닝, 백엔드 등 기술 블로그.",
+  alternates: {
+    canonical: "https://www.ahnyoungjun.site/blog",
+  },
   openGraph: {
     title: "블로그 | 안영준",
     description: "개발과 일상에 대한 이야기를 기록합니다.",

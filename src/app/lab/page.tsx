@@ -20,6 +20,9 @@ const labProjects: LabProject[] = [
 export const metadata = {
   title: "Lab",
   description: "실험적인 프로젝트들과 테스트 페이지 모음",
+  alternates: {
+    canonical: "https://www.ahnyoungjun.site/lab",
+  },
 };
 
 export default function LabPage() {

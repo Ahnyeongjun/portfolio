@@ -23,6 +23,9 @@ export async function generateMetadata({
   return {
     title: project.title,
     description: project.longDescription || project.description,
+    alternates: {
+      canonical: `https://www.ahnyoungjun.site/projects/${id}`,
+    },
     openGraph: {
       title: `${project.title} | 안영준`,
       description: project.longDescription || project.description,
