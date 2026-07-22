@@ -43,12 +43,10 @@ export function Header() {
         )}
 
         <div className="pf-nav-right">
-          {!isBlogPost && (
-            <div className="pf-nav-links">
-              <Link href={portfolioHref} className="pf-nav-link">{t('portfolio')}</Link>
-              <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
-            </div>
-          )}
+          <div className="pf-nav-links">
+            <Link href={portfolioHref} className="pf-nav-link">{t('portfolio')}</Link>
+            <Link href="/blog" className="pf-nav-link">{t('blog')}</Link>
+          </div>
 
           <div className="pf-nav-divider" aria-hidden="true" />
 

@@ -989,6 +989,8 @@ code, pre {
 .pf-series-post-title { font-size: 14px; color: var(--pf-text); flex: 1; }
 .pf-series-post:hover .pf-series-post-title { color: var(--pf-ac); }
 .pf-series-arrow { color: var(--pf-text-mute); flex-shrink: 0; }
+.pf-series-date { font-family: var(--font-family-mono); font-size: 11px; color: var(--pf-text-mute); flex-shrink: 0; white-space: nowrap; }
+.pf-series-post-date { font-family: var(--font-family-mono); font-size: 11px; color: var(--pf-text-mute); flex-shrink: 0; white-space: nowrap; }
 
 .pf-accordion { background: var(--pf-bg-soft); border: 1px solid var(--pf-bdr); border-radius: 14px; margin: 1.5rem 0; overflow: hidden; }
 .pf-accordion-head { display: flex; align-items: center; gap: 8px; padding: 13px 18px; cursor: pointer; user-select: none; list-style: none; font-size: 0.95rem; font-weight: 600; color: var(--pf-ac); }
