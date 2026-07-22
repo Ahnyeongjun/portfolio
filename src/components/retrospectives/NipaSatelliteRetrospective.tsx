@@ -250,6 +250,123 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       </p>
 
       <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
+
+        {/* CI/CD - Jenkins/Nexus → ArgoCD/Pulp 전환 */}
+        <AccordionSection
+          title="CI/CD - Jenkins/Nexus → Argo Events·Workflows·ArgoCD·Pulp 전환"
+          hint="웹훅 트리거부터 클러스터 동기화까지 GitOps로 일원화"
+          module="CI/CD"
+        >
+          <p>
+            기존에는 <Highlight>Jenkins</Highlight>가 빌드·배포를 함께 수행하고
+            아티팩트는 <Highlight>Nexus</Highlight>에 저장했습니다. 파이프라인 정의가 Jenkins UI·스크립트에
+            흩어져 있어 변경 이력 추적이 어렵고, 배포 상태가 클러스터 실제 상태와 어긋나도
+            감지할 방법이 없었습니다.
+          </p>
+          <p>
+            Bitbucket 푸시를 <Highlight>Argo Events</Highlight>(webhook → NATS → Sensor)가 감지해
+            <Highlight>Argo Workflows</Highlight>를 트리거하고, 빌드·테스트·이미지 생성을 수행합니다.
+            생성된 이미지·패키지는 <Highlight>Pulp</Highlight>에 저장하고,
+            <Highlight>ArgoCD</Highlight>가 Git에 선언된 상태와 클러스터 실제 상태를 지속적으로 동기화합니다.
+            배포 전에는 Workflows에 <Highlight>OPA 정책 게이트</Highlight>를 통합해 정책 위반 이미지가
+            클러스터에 반영되기 전에 차단합니다.
+          </p>
+          <CompareTable
+            headers={["구분", "이전 (Jenkins·Nexus)", "이후 (Argo·Pulp)"]}
+            rows={[
+              { cells: ["빌드·배포 트리거", "Jenkins 스케줄/수동 트리거", "Bitbucket 웹훅 → Argo Events"], highlight: true },
+              { cells: ["빌드 정의", "Jenkinsfile·UI 설정 혼재", "Argo Workflows 선언적 정의"], highlight: true },
+              { cells: ["아티팩트 저장소", "Nexus", "Pulp"], highlight: true },
+              { cells: ["배포 상태", "클러스터 상태와 어긋나도 미감지", "ArgoCD가 Git↔클러스터 상태 지속 동기화·자동 교정"], highlight: true },
+              { cells: ["정책 검증", "배포 후 수동 확인", "Workflows 단계에 OPA 게이트 통합"] },
+            ]}
+          />
+        </AccordionSection>
+
+        {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao·CloudNativePG */}
+        <AccordionSection
+          title="클러스터 네트워킹·보안 - Cilium · kube-vip · OpenBao · CloudNativePG"
+          hint="kube-proxy 대체, control-plane HA, 시크릿 중앙 관리, DB 자체 운영"
+          module="클러스터 인프라"
+        >
+          <p>
+            <Highlight>Cilium(eBPF)</Highlight>을 CNI로 도입해 kube-proxy를 대체하고
+            L3~L7 네트워크 정책을 하나의 계층으로 일원화했습니다. Hubble 기반 egress 관측으로
+            비인가 통신을 탐지할 수 있게 됐습니다. control-plane은 3노드 HA로 구성하고
+            <Highlight>kube-vip</Highlight>로 고정 VIP를 두어, 특정 노드가 죽어도 API 서버 진입점이
+            바뀌지 않도록 했습니다.
+          </p>
+          <p>
+            시크릿은 <Highlight>OpenBao</Highlight>(Vault 계열)에 중앙 저장하고
+            <Highlight>External Secrets Operator</Highlight>가 이를 각 네임스페이스의 Kubernetes Secret으로
+            동기화·주입합니다. 서비스 코드가 시크릿 저장소를 직접 호출하지 않아도 되고,
+            시크릿 로테이션 시 배포 재시작만으로 반영됩니다.
+          </p>
+          <p>
+            데이터베이스는 <Highlight>CloudNativePG</Highlight> 오퍼레이터로 PostgreSQL 클러스터를
+            클러스터 내부에서 직접 운영합니다. 외부 관리형 DB 없이도 failover·백업을 오퍼레이터가
+            선언적으로 관리합니다.
+          </p>
+        </AccordionSection>
+
+        {/* 관측 스택 */}
+        <AccordionSection
+          title="관측 스택 - OTel · Prometheus · Grafana · Tempo · OpenSearch"
+          hint="CI/CD·게이트웨이·앱·DB 전 구간 계측 - 장애 원인분석 시간 단축"
+          module="observability"
+        >
+          <p>
+            <Highlight>OTel(OpenTelemetry)</Highlight>로 계측 표준을 통일해 메트릭·트레이스·로그를
+            CI/CD 파이프라인부터 게이트웨이, 앱 Pod, DB까지 전 구간에서 수집합니다.
+            수집된 데이터는 <Highlight>Prometheus</Highlight>(메트릭)·<Highlight>Tempo</Highlight>(분산 트레이싱)·
+            <Highlight>OpenSearch</Highlight>(로그)로 각각 적재되고, <Highlight>Grafana</Highlight>에서
+            하나의 대시보드로 조회합니다.
+          </p>
+          <p>
+            서비스가 9개로 분리되며 장애 시 어느 단계에서 문제가 발생했는지 파악하는 데 걸리는 시간이
+            길어질 위험이 있었는데, 요청 하나를 트레이스 ID로 전 구간(Envoy Gateway → 앱 Pod → DB)에서
+            추적할 수 있게 되면서 장애 원인분석 시간을 단축했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* 단계별 큐 분리 · 워커 수평 확장 */}
+        <AccordionSection
+          title="단계별 큐 분리와 워커 수평 확장"
+          hint="단일 큐로는 병목 단계만 골라 확장 불가 → 처리 워커 1개 → 15개 수평 확장"
+          module="처리 파이프라인"
+        >
+          <p>
+            큐를 하나만 두고 워커를 늘리는 방법도 있었지만, 파이프라인 단계마다 부하 특성이
+            달랐습니다. AI 추론은 무겁고 후처리는 가벼운데, 단일 큐로는 <Highlight>병목 구간만
+            골라 확장</Highlight>할 수 없었습니다.
+          </p>
+          <p>
+            그래서 <Highlight>수집 → 전처리 → 추론 → 후처리</Highlight> 단계별로 큐를 분리했습니다.
+            각 단계 워커는 자기 큐에서 메시지를 consume하고, 끝나면 결과를 다음 큐에 publish합니다.
+            단계 간 직접 통신 없이 큐로만 데이터를 넘기는 구조라, 한 단계가 일시적으로 느려져도
+            큐가 버퍼 역할을 해서 앞뒤 단계가 영향을 받지 않습니다.
+          </p>
+          <CompareTable
+            headers={["", "단일 큐", "단계별 큐 분리"]}
+            rows={[
+              { cells: ["확장 단위", "전체 워커 일괄 확장", "병목 단계 워커만 선택 확장"], highlight: true },
+              { cells: ["결합도", "한 단계 지연이 전체 파이프라인에 전파", "큐가 버퍼 역할 - 앞뒤 단계 영향 차단"], highlight: true },
+              { cells: ["DB 의존", "작업 상태 조회를 위해 DB 폴링 필요", "작업 상태가 큐에 있어 폴링 불필요"] },
+            ]}
+          />
+          <p>
+            추론 단계가 병목이면 추론 워커만 늘리고, 후처리가 가벼우면 워커를 줄이는 식으로
+            단계마다 자원을 따로 조절할 수 있게 되면서, 처리 워커 컨테이너를
+            <Highlight>1개에서 15개로 수평 확장</Highlight>했습니다. 요청을 큐로 받아 워커에
+            분산하는 이 패턴은 더 큰 트래픽의 AI 추론 인프라에도 그대로 적용됩니다.
+          </p>
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
         {/* 1. Keycloak OIDC */}
@@ -431,123 +548,6 @@ def callback(ch, method, properties, body):
               { cells: ["후처리", "모폴로지 연산", "변화 폴리곤 경계 정제"], highlight: true },
             ]}
           />
-        </AccordionSection>
-      </div>
-
-      <div className="border-t border-border" />
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
-
-        {/* CI/CD - Jenkins/Nexus → ArgoCD/Pulp 전환 */}
-        <AccordionSection
-          title="CI/CD - Jenkins/Nexus → Argo Events·Workflows·ArgoCD·Pulp 전환"
-          hint="웹훅 트리거부터 클러스터 동기화까지 GitOps로 일원화"
-          module="CI/CD"
-        >
-          <p>
-            기존에는 <Highlight>Jenkins</Highlight>가 빌드·배포를 함께 수행하고
-            아티팩트는 <Highlight>Nexus</Highlight>에 저장했습니다. 파이프라인 정의가 Jenkins UI·스크립트에
-            흩어져 있어 변경 이력 추적이 어렵고, 배포 상태가 클러스터 실제 상태와 어긋나도
-            감지할 방법이 없었습니다.
-          </p>
-          <p>
-            Bitbucket 푸시를 <Highlight>Argo Events</Highlight>(webhook → NATS → Sensor)가 감지해
-            <Highlight>Argo Workflows</Highlight>를 트리거하고, 빌드·테스트·이미지 생성을 수행합니다.
-            생성된 이미지·패키지는 <Highlight>Pulp</Highlight>에 저장하고,
-            <Highlight>ArgoCD</Highlight>가 Git에 선언된 상태와 클러스터 실제 상태를 지속적으로 동기화합니다.
-            배포 전에는 Workflows에 <Highlight>OPA 정책 게이트</Highlight>를 통합해 정책 위반 이미지가
-            클러스터에 반영되기 전에 차단합니다.
-          </p>
-          <CompareTable
-            headers={["구분", "이전 (Jenkins·Nexus)", "이후 (Argo·Pulp)"]}
-            rows={[
-              { cells: ["빌드·배포 트리거", "Jenkins 스케줄/수동 트리거", "Bitbucket 웹훅 → Argo Events"], highlight: true },
-              { cells: ["빌드 정의", "Jenkinsfile·UI 설정 혼재", "Argo Workflows 선언적 정의"], highlight: true },
-              { cells: ["아티팩트 저장소", "Nexus", "Pulp"], highlight: true },
-              { cells: ["배포 상태", "클러스터 상태와 어긋나도 미감지", "ArgoCD가 Git↔클러스터 상태 지속 동기화·자동 교정"], highlight: true },
-              { cells: ["정책 검증", "배포 후 수동 확인", "Workflows 단계에 OPA 게이트 통합"] },
-            ]}
-          />
-        </AccordionSection>
-
-        {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao·CloudNativePG */}
-        <AccordionSection
-          title="클러스터 네트워킹·보안 - Cilium · kube-vip · OpenBao · CloudNativePG"
-          hint="kube-proxy 대체, control-plane HA, 시크릿 중앙 관리, DB 자체 운영"
-          module="클러스터 인프라"
-        >
-          <p>
-            <Highlight>Cilium(eBPF)</Highlight>을 CNI로 도입해 kube-proxy를 대체하고
-            L3~L7 네트워크 정책을 하나의 계층으로 일원화했습니다. Hubble 기반 egress 관측으로
-            비인가 통신을 탐지할 수 있게 됐습니다. control-plane은 3노드 HA로 구성하고
-            <Highlight>kube-vip</Highlight>로 고정 VIP를 두어, 특정 노드가 죽어도 API 서버 진입점이
-            바뀌지 않도록 했습니다.
-          </p>
-          <p>
-            시크릿은 <Highlight>OpenBao</Highlight>(Vault 계열)에 중앙 저장하고
-            <Highlight>External Secrets Operator</Highlight>가 이를 각 네임스페이스의 Kubernetes Secret으로
-            동기화·주입합니다. 서비스 코드가 시크릿 저장소를 직접 호출하지 않아도 되고,
-            시크릿 로테이션 시 배포 재시작만으로 반영됩니다.
-          </p>
-          <p>
-            데이터베이스는 <Highlight>CloudNativePG</Highlight> 오퍼레이터로 PostgreSQL 클러스터를
-            클러스터 내부에서 직접 운영합니다. 외부 관리형 DB 없이도 failover·백업을 오퍼레이터가
-            선언적으로 관리합니다.
-          </p>
-        </AccordionSection>
-
-        {/* 관측 스택 */}
-        <AccordionSection
-          title="관측 스택 - OTel · Prometheus · Grafana · Tempo · OpenSearch"
-          hint="CI/CD·게이트웨이·앱·DB 전 구간 계측 - 장애 원인분석 시간 단축"
-          module="observability"
-        >
-          <p>
-            <Highlight>OTel(OpenTelemetry)</Highlight>로 계측 표준을 통일해 메트릭·트레이스·로그를
-            CI/CD 파이프라인부터 게이트웨이, 앱 Pod, DB까지 전 구간에서 수집합니다.
-            수집된 데이터는 <Highlight>Prometheus</Highlight>(메트릭)·<Highlight>Tempo</Highlight>(분산 트레이싱)·
-            <Highlight>OpenSearch</Highlight>(로그)로 각각 적재되고, <Highlight>Grafana</Highlight>에서
-            하나의 대시보드로 조회합니다.
-          </p>
-          <p>
-            서비스가 9개로 분리되며 장애 시 어느 단계에서 문제가 발생했는지 파악하는 데 걸리는 시간이
-            길어질 위험이 있었는데, 요청 하나를 트레이스 ID로 전 구간(Envoy Gateway → 앱 Pod → DB)에서
-            추적할 수 있게 되면서 장애 원인분석 시간을 단축했습니다.
-          </p>
-        </AccordionSection>
-
-        {/* 단계별 큐 분리 · 워커 수평 확장 */}
-        <AccordionSection
-          title="단계별 큐 분리와 워커 수평 확장"
-          hint="단일 큐로는 병목 단계만 골라 확장 불가 → 처리 워커 1개 → 15개 수평 확장"
-          module="처리 파이프라인"
-        >
-          <p>
-            큐를 하나만 두고 워커를 늘리는 방법도 있었지만, 파이프라인 단계마다 부하 특성이
-            달랐습니다. AI 추론은 무겁고 후처리는 가벼운데, 단일 큐로는 <Highlight>병목 구간만
-            골라 확장</Highlight>할 수 없었습니다.
-          </p>
-          <p>
-            그래서 <Highlight>수집 → 전처리 → 추론 → 후처리</Highlight> 단계별로 큐를 분리했습니다.
-            각 단계 워커는 자기 큐에서 메시지를 consume하고, 끝나면 결과를 다음 큐에 publish합니다.
-            단계 간 직접 통신 없이 큐로만 데이터를 넘기는 구조라, 한 단계가 일시적으로 느려져도
-            큐가 버퍼 역할을 해서 앞뒤 단계가 영향을 받지 않습니다.
-          </p>
-          <CompareTable
-            headers={["", "단일 큐", "단계별 큐 분리"]}
-            rows={[
-              { cells: ["확장 단위", "전체 워커 일괄 확장", "병목 단계 워커만 선택 확장"], highlight: true },
-              { cells: ["결합도", "한 단계 지연이 전체 파이프라인에 전파", "큐가 버퍼 역할 - 앞뒤 단계 영향 차단"], highlight: true },
-              { cells: ["DB 의존", "작업 상태 조회를 위해 DB 폴링 필요", "작업 상태가 큐에 있어 폴링 불필요"] },
-            ]}
-          />
-          <p>
-            추론 단계가 병목이면 추론 워커만 늘리고, 후처리가 가벼우면 워커를 줄이는 식으로
-            단계마다 자원을 따로 조절할 수 있게 되면서, 처리 워커 컨테이너를
-            <Highlight>1개에서 15개로 수평 확장</Highlight>했습니다. 요청을 큐로 받아 워커에
-            분산하는 이 패턴은 더 큰 트래픽의 AI 추론 인프라에도 그대로 적용됩니다.
-          </p>
         </AccordionSection>
       </div>
 

@@ -147,6 +147,27 @@ export function InsopsRetrospective() {
         (2025.06~2025.12).
       </p>
 
+      {/* 인프라·운영 */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">인프라·운영</h2>
+
+        {/* Zabbix 사전 감지 */}
+        <AccordionSection
+          title="에어갭 무중단 운영 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지"
+          hint="외부 검색·라이브러리 반입 불가 환경에서 Zabbix 커스텀 대시보드로 호스트·서비스 상태 실시간 모니터링"
+          module="에어갭 운영"
+        >
+          <p>
+            외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도 사용자 신고 전까지는
+            인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로 호스트·서비스 상태를 실시간
+            모니터링하는 커스텀 대시보드를 직접 구축해 <Highlight>장애를 사전에 감지</Highlight>할 수 있는
+            체계를 확보하고, 외부 반입이 막힌 환경에서의 장애 대응 판단을 절차로 정리했습니다.
+          </p>
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
       {/* 백엔드 */}
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
@@ -452,27 +473,6 @@ export function InsopsRetrospective() {
             무관하게 동일한 방식으로 DB를 다룰 수 있게 됐습니다. 관리형 인프라가 없는 상태에서 물리 서버
             설치, K8s 클러스터 구성부터 다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화까지
             베어메탈에서 운영 가능한 시스템까지의 인프라 전 과정을 직접 결정했습니다.
-          </p>
-        </AccordionSection>
-      </div>
-
-      <div className="border-t border-border" />
-
-      {/* 인프라·운영 */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">인프라·운영</h2>
-
-        {/* Zabbix 사전 감지 */}
-        <AccordionSection
-          title="에어갭 무중단 운영 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지"
-          hint="외부 검색·라이브러리 반입 불가 환경에서 Zabbix 커스텀 대시보드로 호스트·서비스 상태 실시간 모니터링"
-          module="에어갭 운영"
-        >
-          <p>
-            외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도 사용자 신고 전까지는
-            인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로 호스트·서비스 상태를 실시간
-            모니터링하는 커스텀 대시보드를 직접 구축해 <Highlight>장애를 사전에 감지</Highlight>할 수 있는
-            체계를 확보하고, 외부 반입이 막힌 환경에서의 장애 대응 판단을 절차로 정리했습니다.
           </p>
         </AccordionSection>
       </div>

@@ -217,6 +217,149 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
       </p>
 
       <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
+
+        {/* Kubernetes 도입 배경 */}
+        <AccordionSection
+          title="Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩"
+          hint="Docker Compose · 스크립트 관리 · K8s 세 가지 대안 비교 후 kubeadm으로 직접 부트스트랩"
+          module="인프라"
+        >
+          <p>
+            위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 처음엔
+            Docker 컨테이너 몇 개로 묶는 구조를 먼저 생각했습니다. 컨테이너 하나가
+            죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다.
+          </p>
+          <p>
+            대안은 세 가지였습니다 - <Highlight>Docker Compose</Highlight>로 묶는 방식,
+            직접 스크립트로 프로세스를 관리하는 방식, <Highlight>K8s</Highlight>. 앞의 두
+            방식은 노드가 늘어날수록 관리 포인트가 선형으로 늘고, 노드 장애 시 수동
+            개입이 필요했습니다.
+          </p>
+          <CompareTable
+            headers={["대안", "검토 결과"]}
+            rows={[
+              { cells: ["Docker Compose", "노드가 늘수록 관리 포인트 선형 증가, 장애 시 수동 개입"], muted: true },
+              { cells: ["스크립트 기반 프로세스 관리", "노드 자동 복구 불가, 노드 확장 시 관리 부담 증가"], muted: true },
+              { cells: ["Kubernetes", "여러 노드에 걸친 워크로드 자동 복구 - 채택"], highlight: true },
+            ]}
+          />
+          <p>
+            워크로드가 여러 노드에 걸쳐 돌아야 하고 자동 복구가 필요한 상황이라
+            K8s를 택했습니다. 관리형 K8s가 없는 온프레미스 환경이라{" "}
+            <Highlight>kubeadm으로 클러스터를 직접 부트스트랩</Highlight>했고, 이 아키텍처가
+            이후 모든 K8s 기반 AI 처리 플랫폼의 출발점이 됐습니다.
+          </p>
+        </AccordionSection>
+
+        {/* SaltStack 기반 K8s 운영 안정화: 자원 인지형 스케줄링 + CrashLoopBackOff 진단 */}
+        <AccordionSection
+          title="SaltStack 기반 K8s 운영 안정화 - 자원 인지형 스케줄링 & CrashLoopBackOff 진단"
+          hint="K8s 기본 스케줄러가 메모리 사용률을 못 봐서 OOM 발생 → SaltStack 배치 제어 / SaltStack master 파드 자체의 CrashLoopBackOff는 무거운 livenessProbe가 원인"
+          module="Salt-Stack"
+        >
+          <p className="font-medium text-foreground">1. 노드 자원 인지형 스케줄링</p>
+          <p>
+            K8s 기본 스케줄러는 파드에 선언된 리소스 요청·한도 값만 보고 배치를 결정할 뿐,
+            노드의 <Highlight>실제 메모리 사용률</Highlight>은 반영하지 않습니다.
+            그 결과 특정 노드에 무거운 AI 작업이 몰리면 <Highlight>OOM</Highlight>이 발생했습니다.
+          </p>
+          <p>
+            SaltStack Minion으로 각 노드의 연결 상태와 메모리 사용률을 실시간으로 점검하고,
+            메모리 <Highlight>50% 미만</Highlight> 노드에만 AI 워크로드를 자동 할당하는
+            자원 인지형 배치 구조를 만들었습니다. 관리형 K8s가 없는 온프레미스 환경이라
+            노드 상태 점검·배치 판단을 직접 구현해야 했습니다.
+          </p>
+          <CompareTable
+            headers={["", "K8s 기본 스케줄러", "SaltStack 자원 인지형 배치"]}
+            rows={[
+              { cells: ["배치 기준", "리소스 요청·한도 값", "노드별 실시간 메모리 사용률"], highlight: true },
+              { cells: ["과부하 노드 회피", "불가 - 값만 보고 배치", "메모리 50% 미만 노드에만 할당"], highlight: true },
+              { cells: ["결과", "특정 노드 OOM 반복", "노드 과부하·OOM 사전 차단"], highlight: true },
+            ]}
+          />
+          <p className="font-medium text-foreground">2. K8s CrashLoopBackOff 근본원인 진단 (SaltStack master 파드)</p>
+          <p>
+            정작 배치를 담당하는 SaltStack master 파드 자체가 반복적으로{" "}
+            <Highlight>CrashLoopBackOff</Highlight>에 빠졌습니다. livenessProbe가 전체
+            minion 목록을 조회하고 각 minion에 <code>kubectl exec</code>까지 수행하는
+            무거운 스크립트였는데, 이 실행 시간이 probe timeout(1초)에 가까워 정상 동작
+            중에도 타임아웃이 잦았습니다.
+          </p>
+          <p>
+            헬스체크를 <Highlight>프로세스 생존 여부(pgrep)</Highlight>만 확인하는 경량
+            체크로 축소하고, <code>timeoutSeconds</code>·<code>periodSeconds</code>를
+            재조정해 기존 minion 자동 재시작 로직을 probe에서 분리했습니다. 불필요한
+            재시작을 유발하던 무거운 체크 로직을 걷어내 파드 안정성을 확보했습니다.
+          </p>
+        </AccordionSection>
+
+        {/* GPU 자원 공유 */}
+        <AccordionSection
+          title="GPU 자원 공유 - Aliyun GPUShare (Fractional GPU)"
+          hint="1파드=1GPU라 자원 90% 유휴 → GPU 메모리 fraction 단위 분할로 GPU 4장에서 70파드 병렬 추론"
+          module="AI 추론"
+        >
+          <p>
+            노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라, 여러 모델을 동시에 띄워야 하는
+            요건과 맞지 않았고 대부분의 시간 동안 GPU가 유휴 상태였습니다.
+          </p>
+          <p>
+            하드웨어 파티셔닝(<Highlight>NVIDIA MIG</Highlight>)도 검토했지만, 당시 GPU 모델이
+            MIG를 지원하지 않아 소프트웨어 레벨 공유로 방향을 잡았습니다. <Highlight>Aliyun GPUShare</Highlight>를
+            도입해 여러 컨테이너가 하나의 GPU를 fraction 단위로 나눠 쓰는 구조를 구성했습니다.
+          </p>
+          <CompareTable
+            headers={["방식", "검토 결과"]}
+            rows={[
+              { cells: ["1파드 = 1GPU (기존)", "GPU 자원 대부분 유휴, 동시 모델 서빙 불가"] },
+              { cells: ["NVIDIA MIG (하드웨어 파티셔닝)", "당시 GPU 모델 미지원으로 제외"], muted: true },
+              { cells: ["Aliyun GPUShare (소프트웨어 공유)", "GPU 메모리 fraction 단위 분할 - 채택"], highlight: true },
+            ]}
+          />
+          <p>
+            한정된 GPU로 더 많은 워크로드를 돌릴 수 있게 되면서 <Highlight>GPU 4장에서 70파드 병렬 추론</Highlight>,
+            일 처리량은 200건에서 3,000건으로 늘었습니다.
+          </p>
+        </AccordionSection>
+
+        {/* HTTPS 리버스 프록시 · TLS 인증서 */}
+        <AccordionSection
+          title="HTTPS 리버스 프록시·TLS 인증서 구성"
+          hint="Tomcat 앞단 Nginx로 HTTPS 종단 - 와일드카드 인증서·보안 헤더·쿠키 속성 통합 관리"
+          module="Nginx"
+        >
+          <p>
+            레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했는데, Tomcat이 직접
+            내려주는 보안 헤더가 서비스마다 제각각이었고, 와일드카드 인증서와 체인을
+            Tomcat 단독으로 관리하기도 번거로웠습니다.
+          </p>
+          <p>
+            <Highlight>Nginx를 Tomcat 앞단 HTTPS 리버스 프록시</Highlight>로 구성해 와일드카드
+            TLS 인증서(전체 체인 포함)를 적용하고, TLSv1.2/1.3·세션 캐시를 설정했습니다.
+            Tomcat이 내려주는 중복 보안 헤더는 제거하고 <Highlight>CSP·X-Frame-Options·
+            Referrer-Policy</Highlight> 등을 Nginx 한 곳에서 통합 관리했습니다.
+          </p>
+          <CompareTable
+            headers={["항목", "Tomcat 단독", "Nginx 리버스 프록시"]}
+            rows={[
+              { cells: ["TLS 인증서 관리", "서비스마다 개별 적용", "Nginx 한 곳에서 와일드카드 인증서 통합 관리"], highlight: true },
+              { cells: ["보안 헤더", "서비스마다 제각각", "CSP·X-Frame-Options 등 한 곳에서 일원화"], highlight: true },
+              { cells: ["외부 지도 타일 API 호출", "프론트엔드에서 직접 - CSP·보안 정책 저촉", "path 기반으로 Nginx가 대신 프록시"], highlight: true },
+            ]}
+          />
+          <p>
+            path 기반 라우팅으로 내부 분석 서비스·지도 서버와 외부 지도 타일 API를 함께
+            프록시하고, 쿠키 보안 속성(<code>secure</code>·<code>httponly</code>·<code>samesite</code>)까지
+            일괄 적용했습니다. 대용량 위성영상 전송을 위한 타임아웃·바디 크기(최대 5GB)도
+            함께 튜닝했습니다.
+          </p>
+        </AccordionSection>
+      </div>
+
+      <div className="border-t border-border" />
+
+      <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
         {/* 1. 성능·보안 */}
@@ -638,149 +781,6 @@ public void beforeCommit(boolean readOnly) {
           </p>
         </AccordionSection>
 
-      </div>
-
-      <div className="border-t border-border" />
-
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-foreground">인프라</h2>
-
-        {/* Kubernetes 도입 배경 */}
-        <AccordionSection
-          title="Kubernetes 도입 - kubeadm 베어메탈 클러스터 부트스트랩"
-          hint="Docker Compose · 스크립트 관리 · K8s 세 가지 대안 비교 후 kubeadm으로 직접 부트스트랩"
-          module="인프라"
-        >
-          <p>
-            위성영상을 받아 AI 추론까지 흘려보내는 플랫폼을 만들어야 했는데, 처음엔
-            Docker 컨테이너 몇 개로 묶는 구조를 먼저 생각했습니다. 컨테이너 하나가
-            죽으면 작업이 그냥 사라지는 구조로는 운영이 불가능했습니다.
-          </p>
-          <p>
-            대안은 세 가지였습니다 - <Highlight>Docker Compose</Highlight>로 묶는 방식,
-            직접 스크립트로 프로세스를 관리하는 방식, <Highlight>K8s</Highlight>. 앞의 두
-            방식은 노드가 늘어날수록 관리 포인트가 선형으로 늘고, 노드 장애 시 수동
-            개입이 필요했습니다.
-          </p>
-          <CompareTable
-            headers={["대안", "검토 결과"]}
-            rows={[
-              { cells: ["Docker Compose", "노드가 늘수록 관리 포인트 선형 증가, 장애 시 수동 개입"], muted: true },
-              { cells: ["스크립트 기반 프로세스 관리", "노드 자동 복구 불가, 노드 확장 시 관리 부담 증가"], muted: true },
-              { cells: ["Kubernetes", "여러 노드에 걸친 워크로드 자동 복구 - 채택"], highlight: true },
-            ]}
-          />
-          <p>
-            워크로드가 여러 노드에 걸쳐 돌아야 하고 자동 복구가 필요한 상황이라
-            K8s를 택했습니다. 관리형 K8s가 없는 온프레미스 환경이라{" "}
-            <Highlight>kubeadm으로 클러스터를 직접 부트스트랩</Highlight>했고, 이 아키텍처가
-            이후 모든 K8s 기반 AI 처리 플랫폼의 출발점이 됐습니다.
-          </p>
-        </AccordionSection>
-
-        {/* SaltStack 기반 K8s 운영 안정화: 자원 인지형 스케줄링 + CrashLoopBackOff 진단 */}
-        <AccordionSection
-          title="SaltStack 기반 K8s 운영 안정화 - 자원 인지형 스케줄링 & CrashLoopBackOff 진단"
-          hint="K8s 기본 스케줄러가 메모리 사용률을 못 봐서 OOM 발생 → SaltStack 배치 제어 / SaltStack master 파드 자체의 CrashLoopBackOff는 무거운 livenessProbe가 원인"
-          module="Salt-Stack"
-        >
-          <p className="font-medium text-foreground">1. 노드 자원 인지형 스케줄링</p>
-          <p>
-            K8s 기본 스케줄러는 파드에 선언된 리소스 요청·한도 값만 보고 배치를 결정할 뿐,
-            노드의 <Highlight>실제 메모리 사용률</Highlight>은 반영하지 않습니다.
-            그 결과 특정 노드에 무거운 AI 작업이 몰리면 <Highlight>OOM</Highlight>이 발생했습니다.
-          </p>
-          <p>
-            SaltStack Minion으로 각 노드의 연결 상태와 메모리 사용률을 실시간으로 점검하고,
-            메모리 <Highlight>50% 미만</Highlight> 노드에만 AI 워크로드를 자동 할당하는
-            자원 인지형 배치 구조를 만들었습니다. 관리형 K8s가 없는 온프레미스 환경이라
-            노드 상태 점검·배치 판단을 직접 구현해야 했습니다.
-          </p>
-          <CompareTable
-            headers={["", "K8s 기본 스케줄러", "SaltStack 자원 인지형 배치"]}
-            rows={[
-              { cells: ["배치 기준", "리소스 요청·한도 값", "노드별 실시간 메모리 사용률"], highlight: true },
-              { cells: ["과부하 노드 회피", "불가 - 값만 보고 배치", "메모리 50% 미만 노드에만 할당"], highlight: true },
-              { cells: ["결과", "특정 노드 OOM 반복", "노드 과부하·OOM 사전 차단"], highlight: true },
-            ]}
-          />
-          <p className="font-medium text-foreground">2. K8s CrashLoopBackOff 근본원인 진단 (SaltStack master 파드)</p>
-          <p>
-            정작 배치를 담당하는 SaltStack master 파드 자체가 반복적으로{" "}
-            <Highlight>CrashLoopBackOff</Highlight>에 빠졌습니다. livenessProbe가 전체
-            minion 목록을 조회하고 각 minion에 <code>kubectl exec</code>까지 수행하는
-            무거운 스크립트였는데, 이 실행 시간이 probe timeout(1초)에 가까워 정상 동작
-            중에도 타임아웃이 잦았습니다.
-          </p>
-          <p>
-            헬스체크를 <Highlight>프로세스 생존 여부(pgrep)</Highlight>만 확인하는 경량
-            체크로 축소하고, <code>timeoutSeconds</code>·<code>periodSeconds</code>를
-            재조정해 기존 minion 자동 재시작 로직을 probe에서 분리했습니다. 불필요한
-            재시작을 유발하던 무거운 체크 로직을 걷어내 파드 안정성을 확보했습니다.
-          </p>
-        </AccordionSection>
-
-        {/* GPU 자원 공유 */}
-        <AccordionSection
-          title="GPU 자원 공유 - Aliyun GPUShare (Fractional GPU)"
-          hint="1파드=1GPU라 자원 90% 유휴 → GPU 메모리 fraction 단위 분할로 GPU 4장에서 70파드 병렬 추론"
-          module="AI 추론"
-        >
-          <p>
-            노드당 GPU 하나를 컨테이너 하나가 점유하는 방식이라, 여러 모델을 동시에 띄워야 하는
-            요건과 맞지 않았고 대부분의 시간 동안 GPU가 유휴 상태였습니다.
-          </p>
-          <p>
-            하드웨어 파티셔닝(<Highlight>NVIDIA MIG</Highlight>)도 검토했지만, 당시 GPU 모델이
-            MIG를 지원하지 않아 소프트웨어 레벨 공유로 방향을 잡았습니다. <Highlight>Aliyun GPUShare</Highlight>를
-            도입해 여러 컨테이너가 하나의 GPU를 fraction 단위로 나눠 쓰는 구조를 구성했습니다.
-          </p>
-          <CompareTable
-            headers={["방식", "검토 결과"]}
-            rows={[
-              { cells: ["1파드 = 1GPU (기존)", "GPU 자원 대부분 유휴, 동시 모델 서빙 불가"] },
-              { cells: ["NVIDIA MIG (하드웨어 파티셔닝)", "당시 GPU 모델 미지원으로 제외"], muted: true },
-              { cells: ["Aliyun GPUShare (소프트웨어 공유)", "GPU 메모리 fraction 단위 분할 - 채택"], highlight: true },
-            ]}
-          />
-          <p>
-            한정된 GPU로 더 많은 워크로드를 돌릴 수 있게 되면서 <Highlight>GPU 4장에서 70파드 병렬 추론</Highlight>,
-            일 처리량은 200건에서 3,000건으로 늘었습니다.
-          </p>
-        </AccordionSection>
-
-        {/* HTTPS 리버스 프록시 · TLS 인증서 */}
-        <AccordionSection
-          title="HTTPS 리버스 프록시·TLS 인증서 구성"
-          hint="Tomcat 앞단 Nginx로 HTTPS 종단 - 와일드카드 인증서·보안 헤더·쿠키 속성 통합 관리"
-          module="Nginx"
-        >
-          <p>
-            레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했는데, Tomcat이 직접
-            내려주는 보안 헤더가 서비스마다 제각각이었고, 와일드카드 인증서와 체인을
-            Tomcat 단독으로 관리하기도 번거로웠습니다.
-          </p>
-          <p>
-            <Highlight>Nginx를 Tomcat 앞단 HTTPS 리버스 프록시</Highlight>로 구성해 와일드카드
-            TLS 인증서(전체 체인 포함)를 적용하고, TLSv1.2/1.3·세션 캐시를 설정했습니다.
-            Tomcat이 내려주는 중복 보안 헤더는 제거하고 <Highlight>CSP·X-Frame-Options·
-            Referrer-Policy</Highlight> 등을 Nginx 한 곳에서 통합 관리했습니다.
-          </p>
-          <CompareTable
-            headers={["항목", "Tomcat 단독", "Nginx 리버스 프록시"]}
-            rows={[
-              { cells: ["TLS 인증서 관리", "서비스마다 개별 적용", "Nginx 한 곳에서 와일드카드 인증서 통합 관리"], highlight: true },
-              { cells: ["보안 헤더", "서비스마다 제각각", "CSP·X-Frame-Options 등 한 곳에서 일원화"], highlight: true },
-              { cells: ["외부 지도 타일 API 호출", "프론트엔드에서 직접 - CSP·보안 정책 저촉", "path 기반으로 Nginx가 대신 프록시"], highlight: true },
-            ]}
-          />
-          <p>
-            path 기반 라우팅으로 내부 분석 서비스·지도 서버와 외부 지도 타일 API를 함께
-            프록시하고, 쿠키 보안 속성(<code>secure</code>·<code>httponly</code>·<code>samesite</code>)까지
-            일괄 적용했습니다. 대용량 위성영상 전송을 위한 타임아웃·바디 크기(최대 5GB)도
-            함께 튜닝했습니다.
-          </p>
-        </AccordionSection>
       </div>
     </div>
   );
