@@ -419,6 +419,11 @@ export function ResumeDocument() {
               <div key={i} className="act-item">
                 <div className="act-top"><span className="act-name">{a.title}</span><span className="act-meta">{a.org} · {a.year}</span></div>
                 <div className="act-desc">{a.desc}</div>
+                {a.notes && a.notes.length > 0 && (
+                  <ul className="cg-sub-items" style={{ marginTop: 5 }}>
+                    {a.notes.map((n, j) => <li key={j} className="cg-sub-item">{n}</li>)}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
