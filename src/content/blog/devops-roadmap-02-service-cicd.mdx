@@ -198,6 +198,10 @@ Jenkins를 대체하는 게 아니라 완전히 별개 네임스페이스(`argo`
 - **EventSource** - 실제 이벤트를 받는 창구. GitHub push 웹훅을 받는 EventSource를 하나 만들었는데, 여기서 인증 방식이 흥미롭다 - GitHub API 토큰을 따로 발급하는 대신 `webhookSecret`으로 **서명(HMAC) 검증**만 한다. 웹훅을 보내는 GitHub 쪽 서버 IP가 고정돼 있지 않아서 보안그룹으로 발신자를 제한할 수 없는데, 그 대신 "서명이 맞는 요청만 진짜로 취급한다"는 방식으로 우회한 것이다 - Deploy Key에 최소 권한만 주는 것과 같은 결의 판단이다.
 - **Sensor** - EventBus에 이벤트가 들어오면 그걸 보고 "그래서 뭘 할지" 정의하는 부분. push 이벤트에서 커밋 메시지·브랜치·작성자를 뽑아 실제 Workflow(Argo Workflows가 실행하는 CRD 기반 파이프라인)를 만든다.
 
+실제로 `git push`를 몇 번 날려보면서 이 배관이 끝까지 이어지는지 확인했다 - 처음엔 `workflowtaskresults` 관련 오류(exit code 64)로 실패했고, 원인을 고치고 나서야 두 번 연속 정상 완료됐다.
+
+![Argo Workflows UI - github-push 이벤트로 트리거된 Workflow 목록. 초기 실패(빨간 X) 이후 정상화(초록 체크)](/argo_workflow.png)
+
 **Jenkins와 비교했을 때의 실제 체감**: Jenkins를 구축하며 오늘 겪은 트러블슈팅들 - SSH 자격증명이 파드 안으로 제대로 안 들어오거나, 워크스페이스 볼륨의 `.git`이 스테이지 사이에서 사라지거나, 같은 컨테이너를 재사용하다 빌드 산출물이 섞이는 문제 - 은 전부 "VM 시대에 만들어진 도구를 쿠버네티스 위에 얹으면서 생기는 마찰"에 가깝다. Argo Workflows는 파이프라인 자체가 처음부터 쿠버네티스 CRD라서 이런 종류의 마찰이 구조적으로 적다.
 
 다만 이게 "그러니 Jenkins보다 항상 낫다"는 결론은 아니다. 설치 기반·생태계 규모는 Jenkins가 압도적으로 크고, Argo Workflows+Events는 원래 ML/데이터 파이프라인(Kubeflow 등) 쪽에서 더 흔히 쓰인다 - CI 용도로 쓰는 건 ArgoCD 등 Argo 생태계를 이미 깊게 쓰고 있는 조직에 더 잘 맞는 선택에 가깝다. 신규 프로젝트라면 서버 관리 자체가 필요 없는 GitHub Actions이 실무 기본값으로 더 대중적이고, 자체 인프라 CI가 꼭 필요할 만큼 k8s 투자가 이미 큰 조직에서만 Jenkins 대신 Tekton/Argo Workflows 쪽에 무게를 두는 게 현실적인 판단이다.
