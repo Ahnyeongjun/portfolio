@@ -482,7 +482,7 @@ export const PROFILE_PLATFORM = {
   location: PROFILE.location,
   military: PROFILE.military,
 
-  tagline: "관리형 서비스에 기대지 않고, 클러스터를 바닥부터 만들고 굴려온 인프라 엔지니어",
+  tagline: "5년차 인프라 엔지니어입니다. kubeadm으로 베어메탈 K8s를 직접 부트스트랩하고, GPUShare로 GPU 4장에서 70파드 병렬 추론, 메시지 큐 전환으로 처리 워커 1개→15개까지 수치로 증명되는 성과를 냈습니다. 관리형 서비스 없이 클러스터를 바닥부터 설계·운영합니다.",
   summary: [
     {
       head: "운영 관리를 위해 서비스를 쪼개니, 인프라도 함께 다시 설계해야 했다",
@@ -490,7 +490,7 @@ export const PROFILE_PLATFORM = {
     },
     {
       head: "관리형 서비스 없이, 클러스터를 직접 부트스트랩",
-      body: "관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다. SaltStack Minion으로 노드별 연결 상태와 메모리 사용률을 실시간 점검해 메모리 50% 미만 노드에만 AI 워크로드를 자동 할당하는 자원 인지형 배치 구조를 만들었고, Aliyun GPUShare로 GPU 한 장을 fraction 단위로 나눠 여러 컨테이너가 동시에 추론하도록 구성했습니다.",
+      body: "관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다. SaltStack Minion으로 노드별 연결 상태와 메모리 사용률을 실시간 점검해 메모리 50% 미만 노드에만 AI 워크로드를 자동 할당하는 자원 인지형 배치 구조를 만들었고, Aliyun GPUShare로 GPU 한 장을 fraction 단위로 나눠 여러 컨테이너가 동시에 추론하도록 구성했습니다. 필요한 자동화 도구는 Go·Python 등 언어를 가리지 않고 직접 만들어 썼습니다.",
     },
     {
       head: "인터넷이 완전히 막힌 환경에서, 인프라를 새로 짓고 지켰다",
@@ -518,7 +518,7 @@ export const PROFILE_PLATFORM = {
         period: "2025.07 ~ 진행 중",
         items: [
           { text: "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장" },
-          { text: "Cilium(eBPF)·kube-vip 클러스터 네트워킹 전환 - 서비스 증가에 따른 처리 오버헤드·단일 장애점 해결" },
+          { text: "Cilium(eBPF)·kube-vip 클러스터 네트워킹 전환 - 서비스 증가에 따른 처리 오버헤드·단일 장애점 해결, 팀원과 설계 방향 협의하며 참여" },
           { text: "OpenBao+ESO 시크릿 중앙화, CloudNativePG PostgreSQL 운영 - 서비스별 개별 관리 부담 해소" },
           { text: "Jenkins → ArgoCD GitOps 전환, Pulp 패키지 저장소 통합 - 배포 드리프트 추적성 확보" },
           { text: "Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축" },
