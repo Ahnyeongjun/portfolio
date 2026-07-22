@@ -482,7 +482,7 @@ export const PROFILE_PLATFORM = {
   location: PROFILE.location,
   military: PROFILE.military,
 
-  tagline: "다양한 언어와 환경을 넘나들며 베어메탈 K8s를 직접 부트스트랩해온 5년차 인프라 엔지니어입니다. GPUShare로 GPU 4장에서 70파드 병렬 추론, 메시지 큐 전환으로 처리 워커 1개→15개까지 수치로 증명되는 성과를 냈습니다. 관리형 서비스 없이 클러스터를 바닥부터 설계·운영합니다.",
+  tagline: "다양한 언어와 환경을 다뤄온 5년차 인프라 엔지니어입니다. 베어메탈 K8s를 kubeadm으로 직접 부트스트랩하고, GPUShare로 GPU 4장에서 70파드 병렬 추론, 메시지 큐 전환으로 처리 워커 1개→15개까지 수치로 증명되는 성과를 냈습니다. 관리형 서비스 없이 클러스터를 바닥부터 키워왔습니다.",
   summary: [
     {
       head: "다양한 기관의 인프라를 매번 새로 설계했습니다",
