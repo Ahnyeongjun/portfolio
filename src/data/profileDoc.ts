@@ -494,7 +494,7 @@ export const PROFILE_PLATFORM = {
     },
     {
       head: "반복되는 작업은 자동화로 걷어냅니다",
-      body: "CRUD 코드를 매번 손으로 짜는 대신 information_schema 기반 자동 생성 도구를 직접 만들었고, Git·캘린더·HRWeb을 넘나드는 사내 업무는 FastMCP 에이전트로 묶어 주 30~60분을 줄였습니다. Jira·Bitbucket 연동도 자동화해 브랜치 생성·PR 문화를 정착시켰습니다. Go·Python 등 언어를 가리지 않고 필요한 자동화 도구를 직접 만들어 씁니다.",
+      body: "CRUD 코드를 매번 손으로 짜는 대신 information_schema 기반 자동 생성 도구를 직접 만들었고, Git·캘린더·HRWeb을 넘나드는 사내 업무는 FastMCP 에이전트로 묶어 주 30~60분을 줄였습니다. Jira·Bitbucket 연동도 자동화해 브랜치 생성·PR 문화를 정착시켰습니다. 필요한 자동화 도구는 Java·Go·Python 등 언어를 가리지 않고 직접 만들어 씁니다.",
     },
   ],
   summaryClose: "단일 컨테이너 부트스트랩에서 시작한 인프라 여정은 NIPA의 클러스터 고도화까지, 팀과 함께 이어가고 있습니다.",
