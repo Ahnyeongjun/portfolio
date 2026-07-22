@@ -15,14 +15,14 @@ function SpotCards() {
         </div>
         <div className="pf-spot-row">
           <div>
-            <div className="pf-spot-num">159ms</div>
+            <div className="pf-spot-num">{t('apiMain')}</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginTop: 8 }}>
               {t('apiSub')}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-family-mono)', textDecoration: 'line-through' }}>38s</div>
-            <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-family-mono)', letterSpacing: '-0.04em', color: '#fff' }}>239×</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-family-mono)', textDecoration: 'line-through' }}>{t('apiOld')}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-family-mono)', letterSpacing: '-0.04em', color: '#fff' }}>15×</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>{t('apiFaster')}</div>
           </div>
         </div>

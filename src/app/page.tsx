@@ -32,10 +32,10 @@ const jsonLd = {
   "@type": "Person",
   name: "안영준",
   url: "https://www.ahnyoungjun.site",
-  jobTitle: "Backend Developer",
-  description: "운영 중인 서비스의 구조적 한계를 직접 진단하고, 아키텍처 개선으로 수치를 바꿔온 백엔드 개발자",
+  jobTitle: "Infrastructure Engineer",
+  description: "관리형 서비스 없이 베어메탈 K8s 클러스터를 직접 구축·운영하며 수치로 증명해온 인프라 엔지니어",
   sameAs: ["https://github.com/Ahnyeongjun"],
-  knowsAbout: ["Spring Boot", "Next.js", "Kubernetes", "React", "TypeScript", "Go", "Python"],
+  knowsAbout: ["Kubernetes", "Docker", "Cilium", "ArgoCD", "Go", "Python", "Spring Boot"],
 };
 
 export default function Home() {

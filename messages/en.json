@@ -12,11 +12,13 @@
   "hero": {
     "status": "Open to work",
     "ctaContact": "Resume / Contact",
-    "apiLabel": "Avg. API Response",
-    "apiSub": "PostGIS + Redis cache",
-    "apiFaster": "faster",
-    "aiValue": "3,000",
-    "aiLabel": "AI inferences/day",
+    "apiLabel": "Queue Processing Workers",
+    "apiSub": "RabbitMQ staged queues",
+    "apiMain": "15",
+    "apiOld": "1",
+    "apiFaster": "scaled",
+    "aiValue": "70 pods",
+    "aiLabel": "via Aliyun GPUShare",
     "deployValue": "30s",
     "deployLabel": "Deploy time",
     "reportLabel": "Report automation",
@@ -25,11 +27,11 @@
   },
   "about": {
     "kicker": "About",
-    "heading": "Not just shipping features —\ndigging into structure and performance",
+    "heading": "Not just shipping features —\ndigging into infrastructure",
     "factNow": "Now",
     "factRole": "Role",
     "factBase": "Base",
-    "roleSub": "Backend-focused · Frontend · Infra",
+    "roleSub": "Infra-focused · Backend · Automation",
     "periodSub": "Jul 2021 ~ present · 5 yrs"
   },
   "skills": {

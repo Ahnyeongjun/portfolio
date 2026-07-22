@@ -12,11 +12,13 @@
   "hero": {
     "status": "이직 준비 중",
     "ctaContact": "이력서 / 연락하기",
-    "apiLabel": "평균 API 응답속도",
-    "apiSub": "PostGIS + Redis 캐싱",
-    "apiFaster": "개선",
-    "aiValue": "3,000건",
-    "aiLabel": "일 AI 추론 처리량",
+    "apiLabel": "메시지 큐 처리 워커",
+    "apiSub": "RabbitMQ 단계별 큐 분리",
+    "apiMain": "15개",
+    "apiOld": "1개",
+    "apiFaster": "확장",
+    "aiValue": "70파드",
+    "aiLabel": "GPUShare 병렬 추론",
     "deployValue": "30초",
     "deployLabel": "서비스 배포 속도",
     "reportLabel": "주간보고 자동화",
@@ -25,11 +27,11 @@
   },
   "about": {
     "kicker": "소개",
-    "heading": "구현에서 끝내지 않고\n구조와 성능까지 파고듭니다",
+    "heading": "구현에서 끝내지 않고\n인프라 구조까지 파고듭니다",
     "factNow": "Now",
     "factRole": "Role",
     "factBase": "Base",
-    "roleSub": "백엔드 중심 · 프론트 · 인프라",
+    "roleSub": "인프라 중심 · 백엔드 · 자동화",
     "periodSub": "2021.07 ~ 현재 · 5년차"
   },
   "skills": {
