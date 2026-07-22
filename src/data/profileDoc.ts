@@ -37,7 +37,7 @@ export interface SkillGroup {
 
 export const PROFILE = {
   name: "안영준",
-  role: "풀스택 개발자 (백엔드 메인)",
+  role: "풀스택 개발자 (인프라 메인)",
   email: "ahn479512@gmail.com",
   github: "github.com/Ahnyeongjun",
   githubUrl: "https://github.com/Ahnyeongjun",
@@ -46,7 +46,7 @@ export const PROFILE = {
   location: "서울, Korea",
   military: "면제",
 
-  tagline: "5년차 백엔드 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.",
+  tagline: "5년차 인프라 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.",
   summary: [
     {
       head: "대규모 요청에도 무너지지 않는 API를 만듭니다",

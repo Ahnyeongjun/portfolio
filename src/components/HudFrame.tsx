@@ -5,7 +5,7 @@ export function HudFrame() {
       <span className="pf-hud-corner tr" />
       <span className="pf-hud-corner bl" />
       <span className="pf-hud-corner br" />
-      <span className="pf-hud-edge left">AHN YOUNGJUN - BACKEND ENGINEER</span>
+      <span className="pf-hud-edge left">AHN YOUNGJUN - INFRASTRUCTURE ENGINEER</span>
       <span className="pf-hud-edge right">PORTFOLIO REV 2026.06 - SEOUL, KR</span>
     </div>
   );

@@ -290,7 +290,7 @@ export function PortfolioDocument() {
 
       <div className="sheet" ref={sheetRef}><div className="sheet-inner">
         <div className="w-brand">Portfolio</div>
-        <div className="w-role">Backend Engineer<span className="dot">.</span></div>
+        <div className="w-role">Infrastructure Engineer<span className="dot">.</span></div>
         <div className="w-sub">{P.tagline}</div>
 
         <div className="w-vals">
@@ -389,7 +389,7 @@ export function PortfolioDocument() {
           </div>
         </div>
 
-        <div className="foot"><span>{P.name} · Backend Engineer</span><span>{P.email}</span></div>
+        <div className="foot"><span>{P.name} · Infrastructure Engineer</span><span>{P.email}</span></div>
       </div></div>
     </div>
   );

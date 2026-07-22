@@ -10,9 +10,9 @@ export const strings = {
   },
   hero: {
     status:   { ko: '채용 가능', en: 'Open to work' },
-    role:     { ko: '백엔드 엔지니어', en: 'Backend Engineer' },
+    role:     { ko: '인프라 엔지니어', en: 'Infrastructure Engineer' },
     headline: { ko: '운영 중인 서비스의\n구조적 한계를\n직접 개선합니다', en: 'I identify and fix\narchitectural limits\nin production systems' },
-    sub:      { ko: '5년간 위성 영상 AI 플랫폼을 MSA로 전환하며\n수치로 증명한 백엔드 엔지니어', en: '5 years building satellite imagery AI platforms,\nproven by metrics, not words' },
+    sub:      { ko: '5년간 위성 영상 AI 플랫폼을 MSA로 전환하며\n수치로 증명한 인프라 엔지니어', en: '5 years building satellite imagery AI platforms,\nproven by metrics, not words' },
     cta1:     { ko: '프로젝트 보기', en: 'View Projects' },
     cta2:     { ko: '연락하기', en: 'Contact' },
     stat1:    { ko: 'MSA', en: 'MSA' },
@@ -28,7 +28,7 @@ export const strings = {
     contact:     { ko: '연락',               en: 'Contact' },
   },
   about: {
-    title:  { ko: '백엔드 엔지니어 안영준',    en: 'Backend Engineer Ahn Youngjun' },
+    title:  { ko: '인프라 엔지니어 안영준',    en: 'Infrastructure Engineer Ahn Youngjun' },
     now:    { ko: '지금',                    en: 'Now' },
     role:   { ko: '포지션',                  en: 'Role' },
     base:   { ko: '위치',                    en: 'Base' },
