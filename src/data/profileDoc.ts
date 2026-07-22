@@ -750,7 +750,37 @@ export const PROFILE_PLATFORM = {
     },
   ] as DocProject[],
 
-  activities: PROFILE.activities,
+  activities: [
+    {
+      title: "FESI 13기 - 백엔드 멘토링",
+      org: "codeit", year: "2026",
+      desc: "프론트엔드 부트캠프 수강생 6명 대상 실무 방식 기반 멘토링 (PR 리뷰, REST API 설계, DDD·TDD 실습).",
+      notes: [
+        "[동시성] 동시 신청 시 maxMembers 초과 가능 → PESSIMISTIC_WRITE 락 + Batch UPDATE로 원자적 증감 처리",
+        "[강결합] 알림 실패가 모임 데이터에 영향 → @TransactionalEventListener(AFTER_COMMIT)로 이벤트 분리, fault tolerance 확보",
+        "[배포] AWS 환경에 GitHub Actions CI/CD로 배포, 51개 테스트 파일(단위·통합·E2E 3-layer 피라미드) 구성",
+      ],
+    },
+    {
+      title: "스위프(SWYP) 웹 9기 ~ 11기, 앱 4기",
+      org: "스위프", year: "2025 ~ 2026",
+      desc: "4개 기수에 백엔드·프론트엔드·PM으로 참여하며 팀 프로젝트를 웹·앱으로 출시했습니다.",
+      notes: [
+        "9기 백엔드(모먼티어), 10기 프론트엔드(축지법), 11기 PM·프론트엔드(위딩), 앱 4기 백엔드(Mapin)",
+        "[배포] NCP(네이버클라우드플랫폼) 환경에 배포",
+      ],
+    },
+    {
+      title: "항해99 백엔드코스 9기",
+      org: "항해99", year: "2025",
+      desc: "동시성 제어와 이벤트 드리븐 아키텍처를 실전으로 검증하는 학습 프로젝트. 상위 10% 수료.",
+      notes: [
+        "[좌석 중복 예약] 비관적 락 → Redis 분산락 → 낙관적 락 순으로 전환, k6 + Grafana 부하 테스트로 트레이드오프 검증",
+        "[분산 트랜잭션] Redis 대기열 → Kafka 전환, Choreography Saga + DLQ로 일관성 확보",
+        "[배포] 온프레미스 환경에 Docker Compose로 배포, GitHub Actions CI 구성",
+      ],
+    },
+  ],
   education: PROFILE.education,
   certs: PROFILE.certs,
 
