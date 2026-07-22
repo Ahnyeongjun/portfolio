@@ -154,7 +154,7 @@ export function InsopsRetrospective() {
         {/* Zabbix 사전 감지 */}
         <AccordionSection
           title="에어갭 무중단 운영 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지"
-          hint="외부 검색·라이브러리 반입 불가 환경에서 Zabbix 커스텀 대시보드로 호스트·서비스 상태 실시간 모니터링"
+          hint="에어갭 환경 · Zabbix 커스텀 대시보드로 호스트·서비스 실시간 모니터링"
           module="에어갭 운영"
         >
           <p>
@@ -175,7 +175,7 @@ export function InsopsRetrospective() {
         {/* 인증·인가 */}
         <AccordionSection
           title="인증·인가 체계 - Spring Session + Redis 세션 인증 · 선언적 인가"
-          hint="세션 쿠키(SESSION)를 Redis로 외부화해 다중 WAR 공유 (JWT 미사용) / 인가는 커스텀 어노테이션 + AOP · session:user 인덱스로 동시 로그인 통제"
+          hint="Spring Session + Redis 세션 쿠키로 다중 WAR 공유(JWT 미사용) · 인가는 어노테이션+AOP · session:user 인덱스로 동시 로그인 통제"
           module="inops-api-svr · inops-front-cmmn"
         >
           <p className="font-medium text-foreground">1. 인증 - Spring Session + Redis 세션 (토큰·JWT 아님)</p>
@@ -242,7 +242,7 @@ export function InsopsRetrospective() {
         {/* 파일 다운로드 */}
         <AccordionSection
           title="파일 다운로드 안정화 - 엔드포인트 통합·이어받기 → 대용량 전송 안정화"
-          hint="일반/INNORIX 대용량 전송을 하나로 · DRM 재암호화 동시성 버그 · 청크 스트리밍 UX 및 서버 구현 갭 발견"
+          hint="일반/INNORIX 엔드포인트 통합 · DRM 재암호화 동시성 버그 · 청크 스트리밍 이어받기"
           module="ins-file-svr"
         >
           <p className="font-medium text-foreground">1. 다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로</p>
@@ -287,7 +287,7 @@ export function InsopsRetrospective() {
         {/* 보안 취약점 진단·대응 */}
         <AccordionSection
           title="보안 취약점 진단·대응 - 외부 보안 진단 지적사항 전량 해소"
-          hint="Burp Suite 브루트포스 시뮬레이션 → 5회 초과 차단 실증 / 위험도별 Rate Limiting / 동적 CSP · 47개 매퍼 SQL Injection 해소"
+          hint="Burp 브루트포스 → 5회 초과 차단 · 위험도별 Rate Limiting · 동적 CSP·47개 매퍼 SQLi 해소"
           module="ins-auth-svr · inops-api-svr"
         >
           <p className="font-medium text-foreground">1. 무차별 대입(브루트포스) 방어 - 발견부터 실증까지</p>
@@ -343,7 +343,7 @@ export function InsopsRetrospective() {
         {/* base 모듈 · 자동생성 */}
         <AccordionSection
           title="공통 base 모듈·자동화 도구 개발 - 반복 개발 제거 → 신규 테이블 온보딩 효율화"
-          hint="information_schema 조회 → 40여 개 테이블 Entity·XML mapper 자동 생성 / 제네릭 CRUD base 모듈 / AOP 공통 에러 로깅"
+          hint="information_schema 기반 Entity·mapper 자동 생성 · 제네릭 CRUD base 모듈 · AOP 공통 로깅"
           module="inops-api-svr"
         >
           <p>
@@ -379,7 +379,7 @@ export function InsopsRetrospective() {
         {/* 표적 데이터 관리 · 집계 쿼리 최적화 */}
         <AccordionSection
           title="표적 데이터 관리 · 집계 쿼리 최적화 - SQL 레벨 정합성·성능 개선"
-          hint="부분 시프트 + 윈도우 함수 재정렬 / CUD 이력 + 참조 무결성·계단식 정리 / 첨부파일 채번 경쟁조건 / 집계 API UNION ALL → WITH CTE(스캔 5회→1회)"
+          hint="윈도우 함수 순번 재정렬 · CUD 감사로그·계단식 무결성 · 집계 UNION ALL → CTE(스캔 5→1)"
           module="inops-api-svr"
         >
           <p className="font-medium text-foreground">1. 즐겨찾기·관심표적 우선순위 재정렬</p>
@@ -427,7 +427,7 @@ export function InsopsRetrospective() {
         {/* 배포 환경별 Spring Profile 분리 */}
         <AccordionSection
           title="배포 환경별 Spring Profile 분리 - 개발·에어갭 실배포·로컬 설정 분리 관리"
-          hint="환경마다 다른 context-path·API host·경로 설정을 로컬/개발/에어갭 실배포 프로파일로 분리해 환경 혼선·재빌드 제거"
+          hint="로컬·개발·에어갭 실배포를 Spring Profile로 분리 · 환경 혼선·재빌드 제거"
           module="ins-auth-svr"
         >
           <p>
@@ -458,7 +458,7 @@ export function InsopsRetrospective() {
         {/* 다종위성 플랫폼 신규 구축 - DB 중앙화·베어메탈 */}
         <AccordionSection
           title="다종위성 플랫폼 신규 구축 - DB 접근 중앙화 · 베어메탈 인프라"
-          hint="관리형 인프라 없이 물리 서버·K8s 클러스터부터, 서비스마다 흩어진 DB 접근을 Go API 한 곳으로 중앙화"
+          hint="베어메탈·K8s 직접 구축 · 흩어진 DB 접근을 Go API 한 곳으로 중앙화"
           module="신규 구축"
         >
           <p>
@@ -544,7 +544,7 @@ export function InsopsRetrospective() {
         {/* 컴포넌트 매니저 */}
         <AccordionSection
           title="공통 컴포넌트 매니저 - 팝업·iframe·인페이지 통신 통합"
-          hint="팝업·iframe 등 서로 다른 window의 함수를 execute() 하나로 통일 - 창 경계를 넘는 이름+인자 기반 호출 추상화"
+          hint="팝업·iframe·인페이지 함수를 execute() 하나로 통일 · 창 경계 넘는 호출 추상화"
           module="inops-das"
         >
           <p>

@@ -485,7 +485,7 @@ def callback(ch, method, properties, body):
 
         <AccordionSection
           title="db-api 계층화 · 위성영상 메타 조회 성능 개선"
-          hint="models·crud·router 단일 파일 → 3계층 분리 / 컬럼 프로젝션·페이지네이션 도입"
+          hint="models·crud·router 단일 파일 → 3계층 분리 · 컬럼 프로젝션·페이지네이션 도입"
           module="db-api"
         >
           <p>

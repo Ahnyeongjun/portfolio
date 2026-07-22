@@ -362,61 +362,6 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">백엔드</h2>
 
-        {/* 1. 성능·보안 */}
-        <AccordionSection
-          title="어드민 페이지 성능 개선 - 부하 테스트 기반 병목 진단"
-          hint="k6 50VU 에러율 11.22% → 0% · 위성 메타 38초 → 159ms(239배)"
-          module="API 서버"
-        >
-          <p>
-            국가기관 납품 특성상 보안 요구사항이 엄격했습니다.
-            납품 전 보안 체크리스트를 직접 작성해 개발 단계마다 선제 반영했고,
-            JUnit으로 비즈니스 로직과 API 통합 테스트를 작성했습니다.
-          </p>
-          <p>
-            부하 테스트는 실제 위성 데이터가 있어야 유효해 운영과 동일한 구성의 격리 클러스터를 별도 구축했습니다.
-            k6 50VU로 테스트하자 에러율 11.22%가 나왔고, 병목 원인은 네 가지였습니다.
-          </p>
-          <ul className="space-y-2 list-none">
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">①</span>
-              <span><Highlight>위성 메타 목록</Highlight> - 페이지네이션 없이 전체 행 반환, 파라미터가 없어도 매 요청마다 <Highlight>PostGIS ST_INTERSECTION</Highlight> 실행</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">②</span>
-              <span><Highlight>수집 현황 집계</Highlight> - CTE에 명시적 JOIN 조건 없어 카테시안 곱 발생 → 타임아웃</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">③</span>
-              <span><Highlight>알람 팝업 목록</Highlight> - base64 PNG BLOB을 목록 쿼리에 포함, HikariCP 커넥션 30개 독점 → 전체 요청 연쇄 타임아웃</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">④</span>
-              <span><Highlight>반복적 트랜잭션 생성</Highlight> - 하나의 조회 API 안에서 여러 테이블을 조회할 때마다 개별 트랜잭션이 열려 HikariCP 커넥션을 추가로 점유, 동시 요청이 몰릴수록 커넥션 풀이 먼저 고갈</span>
-            </li>
-          </ul>
-          <p>
-            조건부 PostGIS 실행, 기본 페이지네이션, BLOB 컬럼 목록·상세 분리, Redis 캐싱으로 수정했습니다.
-            알람 팝업 목록은 조회 조건(일련번호·등록일시)에 인덱스(<code>idx_alam_log_sno</code>,{" "}
-            <code>idx_reg_dt</code>)도 추가해 캐시가 없는 최초 조회도 함께 빨라지도록 했습니다.
-            반복적으로 열리던 트랜잭션은 하나의 조회 API 안의 여러 테이블 조회를{" "}
-            <Highlight>단일 트랜잭션</Highlight>으로 묶어, 요청당 필요한 커넥션·트랜잭션 수
-            자체를 줄였습니다. 이 과정에서 32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에
-            직접 삽입되는 <Highlight>SQL injection</Highlight> 취약점도 발견해 화이트리스트
-            검증으로 교체했습니다.
-          </p>
-          <CompareTable
-            headers={["", "전", "후"]}
-            rows={[
-              { cells: ["위성 메타 목록", "38초", "159ms (239배)"], highlight: true },
-              { cells: ["수집 현황 집계", "46초 (타임아웃)", "181ms (256배)"], highlight: true },
-              { cells: ["알람 팝업 목록", "25초", "104ms → 20ms (캐시)"], highlight: true },
-              { cells: ["50VU 에러율", "11.22%", "0%"], highlight: true },
-              { cells: ["처리량", "392 req/s", "1,177 req/s"] },
-            ]}
-          />
-        </AccordionSection>
-
         {/* 3. 영상 서빙 */}
         <AccordionSection
           title="영상 서빙 속도 개선 - 프로토콜 선택·캐싱·워핑 동시성 제어"
@@ -719,6 +664,61 @@ public void beforeCommit(boolean readOnly) {
             GPU VRAM 경합을 없애고, 타일 경계에 걸친 대형 객체의 중복 검출은 overlap을
             128px→384px로 넓히고 <Highlight>cross-tile NMS</Highlight>를 추가해 제거했습니다.
           </p>
+        </AccordionSection>
+
+        {/* 어드민 페이지 성능 개선 */}
+        <AccordionSection
+          title="어드민 페이지 성능 개선 - 부하 테스트 기반 병목 진단"
+          hint="k6 50VU 에러율 11.22% → 0% · 위성 메타 38초 → 159ms(239배)"
+          module="API 서버"
+        >
+          <p>
+            국가기관 납품 특성상 보안 요구사항이 엄격했습니다.
+            납품 전 보안 체크리스트를 직접 작성해 개발 단계마다 선제 반영했고,
+            JUnit으로 비즈니스 로직과 API 통합 테스트를 작성했습니다.
+          </p>
+          <p>
+            부하 테스트는 실제 위성 데이터가 있어야 유효해 운영과 동일한 구성의 격리 클러스터를 별도 구축했습니다.
+            k6 50VU로 테스트하자 에러율 11.22%가 나왔고, 병목 원인은 네 가지였습니다.
+          </p>
+          <ul className="space-y-2 list-none">
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">①</span>
+              <span><Highlight>위성 메타 목록</Highlight> - 페이지네이션 없이 전체 행 반환, 파라미터가 없어도 매 요청마다 <Highlight>PostGIS ST_INTERSECTION</Highlight> 실행</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">②</span>
+              <span><Highlight>수집 현황 집계</Highlight> - CTE에 명시적 JOIN 조건 없어 카테시안 곱 발생 → 타임아웃</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">③</span>
+              <span><Highlight>알람 팝업 목록</Highlight> - base64 PNG BLOB을 목록 쿼리에 포함, HikariCP 커넥션 30개 독점 → 전체 요청 연쇄 타임아웃</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="shrink-0 text-primary font-medium text-sm mt-0.5">④</span>
+              <span><Highlight>반복적 트랜잭션 생성</Highlight> - 하나의 조회 API 안에서 여러 테이블을 조회할 때마다 개별 트랜잭션이 열려 HikariCP 커넥션을 추가로 점유, 동시 요청이 몰릴수록 커넥션 풀이 먼저 고갈</span>
+            </li>
+          </ul>
+          <p>
+            조건부 PostGIS 실행, 기본 페이지네이션, BLOB 컬럼 목록·상세 분리, Redis 캐싱으로 수정했습니다.
+            알람 팝업 목록은 조회 조건(일련번호·등록일시)에 인덱스(<code>idx_alam_log_sno</code>,{" "}
+            <code>idx_reg_dt</code>)도 추가해 캐시가 없는 최초 조회도 함께 빨라지도록 했습니다.
+            반복적으로 열리던 트랜잭션은 하나의 조회 API 안의 여러 테이블 조회를{" "}
+            <Highlight>단일 트랜잭션</Highlight>으로 묶어, 요청당 필요한 커넥션·트랜잭션 수
+            자체를 줄였습니다. 이 과정에서 32개 MyBatis 매퍼의 ORDER BY 파라미터가 쿼리에
+            직접 삽입되는 <Highlight>SQL injection</Highlight> 취약점도 발견해 화이트리스트
+            검증으로 교체했습니다.
+          </p>
+          <CompareTable
+            headers={["", "전", "후"]}
+            rows={[
+              { cells: ["위성 메타 목록", "38초", "159ms (239배)"], highlight: true },
+              { cells: ["수집 현황 집계", "46초 (타임아웃)", "181ms (256배)"], highlight: true },
+              { cells: ["알람 팝업 목록", "25초", "104ms → 20ms (캐시)"], highlight: true },
+              { cells: ["50VU 에러율", "11.22%", "0%"], highlight: true },
+              { cells: ["처리량", "392 req/s", "1,177 req/s"] },
+            ]}
+          />
         </AccordionSection>
 
         {/* 6. 대용량 다운로드 재설계 */}
