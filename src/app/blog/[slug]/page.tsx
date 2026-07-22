@@ -6,6 +6,9 @@ import remarkGfm from "remark-gfm";
 import { getAllPosts, getPostBySlug, getSeriesPosts } from "@/lib/blog";
 import { BlogShell } from "@/components/blog/BlogShell";
 import { Header } from "@/components/Header";
+import { Accordion } from "@/components/blog/Accordion";
+
+const mdxComponents = { Accordion };
 
 export function generateStaticParams() {
   const posts = getAllPosts();
@@ -116,6 +119,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <MDXRemote
                 source={post.content}
                 options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+                components={mdxComponents}
               />
             </div>
 

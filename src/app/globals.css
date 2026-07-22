@@ -990,6 +990,28 @@ code, pre {
 .pf-series-post:hover .pf-series-post-title { color: var(--pf-ac); }
 .pf-series-arrow { color: var(--pf-text-mute); flex-shrink: 0; }
 
+.pf-accordion { background: var(--pf-bg-soft); border: 1px solid var(--pf-bdr); border-radius: 14px; margin: 1.5rem 0; overflow: hidden; }
+.pf-accordion-head { display: flex; align-items: center; gap: 8px; padding: 13px 18px; cursor: pointer; user-select: none; list-style: none; font-size: 0.95rem; font-weight: 600; color: var(--pf-ac); }
+.pf-accordion-head::-webkit-details-marker { display: none; }
+.pf-accordion-head:hover { background: var(--pf-surface-2, var(--pf-bg-soft)); }
+.pf-accordion-icon { flex-shrink: 0; }
+.pf-accordion[open] > .pf-accordion-head { border-bottom: 1px solid var(--pf-bdr); }
+.pf-accordion-title { flex: 1; }
+.pf-accordion-toggle { color: var(--pf-text-mute); flex-shrink: 0; transition: transform 0.2s var(--pf-ease); }
+.pf-accordion[open] > .pf-accordion-head .pf-accordion-toggle { transform: rotate(180deg); }
+.pf-accordion-body { padding: 15px 18px 19px; color: var(--pf-text-dim); font-size: 0.9rem; line-height: 1.8; }
+.pf-accordion-body p { color: var(--pf-text-dim); margin-bottom: 0.85rem; }
+.pf-accordion-body p:last-child { margin-bottom: 0; }
+.pf-accordion-body ul, .pf-accordion-body ol { color: var(--pf-text-dim); padding-left: 1.25rem; margin-bottom: 0.85rem; }
+.pf-accordion-body li { margin-bottom: 0.35rem; }
+.pf-accordion-body strong { color: var(--pf-text); font-weight: 600; }
+.pf-accordion-body pre { background: var(--pf-surface-2, var(--pf-bg-soft)); border: 1px solid var(--pf-bdr); border-radius: 10px; padding: 1rem; overflow-x: auto; font-size: 0.8rem; line-height: 1.65; margin: 0.85rem 0; }
+.pf-accordion-body pre:last-child { margin-bottom: 0; }
+.pf-accordion-body code { font-family: var(--font-family-mono); }
+.pf-accordion-body table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 0.85rem 0; }
+.pf-accordion-body th, .pf-accordion-body td { border: 1px solid var(--pf-bdr); padding: 0.4rem 0.75rem; text-align: left; }
+.pf-accordion-body th { background: var(--pf-surface-2, var(--pf-bg-soft)); color: var(--pf-text); font-weight: 600; white-space: nowrap; }
+
 .pf-blog-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 80px 0; color: var(--pf-text-mute); }
 
 /* Blog article (detail page) */
