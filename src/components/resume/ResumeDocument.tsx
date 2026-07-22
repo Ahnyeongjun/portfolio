@@ -144,7 +144,7 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
 }
 
 export function ResumeDocument() {
-  const [variant, setVariant] = useState<Variant>("backend");
+  const [variant, setVariant] = useState<Variant>("platform");
   const P = VARIANTS[variant].data;
   const sheetRef = useRef<HTMLDivElement>(null);
 
