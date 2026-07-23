@@ -12,6 +12,9 @@
   "hero": {
     "status": "이직 준비 중",
     "ctaContact": "이력서 / 연락하기",
+    "coreSkill1": "다양한 기관 인프라 설계",
+    "coreSkill2": "베어메탈 클러스터 부트스트랩",
+    "coreSkill3": "반복 작업 자동화",
     "apiLabel": "메시지 큐 처리 워커",
     "apiSub": "RabbitMQ 단계별 큐 분리",
     "apiMain": "15개",

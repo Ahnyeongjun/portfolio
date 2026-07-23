@@ -12,6 +12,9 @@
   "hero": {
     "status": "Open to work",
     "ctaContact": "Resume / Contact",
+    "coreSkill1": "Infra design across institutions",
+    "coreSkill2": "Bare-metal cluster bootstrapping",
+    "coreSkill3": "Automating repetitive work",
     "apiLabel": "Queue Processing Workers",
     "apiSub": "RabbitMQ staged queues",
     "apiMain": "15",

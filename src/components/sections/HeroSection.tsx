@@ -81,6 +81,11 @@ export function HeroSection() {
               <span className="hl">{lang === 'ko' ? profile.headingHighlight : profile.headingHighlightEn}</span>
             </h1>
             <p className="pf-hero-tagline">{lang === 'ko' ? profile.tagline : profile.taglineEn}</p>
+            <div className="pf-hero-core">
+              <span className="pf-chip">{t('coreSkill1')}</span>
+              <span className="pf-chip">{t('coreSkill2')}</span>
+              <span className="pf-chip">{t('coreSkill3')}</span>
+            </div>
             <div className="pf-hero-meta">
               <span className="pf-hero-meta-item">{profile.company} · {lang === 'ko' ? profile.duration : profile.durationEn}</span>
               <a className="pf-hero-meta-item" href={profile.githubUrl} target="_blank" rel="noreferrer">
