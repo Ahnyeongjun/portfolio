@@ -39,48 +39,97 @@ IaC 도구는 크게 두 방식으로 나뉜다.
 
 ```hcl
 # terraform/main.tf
+# 이 랩은 기본 VPC를 그대로 쓴다. Terraform이 VPC/서브넷/키페어까지 만들지 않고
+# "이미 있는 것"으로 참조만 하는 이유:
+# - 기본 VPC는 AWS 계정에 이미 존재 (destroy 대상이 아님 - 실수로 계정 전체
+#   네트워크를 건드리지 않게 분리)
+# - 키페어(k8s-lab.pem)는 로컬에만 있는 개인키와 짝이 맞아야 하므로, Terraform이
+#   새로 만들면 기존 .pem 파일이 무용지물이 됨 → 반드시 기존 키페어를 "참조"만 해야 함.
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet" "existing" {
+# 인스턴스 3대가 기존에 놓였던 두 AZ(2c: CP, 2b: 워커 2대)에 맞춰 서브넷을 고른다.
+data "aws_subnet" "az_2c" {
+  filter {
+    name   = "availability-zone"
+    values = ["ap-northeast-2c"]
+  }
   vpc_id = data.aws_vpc.default.id
-  availability_zone = "ap-northeast-2c"
 }
 
-data "aws_key_pair" "existing" {
-  key_name = "k8s-lab"   # 실수로 재생성되면 기존 인스턴스 접근 불가 - 반드시 data로만
+data "aws_key_pair" "k8s_lab" {
+  key_name = var.key_pair_name   # 기본값 "k8s-lab" - Terraform이 새로 만들지 않고 참조만
+}
+
+# Ubuntu 22.04 최신 AMI를 SSM 파라미터로 조회 (수동 조회 절차와 동일한 소스)
+data "aws_ssm_parameter" "ubuntu_2204_ami" {
+  name = "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id"
 }
 ```
 
 ```hcl
-# terraform/security_group.tf - 오늘 하루 동안 필요해서 하나씩 열었던 규칙을 전부 명시적으로 코드화
+# terraform/security_group.tf - 그날그날 하나씩 열어온 인바운드 규칙을 그대로 코드화
+# (실제 계정의 sg-xxxxxxxxxxxxxxxxx 규칙을 조회해 옮김)
 resource "aws_security_group" "k8s_lab" {
   name        = "k8s-lab-sg"
+  description = "k8s lab"
   vpc_id      = data.aws_vpc.default.id
-  description = "k8s lab"   # 한글 설명은 AWS가 거부한다 - 아래 참고
-
-  ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "SSH"
-  }
-  # NodePort 30900(Argo Events webhook), 30931(Argo Workflows UI) 등
-  # 실제로 그날그날 필요해서 열었던 규칙을 전부 여기 옮겨 적었다
 }
+
+# 노드 간 통신: 전체 프로토콜, 자기 자신(같은 SG) 참조 → 쿠버네티스 노드 간 모든 통신 허용
+resource "aws_vpc_security_group_ingress_rule" "node_to_node" {
+  security_group_id            = aws_security_group.k8s_lab.id
+  ip_protocol                  = "-1"
+  referenced_security_group_id = aws_security_group.k8s_lab.id
+  description                  = "node-to-node all traffic"
+}
+
+# GitHub 웹훅 수신 (Argo Events) - 발신 IP가 고정이 아니라 전체 개방 필요,
+# 대신 HMAC 서명 검증으로 위조 요청 차단
+resource "aws_vpc_security_group_ingress_rule" "github_webhook" {
+  security_group_id = aws_security_group.k8s_lab.id
+  ip_protocol       = "tcp"
+  from_port         = var.webhook_nodeport
+  to_port           = var.webhook_nodeport
+  cidr_ipv4         = "0.0.0.0/0"
+  description       = "Argo Events GitHub webhook"
+}
+
+# Jenkins UI - 빌드 실행 권한이 있어 접속자 IP만 허용 (ArgoCD/Hubble과 다른 보안 수준)
+resource "aws_vpc_security_group_ingress_rule" "jenkins" {
+  security_group_id = aws_security_group.k8s_lab.id
+  ip_protocol       = "tcp"
+  from_port         = 30880
+  to_port           = 30880
+  cidr_ipv4         = var.my_ip_cidr
+  description       = "Jenkins UI (restricted to admin IP)"
+}
+# ingress-nginx/ArgoCD/Hubble UI 등 나머지 규칙도 같은 패턴으로 이어진다
 ```
 
 ```hcl
 # terraform/instances.tf
-resource "aws_instance" "control_plane" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.medium"
-  subnet_id              = data.aws_subnet.existing.id
-  key_name               = data.aws_key_pair.existing.key_name
+resource "aws_instance" "k8s_cp" {
+  ami                    = data.aws_ssm_parameter.ubuntu_2204_ami.value
+  instance_type          = var.cp_instance_type   # t3.medium
+  subnet_id              = data.aws_subnet.az_2c.id
+  key_name               = data.aws_key_pair.k8s_lab.key_name
   vpc_security_group_ids = [aws_security_group.k8s_lab.id]
-  root_block_device { volume_size = 50 }  # Longhorn storageReserved 이슈 반영
+
+  # 스팟(persistent) - 중단되면 stop, 종료 아님 (저녁마다 정지하는 운영과 호환)
+  instance_market_options {
+    market_type = "spot"
+    spot_options {
+      spot_instance_type             = "persistent"
+      instance_interruption_behavior = "stop"
+    }
+  }
+
+  root_block_device {
+    volume_size = var.cp_root_volume_size   # 30
+    volume_type = "gp3"
+  }
 }
 ```
 
@@ -89,6 +138,8 @@ resource "aws_instance" "control_plane" {
 `security_group.tf`의 인바운드 규칙 `description`에 한글 설명을 그대로 넣었더니 `terraform apply`가 `InvalidParameterValue`로 실패했다. AWS 보안그룹 규칙의 `description` 필드는 **ASCII 문자만 허용**한다 - 한글(비ASCII)이 하나라도 섞이면 API 레벨에서 거부된다. 전부 영문 설명으로 바꿔서 해결했다. 콘솔에서 클릭으로 만들 때는 잘 몰랐는데, 코드로 선언하고 나서야 마주친 제약이다.
 
 </Accordion>
+
+`variables.tf`에서 한 가지 눈에 띄는 설계 포인트 - Jenkins/Argo Workflows처럼 민감한 UI에 접속을 허용할 `my_ip_cidr` 변수는 **기본값을 아예 지정하지 않았다.** 반드시 `-var`나 `terraform.tfvars`로 명시적으로 넘겨야만 apply가 되게 만들어서, "깜빡하고 0.0.0.0/0으로 열어버리는" 실수를 원천 차단한 것이다.
 
 state 파일이 하는 역할은 이렇다 - Terraform은 `.tf` 코드만 보고는 "이 리소스가 실제로 이미 있는지"를 알 수 없다. `terraform.tfstate`에 "내가 마지막으로 만든 리소스가 무엇이었는지"를 기록해두고, 다음 실행 때 이 state와 코드를 비교해 차이만 적용한다. 이번 랩은 혼자 쓰는 학습 환경이라 로컬 state로 진행했지만, 여러 사람/여러 세션이 같은 인프라를 다룬다면 원격 백엔드(S3+DynamoDB 락)로 옮겨야 두 사람이 동시에 `apply`해서 state가 꼬이는 걸 막을 수 있다.
 
@@ -106,44 +157,108 @@ state 파일이 하는 역할은 이렇다 - Terraform은 `.tf` 코드만 보고
 
 즉 "로컬 → 모든 노드"가 아니라 "로컬 → CP 노드 → (CP가 스스로와 워커들을) 구성"하는 한 단계 간접 구조다. 로컬 환경 제약 때문에 나온 방식이지만, 결과적으로 원본 키를 로컬에만 묶어두는 최소권한 원칙과도 맞아떨어졌다.
 
+`bootstrap.sh`의 핵심은 재시도와 회피 로직이다 - sshd의 `MaxStartups`(동시 미인증 연결 제한)로 추정되는 간헐적 실패에 대응하는 재시도 함수, 그리고 CP를 경유하는 `ProxyJump` 대신 워커 공인 IP로 직접 접속하는 우회 방식이다.
+
+```bash
+# ansible/bootstrap.sh
+# sshd의 MaxStartups(동시 미인증 연결 제한)에 걸려 간헐적으로 "Permission denied"가
+# 나는 현상이 있어(연결 시도가 몰릴 때 관측됨), 위험한 호출들은 짧게 재시도한다.
+ssh_retry() {
+  local tries=15
+  local i=1
+  while [ $i -le $tries ]; do
+    if ssh $SSH_OPTS "$@"; then
+      return 0
+    fi
+    echo "  (ssh 실패, ${i}/${tries}차 재시도 대기 중...)" >&2
+    sleep 5
+    i=$((i + 1))
+  done
+  return 1
+}
+
+for ip in $WORKER_PUBLIC_IPS; do
+  # ProxyJump으로 CP를 경유하면 원인 미상의 간헐적 publickey 실패가 있어(재현 어려움),
+  # 워커도 공인 IP가 있으므로 로컬에서 직접 접속해 등록한다.
+  cat /tmp/ansible_orchestrator.pub | ssh $SSH_OPTS ubuntu@"$ip" \
+    'mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
+done
+```
+
 </Accordion>
 
 ```yaml
 # ansible/playbook.yml
-- hosts: all
+- name: 공통 노드 준비 (모든 노드)
+  hosts: all
   become: true
   tasks:
-    - name: 스왑 비활성화
+    - name: swap 비활성화
       command: swapoff -a
-    - name: 커널 모듈 로드
+      when: ansible_swaptotal_mb > 0
+
+    - name: 커널 모듈 로드 (overlay, br_netfilter)
       modprobe:
         name: "{{ item }}"
+        state: present
       loop: [overlay, br_netfilter]
-    - name: containerd 설치
-      apt: { name: containerd, state: present }
-    - name: kubeadm/kubelet/kubectl 설치
-      apt: { name: [kubelet, kubeadm, kubectl], state: present }
 
-- hosts: control_plane
+    - name: sysctl 파라미터 설정 (브릿지 트래픽이 iptables를 타도록)
+      copy:
+        dest: /etc/sysctl.d/k8s.conf
+        content: |
+          net.bridge.bridge-nf-call-iptables  = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.ipv4.ip_forward                 = 1
+        mode: "0644"
+
+    - name: sysctl 즉시 적용 (핸들러는 파일이 changed일 때만 실행되어, 파일만
+        쓰이고 실제 커널 파라미터는 미적용인 채로 남는 경우가 있어 항상 실행)
+      command: sysctl --system
+      changed_when: false
+
+    - name: containerd 기본 설정 생성 여부 확인
+      stat:
+        path: /etc/containerd/config.toml
+      register: containerd_config
+
+    - name: /etc/containerd 디렉터리 생성
+      file:
+        path: /etc/containerd
+        state: directory
+        mode: "0755"
+      when: not containerd_config.stat.exists
+
+- name: 컨트롤플레인 초기화
+  hosts: control_plane
   become: true
   tasks:
-    - name: kubeadm init 실행 여부 확인
-      stat: path=/etc/kubernetes/admin.conf
-      register: kubeadm_done
-    - name: kubeadm init
-      command: kubeadm init --control-plane-endpoint={{ control_plane_ip }}:6443
+    - name: kubeadm init (Cilium이 kube-proxy를 대체하므로 addon/kube-proxy 스킵)
+      command: >
+        kubeadm init
+        --skip-phases=addon/kube-proxy
+        --control-plane-endpoint={{ control_plane_endpoint }}:6443
+        --upload-certs
       when: not kubeadm_done.stat.exists
-    - name: Cilium/Longhorn helm 설치
-      # kubeProxyReplacement=true, longhorn-system 네임스페이스
-      command: "{{ item }}"
-      loop: [] # 실제로는 helm install 커맨드들이 순서대로 들어간다
+
+    - name: Cilium 설치 (kube-proxy 대체 모드 + Hubble)
+      command: >
+        helm install cilium cilium/cilium --version 1.16.0
+        --namespace kube-system
+        --set kubeProxyReplacement=true
+        --set k8sServiceHost={{ control_plane_endpoint }}
+        --set k8sServicePort=6443
+        --set hubble.enabled=true
+        --set hubble.relay.enabled=true
+        --set hubble.ui.enabled=true
+      when: "'STATUS: deployed' not in cilium_status.stdout"
 ```
 
 <Accordion title="Ansible 플레이북에서 실제로 만난 버그 2가지">
 
-**1) `/etc/containerd` 디렉터리가 없어서 다음 태스크가 실패**: `containerd config default`는 기본 설정을 표준출력에 찍기만 할 뿐 `/etc/containerd` 디렉터리를 만들지는 않는다. 그런데 그 다음 태스크가 바로 이 디렉터리 안에 설정 파일을 쓰려고 하면 `Destination directory /etc/containerd does not exist`로 실패한다. 디렉터리 생성 태스크(`file: { path: /etc/containerd, state: directory }`)를 명시적으로 앞에 추가해서 해결했다.
+**1) `/etc/containerd` 디렉터리가 없어서 다음 태스크가 실패**: `containerd config default`는 기본 설정을 표준출력에 찍기만 할 뿐 `/etc/containerd` 디렉터리를 만들지는 않는다. 그런데 그 다음 태스크가 바로 이 디렉터리 안에 설정 파일을 쓰려고 하면 `Destination directory /etc/containerd does not exist`로 실패한다. 위 플레이북처럼 디렉터리 생성 태스크를 명시적으로 앞에 추가해서 해결했다.
 
-**2) sysctl 설정이 파일에만 쓰이고 실제로 적용은 안 됨**: `net.ipv4.ip_forward` 등의 sysctl 값을 파일로 쓰는 태스크에 `notify` 핸들러(`sysctl --system`)로만 반영되게 짰는데, Ansible 핸들러는 **그 태스크가 `changed`일 때만** 실행된다. 1차 실행은 태스크 자체가 중간에 실패해서 핸들러가 flush되기 전에 플레이가 중단됐고, 2차 실행은 파일이 이미 존재해서 태스크가 `changed`가 아닌 `ok`로 판정돼 핸들러가 아예 호출되지 않았다. 결과적으로 `kubeadm init`이 `ip_forward` preflight 체크에서 계속 실패했다. **핸들러 의존을 없애고 매 실행마다 무조건 `sysctl --system`을 실행**하도록 바꿔서 해결했다 - 멱등성을 챙기려다 오히려 "적용 자체를 건너뛰는" 흔한 함정이었다.
+**2) sysctl 설정이 파일에만 쓰이고 실제로 적용은 안 됨**: `net.ipv4.ip_forward` 등의 sysctl 값을 파일로 쓰는 태스크에 `notify` 핸들러(`sysctl --system`)로만 반영되게 짰는데, Ansible 핸들러는 **그 태스크가 `changed`일 때만** 실행된다. 1차 실행은 태스크 자체가 중간에 실패해서 핸들러가 flush되기 전에 플레이가 중단됐고, 2차 실행은 파일이 이미 존재해서 태스크가 `changed`가 아닌 `ok`로 판정돼 핸들러가 아예 호출되지 않았다. 결과적으로 `kubeadm init`이 `ip_forward` preflight 체크에서 계속 실패했다. 위 플레이북처럼 **핸들러 의존을 없애고 매 실행마다 무조건 `sysctl --system`을 실행**하도록 바꿔서 해결했다 - 멱등성을 챙기려다 오히려 "적용 자체를 건너뛰는" 흔한 함정이었다.
 
 </Accordion>
 
