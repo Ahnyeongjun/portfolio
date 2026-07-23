@@ -21,6 +21,8 @@
     "aiLabel": "GPUShare 병렬 추론",
     "reliabilityValue": "이벤트 유실 0건",
     "reliabilityLabel": "Outbox 라이브러리 직접 개발",
+    "throughputValue": "200 → 3,000건",
+    "throughputLabel": "GPU 공유 후 일 처리량",
     "reportLabel": "주간보고 자동화",
     "reportValue": "1시간 → 자동화",
     "reportSub": "Git · 캘린더 병합 MCP"
