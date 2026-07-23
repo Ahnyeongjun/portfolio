@@ -39,8 +39,8 @@ function SpotCards() {
           <div className="ml">{t('reliabilityLabel')}</div>
         </div>
         <div className="mini">
-          <div className="mv">{t('throughputValue')}</div>
-          <div className="ml">{t('throughputLabel')}</div>
+          <div className="mv">{t('redeployValue')}</div>
+          <div className="ml">{t('redeployLabel')}</div>
         </div>
       </div>
 

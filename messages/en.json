@@ -24,8 +24,8 @@
     "aiLabel": "via Aliyun GPUShare",
     "reliabilityValue": "0 events lost",
     "reliabilityLabel": "Outbox library, built in-house",
-    "throughputValue": "200 → 3,000/day",
-    "throughputLabel": "Daily jobs after GPU sharing",
+    "redeployValue": "10 → 1",
+    "redeployLabel": "Monthly redeploys after MSA",
     "reportLabel": "Report automation",
     "reportValue": "1h → automated",
     "reportSub": "Git · Calendar MCP — 10-member team"
