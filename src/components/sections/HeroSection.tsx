@@ -38,6 +38,10 @@ function SpotCards() {
           <div className="mv">{t('reliabilityValue')}</div>
           <div className="ml">{t('reliabilityLabel')}</div>
         </div>
+        <div className="mini">
+          <div className="mv">{t('kubeadmValue')}</div>
+          <div className="ml">{t('kubeadmLabel')}</div>
+        </div>
       </div>
 
       {/* Bottom card */}

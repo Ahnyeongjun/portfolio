@@ -677,10 +677,10 @@ code, pre {
 .pf-spot-card.blue .pf-spot-flow .to { color: #fff; }
 .pf-spot-label { font-size: 15px; color: var(--pf-text-dim); margin-top: 8px; font-weight: 600; }
 .pf-spot-card.blue .pf-spot-label { color: rgba(255,255,255,0.9); }
-.pf-spot-mini { display: flex; gap: 12px; }
-.pf-spot-mini .mini { flex: 1; background: var(--pf-surface); border-radius: var(--pf-radius-sm); box-shadow: var(--pf-shadow-card); padding: 18px 20px; }
-.pf-spot-mini .mini .mv { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; font-family: var(--font-family-mono); }
-.pf-spot-mini .mini .ml { font-size: 13px; color: var(--pf-text-mute); margin-top: 4px; font-weight: 600; }
+.pf-spot-mini { display: flex; flex-wrap: wrap; gap: 12px; }
+.pf-spot-mini .mini { flex: 1 1 calc(50% - 6px); min-width: 130px; background: var(--pf-surface); border-radius: var(--pf-radius-sm); box-shadow: var(--pf-shadow-card); padding: 18px 20px; }
+.pf-spot-mini .mini .mv { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; font-family: var(--font-family-mono); white-space: nowrap; }
+.pf-spot-mini .mini .ml { font-size: 12.5px; color: var(--pf-text-mute); margin-top: 4px; font-weight: 600; }
 
 .pf-hero-coords { font-family: var(--font-family-mono); font-size: 11px; color: var(--pf-text-mute); letter-spacing: 0.08em; margin-bottom: 16px; }
 

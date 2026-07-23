@@ -21,6 +21,8 @@
     "aiLabel": "via Aliyun GPUShare",
     "reliabilityValue": "0 events lost",
     "reliabilityLabel": "Outbox library, built in-house",
+    "kubeadmValue": "kubeadm",
+    "kubeadmLabel": "Bare-metal K8s, bootstrapped directly",
     "reportLabel": "Report automation",
     "reportValue": "1h → automated",
     "reportSub": "Git · Calendar MCP — 10-member team"
