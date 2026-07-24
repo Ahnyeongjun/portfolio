@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 function CodeBlock({ children }: { children: string }) {
   return (
@@ -283,6 +284,15 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
               { cells: ["정책 검증", "배포 후 수동 확인", "Workflows 단계에 OPA 게이트 통합"] },
             ]}
           />
+          <p className="text-sm">
+            <Highlight>Argo Workflows</Highlight>는 빌드까지만 책임지고, <Highlight>ArgoCD</Highlight>는
+            배포를 직접 실행하는 대신 Git 상태를 클러스터가 계속 따라가게 만드는 역할이라 - 이 전환 과정과
+            OPA 게이트 도입 배경은{" "}
+            <Link href="/blog/nipa-cicd-argo-gitops" className="underline underline-offset-2 hover:text-foreground">
+              별도 글
+            </Link>
+            로 자세히 정리했습니다.
+          </p>
         </AccordionSection>
 
         {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao·CloudNativePG */}
