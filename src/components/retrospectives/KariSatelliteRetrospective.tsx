@@ -330,8 +330,8 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           module="Nginx"
         >
           <p>
-            레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했는데, Tomcat이 직접
-            내려주는 보안 헤더가 서비스마다 제각각이었고, 와일드카드 인증서와 체인을
+            레거시 Tomcat 기반 프론트엔드를 외부에 HTTPS로 노출해야 했는데, <Highlight>서비스 7개</Highlight>가
+            각자 노출되다 보니 Tomcat이 직접 내려주는 보안 헤더가 제각각이었고, 와일드카드 인증서와 체인을
             Tomcat 단독으로 관리하기도 번거로웠습니다.
           </p>
           <p>

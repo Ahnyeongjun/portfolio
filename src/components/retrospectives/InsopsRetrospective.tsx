@@ -154,7 +154,7 @@ export function InsopsRetrospective() {
         {/* 에어갭 인프라 운영 - 사전 감지·재현 가능한 구축·인증서 자동화 */}
         <AccordionSection
           title="에어갭 인프라 운영 - 장애 사전 감지 · 재현 가능한 구축 · 인증서 자동화"
-          hint="Zabbix 커스텀 대시보드 · 클러스터 프로비저닝 쉘 스크립트화 · K8s 인증서 만료 대응 자동화"
+          hint="Zabbix 커스텀 대시보드 · 프로비저닝 쉘 스크립트화(구축 1~2일 → 2~3시간) · K8s 인증서 만료 대응 자동화"
           module="에어갭 운영"
         >
           <p className="font-medium text-foreground">1. 장애 사전 감지 - Zabbix 커스텀 대시보드</p>
@@ -168,7 +168,8 @@ export function InsopsRetrospective() {
           <p>
             반입 가능한 도구가 제한된 환경이라 Terraform·Ansible 같은 범용 IaC 도구를 그대로 들여올 수
             없었습니다. 클러스터 구축 절차를 <Highlight>쉘 스크립트로 코드화</Highlight>해, 같은 환경
-            제약 안에서도 사람이 매번 손으로 따라 하지 않고 재현 가능한 구축 절차를 확보했습니다.
+            제약 안에서도 사람이 매번 손으로 따라 하지 않고 재현 가능한 구축 절차를 확보했습니다. 수동으로
+            진행하던 <Highlight>1~2일짜리 구축 작업을 2~3시간</Highlight>으로 단축했습니다.
           </p>
           <p className="font-medium text-foreground">3. K8s 인증서 만료 대응 자동화</p>
           <p>
@@ -412,6 +413,10 @@ export function InsopsRetrospective() {
             개별로 넣는 대신 <Highlight>AOP</Highlight>로 base 모듈에 공통 적용해 로깅 누락을 구조적으로
             방지했습니다.
           </p>
+          <p>
+            테이블당 <Highlight>30분~1시간</Highlight> 걸리던 보일러플레이트 작성을 <Highlight>수 분 내</Highlight>로
+            단축했습니다.
+          </p>
         </AccordionSection>
 
         {/* 표적 데이터 관리 · 집계 쿼리 최적화 */}
@@ -500,9 +505,10 @@ export function InsopsRetrospective() {
           module="신규 구축"
         >
           <p>
-            기존 프로젝트들은 각 서비스(Cataloger, Job Manager, 가시화 등)가 ORM으로 DB에 직접 접근하는
-            구조였습니다. DB 접근 로직과 자격증명이 모든 서비스에 흩어져 있어 스키마가 바뀌면 여러 서비스를
-            동시에 수정해야 했고, Python ORM과 Go가 같은 DB를 다룰 때 패턴이 어긋나는 문제도 있었습니다.
+            기존 프로젝트들은 <Highlight>서비스 7개</Highlight>(Cataloger, Job Manager, 가시화 등)가 ORM으로
+            DB에 직접 접근하는 구조였습니다. DB 접근 로직과 자격증명이 모든 서비스에 흩어져 있어 스키마가
+            바뀌면 여러 서비스를 동시에 수정해야 했고, Python ORM과 Go가 같은 DB를 다룰 때 패턴이 어긋나는
+            문제도 있었습니다.
           </p>
           <p>
             독립 스키마를 새로 짜야 하는 신규 구축 프로젝트의 기회를 활용해, DB 접근을{" "}

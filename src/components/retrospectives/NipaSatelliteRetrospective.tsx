@@ -319,7 +319,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         {/* 관측 스택 */}
         <AccordionSection
           title="관측 스택 - OTel · Prometheus · Grafana · Tempo · OpenSearch"
-          hint="CI/CD·게이트웨이·앱·DB 전 구간 계측 - 장애 원인분석 시간 단축"
+          hint="CI/CD·게이트웨이·앱·DB 전 구간 계측 - 장애 원인분석 1~2시간 → 30분 이내"
           module="observability"
         >
           <p>
@@ -332,7 +332,8 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           <p>
             서비스가 9개로 분리되며 장애 시 어느 단계에서 문제가 발생했는지 파악하는 데 걸리는 시간이
             길어질 위험이 있었는데, 요청 하나를 트레이스 ID로 전 구간(Envoy Gateway → 앱 Pod → DB)에서
-            추적할 수 있게 되면서 장애 원인분석 시간을 단축했습니다.
+            추적할 수 있게 되면서 장애 원인분석 시간을 <Highlight>1~2시간에서 30분 이내로</Highlight> 단축했습니다.
+            요청이 죽은 구간이나 지연 구간을 로그를 수동으로 뒤지지 않고 대시보드에서 바로 특정할 수 있게 됐습니다.
           </p>
         </AccordionSection>
 
