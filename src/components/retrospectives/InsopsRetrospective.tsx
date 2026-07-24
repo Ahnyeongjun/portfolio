@@ -136,13 +136,13 @@ export function InsopsRetrospective() {
         국가보안기관 위성영상 시스템을 <Highlight>4년째 책임</Highlight>지고 있습니다.
         Spring Boot·MyBatis·PostGIS·CesiumJS 기반 시스템에서 판독보고서 생성·어드민·위성
         ETL(수집·전처리·적재)·AI 분석 연동 등 핵심 도메인 서비스를 개발·운영했고, 이후
-        에어갭 무중단 운영과 신규 플랫폼 구축까지 이어서 맡았습니다.
+        에어갭 환경 운영과 신규 플랫폼 구축까지 이어서 맡았습니다.
       </p>
       <p>
         초기 2년(2022.05~2024.05)은 프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·인증
         서버(ins-auth-svr)·다운로드 컨트롤러(ins-file-svr)를 <Highlight>처음부터 끝까지</Highlight>{" "}
         개발하며 레거시 모듈을 점진적으로 전환했고, 이후 위성영상 AI 처리 플랫폼을 인터넷이
-        완전히 차단된 에어갭 환경에서 수십 대 서버 규모로 무중단 <Highlight>운영</Highlight>(2024.07~),
+        완전히 차단된 에어갭 환경에서 수십 대 서버 규모로 롤링 방식 서비스 중단 없이 <Highlight>운영</Highlight>(2024.07~),
         별도의 다종위성 수집·처리 플랫폼을 베어메탈부터 전 과정 <Highlight>신규 구축</Highlight>했습니다
         (2025.06~2025.12).
       </p>
@@ -151,17 +151,30 @@ export function InsopsRetrospective() {
       <div className="space-y-2">
         <h2 className="text-2xl font-bold text-foreground">인프라·운영</h2>
 
-        {/* Zabbix 사전 감지 */}
+        {/* 에어갭 인프라 운영 - 사전 감지·재현 가능한 구축·인증서 자동화 */}
         <AccordionSection
-          title="에어갭 무중단 운영 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지"
-          hint="에어갭 환경 · Zabbix 커스텀 대시보드로 호스트·서비스 실시간 모니터링"
+          title="에어갭 인프라 운영 - 장애 사전 감지 · 재현 가능한 구축 · 인증서 자동화"
+          hint="Zabbix 커스텀 대시보드 · 클러스터 프로비저닝 쉘 스크립트화 · K8s 인증서 만료 대응 자동화"
           module="에어갭 운영"
         >
+          <p className="font-medium text-foreground">1. 장애 사전 감지 - Zabbix 커스텀 대시보드</p>
           <p>
             외부 검색이나 라이브러리 반입이 불가능한 에어갭 환경이라, 장애가 발생해도 사용자 신고 전까지는
             인지가 늦는 구조였습니다. <Highlight>Zabbix</Highlight>로 호스트·서비스 상태를 실시간
             모니터링하는 커스텀 대시보드를 직접 구축해 <Highlight>장애를 사전에 감지</Highlight>할 수 있는
             체계를 확보하고, 외부 반입이 막힌 환경에서의 장애 대응 판단을 절차로 정리했습니다.
+          </p>
+          <p className="font-medium text-foreground">2. 클러스터 프로비저닝 쉘 스크립트화</p>
+          <p>
+            반입 가능한 도구가 제한된 환경이라 Terraform·Ansible 같은 범용 IaC 도구를 그대로 들여올 수
+            없었습니다. 클러스터 구축 절차를 <Highlight>쉘 스크립트로 코드화</Highlight>해, 같은 환경
+            제약 안에서도 사람이 매번 손으로 따라 하지 않고 재현 가능한 구축 절차를 확보했습니다.
+          </p>
+          <p className="font-medium text-foreground">3. K8s 인증서 만료 대응 자동화</p>
+          <p>
+            kubeadm 클러스터의 인증서는 주기적으로 만료되는데, 이전에는 만료 시점마다 현장을 직접 방문해
+            수동으로 갱신해야 했습니다. 갱신 절차를 자동화해 <Highlight>연 1회 현장 방문 작업을
+            제거</Highlight>했습니다.
           </p>
         </AccordionSection>
       </div>
@@ -472,7 +485,7 @@ export function InsopsRetrospective() {
             접근하도록 바꾸자 스키마 변경의 영향 범위가 API 레이어 한 곳으로 좁혀졌고, 서비스는 사용 언어와
             무관하게 동일한 방식으로 DB를 다룰 수 있게 됐습니다. 관리형 인프라가 없는 상태에서 물리 서버
             설치, K8s 클러스터 구성부터 다종 수집기 통합, DB 기반 중복 체크, zst/tar.gz 포맷 변환 자동화까지
-            베어메탈에서 운영 가능한 시스템까지의 인프라 전 과정을 직접 결정했습니다.
+            베어메탈에서 운영 가능한 시스템까지의 인프라 전 과정에 핵심적으로 참여했습니다.
           </p>
         </AccordionSection>
       </div>

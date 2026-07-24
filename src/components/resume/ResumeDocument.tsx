@@ -41,7 +41,7 @@ const CSS = `
   .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skill-group { break-inside:avoid; }
   .rallit-root .sec-h, .rallit-root .cg-top { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
-  .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:normal !important; }
 }
 .rallit-root .hd { display:flex; justify-content:space-between; align-items:flex-start; gap:28px; }
 .rallit-root .hd-main { flex:1; min-width:0; }
@@ -143,9 +143,25 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
   return er.top - sr.top;
 }
 
+const TAB_PARAM: Record<Variant, string> = { backend: "backend", platform: "infra" };
+
+function variantFromSearch(search: string): Variant {
+  const tab = new URLSearchParams(search).get("tab");
+  return tab === "backend" ? "backend" : "platform";
+}
+
 export function ResumeDocument() {
-  const [variant, setVariant] = useState<Variant>("platform");
+  const [variant, setVariant] = useState<Variant>(() =>
+    typeof window === "undefined" ? "platform" : variantFromSearch(window.location.search)
+  );
   const P = VARIANTS[variant].data;
+
+  const handleVariantChange = useCallback((key: Variant) => {
+    setVariant(key);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", TAB_PARAM[key]);
+    window.history.replaceState(null, "", url.toString());
+  }, []);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const applyBreaks = useCallback(() => {
@@ -305,7 +321,7 @@ export function ResumeDocument() {
           <button
             key={key}
             className={`rallit-variant-btn${variant === key ? " active" : ""}`}
-            onClick={() => setVariant(key)}
+            onClick={() => handleVariantChange(key)}
           >
             {VARIANTS[key].label}
           </button>

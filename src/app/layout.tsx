@@ -21,20 +21,20 @@ const BASE_URL = "https://www.ahnyoungjun.site";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "안영준 | Full-Stack Developer",
+    default: "안영준 | Infrastructure Engineer",
     template: "%s | 안영준",
   },
   description:
-    "서비스의 지속적인 발전을 고민하는 풀스택 개발자 안영준입니다. Spring Boot, Next.js, Kubernetes 기반의 프로젝트를 진행합니다.",
+    "베어메탈 Kubernetes를 kubeadm으로 직접 부트스트랩하고 MSA·관측성·CI/CD까지 다루는 인프라 엔지니어 안영준입니다.",
   keywords: [
     "안영준",
-    "풀스택 개발자",
+    "인프라 엔지니어",
     "포트폴리오",
+    "Kubernetes",
+    "MSA",
+    "DevOps",
     "Spring Boot",
     "Next.js",
-    "Kubernetes",
-    "React",
-    "TypeScript",
   ],
   authors: [{ name: "안영준" }],
   creator: "안영준",
@@ -43,9 +43,9 @@ export const metadata: Metadata = {
     locale: "ko_KR",
     url: BASE_URL,
     siteName: "안영준 포트폴리오",
-    title: "안영준 | Full-Stack Developer",
+    title: "안영준 | Infrastructure Engineer",
     description:
-      "서비스의 지속적인 발전을 고민하는 풀스택 개발자 안영준입니다.",
+      "베어메탈 Kubernetes를 kubeadm으로 직접 부트스트랩하고 MSA·관측성·CI/CD까지 다루는 인프라 엔지니어 안영준입니다.",
     images: [
       {
         url: "/opengraph-image",
@@ -57,9 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "안영준 | Full-Stack Developer",
+    title: "안영준 | Infrastructure Engineer",
     description:
-      "서비스의 지속적인 발전을 고민하는 풀스택 개발자 안영준입니다.",
+      "베어메탈 Kubernetes를 kubeadm으로 직접 부트스트랩하고 MSA·관측성·CI/CD까지 다루는 인프라 엔지니어 안영준입니다.",
     images: ["/opengraph-image"],
   },
   robots: {

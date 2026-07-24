@@ -31,7 +31,7 @@ const CSS = `
   .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two { break-inside:avoid; }
   .wanted-root .w-sec-title { break-after:avoid; }
   .wanted-root .pg-spacer, .wanted-root .pg-line { display:none; }
-  .wanted-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .wanted-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:normal !important; }
 }
 .wanted-root .w-brand { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); }
 .wanted-root .w-role { font-size:44px; font-weight:800; letter-spacing:-0.045em; line-height:1.04; margin-top:14px; }
