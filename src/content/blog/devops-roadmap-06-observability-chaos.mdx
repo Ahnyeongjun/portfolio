@@ -257,6 +257,8 @@ def create_job(payload: JobCreate):
 
 Tempo 자체도 관측 대상이라는 걸 그대로 보여주는 장면이다 - 과거 트레이스는 남아있어 테이블 조회는 되지만, 실시간 조회는 막혀있다. 이게 앞서 Alertmanager 절에서 다룬 `PodOOMKilled`(pod=tempo-0) 알림의 실제 원인이고, 메모리 한도를 512Mi→1Gi로 올리면서 해결됐다.
 
+**(선택 확장, 보류) Exemplar 연결·Tempo metrics-generator**: Prometheus 메트릭의 특정 지점(예: `http_request_duration_seconds`의 한 버킷)을 클릭하면 그 지연에 실제로 기여한 트레이스로 바로 넘어가는 **exemplar** 연결이나, span 데이터에서 RED 메트릭(rate/error/duration)을 별도 계측 없이 자동으로 뽑아주는 **Tempo metrics-generator**는 지금 단계에서는 하지 않는다. 메트릭도 있고 트레이스도 있는 지금 상태에서 이건 "그 사이 클릭 한 번을 아끼는" 편의 기능에 가깝고, 이 랩 규모에서는 지표·트레이스를 따로 찾아봐도 큰 불편이 없다. 반면 도입하면 Prometheus exemplar storage 활성화, Tempo metrics-generator 설정, `remote_write` 배선까지 손댈 게 늘어난다 - 편의 대비 설정 비용이 아직은 맞지 않아 보류한다.
+
 ## 실전에서 겪은 버그 모음
 
 여기까지 절차대로 따라가면 되는 부분이었고, 아래는 실제로 이 스택을 구축·운영하면서 순서대로 마주친 버그와 사건들이다.
