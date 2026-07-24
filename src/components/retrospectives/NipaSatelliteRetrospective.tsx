@@ -234,7 +234,8 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
       <p>
         NIPA(정보통신산업진흥원) 지원 사업으로, 서로 다른 두 시점의 위성 영상을 비교해
         지표 변화를 자동으로 탐지하는 AI 플랫폼입니다. <Highlight>9개 서비스</Highlight>로
-        구성된 MSA 구조를 백엔드·인프라·프론트엔드까지 <Highlight>혼자 설계·구현</Highlight>했습니다.
+        구성된 MSA 구조의 설계·구현을 <Highlight>주도</Highlight>했고, 클러스터 네트워킹·시크릿·배포
+        등 인프라 고도화는 팀원과 설계 방향을 협의하며 함께 확장하고 있습니다.
       </p>
       <p>
         이전 시스템은 기능 하나만 고쳐도 전체를 재배포해야 하는 모놀리식 구조였습니다.
@@ -307,6 +308,11 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             데이터베이스는 <Highlight>CloudNativePG</Highlight> 오퍼레이터로 PostgreSQL 클러스터를
             클러스터 내부에서 직접 운영합니다. 외부 관리형 DB 없이도 failover·백업을 오퍼레이터가
             선언적으로 관리합니다.
+          </p>
+          <p>
+            네트워킹·HA 영역은 서비스 증가에 따른 처리 오버헤드와 단일 장애점이라는 문제 자체는
+            같이 겪었지만, 구체적인 설계 방향(Cilium 도입 범위, control-plane HA 구성)은{" "}
+            <Highlight>팀원과 협의하며</Highlight> 정했습니다.
           </p>
         </AccordionSection>
 

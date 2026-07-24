@@ -354,6 +354,11 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
             일괄 적용했습니다. 대용량 위성영상 전송을 위한 타임아웃·바디 크기(최대 5GB)도
             함께 튜닝했습니다.
           </p>
+          <p>
+            설정만으로는 실제 응답에 정보가 새는지 확신할 수 없어서, <Highlight>Wireshark</Highlight>로
+            실제 트래픽을 캡처해 응답 헤더·바디에 서버 버전이나 내부 경로 같은 정보가 노출되는지
+            직접 점검했습니다.
+          </p>
         </AccordionSection>
       </div>
 
@@ -680,6 +685,11 @@ public void beforeCommit(boolean readOnly) {
           <p>
             부하 테스트는 실제 위성 데이터가 있어야 유효해 운영과 동일한 구성의 격리 클러스터를 별도 구축했습니다.
             k6 50VU로 테스트하자 에러율 11.22%가 나왔고, 병목 원인은 네 가지였습니다.
+          </p>
+          <p>
+            한 번 찾아서 고치고 끝내는 대신, <Highlight>k6 부하테스트와 JUnit 테스트를 Jenkins CI
+            파이프라인에 편입</Highlight>해 배포 전 자동 검증 단계로 만들었습니다 - 이후 배포부터는
+            같은 종류의 부하·트랜잭션 결함이 배포 전에 CI에서 걸러집니다.
           </p>
           <ul className="space-y-2 list-none">
             <li className="flex gap-2">

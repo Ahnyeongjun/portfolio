@@ -177,6 +177,31 @@ export function InsopsRetrospective() {
             제거</Highlight>했습니다.
           </p>
         </AccordionSection>
+
+        {/* 가시화 전면 실패 장애 - NVMe 펌웨어 이관 로직 누락 */}
+        <AccordionSection
+          title="가시화 전면 실패 장애 - 표면 에러를 따라가 만난 진짜 원인"
+          hint="No space left on device였지만 실제 여유 용량은 있었던 상황 - 컨테이너→마운트→디바이스→펌웨어까지 추적"
+          module="에어갭 운영"
+        >
+          <p>
+            어느 날 가시화 작업이 전부 실패 처리되기 시작했습니다. 로그에는 <code>No space left on device</code>가
+            찍혀 단순 디스크 부족처럼 보였지만, 마운트된 스토리지 용량을 확인하니 여유가 충분히 남아 있었습니다 -
+            명령어로 본 용량과 실제 동작이 어긋나 있었던 겁니다.
+          </p>
+          <p>
+            마운트 경로에 빈 파일을 만들어보니 단순 쓰기조차 실패했습니다 - 컨테이너가 아니라{" "}
+            <Highlight>마운트된 스토리지 자체의 문제</Highlight>로 범위를 좁혔습니다. 팀원과 함께 스토리지
+            장비에 직접 원격 접속해 NVMe 상태를 확인한 결과 실제 여유 용량이 0이었고, 업체 운영 코드를
+            검토한 결과 <Highlight>펌웨어 업그레이드 과정에서 NVMe→system pool 데이터 이동 로직이
+            누락</Highlight>된 것이 근본 원인이었습니다.
+          </p>
+          <p>
+            임시 패치로 서비스를 즉시 복구한 뒤 업체 정식 패치까지 연동해 마무리했습니다.{" "}
+            <Highlight>컨테이너 → 마운트 → 디바이스 → 펌웨어</Highlight>로 경계를 넘어 근본 원인을 추적한
+            사례로, 외부 레퍼런스 없이 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축했습니다.
+          </p>
+        </AccordionSection>
       </div>
 
       <div className="border-t border-border" />
