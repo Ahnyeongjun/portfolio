@@ -32,7 +32,7 @@ BASE : 서울, Korea
   - RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장
   - Cilium(eBPF)·kube-vip 클러스터 네트워킹 전환 - 서비스 증가에 따른 처리 오버헤드·단일 장애점 해결, 팀원과 설계 방향 협의하며 참여
   - OpenBao+ESO 시크릿 중앙화, CloudNativePG PostgreSQL 운영 - 서비스별 개별 관리 부담 해소
-  - Jenkins 명령형 배포 → Argo Events·Workflows·CD 기반 GitOps 전환 - 배포 드리프트 추적성 확보
+  - CI/CD 파이프라인 전환 - Jenkins 명령형 배포 → Argo Events·Workflows·CD 기반 GitOps, 배포 드리프트 추적성 확보
   - Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축, 장애 원인분석 1~2시간 → 30분 이내로 단축
   - Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득
 
