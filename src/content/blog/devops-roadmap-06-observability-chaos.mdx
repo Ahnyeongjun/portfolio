@@ -1,0 +1,286 @@
+---
+title: "Prometheus·Loki 관측 스택 구축과 장애 주입 실험 설계 절차"
+description: "관측성(메트릭/로그/트레이스) 개념부터 kube-prometheus-stack 설치, Discord 알림 라우팅, Loki 로그 보존 정책, 노드 다운·OOMKill·디스크풀 장애 주입 실험의 실제 결과, 선택 확장인 OpenTelemetry 분산 트레이싱까지 - ServiceMonitor 셀렉터 함정, null 리시버 사고, Grafana 크래시루프 등 실전에서 겪은 버그 포함."
+date: "2026-07-18"
+category: "DevOps"
+tags: ["Prometheus", "Grafana", "Alertmanager", "Loki", "장애 주입", "OpenTelemetry"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 7
+---
+
+## 목표
+
+메트릭(Prometheus)·시각화(Grafana)·알림(Alertmanager)·로그(Loki)를 클러스터에 설치하고, 의도적으로 장애를 주입해 "알림이 실제로 오는지, 얼마나 걸리는지"를 검증한다. (선택 확장으로 분산 트레이싱까지 붙인다.)
+
+## 개념: 관측성(Observability)이란 무엇인가
+
+시스템이 커질수록 "지금 뭐가 잘못됐는지"를 눈으로 추측하는 게 불가능해진다. 관측성은 시스템이 내보내는 신호로 내부 상태를 외부에서 알아내는 능력이고, 보통 세 종류의 신호로 나뉜다 - **각각이 답하는 질문이 다르다.**
+
+| 신호 | 답하는 질문 | 이 시리즈의 도구 |
+|---|---|---|
+| 메트릭(Metrics) | "지금 수치가 얼마인가" (에러율, 응답시간, CPU 등 시계열 숫자) | Prometheus (수집) + Grafana (시각화) |
+| 로그(Logs) | "그때 정확히 무슨 일이 있었나" (텍스트 기록) | Loki |
+| 알림(Alerts) | "지금 사람이 봐야 하는 상황인가" (메트릭이 임계치를 넘었을 때 통지) | Alertmanager |
+| (확장) 트레이스(Traces) | "이 요청이 여러 서비스를 거치며 어디서 느려졌나" | OpenTelemetry + Tempo (아래 확장 절 참고) |
+
+메트릭만으로는 "에러율이 올랐다"는 건 알아도 "왜"는 알 수 없고, 로그만 뒤지면 "왜"는 나오지만 "언제부터 이상했는지"를 미리 알 방법이 없다. 세 신호를 같이 둬야 서로의 빈틈을 메운다.
+
+## 실제 구축 절차
+
+### 1. kube-prometheus-stack 설치
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace \
+  --set grafana.adminPassword=<시크릿으로 관리>
+```
+
+이 차트 하나로 Prometheus, Grafana, Alertmanager, node-exporter, kube-state-metrics가 함께 설치된다. `api-server`/`inference-worker`가 `/metrics`를 이미 노출하고 있다면(시리즈 2), `ServiceMonitor`로 수집 대상에 등록한다.
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-server
+  labels: {release: monitoring}     # kube-prometheus-stack의 셀렉터와 맞춰야 수집됨
+spec:
+  selector:
+    matchLabels: {app: api-server}
+  endpoints:
+    - port: http
+      path: /metrics
+```
+
+**겪은 버그 - ServiceMonitor를 만들었는데 타겟을 못 찾음**: `api-server` Service에 포트 이름(`http`)도 붙였고 셀렉터도 맞는 것 같은데 `up{job="api-server"}`가 계속 빈 결과였다. `/metrics` 자체는 정상 응답하고 있어서 "네트워크는 멀쩡한데 왜 안 잡히지"로 한참 헤맸는데, 원인은 **`ServiceMonitor`의 `selector`가 Service의 `spec.selector`(파드를 고르는 필드)가 아니라 `metadata.labels`로 매칭한다**는 점이었다 - 완전히 다른 필드다. Service manifest엔 `metadata.labels`가 아예 없이 `spec.selector`만 있었던 게 원인. `metadata.labels: {app: api-server}`를 추가하니 바로 잡혔다. Prometheus Operator의 config(`/api/v1/status/config`)를 직접 까봐야 relabel 단계에서 정확히 걸러지는 지점을 확인할 수 있었다.
+
+![Grafana Kubernetes/Networking/Namespace(Pods) 대시보드 - jobs 네임스페이스의 api-server·inference-worker·rabbitmq·postgres 파드가 실제로 수집되고 있다](/grafana_dashboard_jobs.png)
+
+### 컨트롤플레인 스크랩 실패 (etcd·controller-manager·scheduler)
+
+설치 직후 `up{job=~"kube-etcd|kube-controller-manager|kube-scheduler"}`를 조회하면 세 컴포넌트가 전부 `0`으로 나오는 경우가 있다 - `etcdInsufficientMembers`/`KubeControllerManagerInstanceUnreachable`/`KubeSchedulerInstanceUnreachable` 알림이 계속 새고 있다면 이게 원인이다.
+
+![Prometheus에서 up 쿼리 결과 - kube-etcd·kube-controller-manager·kube-scheduler만 0, kubelet 등 나머지는 전부 1](/prometheus_search.png)
+
+kubeadm 기본 설정이 이 세 컴포넌트의 메트릭 엔드포인트를 `127.0.0.1`에만 바인딩해두기 때문에, 파드 네트워크에서 접근하는 Prometheus가 영영 스크랩하지 못하는 흔한 문제다. 정적 파드 매니페스트(`/etc/kubernetes/manifests/{kube-controller-manager,kube-scheduler,etcd}.yaml`)를 고쳐야 한다 - controller-manager/scheduler는 `--bind-address=0.0.0.0`으로, etcd는 `--listen-metrics-urls`에 노드 사설 IP를 추가한다. 수정하면 kubelet이 감지해서 해당 정적 파드만 재시작한다(다른 워크로드는 영향 없음). 다음 클러스터를 새로 구축할 때부터 재발하지 않도록, `kubeadm init` 직후 이 수정을 적용하는 태스크를 Ansible 플레이북에 idempotent하게 넣어두면 된다.
+
+### 2. Alertmanager - 알림 라우팅
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: api-server-alerts
+  labels: {release: monitoring}
+spec:
+  groups:
+    - name: api-server
+      rules:
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+          for: 2m
+          labels: {severity: warning}
+          annotations:
+            summary: "api-server 5xx 비율이 5% 초과"
+```
+
+Slack/이메일도 되지만, 실제로는 **Discord 웹훅**으로 붙였다 - 웹훅 URL 끝에 `/slack`만 붙이면 Alertmanager의 기본 `slack_configs` 리시버를 그대로 재사용할 수 있다(Discord가 Slack 호환 포맷을 지원한다). 웹훅 URL은 k8s Secret으로 저장해 `alertmanagerSpec.secrets`로 마운트하고 `api_url_file`로 참조하면 원본 URL이 git에 올라가지 않는다.
+
+```yaml
+# alertmanager config
+route:
+  receiver: "null"          # kube-prometheus-stack 기본 Watchdog(헬스체크)용 - 반드시 유지
+  routes:
+    - receiver: discord
+      matchers: [severity =~ "warning|critical"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+receivers:
+  - name: "null"
+  - name: discord
+    slack_configs:
+      - api_url_file: /etc/alertmanager/secrets/discord-webhook/url
+        channel: "#alerts"
+```
+
+`group_wait`/`group_interval`이 "장애 알림이 늦게 오는" 원인이 되는 경우가 많다 - 값이 크면 초기 알림이 그만큼 지연된다. 실험 단계에서 이 값을 조정하며 지연 시간을 직접 재본다.
+
+**겪은 버그 - 리시버를 교체했더니 조용히 reconcile이 실패함**: receivers 목록을 실제 채널(`discord`) 하나로 통째로 바꿨더니, kube-prometheus-stack 기본 Watchdog(항상 발화하는 헬스체크용 알림)의 서브라우트가 참조하는 `"null"` 리시버가 사라져서 Alertmanager Operator의 reconcile 자체가 계속 실패했다(`undefined receiver "null" used in route`). 겉으로는 아무 에러도 안 보이고 그냥 예전 설정이 계속 살아있어서, 테스트 알림을 몇 번을 보내봐도 왜 안 오는지 한참 헤맸다 - Operator 로그를 직접 까본 뒤에야 원인을 확인했다. **`"null"` 리시버는 지우면 안 되고 실제 채널과 같이 유지해야 한다.**
+
+![Alertmanager 리시버 목록 - discord(실제 알림)와 null(Watchdog 전용)이 나란히 존재](/alertmanger_base.png)
+
+**실제로 잡아낸 사건 2건**
+
+![Alertmanager Alerts 화면 - KubeProxyDown(오탐), Watchdog(null), PodOOMKilled(pod=tempo-0, 실제 장애)가 함께 보인다](/alertmanger_alerts.png)
+
+- `KubeProxyDown`(critical)이 계속 발화하고 있었는데, 이 클러스터는 Cilium이 kube-proxy를 완전히 대체해서 kube-proxy 자체가 애초에 존재하지 않는다 - kube-prometheus-stack 기본 규칙이 그걸 모르고 계속 "다운"이라고 오탐한 것이었다. `kubeProxy.enabled: false` + `defaultRules.rules.kubeProxy: false`로 해당 스크랩·알림 자체를 꺼서 해결했다.
+- `PodOOMKilled` 알림이 `tempo-0`에 대해 실제로 발화한 적이 있다 - 테스트가 아니라 진짜 장애였다. 확인해보니 Tempo가 메모리 한도 512Mi를 넘어 이미 2번 OOMKilled된 상태였다. 한도를 1Gi로 올리자 재시작 없이 안정화됐다 - 관측 스택이 "설치해놓고 안 쓰는 것"이 아니라 실제로 문제를 잡아낸다는 걸 확인한 순간이었다(이 사건은 아래 Tempo 절과 이어진다).
+
+### 3. Loki - 로그 수집 + 보존 정책
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install loki grafana/loki-stack \
+  --namespace monitoring \
+  --set promtail.enabled=true
+```
+
+보존 기간은 `limits_config`에서 설정한다 - 이 값 자체가 나중에 ISMS-P 2.9(운영관리) 증적 자료가 된다.
+
+```yaml
+limits_config:
+  retention_period: 720h   # 30일
+compactor:
+  retention_enabled: true
+  retention_delete_delay: 2h
+```
+
+![Grafana Explore의 Loki 쿼리 - jobs 네임스페이스 로그, RabbitMQ AMQP 연결·헬스체크 요청이 실시간으로 보인다](/grafana_dashboard_loki.png)
+
+**겪은 버그 1 - Grafana가 211번 재시작 크래시루프**: "Explore에 Loki가 안 보인다"는 보고를 쫓다가, Grafana 파드가 17시간째 `CrashLoopBackOff`(211회 재시작) 상태였던 걸 발견했다. 로그를 보니 `Only one datasource per organization can be marked as default` - `loki-stack` 차트가 기본값(`grafana.sidecar.datasources.enabled=true`)으로 자체 Loki 데이터소스를 또 만들면서 `isDefault: true`를 하드코딩했는데, kube-prometheus-stack이 이미 Prometheus를 `isDefault: true`로 등록해둔 것과 충돌해 Grafana 자체가 못 뜨고 있었다. `grafana.sidecar.datasources.enabled: false`로 중복 생성을 끄고 충돌 ConfigMap을 지우니 정상화됐다.
+
+**겪은 버그 2 - Loki·Grafana 버전 불일치로 로그 볼륨 패널이 계속 파싱 에러**: Explore의 "Logs volume" 히스토그램이 `bad_data: ... unexpected IDENTIFIER`를 냈다. 쿼리의 빈 라인필터(`|= ""`)가 원인인가 싶었지만 필터를 지워도 재현됐다. 실제 원인은 설치돼있던 Loki(`loki-stack` 차트 고정 버전 2.6.1)와 Grafana(13.1.1)의 버전 차이 - Grafana의 최신 "Logs volume" 기능이 2.6.1이 모르는 LogQL 문법으로 쿼리를 보내서 항상 파싱에 실패한 것이었다. 로그 검색 자체(Explore에서 로그 직접 보기)는 문제없이 동작하고 있었다. deprecated된 `loki-stack` 대신 최신 `grafana/loki`(3.6.8) + 별도 `grafana/promtail` 차트로 교체 설치해 근본적으로 해결했다(보존기간이 30일이라 며칠 치 로그 유실은 감수).
+
+### 4. 장애 주입 실험 설계 (3종 이상 택)
+
+**카오스 엔지니어링이란**: 장애가 언젠가 난다는 걸 전제로, 실제로 터지기 전에 통제된 환경에서 미리 장애를 일으켜보고 시스템과 사람(알림·대응 절차)이 제대로 반응하는지 검증하는 방법론이다. 목적은 "장애를 일으키는 것"이 아니라 **"장애가 났을 때 탐지까지 얼마나 걸리는지를 미리 재보는 것"**이다 - 이 시리즈의 모든 실험은 그 시간을 재는 게 진짜 목적이다.
+
+각 실험은 **주입 → 관측 → 기록**의 순서로 진행하고, 시작 시각을 먼저 기록해야 나중에 "알림까지 걸린 시간"을 정확히 잴 수 있다.
+
+**노드 다운**
+
+```bash
+# 실험 대상 워커 노드에서
+sudo systemctl stop kubelet
+# 또는 VM 자체를 강제 종료
+
+# 관측할 것
+# - kubectl get nodes 에서 NotReady로 바뀌는 시점
+# - 해당 노드의 파드가 다른 노드로 재스케줄되기까지 걸리는 시간 (기본 pod-eviction-timeout 5분)
+# - Alertmanager 알림이 Discord에 도착하는 시점
+```
+
+**OOMKill**
+
+리눅스 커널은 메모리가 부족해지면 임의로 프로세스를 골라 강제 종료해서 시스템 전체가 멎는 걸 막는다 - 이 메커니즘을 OOM(Out Of Memory) Killer라 부른다. 컨테이너에 메모리 `limits`를 걸어두면, 그 컨테이너가 한도를 넘었을 때 커널이 호스트 전체 대신 그 컨테이너만 골라 종료한다(OOMKilled).
+
+```yaml
+# 의도적으로 낮은 메모리 제한을 건 테스트 파드
+resources:
+  limits: {memory: "64Mi"}
+```
+```bash
+kubectl run oom-test --image=polinux/stress --limits=memory=64Mi -- \
+  stress --vm 1 --vm-bytes 256M
+# kubectl describe pod oom-test 에서 OOMKilled 상태 확인
+# Prometheus의 container_oom_events_total 메트릭에 반영되는 시점 확인
+```
+
+**디스크 풀**
+
+```bash
+# 워커 노드에서 디스크를 의도적으로 채움
+fallocate -l 10G /tmp/fillfile
+# kubelet의 disk pressure 감지 → 노드가 파드 축출(evict)을 시작하는지 확인
+# node-exporter의 node_filesystem_avail_bytes 알림이 임계치를 넘는 시점 확인
+```
+
+**RabbitMQ 장애**
+
+```bash
+kubectl delete pod rabbitmq-0 --grace-period=0 --force
+# 시리즈 2에서 만든 ack/nack 파이프라인이 이 상황에서 실제로 메시지를 보존하는지 재검증
+```
+
+### 실제로 실행한 결과
+
+| # | 실험 | 탐지 시간 | 비고 |
+|---|------|-----------|------|
+| 1 | RabbitMQ 파드 강제삭제 | 알림 없음 (46초 내 자기치유) | worker 재연결 로직이 임계치 도달 전에 정상 동작 - 이것도 유효한 결과다 |
+| 2 | OOMKill | kubectl 기준 9초, **메트릭 알림은 못 잡음** | `container_oom_events_total`이 재시작 없이 죽는 파드는 못 잡는다는 한계 발견 → `kube_pod_container_status_last_terminated_reason` 기반 규칙으로 교체 |
+| 3 | 노드 다운(kubelet 중지) | 약 2분(NotReady) | IP 착각으로 의도와 다른 노드에 주입했지만, 조기 발견 후 3분 만에 복구(축출 타임아웃 전이라 서비스 영향 없음) |
+| 4 | 디스크 풀 | 13초(DiskPressure) | kubelet의 자동 image GC가 축출 전에 스스로 ~5GB를 회수하는 것까지 실측 확인 |
+
+4개 전부 디스코드로 알림이 도착했다(1번은 애초에 임계치를 안 넘어서 알림이 없는 게 맞는 동작이다). 2번에서 **알림 규칙이 실제 장애 유형을 못 잡는 걸 발견하고 교체**한 게 이 실험의 핵심 소득이다 - "장애를 일으켜봤다"가 아니라 "탐지 공백을 찾아 메꿨다"가 진짜 목적이라는 걸 보여주는 사례다.
+
+### 5. 포스트모템 문서 템플릿
+
+실험마다 아래 형식으로 기록한다.
+
+```markdown
+# 포스트모템: <실험명> (YYYY-MM-DD)
+
+## 타임라인
+- 00:00 장애 주입 (구체적 명령/조작)
+- 00:XX 첫 이상 신호 감지 (메트릭/로그상 변화)
+- 00:XX 알림 도착 (Discord 등)
+- 00:XX 자동/수동 복구 완료
+
+## 원인
+(장애가 실제로 무엇 때문에 발생했는지)
+
+## 탐지 공백
+(장애 발생부터 알림 도착까지 얼마나 걸렸는지, 왜 그만큼 걸렸는지)
+
+## 재발 방지
+(알림 규칙 조정, 임계치 변경, 자동 복구 추가 등 - 실행한 조치)
+```
+
+## 검증 방법
+
+각 실험에서 반드시 남겨야 하는 숫자 3가지: **장애 발생 시각**, **첫 메트릭/로그 이상 시각**, **알림 도착 시각**. 이 세 시각의 차이가 곧 "탐지 공백"이고, 다음 단계(알림 규칙 튜닝)의 기준값이 된다.
+
+## (선택 확장) OpenTelemetry로 분산 트레이싱 붙이기
+
+**분산 트레이싱이란**: 요청 하나가 `api-server → RabbitMQ → inference-worker → PostgreSQL`을 거치는 이 프로젝트에서, 메트릭과 로그만으로는 "이 요청이 정확히 어느 구간에서 느려졌는지"를 알기 어렵다 - 각 서비스의 로그를 시간으로 짐작해서 이어 붙여야 한다. **트레이스는 요청 하나에 고유 ID(trace ID)를 붙여서, 그 요청이 거친 모든 서비스의 처리 구간(span)을 하나로 이어 보여준다.**
+
+**OpenTelemetry(OTel)**는 이 계측을 위한 표준 규격이고, **Tempo**는 그 트레이스 데이터를 저장·조회하는 백엔드다.
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install tempo grafana/tempo --namespace monitoring
+```
+
+```python
+# api-server - OTel 계측 최소 예시
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+provider = TracerProvider()
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint="tempo.monitoring:4317")))
+trace.set_tracer_provider(provider)
+tracer = trace.get_tracer(__name__)
+
+@app.post("/jobs")
+def create_job(payload: JobCreate):
+    with tracer.start_as_current_span("create_job"):
+        job_id = save_job_as_pending(payload)
+        publish_to_queue("jobs.upload", {"job_id": job_id, "trace_id": trace.get_current_span().get_span_context().trace_id})
+        return {"job_id": job_id, "status": "PENDING"}
+```
+
+메시지를 큐에 넣을 때 `trace_id`를 함께 실어 보내면, `inference-worker`가 그 trace_id로 이어서 span을 기록할 수 있다 - 큐를 거치는 비동기 구간까지 하나의 트레이스로 연결하는 게 핵심이다.
+
+**겪은 버그 1 - `pkg_resources`가 없어서 크래시루프**: `opentelemetry-instrumentation-fastapi`가 내부적으로 `pkg_resources`(setuptools)를 임포트하는데, `python:3.12-slim` 최신 이미지의 pip는 setuptools를 기본 포함하지 않아 `ModuleNotFoundError`로 그대로 크래시했다. `requirements.txt`에 `setuptools`를 명시적으로 추가해서 해결.
+
+**겪은 버그 2 - 의존성을 추가할 때마다 새 CVE로 Harbor push가 막힘**: OTel 패키지를 추가하니 `CVE-2026-0994`가, setuptools를 추가하니 `CVE-2025-47273`이 새로 검출돼 매번 Harbor의 `prevent_vul` 정책(시리즈 2)에 걸렸다. 새 의존성을 추가할 때마다 이 절차(allowlist 갱신)가 반복된다는 걸 전제로 잡아야 한다.
+
+**검증**: 실제 job 하나를 제출해 Tempo에서 trace를 조회해보면, `api-server`(5 span)와 `inference-worker`(1 span)가 **같은 트레이스**로 묶여 있는 걸 확인할 수 있다 - `POST /jobs`(루트) → `create_job`(api-server) → `process_job`(inference-worker) 순서로 타임스탬프를 보면, 발행부터 워커가 픽업하기까지 약 215ms 간격까지 한 화면에서 보인다. 로그를 시간으로 짐작해 잇던 것보다 훨씬 빠르고 정확하게 "어디서 지연이 생기는지"를 확인할 수 있었다.
+
+![Tempo Explore의 api-server 트레이스 테이블 - 실제로는 이 캡처 시점에 Tempo가 메모리 부족으로 OOMKilled돼 있어 우측 상단에 "Failed to connect to Tempo" 에러가 함께 떠 있다(Alertmanager 절의 PodOOMKilled 사건과 동일 건)](/grafana_dashboard_tempo.png)
+
+Tempo 자체도 관측 대상이라는 걸 그대로 보여주는 장면이다 - 과거 트레이스는 남아있어 테이블 조회는 되지만, 실시간 조회는 막혀있다. 이게 앞서 Alertmanager 절에서 다룬 `PodOOMKilled`(pod=tempo-0) 알림의 실제 원인이고, 메모리 한도를 512Mi→1Gi로 올리면서 해결됐다.
+
+## 체크리스트
+
+- [ ] kube-prometheus-stack 설치, 서비스 메트릭 수집 (ServiceMonitor는 `metadata.labels` 매칭 확인)
+- [ ] 컨트롤플레인(etcd/controller-manager/scheduler) 스크랩 바인딩 확인 (`--bind-address=0.0.0.0`)
+- [ ] Alertmanager 알림 라우팅 (Discord/Slack 등), 기본 `"null"` 리시버 유지
+- [ ] kube-proxy를 안 쓰는 클러스터(Cilium 등)라면 관련 스크랩·알림 규칙 비활성화
+- [ ] Loki 로그 수집 + 보존 기간 정책 설정, Grafana 데이터소스 중복 생성(sidecar) 여부 확인
+- [ ] 장애 주입 실험 3종 이상 실행 (노드 다운/OOMKill/디스크풀/RabbitMQ 중 택3)
+- [ ] 실험마다 포스트모템 문서 작성, 알림 규칙이 실제로 그 장애 유형을 잡는지 검증
+- [ ] (선택 확장) OpenTelemetry + Tempo로 분산 트레이싱 연결, 장애 실험 때 활용도 비교

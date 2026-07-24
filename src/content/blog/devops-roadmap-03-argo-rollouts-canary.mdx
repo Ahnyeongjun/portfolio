@@ -1,0 +1,155 @@
+---
+title: "Argo Rollouts로 카나리 배포와 Prometheus 메트릭 기반 자동 롤백 붙이기"
+description: "기본 Deployment 롤링 업데이트가 못 보는 것부터, Argo Rollouts CRD로 트래픽을 단계적으로 흘리는 카나리 배포, Nginx Ingress 트래픽 분할, AnalysisTemplate으로 Prometheus 메트릭을 봐서 자동 롤백하는 절차, 블루그린 옵션까지."
+date: "2026-07-24"
+category: "DevOps"
+tags: ["Argo Rollouts", "카나리 배포", "ArgoCD", "Prometheus", "Nginx Ingress", "GitOps"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 4
+---
+
+## 목표
+
+지금까지 이 시리즈는 ArgoCD로 GitOps 배포까지는 갖췄지만(시리즈 2), 배포 전략 자체는 기본 Kubernetes `Deployment`의 롤링 업데이트에 머물러 있었다. 이 시리즈는 그 위 단계를 다룬다 - **새 버전에 트래픽을 조금씩만 흘려보고, 문제가 있으면 사람이 알아채기 전에 메트릭 기준으로 자동으로 되돌리는 배포**를 만든다.
+
+## 개념: Deployment 롤링 업데이트가 못 보는 것
+
+기본 `Deployment`의 롤링 업데이트는 단순하다 - 새 파드를 하나씩 늘리고 옛 파드를 하나씩 줄인다. 이때 유일한 판단 기준은 **헬스체크(liveness/readiness)를 통과하는가**다. 문제는 헬스체크 통과와 "서비스가 제대로 동작하는가"가 다른 질문이라는 점이다 - 프로세스는 떠 있고 `/healthz`도 200을 반환하는데, 특정 API의 에러율만 조용히 올라가는 배포는 롤링 업데이트가 절대 잡아내지 못한다. 롤링 업데이트는 "파드가 살아있는지"만 보고, "트래픽을 받은 결과가 정상인지"는 보지 않는다.
+
+**Argo Rollouts**는 `Deployment`를 대체하는 CRD(`Rollout`)로, 배포 과정에 단계·대기·검증을 끼워 넣을 수 있게 해준다. 핵심 개념 세 가지:
+
+| 개념 | 설명 |
+|---|---|
+| 카나리(Canary) | 새 버전에 트래픽을 5%→20%→50%→100%처럼 단계적으로 흘리고, 각 단계 사이에 대기 시간이나 수동 승인을 둘 수 있음 |
+| AnalysisTemplate | 각 단계에서 Prometheus 등 메트릭을 쿼리해 기준(에러율, p99 레이턴시 등)을 정의 - 기준을 넘으면 사람 개입 없이 자동으로 이전 버전으로 롤백 |
+| 블루그린(Blue-Green) | 새 버전을 통째로 띄워두고 스위치 한 번으로 트래픽을 전환, 문제 시 즉시 원복 |
+
+이 시리즈는 이미 ArgoCD·Prometheus·Nginx Ingress를 갖추고 있으므로(시리즈 2, 6), 트래픽 분할은 서비스 메시 없이 **Nginx Ingress 애노테이션 기반 분할**로 가장 간단하게 시작한다.
+
+## 실제 구축 절차
+
+### 1. Argo Rollouts 설치
+
+```bash
+kubectl create namespace argo-rollouts
+kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+# kubectl 플러그인 - Rollout 상태를 실시간으로 보기 위함
+curl -LO https://github.com/argoproj/argo-rollouts/releases/latest/download/kubectl-argo-rollouts-linux-amd64
+chmod +x kubectl-argo-rollouts-linux-amd64
+sudo mv kubectl-argo-rollouts-linux-amd64 /usr/local/bin/kubectl-argo-rollouts
+```
+
+### 2. Deployment → Rollout 전환
+
+기존 `api-server` Deployment를 `Rollout` 오브젝트로 바꾼다. `apiVersion`과 `kind`만 바뀌고 `spec.template` 이하는 거의 동일하다 - 대신 `strategy` 아래에 카나리 단계를 정의한다.
+
+```yaml
+# api-server-rollout.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api-server
+spec:
+  replicas: 5
+  selector:
+    matchLabels: { app: api-server }
+  template:
+    metadata:
+      labels: { app: api-server }
+    spec:
+      containers:
+        - name: api-server
+          image: harbor.local/proxy-cache/api-server:latest
+  strategy:
+    canary:
+      canaryService: api-server-canary
+      stableService: api-server-stable
+      trafficRouting:
+        nginx:
+          stableIngress: api-server-ingress
+      steps:
+        - setWeight: 5
+        - pause: { duration: 2m }
+        - analysis:
+            templates:
+              - templateName: error-rate-check
+        - setWeight: 20
+        - pause: { duration: 2m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+        - setWeight: 100
+```
+
+`canaryService`/`stableService`는 같은 파드 셀렉터를 가리키지만 각각 신규/기존 버전으로 라우팅되는 별도 Service다. `trafficRouting.nginx.stableIngress`에 지정한 Ingress의 애노테이션을 Argo Rollouts가 컨트롤러 대신 자동으로 조작해 트래픽 비율을 나눈다 - 즉 사람이 직접 `nginx.ingress.kubernetes.io/canary-weight`를 고칠 필요가 없다.
+
+```bash
+kubectl apply -f api-server-rollout.yaml
+kubectl argo-rollouts get rollout api-server --watch   # 단계별 진행 상황을 실시간으로 확인
+```
+
+### 3. AnalysisTemplate - Prometheus 메트릭 기준 자동 롤백
+
+카나리 단계 사이에 끼워 넣은 `analysis` 스텝이 바로 이 부분이다. 5% 트래픽을 받는 동안 에러율을 Prometheus에 쿼리해서, 기준을 넘으면 그 자리에서 자동으로 롤백한다.
+
+```yaml
+# analysis-template.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-check
+spec:
+  metrics:
+    - name: error-rate
+      interval: 30s
+      count: 4                     # 30초씩 4번 반복 측정
+      successCondition: result[0] < 0.05   # 5% 미만이어야 통과
+      failureLimit: 1               # 1번이라도 실패하면 즉시 중단
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring:9090
+          query: |
+            sum(rate(http_requests_total{app="api-server-canary", status=~"5.."}[1m]))
+            /
+            sum(rate(http_requests_total{app="api-server-canary"}[1m]))
+```
+
+`successCondition`을 만족하지 못하는 순간 Argo Rollouts는 남은 카나리 단계를 진행하지 않고 트래픽 비중을 즉시 0으로 되돌린다 - "배포 후 대시보드를 지켜보다 이상하면 수동으로 롤백"하던 걸 기계가 대신하는 지점이 정확히 여기다.
+
+### 4. ArgoCD와의 연동
+
+시리즈 2에서 이미 ArgoCD로 GitOps 배포를 하고 있다면, `Rollout`/`AnalysisTemplate` 매니페스트도 같은 Git 저장소·같은 `Application`에 그대로 커밋하면 된다 - ArgoCD 입장에서는 `Deployment`든 `Rollout`이든 그냥 관리하는 리소스 중 하나다. 다만 ArgoCD UI에서 카나리 진행 상태를 보려면 Argo Rollouts용 UI 확장(`kubectl argo-rollouts dashboard`)을 따로 띄워야 한다.
+
+### 5. (선택) 블루그린으로 전략 교체
+
+일부 서비스는 트래픽을 점진적으로 나누는 것보다 "완전히 새 버전으로 스위치 - 문제 시 즉시 원복"이 더 맞을 수 있다. `strategy.canary` 대신 `strategy.blueGreen`으로 바꾸면 된다.
+
+```yaml
+  strategy:
+    blueGreen:
+      activeService: api-server-active
+      previewService: api-server-preview
+      autoPromotionEnabled: false   # 수동 승인 후에만 전환
+      prePromotionAnalysis:
+        templates:
+          - templateName: error-rate-check
+```
+
+`prePromotionAnalysis`로 전환 직전에도 같은 AnalysisTemplate을 재사용할 수 있다 - 카나리와 블루그린이 검증 로직 자체는 공유하고, 트래픽을 어떻게 나누느냐만 다르다는 걸 보여주는 지점이다.
+
+## 검증 방법
+
+- 의도적으로 에러율이 높은 이미지를 배포해, 5% 단계에서 `AnalysisTemplate`이 실패를 감지하고 자동 롤백하는지 확인
+- 정상 이미지 배포 시 5%→20%→50%→100%까지 각 단계가 정의한 대기 시간대로 진행되는지 `kubectl argo-rollouts get rollout --watch`로 확인
+- 롤백이 발생했을 때 실제 서비스 트래픽이 끊기지 않고 안정 버전으로 계속 처리되는지 확인
+- (선택) 블루그린 전략에서 `previewService`로 먼저 접근해 검증한 뒤 수동 승인으로 전환이 잘 되는지 확인
+
+## 체크리스트
+
+- [ ] Argo Rollouts 컨트롤러·kubectl 플러그인 설치
+- [ ] 기존 Deployment를 Rollout으로 전환, canary/stable Service 분리
+- [ ] Nginx Ingress 트래픽 분할 연동 확인
+- [ ] Prometheus 쿼리 기반 AnalysisTemplate 작성, 카나리 단계에 편입
+- [ ] 의도적 실패 배포로 자동 롤백 동작 검증
+- [ ] ArgoCD Application에 Rollout 매니페스트 편입
+- [ ] (선택) 블루그린 전략으로 교체, prePromotionAnalysis 재사용 확인

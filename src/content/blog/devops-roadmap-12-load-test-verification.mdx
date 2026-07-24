@@ -1,11 +1,11 @@
 ---
 title: "번외: 부하테스트로 관측 스택을 실전 검증하기 - k6 + HPA + MSA 파이프라인"
-description: "시리즈 4에서 만든 관측 스택(Prometheus/Grafana/Alertmanager)을 인위적 장애가 아니라 실제 트래픽 증가로 검증한다. k6로 이미지 업로드→비동기 추론 파이프라인 전체에 부하를 걸고, 큐 길이 기반 HPA 오토스케일링, 알림 임계치, 병목 구간까지 확인하는 절차."
+description: "시리즈 6에서 만든 관측 스택(Prometheus/Grafana/Alertmanager)을 인위적 장애가 아니라 실제 트래픽 증가로 검증한다. k6로 이미지 업로드→비동기 추론 파이프라인 전체에 부하를 걸고, 큐 길이 기반 HPA 오토스케일링, 알림 임계치, 병목 구간까지 확인하는 절차."
 date: "2026-07-24"
 category: "DevOps"
 tags: ["k6", "부하 테스트", "HPA", "RabbitMQ", "Prometheus", "MSA"]
 series: "DevOps 학습 로드맵"
-seriesOrder: 11
+seriesOrder: 13
 ---
 
 ## 목표
@@ -81,7 +81,7 @@ spec:
 
 ### 3. Grafana 대시보드 - 5개 지표를 한 화면에
 
-시리즈 4에서 이미 Prometheus/Grafana는 있으므로, 이번엔 패널만 새로 구성한다.
+시리즈 6에서 이미 Prometheus/Grafana는 있으므로, 이번엔 패널만 새로 구성한다.
 
 | 패널 | 쿼리 | 보는 것 |
 |---|---|---|
@@ -97,7 +97,7 @@ spec:
 k6 run --env BASE_URL=https://api.local --env TOKEN=$TOKEN tests/load/pipeline-ramp.js
 ```
 
-실행하면서 Grafana를 같이 열어두고, 아래 5개 시각을 반드시 기록한다 - 시리즈 4의 "탐지 공백" 개념을 그대로 가져오되, 이번엔 원인이 장애가 아니라 부하다.
+실행하면서 Grafana를 같이 열어두고, 아래 5개 시각을 반드시 기록한다 - 시리즈 6의 "탐지 공백" 개념을 그대로 가져오되, 이번엔 원인이 장애가 아니라 부하다.
 
 1. 부하 급증 시작 시각 (k6 stage가 80 VU로 전환된 시각)
 2. 큐 길이가 `queueLength` 임계치(20)를 넘긴 시각
@@ -105,7 +105,7 @@ k6 run --env BASE_URL=https://api.local --env TOKEN=$TOKEN tests/load/pipeline-r
 4. Alertmanager 알림이 도착한 시각 (큐 길이 또는 지연 관련 규칙)
 5. 큐가 다시 정상 수준으로 소진된 시각
 
-2~3번 사이 간격이 "오토스케일 반응 지연"이고, 2~4번 사이 간격이 "이번 버전의 탐지 공백"이다 - 시리즈 4의 알림 규칙이 사람이 아니라 실제 트래픽 증가에도 적절한 시점에 울리는지가 이 시리즈의 통과 기준이다.
+2~3번 사이 간격이 "오토스케일 반응 지연"이고, 2~4번 사이 간격이 "이번 버전의 탐지 공백"이다 - 시리즈 6의 알림 규칙이 사람이 아니라 실제 트래픽 증가에도 적절한 시점에 울리는지가 이 시리즈의 통과 기준이다.
 
 ### 5. (선택) OTel 트레이스로 병목 구간 특정
 
