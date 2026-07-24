@@ -76,7 +76,7 @@ BASE : 서울, Korea
 
 ● 국가보안기관 위성영상 시스템 - 개발·운영·신규 구축
   기간 : 2022.05. ~ 진행 중
-  역할 : 주도 (팀 6명)
+  역할 : 핵심 참여 (팀 6명)
   기술스택 : Spring Boot · Java · MyBatis · PostGIS · Redis · Spring Session · Go · Kubernetes · Zabbix · Jenkins · Nexus
 
   위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 환경 운영, 신규 플랫폼 구축까지 담당했습니다.
