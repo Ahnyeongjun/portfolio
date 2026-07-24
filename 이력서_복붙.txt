@@ -53,7 +53,7 @@ BASE : 서울, Korea
   - Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응
   - Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여
   - CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps
-  - 관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, Grafana 단일 대시보드로 장애 원인분석 시간 단축
+  - 관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축
   - 클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보
   - 프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)
   - WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득
@@ -64,7 +64,7 @@ BASE : 서울, Korea
   - 실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과
 
 ● 사내 자동화   (2022 ~ 진행 중)
-  - DB 스키마(information_schema) 기반 CRUD 코드 자동 생성 도구 개발 - Controller·Service·Mapper·Entity 반복 작업 제거
+  - 40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 수 분 내로 단축
   - FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거
   - Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화
   - Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착
@@ -140,7 +140,7 @@ BASE : 서울, Korea
   2) 관측성 통합 - 9개 서비스 분리로 추적 복잡 → 장애 분석 시간 단축
      문제  모놀리식을 9개 서비스로 분리하며 통합 관측 스택 자체가 없어, 하나의 요청이 여러 서비스를 거칠 때 원인 구간을 추적하기가 어려웠음
      해결  팀원과 함께 Prometheus·OpenSearch·Tempo·Grafana를 신규 도입해 OTel 기반 관측 스택을 새로 갖추고, Grafana 단일 대시보드에서 로그·트레이스 조회 및 서비스 간 요청 흐름 추적
-     결과  장애 원인분석 시간 단축, MSA 서비스 간 요청 흐름을 단일 대시보드에서 추적
+     결과  장애 원인분석 1~2시간 → 30분 이내로 단축, 요청이 죽은 구간·지연 구간을 로그 수동 추적 없이 대시보드에서 특정
 
 
 ● 드론 객체탐지 시스템 - ROS1 → ROS2 마이그레이션

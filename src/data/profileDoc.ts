@@ -116,7 +116,7 @@ export const PROFILE = {
             text: "K8s 워크로드 관리 고도화 - Aliyun GPUShare로 GPU 4장 70파드 병렬 추론, Job→Deployment 전환으로 자동 복구",
           },
           {
-            text: "보안 게이트웨이·정보 노출 점검 - Nginx 게이트웨이 구축·정보 노출 여부 점검",
+            text: "보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검",
           },
           {
             text: "AI 모델 직접 학습·서빙 - YOLOv11 객체탐지(HBB mAP50 0.644)·UPerNet 세그멘테이션(mIoU 0.72)",
@@ -140,7 +140,7 @@ export const PROFILE = {
             text: "CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps",
           },
           {
-            text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, Grafana 단일 대시보드로 장애 원인분석 시간 단축",
+            text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축",
           },
           {
             text: "클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보",
@@ -166,7 +166,7 @@ export const PROFILE = {
         title: "사내 자동화",
         period: "2022 ~ 진행 중",
         items: [
-          { text: "DB 스키마(information_schema) 기반 CRUD 코드 자동 생성 도구 개발 - Controller·Service·Mapper·Entity 반복 작업 제거" },
+          { text: "40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 수 분 내로 단축" },
           { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
@@ -334,7 +334,7 @@ export const PROFILE = {
             "팀원과 함께 Prometheus·OpenSearch·Tempo·Grafana를 신규 도입해 OpenTelemetry 기반 관측 스택을 새로 구축",
             "Grafana 단일 대시보드에서 로그·트레이스를 함께 조회하고 서비스 간 요청 흐름을 추적하도록 구성",
           ],
-          result: "장애 원인분석 시간 단축, MSA 서비스 간 요청 흐름을 단일 대시보드에서 추적",
+          result: "장애 원인분석 1~2시간 → 30분 이내로 단축, 요청이 죽은 구간·지연 구간을 로그 수동 추적 없이 대시보드에서 특정",
           brief: [
             "모놀리식을 9개 서비스로 분리하며 통합 관측 스택 자체가 없어, 하나의 요청이 여러 서비스를 거칠 때 원인 구간을 추적하기가 어려웠음",
             "팀원과 함께 Prometheus·OpenSearch·Tempo·Grafana를 신규 도입해 OTel 기반 관측 스택을 새로 갖추고, Grafana 단일 대시보드에서 로그·트레이스 조회 및 서비스 간 요청 흐름 추적",
@@ -529,8 +529,8 @@ export const PROFILE_PLATFORM = {
           { text: "RabbitMQ 단계별 큐 분리(수집→전처리→추론→후처리) - 처리 워커 1개→15개 수평 확장" },
           { text: "Cilium(eBPF)·kube-vip 클러스터 네트워킹 전환 - 서비스 증가에 따른 처리 오버헤드·단일 장애점 해결, 팀원과 설계 방향 협의하며 참여" },
           { text: "OpenBao+ESO 시크릿 중앙화, CloudNativePG PostgreSQL 운영 - 서비스별 개별 관리 부담 해소" },
-          { text: "Jenkins → ArgoCD GitOps 전환, Pulp 패키지 저장소 통합 - 배포 드리프트 추적성 확보" },
-          { text: "Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축" },
+          { text: "Jenkins 명령형 배포 → Argo Events·Workflows·CD 기반 GitOps 전환 - 배포 드리프트 추적성 확보" },
+          { text: "Prometheus·OpenSearch·Tempo·Grafana 신규 도입 - OTel 기반 관측 스택 구축, 장애 원인분석 1~2시간 → 30분 이내로 단축" },
           { text: "Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득" },
         ],
       },
@@ -539,7 +539,7 @@ export const PROFILE_PLATFORM = {
         period: "2023.10 ~ 2025.07",
         items: [
           { text: "Kubernetes 클러스터 구축 - kubeadm 베어메탈 부트스트랩, Aliyun GPUShare로 GPU 4장 70파드 병렬 추론" },
-          { text: "Nginx 게이트웨이 구축 - HTTPS 리버스 프록시·TLS 인증서·보안 헤더 통합, Wireshark 패킷 분석으로 정보 노출 여부 점검" },
+          { text: "Nginx 게이트웨이 구축 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더를 게이트웨이 1곳으로 통합, Wireshark 패킷 분석으로 정보 노출 여부 점검" },
           { text: "Nginx Ingress keepalive 튜닝 - 백엔드 커넥션 재사용 → TCP 핸드셰이크 오버헤드 제거" },
           { text: "CI 파이프라인에 k6 부하테스트·유닛테스트 도입 → 배포 후 에러율 11%→0%" },
           { text: "AOP+MyBatis Outbox 라이브러리 직접 개발 - CDC 인프라 의존 제거, 이벤트 유실 0건" },
@@ -551,9 +551,8 @@ export const PROFILE_PLATFORM = {
         items: [
           { text: "에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영, Zabbix 커스텀 대시보드로 장애 사전 감지 체계 구축" },
           { text: "가시화 전면 실패 장애 대응 - 표면 에러(디스크 부족)를 따라가 NVMe 펌웨어 이관 로직 누락까지 추적, 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축" },
-          { text: "DB 접근을 Go 기반 API 한 곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소" },
-          { text: "물리 서버 설치부터 K8s 클러스터 구성까지 신규 인프라 구축 핵심 참여" },
-          { text: "클러스터 프로비저닝 쉘 스크립트화 - 반입 가능한 도구가 제한된 환경에서도 재현 가능한 구축 절차 확보" },
+          { text: "7개 서비스가 직접 접근하던 DB를 API 1곳으로 중앙화 - 스키마 변경 영향 범위를 API 레이어로 축소" },
+          { text: "물리 서버 설치부터 K8s 클러스터 구성까지 신규 구축 핵심 참여 - 프로비저닝 쉘 스크립트화로 수동 구축 1~2일 → 2~3시간" },
           { text: "로컬·개발·에어갭 3환경 매니페스트 분리 관리 - 환경별 오배포 방지" },
           { text: "K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거" },
         ],
@@ -562,7 +561,7 @@ export const PROFILE_PLATFORM = {
         title: "사내 자동화",
         period: "2022 ~ 진행 중",
         items: [
-          { text: "DB 스키마(information_schema) 기반 CRUD 코드 자동 생성 도구 개발 - Controller·Service·Mapper·Entity 반복 작업 제거" },
+          { text: "40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 수 분 내로 단축" },
           { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
@@ -605,7 +604,7 @@ export const PROFILE_PLATFORM = {
             "배포 추적성 확보: Jenkins 명령형 배포를 ArgoCD GitOps로 전환, Pulp로 패키지 저장소 통합",
             "관측 스택 신규 구축: Prometheus·OpenSearch·Tempo·Grafana를 새로 도입해 OTel로 수집 통합, 서비스 간 요청 흐름 추적 가능하게 구성",
           ],
-          result: "클러스터 네트워킹·시크릿·배포를 팀 차원에서 표준화, 관측 스택을 신규로 갖춰 장애 원인분석 시간 단축",
+          result: "클러스터 네트워킹·시크릿·배포를 팀 차원에서 표준화, 관측 스택을 신규로 갖춰 장애 원인분석 1~2시간 → 30분 이내로 단축",
           brief: [
             "MSA 전환으로 네트워킹·시크릿·배포·관측성 각 영역에서 감당하기 어려운 문제가 동시에 드러났습니다.",
             "팀원과 영역을 나눠 Cilium·kube-vip로 네트워킹·HA를, OpenBao·CloudNativePG로 시크릿·DB를, ArgoCD·Pulp로 배포를, 신규 도입한 Prometheus·Grafana 등으로 관측성을 각각 해결했습니다.",
@@ -658,7 +657,7 @@ export const PROFILE_PLATFORM = {
             "path 기반 라우팅으로 내부 분석 서비스·지도 서버와 외부 지도 타일 API를 함께 프록시, 쿠키 보안 속성까지 일괄 적용해 단일 진입점 확보",
             "Wireshark로 패킷을 분석해 서버·버전 등 노출 금지 정보가 실제로 노출되는지 점검",
           ],
-          result: "HTTPS 종단·인증서·보안 헤더·게이트웨이 라우팅을 Nginx 한 곳에서 통합, 정보 노출 여부 사전 점검 체계 마련",
+          result: "서비스 7개의 HTTPS 종단·인증서·보안 헤더를 게이트웨이 1곳으로 통합, 정보 노출 여부 사전 점검 체계 마련",
           brief: [
             "Tomcat 단독으로는 인증서·보안 헤더 관리가 번거로웠고, 서비스가 각자 노출되다 보니 보안 정책 통합도 응답의 정보 노출 여부 확인도 어려웠습니다.",
             "Nginx를 HTTPS 리버스 프록시 겸 단일 게이트웨이로 구성해 인증서·보안 헤더·라우팅을 통합하고, Wireshark 패킷 분석으로 정보 노출 여부까지 점검했습니다.",
@@ -671,7 +670,7 @@ export const PROFILE_PLATFORM = {
           actions: [
             "Nginx Ingress의 upstream keepalive 설정으로 백엔드 커넥션을 재사용하도록 튜닝",
           ],
-          result: "TCP 핸드셰이크 오버헤드 제거, K8s 레플리카를 늘려도 그대로 스케일되는 구조 확보",
+          result: "커넥션 재사용으로 응답 지연 단축, K8s 레플리카를 늘려도 그대로 스케일되는 구조 확보",
           brief: [
             "타일 요청이 트래픽 대부분을 차지하는데 매 요청마다 TCP 핸드셰이크가 반복돼 응답 지연이 누적됐습니다.",
             "Nginx Ingress upstream keepalive로 백엔드 커넥션을 재사용하도록 튜닝해 핸드셰이크 오버헤드를 제거하고 K8s 레플리카 확장에도 그대로 대응하도록 만들었습니다.",
@@ -724,7 +723,7 @@ export const PROFILE_PLATFORM = {
             "독립 스키마를 새로 짜는 기회를 활용해 DB 접근을 Go 기반 API 한 곳으로 중앙화",
             "모든 서비스가 HTTP로만 DB에 접근하도록 재설계",
           ],
-          result: "스키마 변경 영향 범위가 API 레이어 한 곳으로 축소, 서비스는 언어와 무관하게 동일한 방식으로 DB 접근 가능",
+          result: "7개 서비스가 직접 접근하던 DB를 API 1곳으로 중앙화, 스키마 변경 영향 범위가 API 레이어 한 곳으로 축소",
           brief: [
             "서비스마다 ORM으로 DB에 직접 접근해 스키마 변경 시 여러 서비스를 동시 수정해야 했고, 언어별 ORM 개선만으로는 이 구조적 문제가 해결되지 않았습니다.",
             "DB 접근을 Go 기반 API 한 곳으로 중앙화해, 스키마 변경 영향 범위를 API 레이어 하나로 좁히고 언어 무관하게 동일한 방식으로 DB에 접근하도록 만들었습니다.",
