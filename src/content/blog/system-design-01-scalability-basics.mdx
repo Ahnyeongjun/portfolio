@@ -1,9 +1,9 @@
 ---
-title: "단일 서버에서 시작해 로드밸런서·캐시·DB 복제까지 - 규모 확장성을 단계별로 직접 만들어보는 절차"
-description: "책 1~3장(규모 확장성, 개략적 추정, 면접 공략법)을 요약 대신 Docker Compose로 단계별로 직접 쌓아본다. 단일 서버 → DB 분리 → 로드밸런서+레플리카 → DB 읽기 복제 → 캐시까지, 각 단계마다 k6로 처리량을 실측해 책의 주장을 검증하는 절차."
+title: "단일 서버에서 시작해 로드밸런서·캐시·DB 복제·샤딩까지 - 규모 확장성을 단계별로 직접 만들어보는 절차"
+description: "책 1~3장(규모 확장성, 개략적 추정, 면접 공략법)을 요약 대신 Docker Compose로 단계별로 직접 쌓아본다. DNS·SQL/NoSQL 선택부터 로드밸런서, DB 복제, 캐시, 무상태 웹 계층, 샤딩까지, 각 단계마다 k6로 처리량을 실측해 책의 주장을 검증하는 절차."
 date: "2026-07-26"
 category: "System Design"
-tags: ["시스템 설계", "확장성", "로드밸런서", "캐시", "DB 복제", "Docker", "k6"]
+tags: ["시스템 설계", "확장성", "로드밸런서", "캐시", "DB 복제", "샤딩", "Docker", "k6"]
 series: "시스템 설계 스터디"
 seriesOrder: 2
 ---
@@ -16,20 +16,94 @@ seriesOrder: 2
 
 시스템을 설계하기 전에 "이 서비스가 초당 몇 건의 요청을 받을지, 데이터가 하루에 얼마나 쌓일지"를 먼저 어림잡아야 한다 - 이 숫자가 "단일 서버로 충분한지, 언제부터 분산이 필요한지"를 결정하기 때문이다. 예를 들어 DAU(일간 활성 사용자) 1천만 명이 하루 평균 10개의 요청을 보낸다면 하루 요청 수는 1억 건, 초당 평균 요청(QPS)은 1억÷86400 ≈ 1,157건이다. 여기에 트래픽이 특정 시간대에 몰리는 걸 감안해 피크 QPS는 평균의 2~3배로 잡는 식이다. 이 글의 실습에서는 실제 사용자 수 대신 **k6로 발생시키는 가상 유저 수 자체가 이 추정치 역할**을 한다 - "이 정도 트래픽까지 견디는지"를 계산이 아니라 직접 걸어서 확인하는 것이다.
 
+## 개념: 데이터베이스 - SQL이냐 NoSQL이냐
+
+단일 서버 단계에서부터 이미 결정해야 하는 것 - 관계형(SQL)이냐 비관계형(NoSQL)이냐. 대부분의 서비스는 여전히 SQL(관계형 DB)을 기본으로 쓰지만, NoSQL이 유리한 상황이 따로 있다.
+
+| | SQL(관계형) | NoSQL |
+|---|---|---|
+| 데이터 모델 | 테이블·행·컬럼, 스키마 고정 | 키-값·문서·컬럼 기반·그래프 등 |
+| 조인 | 지원 | 대부분 지원 안 함(비정규화로 대체) |
+| 적합한 상황 | 데이터 간 관계가 중요, 트랜잭션 정합성 필요 | 아주 많은 양의 데이터, 비정형 데이터, 아주 낮은 응답 지연시간이 필요할 때 |
+| 데이터 처리 | 쿼리 엔진이 관계를 해석 | 애플리케이션이 직렬화/역직렬화만 하면 됨 |
+
+NoSQL 안에서도 목적에 따라 갈린다 - 단순 조회가 대부분이면 **키-값 저장소**(Redis, DynamoDB), 데이터 간 관계 자체가 핵심이면 **그래프 저장소**(Neo4j), 시계열·로그처럼 컬럼 단위로 몰아서 읽으면 **컬럼 기반 저장소**(Cassandra), 스키마가 자주 바뀌는 반정형 데이터면 **문서 저장소**(MongoDB)를 고른다. 이 실습은 카운터 값의 정합성(순차 증가)을 눈으로 확인하는 게 목적이라 트랜잭션이 확실한 **SQL(Postgres)**을 그대로 쓴다.
+
 ## 개념: 단일 서버에서 무엇이 순서대로 늘어나는가 (1장)
 
-책이 제시하는 확장 순서는 이렇다 - 이 실습도 정확히 같은 순서로 간다.
+책이 제시하는 확장 순서는 이렇다.
 
 ```
-1. 단일 서버 (앱+DB+정적 자산이 한 곳에)
-2. DB를 별도 서버로 분리 (앱과 DB를 독립적으로 확장 가능하게)
-3. 로드밸런서 + 앱 서버 다중화 (단일 장애점 제거, 수평 확장)
-4. DB 복제 (읽기/쓰기 분리 - 읽기가 압도적으로 많은 워크로드 대응)
-5. 캐시 추가 (DB 부하 자체를 줄임)
-6. (확장) CDN - 정적 자산을 사용자와 가까운 곳에서 서빙
+[단말기] → [DNS] → [로드밸런서] → [웹 서버 (다중화)] → [DB (마스터-슬레이브 복제)]
+                                        ↕
+                                     [캐시]
 ```
 
-각 단계는 직전 단계의 구체적인 한계를 해소하기 위해 추가된다 - 단계 3(로드밸런서)은 앱 서버 1대가 죽으면 서비스 전체가 죽는 문제를, 단계 4(DB 복제)는 읽기 요청이 쓰기 요청보다 훨씬 많은 전형적인 웹 서비스에서 마스터 DB 하나가 모든 읽기까지 떠안는 병목을, 단계 5(캐시)는 매 요청마다 DB까지 가는 낭비를 해소한다.
+1. **단일 서버**: 앱+DB+정적 자산이 한 곳에.
+2. **DB를 별도 서버로 분리**: 앱과 DB를 독립적으로 확장 가능하게.
+3. **로드밸런서 + 앱 서버 다중화**: 단일 장애점 제거, 수평 확장.
+4. **DB 다중화(복제)**: 읽기/쓰기 분리 - 읽기가 압도적으로 많은 워크로드 대응.
+5. **캐시 추가**: DB 부하 자체를 줄임.
+6. **CDN**: 정적 자산을 사용자와 가까운 곳에서 서빙.
+7. **무상태 웹 계층**: 웹 서버가 세션 상태를 들고 있지 않게 만들어 수평 확장을 쉽게 함.
+8. **데이터 센터 다중화, 메시지 큐, 로그/메트릭/자동화**: 더 큰 규모·가용성을 위한 확장.
+9. **데이터베이스의 수평적 확장(샤딩)**: DB 자체도 여러 대로 쪼갬.
+
+각 단계는 직전 단계의 구체적인 한계를 해소하기 위해 추가된다 - 3단계(로드밸런서)는 앱 서버 1대가 죽으면 서비스 전체가 죽는 문제를, 4단계(DB 복제)는 마스터 DB 하나가 모든 읽기까지 떠안는 병목을, 5단계(캐시)는 매 요청마다 DB까지 가는 낭비를 해소한다. 8단계(메시지 큐·로그/메트릭 자동화)는 이미 DevOps 학습 로드맵 시리즈(RabbitMQ 비동기 파이프라인, Prometheus/Grafana 관측 스택)에서 별도로 깊게 다뤘으므로 이 글에서는 반복하지 않고 개념만 짚는다.
+
+### DNS와 로드밸런서
+
+**DNS**는 사람이 읽는 도메인 이름을 서버의 실제 IP 주소로 바꿔주는 서비스다 - 단말기가 가장 먼저 거치는 관문이다. DNS가 반환한 IP로 요청이 도착하는 곳이 로드밸런서인 경우가 많다.
+
+**로드밸런서**는 부하 분산 집합에 속한 웹 서버들에게 트래픽을 고르게 분산하는 역할을 한다. 클라이언트는 로드밸런서의 공개 IP로만 접속하고, 로드밸런서가 내부망을 통해 실제 서버들로 요청을 나눈다 - 이 덕분에 서버가 몇 대든, 어떤 서버가 죽든 클라이언트 입장에서는 접속 지점이 바뀌지 않는다.
+
+### DB 다중화(복제) - master-slave
+
+**마스터(master)**에는 쓰기 연산만 보낸다. **슬레이브(slave, 복제본)**는 마스터의 데이터를 사본으로 복제해두고 읽기 연산만 처리한다. 대부분의 서비스는 읽기가 쓰기보다 훨씬 많으므로, 읽기를 여러 슬레이브로 분산하면:
+
+- **더 나은 성능**: 병렬로 처리되는 쿼리가 많아짐
+- **안전성(가용성)**: 슬레이브 중 하나가 죽어도, 심지어 마스터가 죽어도 슬레이브를 마스터로 승격해 서비스를 이어갈 수 있음
+
+여기까지 합치면: `단말기 → 로드밸런서 → (다중화된) 서버 → (다중화된) DB` 구조가 된다.
+
+### 캐시 - 읽기 주도형(read-through) 전략과 고려사항
+
+**캐시**는 값비싼 연산 혹은 자주 참조되는 데이터를 메모리에 두고, 뒤이은 요청을 빠르게 만드는 것이다. 캐시 계층은 DB 앞단에 둬서 DB 부하를 줄이고, 캐시 계층 자체를 독립적으로 확장하는 것도 가능하다.
+
+데이터가 캐시에 없으면 DB 질의로 찾아 캐시에 저장한 뒤 클라이언트에 반환한다 - 이 전략을 **읽기 주도형(read-through) 캐시 전략**이라 부른다. 캐시를 실제로 쓰려면 아래 다섯 가지를 항상 같이 고려해야 한다.
+
+| 고려사항 | 내용 |
+|---|---|
+| 휘발성 | 캐시는 휘발성 데이터 보관에 적합하다 - 캐시가 날아가도 원본(DB)에서 복구 가능해야 한다 |
+| 만료 정책 | 캐시에 보관한 데이터는 TTL 같은 만료 정책이 필요하다 - 없으면 오래된 데이터가 영원히 남는다 |
+| 일관성 | 원본(DB) 갱신과 캐시 갱신이 단일 트랜잭션이 아니라면 일관성이 깨질 수 있다 |
+| 장애 대처 | 캐시 서버를 한 대만 두면 그 자체가 단일 장애 지점이 된다 - 여러 대의 캐시 서버로 분산해야 한다 |
+| 메모리 크기 | 너무 작게 잡으면 캐시 항목이 자주 밀려나(eviction) 캐시 히트율이 떨어진다 - 과할당(overprovision)이 이를 방지하는 방법이다 |
+| 데이터 방출(eviction) | 캐시 메모리가 가득 찼을 때 무엇을 지울지 - FIFO, LRU, LFU 등의 정책이 있다 |
+
+### CDN - 정적 콘텐츠 캐싱
+
+**CDN(Content Delivery Network)**은 지리적으로 분산된 서버의 네트워크로, 콘텐츠를 캐시해 사용자에게 더 가까운 곳에서 응답한다. **동적 콘텐츠 캐싱**은 요청마다 결과가 달라져서 상대적으로 어렵다 - 이 실습에서는 다루지 않는다. **정적 콘텐츠 캐싱**은 쿠키·요청 헤더 등의 정보에 기반해 이미지·CSS·HTML 같은 정적 자산을 캐시하는 것이다. 클라이언트에서 CDN까지의 거리가 클라이언트에서 원본 서버까지의 거리보다 훨씬 가깝다는 게 핵심이다.
+
+### 무상태(stateless) 웹 계층
+
+웹 계층에서 세션 같은 상태 정보를 제거하고, 그 상태를 공유 저장소(DB나 별도 세션 스토어)에 보관해뒀다가 필요할 때 가져오는 방식이다.
+
+- **상태 유지형(stateful)** 서버는 클라이언트의 세션 정보를 서버 자신이 들고 있어야 한다 - 그러면 **같은 클라이언트의 요청은 항상 같은 서버로** 가야 한다. 대부분의 로드밸런서는 이를 위해 **고정 세션(sticky session)** 기능을 제공하는데, 이건 로드밸런서에 추가 부담을 준다(어떤 클라이언트가 어떤 서버로 갔는지 계속 추적해야 하므로).
+- **무상태(stateless)** 아키텍처는 상태 자체를 서버 밖(공유 저장소)에 두므로, 어떤 요청이 어떤 서버로 가도 상관없다. 구조는 `단말기 → 웹 서버 → 공유 저장소`가 된다.
+
+### 데이터 센터, 메시지 큐, 로그/메트릭/자동화
+
+여기서부터는 더 큰 규모를 향한 확장이다 - 데이터 센터를 여러 지역에 두어 재해에 대비하고, 메시지 큐로 서비스 간 결합을 느슨하게 만들고(→ DevOps 로드맵 시리즈에서 RabbitMQ로 이미 구현), 로그/메트릭/자동화로 무엇이 어디서 잘못됐는지 파악한다(→ DevOps 로드맵 시리즈에서 Prometheus/Grafana로 이미 구현). 이미 다른 시리즈에서 손으로 만들어본 부분이라 이 글에서는 개념만 짚고 넘어간다.
+
+### 데이터베이스의 수평적 확장 - 샤딩
+
+DB 한 대의 용량을 넘어서면, **샤딩(sharding)**으로 데이터를 여러 대의 작은 DB(샤드)로 쪼갠다. 핵심 결정 두 가지:
+
+- **샤딩 키(파티션 키) 선정**: 데이터를 어떤 기준으로 나눌지 - 특정 값에 데이터가 몰리면(hot shard) 샤딩의 이점이 사라진다.
+- **재샤딩(resharding)**: 샤드 하나가 너무 커지거나 데이터 분포가 한쪽으로 쏠릴 때, 샤드 수를 늘리거나 데이터를 재분배해야 한다.
+
+샤딩된 데이터는 **조인(join)이 사실상 불가능**해진다 - 서로 다른 샤드에 있는 데이터를 조인하려면 애플리케이션 레벨에서 여러 샤드를 조회해 직접 합쳐야 한다. 그래서 샤딩 환경에서는 조인이 필요 없도록 데이터를 미리 중복 저장하는 **비정규화(denormalization)**를 함께 쓰는 경우가 많다.
 
 ## 실제 구축 절차
 
@@ -70,7 +144,7 @@ def healthz():
 
 ### 1단계: 단일 서버
 
-앱과 DB를 컨테이너 하나씩, 별도 로드밸런서 없이 직접 붙인다.
+앱과 DB를 컨테이너 하나씩, 별도 로드밸런서 없이 직접 붙인다. (여기서 DNS는 도커 내부 DNS가 서비스명 `db`를 컨테이너 IP로 바꿔주는 것으로 대신한다 - 실제 도메인 등록 없이도 "이름 → IP 변환"이라는 DNS의 역할 자체는 동일하게 관찰할 수 있다.)
 
 ```yaml
 # docker-compose.step1.yml
@@ -172,6 +246,155 @@ def count():
 
 TTL을 짧게 잡은 이유를 그대로 보여주는 게 목적이다 - TTL이 너무 길면 `/hit`으로 값이 바뀌어도 `/count`가 오래된 값을 계속 반환한다(캐시 무효화 문제). k6로 `/count`를 반복 호출하며 응답에 `source: cache`가 섞이는 비율과, DB 부하(활성 커넥션 수)가 캐시 도입 전후로 얼마나 줄어드는지 비교한다.
 
+### 5단계: 무상태 웹 계층 - 세션을 공유 저장소로
+
+로그인 세션을 흉내내는 엔드포인트(`/session`)를 추가해, 상태 유지형과 무상태의 차이를 직접 재현한다.
+
+```python
+# 상태 유지형(나쁜 예) - 프로세스 메모리에 세션 저장
+sessions = {}
+
+@app.post("/login-stateful")
+def login_stateful(user_id: str):
+    sessions[user_id] = {"logged_in": True}
+    return {"ok": True}
+```
+
+앱이 2개 이상이면 `app1`에 로그인한 세션이 `app2`에는 없다 - 로드밸런서가 다음 요청을 `app2`로 보내는 순간 "로그인 안 된 상태"로 보인다. 이걸 고치려면 로드밸런서에 **고정 세션(sticky session)**을 켜서 같은 클라이언트를 항상 같은 앱으로 보내야 하는데, 이번엔 반대로 **세션 자체를 Redis(공유 저장소)로 옮겨서** 고정 세션 없이 문제를 없앤다.
+
+```python
+# 무상태 - 세션을 Redis에 저장, 어떤 앱 인스턴스가 받아도 동일하게 조회 가능
+@app.post("/login")
+def login(user_id: str):
+    redis_client.setex(f"session:{user_id}", 3600, "logged_in")
+    return {"ok": True}
+
+@app.get("/whoami/{user_id}")
+def whoami(user_id: str):
+    return {"logged_in": redis_client.exists(f"session:{user_id}") == 1}
+```
+
+검증: `nginx.conf`에서 `sticky` 옵션을 끈 채로(라운드로빈 그대로), 같은 `user_id`로 `/login` → `/whoami`를 반복 호출해 매번 다른 앱 인스턴스가 응답해도 항상 `logged_in: true`가 나오는지 확인한다.
+
+### 6단계: 샤딩 데모 - 카운터를 여러 DB로 분산
+
+카운터 1개 대신 카운터 N개(`counter_id: 0~3`)를 두고, `counter_id % 샤드 수`로 어느 DB에 저장할지 결정한다.
+
+```python
+SHARDS = {0: "db-shard-0", 1: "db-shard-1"}  # 샤드 2개
+
+def get_shard_conn(counter_id: int):
+    shard_host = SHARDS[counter_id % len(SHARDS)]
+    return psycopg2.connect(host=shard_host, dbname="counter", user="postgres", password="postgres")
+
+@app.post("/hit/{counter_id}")
+def hit_sharded(counter_id: int):
+    with get_shard_conn(counter_id) as conn, conn.cursor() as cur:
+        cur.execute("UPDATE counter SET value = value + 1 WHERE id = %s RETURNING value", (counter_id,))
+        return {"value": cur.fetchone()[0], "shard": counter_id % len(SHARDS)}
+```
+
+검증: 여러 `counter_id`로 동시에 `/hit/{counter_id}`를 호출하는 k6 시나리오를 돌려, 부하가 두 샤드에 고르게 나뉘는지 각 DB 컨테이너의 커넥션 수로 확인한다. 그다음 일부러 `counter_id`를 한 값(예: 항상 0)으로만 고정해 호출해서, **샤딩 키를 잘못 고르면 한 샤드에만 몰리는 현상(hot shard)**을 재현한다. 마지막으로 "샤드 2개를 넘나드는 합계(`SELECT SUM(value)`)"를 한 번에 구하는 쿼리가 불가능하다는 것도 확인한다 - 애플리케이션이 각 샤드에서 값을 따로 읽어와 합산해야 한다(조인 불가 문제의 축소판).
+
+### 7단계 (선택): CDN - AWS CloudFront로 실제 구현
+
+로컬 Docker로는 "지리적으로 먼 원본 서버"라는 CDN의 핵심 조건 자체를 재현할 수 없다 - 그래서 이 단계만 실제 AWS에 만든다. 정적 자산(이미지 한 장이면 충분하다)을 S3에 올리고, 그 앞에 CloudFront를 붙인다.
+
+```hcl
+# terraform/cdn.tf
+resource "aws_s3_bucket" "static_assets" {
+  bucket = "system-design-lab-static-assets"
+}
+
+# CloudFront에서만 S3에 접근하도록 - 버킷 자체는 퍼블릭으로 열지 않는다
+resource "aws_s3_bucket_public_access_block" "static_assets" {
+  bucket                  = aws_s3_bucket.static_assets.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_cloudfront_origin_access_control" "static_oac" {
+  name                              = "static-assets-oac"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"   # AWS 관리형 정책 - TTL은 응답의 Cache-Control 헤더를 따름
+}
+
+resource "aws_cloudfront_distribution" "static_cdn" {
+  enabled = true
+
+  origin {
+    domain_name              = aws_s3_bucket.static_assets.bucket_regional_domain_name
+    origin_id                = "s3-static"
+    origin_access_control_id = aws_cloudfront_origin_access_control.static_oac.id
+  }
+
+  default_cache_behavior {
+    target_origin_id       = "s3-static"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods          = ["GET", "HEAD"]
+    cache_policy_id         = data.aws_cloudfront_cache_policy.caching_optimized.id
+  }
+
+  restrictions {
+    geo_restriction { restriction_type = "none" }
+  }
+  viewer_certificate { cloudfront_default_certificate = true }
+}
+
+# CloudFront(OAC)만 이 버킷을 읽을 수 있도록 허용
+resource "aws_s3_bucket_policy" "allow_cloudfront" {
+  bucket = aws_s3_bucket.static_assets.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "cloudfront.amazonaws.com" }
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.static_assets.arn}/*"
+      Condition = {
+        StringEquals = { "AWS:SourceArn" = aws_cloudfront_distribution.static_cdn.arn }
+      }
+    }]
+  })
+}
+```
+
+```bash
+terraform apply
+aws s3 cp ./logo.png s3://system-design-lab-static-assets/logo.png --cache-control "max-age=86400"
+```
+
+**테스트 방법**
+
+```bash
+# 1. 원본(S3) 직접 접근 vs CDN 경유 접근 응답시간 비교
+curl -o /dev/null -s -w "origin: %{time_total}s\n" \
+  "https://system-design-lab-static-assets.s3.ap-northeast-2.amazonaws.com/logo.png"
+curl -o /dev/null -s -w "cdn:    %{time_total}s\n" \
+  "https://<distribution-id>.cloudfront.net/logo.png"
+
+# 2. 캐시 히트 확인 - 같은 파일을 두 번째 요청부터는 CloudFront가 원본까지 안 가고 바로 응답해야 함
+curl -sI "https://<distribution-id>.cloudfront.net/logo.png" | grep -i x-cache
+# 첫 요청: X-Cache: Miss from cloudfront
+# 두 번째 요청부터: X-Cache: Hit from cloudfront
+
+# 3. 캐시 무효화 확인 - S3 원본 파일을 바꿔도 TTL이 남아있으면 CDN은 옛 버전을 계속 서빙
+aws s3 cp ./logo-v2.png s3://system-design-lab-static-assets/logo.png
+curl -sI "https://<distribution-id>.cloudfront.net/logo.png" | grep -i x-cache  # 여전히 Hit (옛 버전)
+aws cloudfront create-invalidation --distribution-id <distribution-id> --paths "/logo.png"
+# 무효화 완료 후 재요청하면 Miss로 바뀌고 새 버전이 내려온다
+```
+
+`time_total` 값 자체는 두 요청 모두 같은 리전(서울)에서 쏘면 큰 차이가 안 날 수 있다 - CDN의 이점은 "사용자와 가까운 캐시 서버"에서 나오므로, 가능하면 해외 VPN이나 다른 리전의 인스턴스에서 같은 테스트를 돌려 origin 대비 CDN의 응답시간 차이가 지역에 따라 벌어지는지까지 확인해야 이 단계의 주장을 제대로 검증한 것이 된다.
+
 ## 검증 방법
 
 각 단계마다 동일한 k6 시나리오(`--vus 50 --duration 1m`)로 처리량(RPS)과 p95 응답시간을 재고, 표로 남긴다.
@@ -182,6 +405,8 @@ TTL을 짧게 잡은 이유를 그대로 보여주는 게 목적이다 - TTL이 
 | 2 | LB + 앱 2대 | 처리량 변화, 앱 1대 종료해도 서비스 유지 |
 | 3 | + DB 읽기 복제 | 복제 지연 실측(ms), 쓰기 직후 읽기 시 stale 값 재현 |
 | 4 | + 캐시 | DB 활성 커넥션 수 변화, 캐시 TTL과 정합성의 트레이드오프 |
+| 5 | + 무상태 웹 계층 | sticky session 없이도 로그인 상태가 유지되는지 |
+| 6 | + 샤딩 | 부하 분산 여부, 잘못된 샤딩 키로 인한 hot shard 재현, 샤드 간 조인 불가 확인 |
 
 ## 체크리스트
 
@@ -189,5 +414,7 @@ TTL을 짧게 잡은 이유를 그대로 보여주는 게 목적이다 - TTL이 
 - [ ] 2단계: Nginx LB + 앱 2대, 처리량 비교, 장애 시 가용성 확인
 - [ ] 3단계: Postgres 스트리밍 복제 구성, 복제 지연 실측
 - [ ] 4단계: Redis 캐시 추가, TTL별 정합성/성능 트레이드오프 비교
-- [ ] (선택) CDN 시뮬레이션 - 정적 자산을 별도 Nginx로 분리해 캐싱 헤더 효과 확인
-- [ ] 4단계까지의 처리량·응답시간 변화를 표 하나로 정리
+- [ ] 5단계: 세션을 Redis 공유 저장소로 이전, sticky session 없이 정상 동작 확인
+- [ ] 6단계: 카운터를 2개 샤드로 분산, hot shard 재현, 샤드 간 조인 불가 확인
+- [ ] (선택) CDN: S3+CloudFront 실제 구성, origin 대비 응답시간·캐시 히트(X-Cache) 확인, 무효화(invalidation) 후 갱신 확인
+- [ ] 전 단계 처리량·응답시간 변화를 표 하나로 정리
