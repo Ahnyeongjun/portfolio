@@ -1,0 +1,193 @@
+---
+title: "단일 서버에서 시작해 로드밸런서·캐시·DB 복제까지 - 규모 확장성을 단계별로 직접 만들어보는 절차"
+description: "책 1~3장(규모 확장성, 개략적 추정, 면접 공략법)을 요약 대신 Docker Compose로 단계별로 직접 쌓아본다. 단일 서버 → DB 분리 → 로드밸런서+레플리카 → DB 읽기 복제 → 캐시까지, 각 단계마다 k6로 처리량을 실측해 책의 주장을 검증하는 절차."
+date: "2026-07-26"
+category: "System Design"
+tags: ["시스템 설계", "확장성", "로드밸런서", "캐시", "DB 복제", "Docker", "k6"]
+series: "시스템 설계 스터디"
+seriesOrder: 2
+---
+
+## 목표
+
+책 1장이 말하는 "단일 서버 → 수백만 사용자"까지의 확장 경로를 순서 그대로 Docker Compose로 쌓아 올린다. 각 단계에서 "왜 이걸 추가하는가"(직전 단계의 어떤 한계 때문에)와 "실제로 얼마나 나아지는가"(k6로 처리량 실측)를 둘 다 남긴다. 2장(개략적 추정)의 계산 방식과 3장(면접 공략법)의 질문 프레임워크는 별도 구현 대상이 없어 이 글의 개념 절에 흡수한다.
+
+## 개념: 개략적 추정이 왜 먼저 나오는가 (2장)
+
+시스템을 설계하기 전에 "이 서비스가 초당 몇 건의 요청을 받을지, 데이터가 하루에 얼마나 쌓일지"를 먼저 어림잡아야 한다 - 이 숫자가 "단일 서버로 충분한지, 언제부터 분산이 필요한지"를 결정하기 때문이다. 예를 들어 DAU(일간 활성 사용자) 1천만 명이 하루 평균 10개의 요청을 보낸다면 하루 요청 수는 1억 건, 초당 평균 요청(QPS)은 1억÷86400 ≈ 1,157건이다. 여기에 트래픽이 특정 시간대에 몰리는 걸 감안해 피크 QPS는 평균의 2~3배로 잡는 식이다. 이 글의 실습에서는 실제 사용자 수 대신 **k6로 발생시키는 가상 유저 수 자체가 이 추정치 역할**을 한다 - "이 정도 트래픽까지 견디는지"를 계산이 아니라 직접 걸어서 확인하는 것이다.
+
+## 개념: 단일 서버에서 무엇이 순서대로 늘어나는가 (1장)
+
+책이 제시하는 확장 순서는 이렇다 - 이 실습도 정확히 같은 순서로 간다.
+
+```
+1. 단일 서버 (앱+DB+정적 자산이 한 곳에)
+2. DB를 별도 서버로 분리 (앱과 DB를 독립적으로 확장 가능하게)
+3. 로드밸런서 + 앱 서버 다중화 (단일 장애점 제거, 수평 확장)
+4. DB 복제 (읽기/쓰기 분리 - 읽기가 압도적으로 많은 워크로드 대응)
+5. 캐시 추가 (DB 부하 자체를 줄임)
+6. (확장) CDN - 정적 자산을 사용자와 가까운 곳에서 서빙
+```
+
+각 단계는 직전 단계의 구체적인 한계를 해소하기 위해 추가된다 - 단계 3(로드밸런서)은 앱 서버 1대가 죽으면 서비스 전체가 죽는 문제를, 단계 4(DB 복제)는 읽기 요청이 쓰기 요청보다 훨씬 많은 전형적인 웹 서비스에서 마스터 DB 하나가 모든 읽기까지 떠안는 병목을, 단계 5(캐시)는 매 요청마다 DB까지 가는 낭비를 해소한다.
+
+## 실제 구축 절차
+
+### 0. 실습 대상 - 카운터 API
+
+복잡한 도메인 대신 상태를 명확히 관찰할 수 있는 단순한 API를 쓴다 - 요청마다 카운터를 1 증가시키고 현재 값을 반환하는 FastAPI 서비스. 카운터 값이 DB에 정확히 반영되는지, 캐시가 낀 뒤에도 정합성이 깨지지 않는지를 그대로 관찰할 수 있다.
+
+```python
+# app/main.py
+from fastapi import FastAPI
+import psycopg2, os
+
+app = FastAPI()
+DB_HOST = os.environ.get("DB_HOST", "db")
+
+def get_conn():
+    return psycopg2.connect(host=DB_HOST, dbname="counter", user="postgres", password="postgres")
+
+@app.on_event("startup")
+def init_db():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("CREATE TABLE IF NOT EXISTS counter (id INT PRIMARY KEY, value INT)")
+        cur.execute("INSERT INTO counter VALUES (1, 0) ON CONFLICT DO NOTHING")
+        conn.commit()
+
+@app.post("/hit")
+def hit():
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE counter SET value = value + 1 WHERE id = 1 RETURNING value")
+        value = cur.fetchone()[0]
+        conn.commit()
+    return {"value": value}
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+```
+
+### 1단계: 단일 서버
+
+앱과 DB를 컨테이너 하나씩, 별도 로드밸런서 없이 직접 붙인다.
+
+```yaml
+# docker-compose.step1.yml
+services:
+  app:
+    build: ./app
+    ports: ["8000:8000"]
+    environment:
+      DB_HOST: db
+    depends_on: [db]
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: counter
+      POSTGRES_PASSWORD: postgres
+```
+
+```bash
+docker compose -f docker-compose.step1.yml up -d
+k6 run --vus 20 --duration 30s - <<'EOF'
+import http from 'k6/http';
+export default function () {
+  http.post('http://localhost:8000/hit');
+}
+EOF
+```
+
+이 단계에서 확인할 것: `app` 컨테이너를 강제로 죽이면(`docker kill`) API가 즉시 전부 실패한다 - 단일 장애점이 실제로 단일 장애점인지 눈으로 확인하는 게 이 단계의 핵심이다.
+
+### 2단계: 앱 다중화 + 로드밸런서
+
+Nginx를 로드밸런서로 앞에 두고 앱을 2개로 늘린다. DB는 아직 1대 그대로 - 이번 단계가 해소하는 건 "앱 서버의" 단일 장애점뿐이라는 걸 명확히 하기 위해서다.
+
+```nginx
+# nginx.conf
+upstream app_servers {
+    server app1:8000;
+    server app2:8000;
+}
+server {
+    listen 80;
+    location / {
+        proxy_pass http://app_servers;
+    }
+}
+```
+
+```yaml
+# docker-compose.step2.yml (일부)
+services:
+  nginx:
+    image: nginx:alpine
+    ports: ["8000:80"]
+    volumes: ["./nginx.conf:/etc/nginx/conf.d/default.conf"]
+    depends_on: [app1, app2]
+  app1:
+    build: ./app
+    environment: { DB_HOST: db }
+  app2:
+    build: ./app
+    environment: { DB_HOST: db }
+  db:
+    image: postgres:16
+    environment: { POSTGRES_DB: counter, POSTGRES_PASSWORD: postgres }
+```
+
+이번엔 `app1`을 죽여도 서비스가 계속 응답하는지 확인한다 - 1단계와 대조되는 지점이다. 카운터 값이 두 앱 인스턴스를 오가며 요청해도 **정확히 순차적으로 증가하는지**(DB가 정합성을 보장하는지)도 같이 확인한다.
+
+### 3단계: DB 읽기 복제본 추가
+
+쓰기(`/hit`)와 읽기(`/count`, 새로 추가) 엔드포인트를 분리하고, 읽기는 복제본으로 보낸다.
+
+```python
+@app.get("/count")
+def count():
+    with get_conn(read=True) as conn, conn.cursor() as cur:  # 복제본으로 연결
+        cur.execute("SELECT value FROM counter WHERE id = 1")
+        return {"value": cur.fetchone()[0]}
+```
+
+Postgres 복제본은 스트리밍 복제(`primary_conninfo` 설정)로 구성한다. 검증 포인트는 복제 지연(replication lag)이다 - `/hit`으로 값을 올린 직후 바로 `/count`를 읽으면 복제 지연 때문에 **이전 값이 보일 수 있다**(최종 일관성). k6로 쓰기 직후 읽기를 반복하며 이 지연이 실제로 몇 ms인지 재본다.
+
+### 4단계: 캐시 추가
+
+`/count` 앞에 Redis 캐시를 붙인다.
+
+```python
+@app.get("/count")
+def count():
+    cached = redis_client.get("counter:value")
+    if cached is not None:
+        return {"value": int(cached), "source": "cache"}
+    with get_conn(read=True) as conn, conn.cursor() as cur:
+        cur.execute("SELECT value FROM counter WHERE id = 1")
+        value = cur.fetchone()[0]
+    redis_client.setex("counter:value", 2, value)  # TTL 2초
+    return {"value": value, "source": "db"}
+```
+
+TTL을 짧게 잡은 이유를 그대로 보여주는 게 목적이다 - TTL이 너무 길면 `/hit`으로 값이 바뀌어도 `/count`가 오래된 값을 계속 반환한다(캐시 무효화 문제). k6로 `/count`를 반복 호출하며 응답에 `source: cache`가 섞이는 비율과, DB 부하(활성 커넥션 수)가 캐시 도입 전후로 얼마나 줄어드는지 비교한다.
+
+## 검증 방법
+
+각 단계마다 동일한 k6 시나리오(`--vus 50 --duration 1m`)로 처리량(RPS)과 p95 응답시간을 재고, 표로 남긴다.
+
+| 단계 | 구성 | 확인할 것 |
+|---|---|---|
+| 1 | 단일 서버 | 기준 처리량, 앱 강제 종료 시 전체 다운 |
+| 2 | LB + 앱 2대 | 처리량 변화, 앱 1대 종료해도 서비스 유지 |
+| 3 | + DB 읽기 복제 | 복제 지연 실측(ms), 쓰기 직후 읽기 시 stale 값 재현 |
+| 4 | + 캐시 | DB 활성 커넥션 수 변화, 캐시 TTL과 정합성의 트레이드오프 |
+
+## 체크리스트
+
+- [ ] 1단계: 단일 서버 구성, 기준 처리량 측정, 단일 장애점 재현
+- [ ] 2단계: Nginx LB + 앱 2대, 처리량 비교, 장애 시 가용성 확인
+- [ ] 3단계: Postgres 스트리밍 복제 구성, 복제 지연 실측
+- [ ] 4단계: Redis 캐시 추가, TTL별 정합성/성능 트레이드오프 비교
+- [ ] (선택) CDN 시뮬레이션 - 정적 자산을 별도 Nginx로 분리해 캐싱 헤더 효과 확인
+- [ ] 4단계까지의 처리량·응답시간 변화를 표 하나로 정리
