@@ -1,0 +1,89 @@
+---
+title: "번외: 임계값 없이 - 통계 기반 이상탐지로 Datadog Watchdog 흉내내기"
+description: "Datadog Watchdog 같은 상용 AI 이상탐지 기능을, Prometheus의 holt_winters·predict_linear로 정상 트래픽 패턴을 학습해 고정 임계값 없이 이상을 탐지하는 절차로 오픈소스 구현. 고정 임계값 알림과 나란히 비교해 오탐/누락을 실측."
+date: "2026-07-27"
+category: "DevOps"
+tags: ["이상탐지", "Prometheus", "Watchdog", "Datadog", "AIOps", "holt-winters"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 17
+---
+
+## 목표
+
+지금까지 만든 알림 규칙(`HighErrorRate > 0.05` 같은)은 전부 **고정 임계값**이다. 문제는 "정상적인 트래픽 변동"과 "진짜 이상 상황"을 구분하지 못한다는 것 - 예를 들어 트래픽이 몰리는 시간대엔 응답시간이 평소보다 늘어나는 게 정상인데, 고정 임계값은 그 맥락을 모른다. Datadog의 **Watchdog**(Datadog 플랫폼 안의 AI 이상탐지 기능 - Datadog이라는 제품과는 별개의, 그 안에 포함된 하나의 기능이다)이 하는 일이 바로 이 맥락을 학습하는 것이다. 이 시리즈에서는 Prometheus의 시계열 예측 함수로 같은 개념을 오픈소스로 흉내낸다.
+
+## 개념: 고정 임계값이 놓치는 것
+
+| 상황 | 고정 임계값(`> 500ms`) | 학습 기반 이상탐지 |
+|---|---|---|
+| 평소 대비 정상적인 피크 시간대 트래픽 증가 | 오탐(진짜 이상 아닌데 알림) | 정상 범위로 인식, 알림 안 함 |
+| 평소보다 낮은 트래픽 시간대의 미세한 지연 증가 | 임계값 미달로 누락 | 평소 패턴과 다름을 감지, 알림 |
+| 요일별/시간대별 반복되는 패턴(주말 트래픽 감소 등) | 매번 같은 임계값 적용 | 과거 같은 시간대와 비교 |
+
+## 실제 구축 절차
+
+### 1. `holt_winters`로 계절성 있는 예측선 만들기
+
+Prometheus의 `holt_winters` 함수는 과거 데이터의 추세(trend)와 계절성(seasonality)을 반영해 "지금 이 시점에 예상되는 값"을 계산한다.
+
+```promql
+# 과거 1시간 추세를 반영한 요청 수 예측 (평활 계수는 실측하며 조정)
+holt_winters(http_requests_total[1h], 0.3, 0.1)
+```
+
+### 2. 예측 구간을 벗어나는지로 이상 판정
+
+```yaml
+# prometheus-rules/anomaly.yaml
+groups:
+  - name: anomaly-detection
+    rules:
+      - record: anomaly:request_rate:predicted
+        expr: holt_winters(sum(rate(http_requests_total[5m]))[1h:5m], 0.3, 0.1)
+
+      - record: anomaly:request_rate:actual
+        expr: sum(rate(http_requests_total[5m]))
+
+      - record: anomaly:request_rate:deviation_ratio
+        expr: |
+          abs(anomaly:request_rate:actual - anomaly:request_rate:predicted)
+          /
+          anomaly:request_rate:predicted
+
+      - alert: TrafficAnomalyDetected
+        expr: anomaly:request_rate:deviation_ratio > 0.5   # 예측치 대비 50% 이상 이탈
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "실제 트래픽이 예측 패턴에서 50% 이상 벗어남 - 임계값이 아니라 패턴 이탈로 감지"
+```
+
+### 3. `predict_linear`로 "이대로 가면 언제 임계값을 넘는지" 예측
+
+디스크 사용량처럼 서서히 증가하는 지표는, 현재 값이 아니라 **증가 추세**를 보고 미리 경고하는 게 더 유용하다.
+
+```promql
+# 디스크 사용량이 현재 추세(최근 6시간)로 계속 늘면 4시간 안에 가득 찰지 예측
+predict_linear(node_filesystem_avail_bytes[6h], 4 * 3600) < 0
+```
+
+이 알림은 "지금 디스크가 부족하다"가 아니라 "지금 이 속도로 줄면 4시간 뒤에 부족해진다"를 미리 알려준다 - 시리즈 6의 장애 주입 실험(디스크 풀)에서 사후에야 알아챘던 것과 대비되는 지점이다.
+
+### 4. 고정 임계값과 나란히 비교
+
+기존 `HighErrorRate`(고정 임계값) 알림과 이번에 만든 `TrafficAnomalyDetected`(학습 기반)를 같은 대시보드에 나란히 두고, 부하테스트 시리즈(12번)에서 쓴 k6 스크립트로 트래픽을 인위적으로 늘려가며 두 알림 중 어느 쪽이 먼저·더 정확하게 반응하는지 비교한다.
+
+## 검증 방법
+
+- 평소 패턴대로 트래픽을 흘리며 `TrafficAnomalyDetected`가 오탐하지 않는지(정상 변동을 이상으로 잘못 잡지 않는지) 확인
+- k6로 평소와 다른 갑작스러운 트래픽 패턴을 주입해 학습 기반 알림이 실제로 반응하는지 확인
+- 같은 상황에서 기존 고정 임계값 알림과 비교해 어느 쪽이 먼저 반응했는지, 오탐률은 어느 쪽이 높았는지 기록
+- `predict_linear` 기반 디스크 알림이 실제 디스크 풀 몇 시간 전에 미리 발화하는지 확인(시리즈 6 장애 주입 실험 재활용)
+
+## 체크리스트
+
+- [ ] `holt_winters` 기반 예측선 recording rule 작성
+- [ ] 예측치 대비 이탈률로 이상탐지 알림 규칙 작성
+- [ ] `predict_linear`로 디스크 사용량 사전 경고 알림 작성
+- [ ] 기존 고정 임계값 알림과 나란히 두고 k6 부하로 반응 속도·오탐률 비교
+- [ ] 비교 결과를 표로 정리 (고정 임계값 vs 학습 기반, 각각의 장단점)

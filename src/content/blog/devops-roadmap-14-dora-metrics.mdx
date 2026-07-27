@@ -1,0 +1,123 @@
+---
+title: "번외: DORA 4대 지표를 Four Keys로 자동 집계해보기"
+description: "배포 빈도·변경 리드타임·변경 실패율·서비스 복구 시간(MTTR), DORA 4대 지표를 구글 오픈소스 Four Keys로 Jenkins/ArgoCD/GitHub 이벤트에서 자동 집계하는 절차. 기존 재배포 월10건→1건, 배포 4분→30초 수치를 DORA 등급으로 재해석한다."
+date: "2026-07-27"
+category: "DevOps"
+tags: ["DORA", "Four Keys", "배포 빈도", "리드타임", "MTTR", "BigQuery"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 16
+---
+
+## 목표
+
+"배포가 빨라졌다"를 감이 아니라 업계 표준 지표로 측정한다. DORA(DevOps Research and Assessment) 4대 지표를 정의하고, Google이 공개한 오픈소스 **Four Keys**로 Jenkins/ArgoCD/GitHub 이벤트에서 자동 집계되게 만든다. MSA 전환 때 이미 만든 "재배포 월 10건→1건, 배포 4분→30초" 수치를 이 프레임워크로 다시 해석해본다.
+
+## 개념: DORA 4대 지표
+
+| 지표 | 의미 | 이 랩에서의 데이터 소스 |
+|---|---|---|
+| 배포 빈도(Deployment Frequency) | 얼마나 자주 프로덕션에 배포하는가 | ArgoCD 배포 완료 이벤트 |
+| 변경 리드타임(Lead Time for Changes) | 커밋부터 프로덕션 배포까지 걸리는 시간 | GitHub 커밋 타임스탬프 ↔ ArgoCD 배포 타임스탬프 |
+| 변경 실패율(Change Failure Rate) | 배포 중 몇 %가 장애·롤백을 유발하는가 | ArgoCD 롤백 이벤트, 배포 직후 알림 발화 여부 |
+| 서비스 복구 시간(MTTR) | 장애 발생부터 복구까지 걸리는 시간 | Alertmanager 알림 시작~해제 타임스탬프 |
+
+이 4개를 기준으로 Elite/High/Medium/Low 등급을 나눈다 - 예를 들어 Elite는 "하루에 여러 번 배포, 리드타임 1시간 미만, 변경 실패율 0~15%, 복구 1시간 미만"에 해당한다. 등급 자체보다 **"우리 팀이 지금 어느 지표에서 병목인지"**를 알려주는 도구로 쓰는 게 핵심이다.
+
+## 실제 구축 절차
+
+### 1. Four Keys 설치
+
+Four Keys는 원래 BigQuery(GCP)를 기본 백엔드로 가정하지만, 이 랩은 이미 Prometheus 생태계이므로 이벤트 수집 부분만 개념적으로 차용하고 실제 저장은 Prometheus Pushgateway로 대체한다.
+
+```bash
+git clone https://github.com/GoogleCloudPlatform/fourkeys.git
+```
+
+### 2. 배포 이벤트 계측 - ArgoCD
+
+ArgoCD의 `Application` sync 완료를 감지해 배포 이벤트를 기록한다.
+
+```yaml
+# argocd-notifications-cm에 sync 완료 트리거 추가
+template.deployment-recorded: |
+  webhook:
+    four-keys-collector:
+      method: POST
+      path: /deployment
+      body: |
+        {
+          "app": "{{.app.metadata.name}}",
+          "revision": "{{.app.status.sync.revision}}",
+          "deployed_at": "{{.app.status.operationState.finishedAt}}"
+        }
+trigger.on-sync-succeeded: |
+  - when: app.status.operationState.phase in ['Succeeded']
+    send: [deployment-recorded]
+```
+
+### 3. 리드타임 계산 - 커밋 시각과 배포 시각의 차이
+
+```python
+# 수집기 - 커밋 타임스탬프와 배포 타임스탬프를 매칭해 리드타임 계산
+def record_deployment(app: str, revision: str, deployed_at: datetime):
+    commit_time = get_commit_timestamp(revision)  # GitHub API
+    lead_time_seconds = (deployed_at - commit_time).total_seconds()
+    deployment_lead_time_seconds.labels(app=app).observe(lead_time_seconds)
+    deployment_total.labels(app=app).inc()
+```
+
+```promql
+# 배포 빈도 - 최근 7일 배포 횟수
+increase(deployment_total[7d])
+
+# 변경 리드타임 p50
+histogram_quantile(0.5, rate(deployment_lead_time_seconds_bucket[7d]))
+```
+
+### 4. 변경 실패율 - 배포 직후 알림 발화 여부로 판정
+
+배포 시각으로부터 15분 이내에 관련 서비스의 알림이 발화하면 "이 배포는 실패"로 간주한다.
+
+```python
+def is_deployment_failed(app: str, deployed_at: datetime) -> bool:
+    alerts = query_alertmanager_alerts(
+        service=app,
+        start=deployed_at,
+        end=deployed_at + timedelta(minutes=15),
+    )
+    return len(alerts) > 0
+```
+
+```promql
+# 변경 실패율
+sum(deployment_failed_total) / sum(deployment_total) * 100
+```
+
+### 5. MTTR - Alertmanager 알림 시작~해제 시간
+
+```promql
+# 알림 발화(firing)부터 해제(resolved)까지 걸린 시간의 평균
+avg(alertmanager_alert_resolved_timestamp - alertmanager_alert_firing_timestamp)
+```
+
+Alertmanager 자체는 이 값을 기본 제공하지 않으므로, 알림 webhook을 받아 firing/resolved 타임스탬프를 직접 기록하는 작은 수집기가 필요하다 - webhook receiver 하나를 새로 만들어 Discord 알림과 나란히 두면 된다.
+
+### 6. Grafana 대시보드 - DORA 4대 지표 한 화면
+
+네 지표를 한 대시보드에 모으고, 기존 MSA 전환 수치(재배포 월10건→1건, 배포 4분→30초)를 리드타임·배포 빈도 지표로 다시 그려본다 - "월 10건 → 1건"은 배포 빈도가 오히려 줄어든 것처럼 보이지만, 실제로는 "재배포가 필요했던 원인(모듈 결합)" 자체가 사라진 것이라 이 숫자의 의미를 대시보드 옆에 주석으로 남겨둔다(지표를 맹신하지 않고 맥락과 같이 읽어야 한다는 실습이기도 하다).
+
+## 검증 방법
+
+- 실제로 배포 몇 번을 수행해 배포 빈도·리드타임이 대시보드에 정확히 집계되는지 확인
+- 의도적으로 실패하는 배포를 만들어(알림이 발화하도록) 변경 실패율에 반영되는지 확인
+- 그 알림을 수동으로 해제해 MTTR이 기록되는지 확인
+- 기존 MSA 전환 수치를 이 지표들로 재해석했을 때 논리적으로 설명되는지 (숫자만 보고 등급을 매기지 않고, 왜 그런 숫자가 나왔는지 설명 가능한지)
+
+## 체크리스트
+
+- [ ] ArgoCD sync 완료 이벤트를 배포 이벤트로 계측
+- [ ] 커밋~배포 리드타임 계산 및 히스토그램화
+- [ ] 배포 직후 알림 발화 여부로 변경 실패율 판정
+- [ ] Alertmanager firing~resolved로 MTTR 계측
+- [ ] DORA 4대 지표 Grafana 대시보드 구성
+- [ ] 기존 MSA 전환 성과 수치를 DORA 지표로 재해석해 설명 남기기

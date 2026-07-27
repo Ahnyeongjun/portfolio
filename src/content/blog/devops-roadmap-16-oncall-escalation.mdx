@@ -1,0 +1,134 @@
+---
+title: "번외: Grafana OnCall로 PagerDuty 없이 온콜·에스컬레이션 구현하기"
+description: "Alertmanager가 알림을 보내는 것과 그 알림을 누가 언제 처리하는지 관리하는 것은 다른 문제다. PagerDuty의 오픈소스 대체품 Grafana OnCall로 당직 스케줄, 무응답 시 에스컬레이션, 알림 그룹핑까지 구현하는 절차."
+date: "2026-07-27"
+category: "DevOps"
+tags: ["PagerDuty", "Grafana OnCall", "온콜", "에스컬레이션", "Alertmanager"]
+series: "DevOps 학습 로드맵"
+seriesOrder: 18
+---
+
+## 목표
+
+지금까지 Alertmanager는 알림을 Discord 채널에 뿌리는 것으로 끝났다 - 채널에 알림이 오지만 "누가 봐야 하는지, 못 보면 어떻게 되는지"는 사람이 알아서 챙겨야 했다. **PagerDuty**가 상용으로 제공하는 이 부분(당직 스케줄, 무응답 시 다음 사람에게 에스컬레이션, 알림 그룹핑으로 노이즈 감소)을 오픈소스 **Grafana OnCall**로 직접 구현한다.
+
+## 개념: Alertmanager와 온콜 도구는 역할이 다르다
+
+| | Alertmanager | Grafana OnCall / PagerDuty |
+|---|---|---|
+| 역할 | 알림을 받아 라우팅(누구에게 보낼지 규칙 적용) | 그 알림을 "사람이 실제로 확인·대응"하게 관리 |
+| 없는 것 | 당직 스케줄, 무응답 시 재시도 개념 | (직접 만들지 않음, Alertmanager가 여전히 알림 소스) |
+| 실패 시 | 채널에 뿌리고 끝 - 아무도 안 보면 그대로 묻힘 | 일정 시간 무응답 시 다음 사람에게 자동 에스컬레이션(전화·SMS 등) |
+
+Grafana OnCall은 Alertmanager를 대체하는 게 아니라 **그 뒤에 붙는다** - Alertmanager가 여전히 "무엇이 알림인지"를 판단하고, OnCall은 "그 알림을 누가 언제 확인해야 하는지"를 관리한다.
+
+## 실제 구축 절차
+
+### 1. Grafana OnCall 설치
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install grafana-oncall grafana/oncall \
+  --namespace monitoring \
+  --set oncall.secrets.secretKey=$(openssl rand -hex 32)
+```
+
+### 2. Alertmanager → OnCall 연동
+
+Alertmanager의 기존 Discord 웹훅 라우트 옆에 OnCall 웹훅 라우트를 추가한다 - 두 채널 모두에 알림이 가되, 실제 "누가 대응할지"는 OnCall이 관리한다.
+
+```yaml
+# alertmanager config
+route:
+  receiver: "null"
+  routes:
+    - receiver: discord         # 기존 - 채널에 그냥 뿌림 (가시성 용도)
+      matchers: [severity =~ "warning|critical"]
+    - receiver: grafana-oncall  # 신규 - 실제 대응 관리
+      matchers: [severity = "critical"]
+receivers:
+  - name: "null"
+  - name: discord
+    slack_configs:
+      - api_url_file: /etc/alertmanager/secrets/discord-webhook/url
+  - name: grafana-oncall
+    webhook_configs:
+      - url: http://grafana-oncall.monitoring:8080/integrations/v1/alertmanager/<integration-token>/
+```
+
+### 3. 당직 스케줄 구성
+
+Grafana OnCall UI(또는 Terraform provider)에서 스케줄을 정의한다 - 개인 랩이라 실제로는 "본인 1인 로테이션"이지만, 팀 규모를 가정한 다인 로테이션 구조로 만들어본다.
+
+```hcl
+# terraform/oncall.tf (grafana/grafana provider의 oncall 리소스)
+resource "grafana_oncall_schedule" "primary" {
+  name = "primary-oncall"
+  type = "calendar"
+  shifts = [grafana_oncall_on_call_shift.weekday.id]
+}
+
+resource "grafana_oncall_on_call_shift" "weekday" {
+  name       = "weekday-shift"
+  type       = "recurrent_event"
+  start      = "2026-07-27T09:00:00"
+  duration   = 43200  # 12시간
+  frequency  = "daily"
+  users      = [data.grafana_oncall_user.me.id]
+}
+```
+
+### 4. 에스컬레이션 정책
+
+```hcl
+resource "grafana_oncall_escalation_chain" "critical" {
+  name = "critical-escalation"
+}
+
+resource "grafana_oncall_escalation" "notify_primary" {
+  escalation_chain_id = grafana_oncall_escalation_chain.critical.id
+  type                = "notify_persons"
+  persons_to_notify    = [data.grafana_oncall_user.me.id]
+  position             = 0
+}
+
+resource "grafana_oncall_escalation" "escalate_after_5min" {
+  escalation_chain_id = grafana_oncall_escalation_chain.critical.id
+  type                = "wait"
+  duration            = 300   # 5분 무응답 시
+  position             = 1
+}
+
+resource "grafana_oncall_escalation" "notify_backup" {
+  escalation_chain_id = grafana_oncall_escalation_chain.critical.id
+  type                = "notify_person_next_each_time"
+  position             = 2
+}
+```
+
+### 5. 알림 그룹핑으로 노이즈 감소
+
+한 장애가 여러 서비스에 연쇄적으로 영향을 주면(예: DB 장애 → 여러 서비스가 동시에 5xx) Alertmanager가 알림을 각각 따로 보내 "알림 폭주"가 생길 수 있다. OnCall의 그룹핑 규칙으로 같은 근본 원인으로 추정되는 알림을 하나의 "인시던트"로 묶는다.
+
+```yaml
+# alertmanager config - group_by로 1차 그룹핑
+route:
+  group_by: ['alertname', 'cluster']
+  group_wait: 30s
+  group_interval: 5m
+```
+
+## 검증 방법
+
+- 시리즈 6의 장애 주입 실험(디스크풀·OOMKill 등)을 다시 실행해 OnCall에 실제로 알림이 도착하는지 확인
+- 알림을 의도적으로 확인(acknowledge)하지 않고 5분을 기다려, 백업 담당자에게 실제로 에스컬레이션되는지 확인
+- 여러 서비스에 동시에 영향을 주는 장애를 재현해, 알림이 개별로 쏟아지는 대신 하나의 인시던트로 그룹핑되는지 확인
+- 당직 스케줄 시간 외에 발생한 알림이 그 시간대 담당자에게만 가는지 확인
+
+## 체크리스트
+
+- [ ] Grafana OnCall 설치, Alertmanager 웹훅 연동
+- [ ] 당직 스케줄 구성 (다인 로테이션 가정)
+- [ ] 에스컬레이션 체인 구성 - 무응답 시 다음 담당자로 자동 전환
+- [ ] 알림 그룹핑으로 동시다발 알림이 하나의 인시던트로 묶이는지 확인
+- [ ] 시리즈 6 장애 주입 실험 재실행으로 전체 흐름(Prometheus → Alertmanager → OnCall → 에스컬레이션) 종단 검증
