@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ResumePage() {
-  return <ResumeDocument />;
+export default async function ResumePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  return <ResumeDocument initialTab={tab ?? null} />;
 }

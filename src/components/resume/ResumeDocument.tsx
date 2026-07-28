@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState, useEffect, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { PROFILE, PROFILE_PLATFORM } from "@/data/profileDoc";
 
 const VARIANTS = {
@@ -143,25 +144,26 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
   return er.top - sr.top;
 }
 
-const TAB_PARAM: Record<Variant, string> = { backend: "backend", platform: "infra" };
+const TAB_PARAM: Record<Variant, string> = { backend: "fullstack", platform: "infra" };
 
-function variantFromSearch(search: string): Variant {
-  const tab = new URLSearchParams(search).get("tab");
-  return tab === "backend" ? "backend" : "platform";
+function variantFromTab(tab: string | null | undefined): Variant {
+  if (tab === "fullstack") return "backend";
+  if (tab === "infra") return "platform";
+  return "platform"; // 파라미터 없음/미인식 값 - 기본 탭(인프라) 유지
 }
 
-export function ResumeDocument() {
-  const [variant, setVariant] = useState<Variant>(() =>
-    typeof window === "undefined" ? "platform" : variantFromSearch(window.location.search)
-  );
+export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [variant, setVariant] = useState<Variant>(() => variantFromTab(initialTab));
   const P = VARIANTS[variant].data;
 
   const handleVariantChange = useCallback((key: Variant) => {
     setVariant(key);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", TAB_PARAM[key]);
-    window.history.replaceState(null, "", url.toString());
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", TAB_PARAM[key]);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router]);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const applyBreaks = useCallback(() => {
