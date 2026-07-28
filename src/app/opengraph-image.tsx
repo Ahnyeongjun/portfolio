@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "안영준 | Full-Stack Developer";
+export const alt = "안영준 | 포트폴리오";
 export const size = {
   width: 1200,
   height: 630,
@@ -41,7 +41,7 @@ export default async function Image() {
           안영준
         </div>
         <div style={{ fontSize: 40, color: "#9ba8ba" }}>
-          Full-Stack Developer
+          포트폴리오
         </div>
       </div>
     ),
