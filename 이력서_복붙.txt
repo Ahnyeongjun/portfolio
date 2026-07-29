@@ -1,5 +1,5 @@
 ════════════════════════════════════════
-안영준 · 풀스택 개발자 (백엔드 메인)
+안영준 · 풀스택 개발자 (인프라 메인)
 ════════════════════════════════════════
 EMAIL : ahn479512@gmail.com
 GITHUB : github.com/Ahnyeongjun
@@ -7,7 +7,7 @@ PORTFOLIO : ahnyoungjun.site
 BASE : 서울, Korea
 ────────────────────────────────────────
 
-5년차 백엔드 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.
+5년차 인프라 중심 풀스택 개발자입니다. k6 부하테스트로 에러율 11%→0%·처리량 3배, MSA 전환으로 재배포 10건→1건, DB 튜닝으로 응답속도 239배 단축까지 국가기관 납품 환경에서 수치로 증명되는 성과를 냈습니다. 프레임워크가 못 푸는 문제는 직접 만들어 해결합니다.
 
 
 ■ 자기소개
@@ -45,13 +45,13 @@ BASE : 서울, Korea
   - MSA 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건 (NIPA)
 
 ● 데이터·이벤트 파이프라인
-  - 운영 유연성 중심 무외래키 스키마 설계 (정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능 (KARI)
+  - 운영 유연성 중심 무외래키 스키마 설계(정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능 (KARI)
   - 에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건 (KARI)
   - SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환 (KARI)
 
 ● 보안·인증
   - 보안 취약점 진단·대응 - 브루트포스 차단 구현, 47개 매퍼 SQL Injection 전량 해소 (국가보안기관)
-  - 보안 게이트웨이·정보 노출 점검 - Nginx 게이트웨이 구축·정보 노출 여부 점검 (KARI)
+  - 보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검 (KARI)
   - Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여 (NIPA)
 
 ● CI/CD·관측성
@@ -89,7 +89,7 @@ BASE : 서울, Korea
 ● 국가보안기관 위성영상 시스템 - 개발·운영·신규 구축
   기간 : 2022.05. ~ 진행 중
   역할 : 핵심 참여 (팀 6명)
-  기술스택 : Spring Boot · Java · MyBatis · PostGIS · Redis · Spring Session · Go · Kubernetes · Zabbix · Jenkins · Nexus
+  기술스택 : Spring Boot · Java · MyBatis · jQuery · JSP · Tomcat · PostGIS · Redis · Spring Session · Go · Kubernetes · Zabbix · Jenkins · Nexus
 
   위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 환경 운영, 신규 플랫폼 구축까지 담당했습니다.
 
@@ -154,6 +154,11 @@ BASE : 서울, Korea
      해결  팀원과 함께 Prometheus·OpenSearch·Tempo·Grafana를 신규 도입해 OTel 기반 관측 스택을 새로 갖추고, Grafana 단일 대시보드에서 로그·트레이스 조회 및 서비스 간 요청 흐름 추적
      결과  장애 원인분석 1~2시간 → 30분 이내로 단축, 요청이 죽은 구간·지연 구간을 로그 수동 추적 없이 대시보드에서 특정
 
+  3) 시크릿 중앙화 - 서비스별 분산 관리 → OpenBao+ESO 중앙 저장·자동 주입
+     문제  9개 서비스로 분리되며 DB 접속 정보·인증서·API 키 같은 시크릿이 서비스마다 개별 K8s Secret으로 분산돼, 변경 시 수동 반영이 필요하고 중앙에서 관리·감사할 수 없었음
+     해결  OpenBao를 시크릿 중앙 저장소로 두고 External Secrets Operator로 K8s Secret에 자동 주입·동기화해, 서비스 코드 변경 없이 시크릿을 중앙에서 일원 관리
+     결과  서비스별로 흩어져 있던 시크릿을 중앙 저장소 한 곳으로 통합, ESO 자동 주입으로 수동 반영·개별 관리 부담 해소
+
 
 ● 드론 객체탐지 시스템 - ROS1 → ROS2 마이그레이션
   기간 : 2026.07.
@@ -194,7 +199,7 @@ BASE : 서울, Korea
 언어 : Java · Kotlin · Python · Go
 프레임워크 : Spring Boot · FastAPI · MyBatis
 데이터 : PostgreSQL · MySQL · Redis · RabbitMQ
-인프라 : Kubernetes · Docker · SaltStack · Zabbix
+인프라 : Kubernetes · Docker · Zabbix
 
 
 ────────────────────────────────────────
