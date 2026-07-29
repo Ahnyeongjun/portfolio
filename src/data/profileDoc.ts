@@ -80,96 +80,81 @@ export const PROFILE = {
     metrics: ["재배포 월 10건→1건", "배포 4분→30초", "메타데이터 API 38초→159ms", "GPU 4장 70파드 병렬 추론", "이벤트 유실 0건"],
     groups: [
       {
-        title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
-        period: "2022.05 ~ 진행 중",
+        title: "프로젝트 개요",
         items: [
-          { text: "핵심 도메인 서비스 개발·운영 - 판독보고서(웹 PPT) 생성·어드민·위성 ETL(수집·전처리·적재)·AI 분석 연동" },
-          { text: "레거시 모듈 점진적 전환 주도 - 인증·다운로드 안정화 → 장애 전파 최소화" },
-          { text: "공통 base 모듈·자동화 도구 개발 - 반복 개발 작업 제거 → 신규 테이블 온보딩 효율화" },
-          { text: "보안 취약점 진단·대응 - 브루트포스 차단 구현, 47개 매퍼 SQL Injection 전량 해소" },
-          { text: "에어갭 환경 장애 대응 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지" },
+          { text: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축 · 핵심 참여(팀 6명)" },
+          { text: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축 · 주도(팀 3명)" },
+          { text: "NIPA 위성 변화탐지 플랫폼 - MSA 설계 · 주도(팀 5명)" },
+          { text: "드론 객체탐지 시스템 - ROS1→ROS2 마이그레이션 · 주도(팀 2명)" },
         ],
       },
       {
-        title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
-        period: "2023.10 ~ 2025.07",
+        title: "API·아키텍처 설계",
         items: [
-          {
-            text: "테스트 문화 정착 주도 - k6·유닛테스트 도입 → 배포 후 에러율 11%→0%",
-          },
-          {
-            text: "에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건",
-          },
-          {
-            text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환",
-          },
-          {
-            text: "CDC·Outbox 아키텍처 팀 내 설명 - 신규 도입 배경·개념 전파",
-          },
-          {
-            text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원",
-          },
-          {
-            text: "운영 유연성 중심 무외래키 스키마 설계 (정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능",
-          },
-          {
-            text: "K8s 워크로드 관리 고도화 - Aliyun GPUShare로 GPU 4장 70파드 병렬 추론, Job→Deployment 전환으로 자동 복구",
-          },
-          {
-            text: "보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검",
-          },
-          {
-            text: "AI 모델 직접 학습·서빙 - YOLOv11 객체탐지(HBB mAP50 0.644)·UPerNet 세그멘테이션(mIoU 0.72)",
-          },
+          { text: "핵심 도메인 서비스 개발·운영 - 판독보고서(웹 PPT) 생성·어드민·위성 ETL(수집·전처리·적재)·AI 분석 연동 (국가보안기관)" },
+          { text: "레거시 모듈 점진적 전환 주도 - 인증·다운로드 안정화 → 장애 전파 최소화 (국가보안기관)" },
+          { text: "공통 base 모듈·자동화 도구 개발 - 반복 개발 작업 제거 → 신규 테이블 온보딩 효율화 (국가보안기관)" },
+          { text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원 (KARI)" },
+          { text: "Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응 (NIPA)" },
+          { text: "MSA 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건 (NIPA)" },
         ],
       },
       {
-        title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
-        period: "2025.07 ~ 진행 중",
+        title: "데이터·이벤트 파이프라인",
         items: [
-          {
-            text: "MSA 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건",
-          },
-          {
-            text: "Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응",
-          },
-          {
-            text: "Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여",
-          },
-          {
-            text: "CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps",
-          },
-          {
-            text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축",
-          },
-          {
-            text: "클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보",
-          },
-          {
-            text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포)",
-          },
-          {
-            text: "WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득",
-          },
+          { text: "운영 유연성 중심 무외래키 스키마 설계(정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능 (KARI)" },
+          { text: "에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건 (KARI)" },
+          { text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환 (KARI)" },
         ],
       },
       {
-        title: "드론 객체탐지 시스템 - ROS1→ROS2 마이그레이션",
-        period: "2026.07",
+        title: "보안·인증",
         items: [
-          { text: "ROS1(catkin/rospy) → ROS2(colcon/rclpy) 전체 패키지 마이그레이션 설계·구현" },
-          { text: "ROS_DOMAIN_ID 기반 멀티 드론 격리 재설계 - 순수 로직 모듈화 + 단위 테스트 검증" },
-          { text: "실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과" },
+          { text: "보안 취약점 진단·대응 - 브루트포스 차단 구현, 47개 매퍼 SQL Injection 전량 해소 (국가보안기관)" },
+          { text: "보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검 (KARI)" },
+          { text: "Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여 (NIPA)" },
         ],
       },
       {
-        title: "사내 자동화",
-        period: "2022 ~ 진행 중",
+        title: "CI/CD·관측성",
+        items: [
+          { text: "테스트 문화 정착 주도 - k6·유닛테스트 도입 → 배포 후 에러율 11%→0% (KARI)" },
+          { text: "에어갭 환경 장애 대응 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지 (국가보안기관)" },
+          { text: "CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps (NIPA)" },
+          { text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축 (NIPA)" },
+        ],
+      },
+      {
+        title: "인프라·클러스터 운영",
+        items: [
+          { text: "K8s 워크로드 관리 고도화 - Aliyun GPUShare로 GPU 4장 70파드 병렬 추론, Job→Deployment 전환으로 자동 복구 (KARI)" },
+          { text: "클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보 (NIPA)" },
+        ],
+      },
+      {
+        title: "AI·로보틱스",
+        items: [
+          { text: "AI 모델 직접 학습·서빙 - YOLOv11 객체탐지(HBB mAP50 0.644)·UPerNet 세그멘테이션(mIoU 0.72) (KARI)" },
+          { text: "ROS1(catkin/rospy) → ROS2(colcon/rclpy) 전체 패키지 마이그레이션 설계·구현 (드론)" },
+          { text: "ROS_DOMAIN_ID 기반 멀티 드론 격리 재설계 - 순수 로직 모듈화 + 단위 테스트 검증 (드론)" },
+          { text: "실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과 (드론)" },
+        ],
+      },
+      {
+        title: "프론트엔드",
+        items: [
+          { text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포) (NIPA)" },
+        ],
+      },
+      {
+        title: "업무 자동화·지식 전파",
         items: [
           { text: "40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 수 분 내로 단축" },
           { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
+          { text: "CDC·Outbox 아키텍처 팀 내 설명 - 신규 도입 배경·개념 전파 (KARI)" },
+          { text: "WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득 (NIPA)" },
         ],
       },
     ] as CareerGroup[],
@@ -792,7 +777,7 @@ export const PROFILE_PLATFORM = {
       notes: [
         "[좌석 중복 예약] 비관적 락 → Redis 분산락 → 낙관적 락 순으로 전환, k6 + Grafana 부하 테스트로 트레이드오프 검증",
         "[분산 트랜잭션] Redis 대기열 → Kafka 전환, Choreography Saga + DLQ로 일관성 확보",
-        "[배포] 온프레미스 환경에 Docker Compose로 배포, GitHub Actions CI 구성",
+        "[배포] WireGuard VPN으로 사내 서버와 WSL 워커를 연결해 온프레미스 K8s 클러스터 구성, Jenkins·Nexus CI/CD 파이프라인 구축, API Gateway가 서비스별 경로·Swagger 문서를 1:1 라우팅",
       ],
     },
   ],
