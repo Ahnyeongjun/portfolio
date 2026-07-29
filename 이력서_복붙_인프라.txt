@@ -34,6 +34,7 @@ BASE : 서울, Korea
   - 컨테이너 장애 시 작업이 유실되고 GPU가 유휴 상태였던 추론 환경을 kubeadm 베어메탈 클러스터+GPUShare fraction 분할로 재구성 - GPU 4장 70파드 병렬 추론 (KARI)
   - 에어갭(인터넷 완전 차단) 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영, Zabbix 커스텀 대시보드 모니터링으로 장애 사전 감지 (국가보안기관)
   - 반입 도구가 제한된 환경에서 클러스터 프로비저닝 쉘 스크립트화 - 수동 구축 1~2일 → 2~3시간 (국가보안기관)
+  - 신규 노드 추가 시 OS·K8s 사전 준비(스왑 비활성화·커널 모듈·containerd 설치 등)를 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거 (KARI)
   - K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거 (국가보안기관)
   - 로컬·개발·에어갭 3환경 매니페스트 분리 관리 - 환경별 오배포 방지 (국가보안기관)
 
@@ -56,6 +57,7 @@ BASE : 서울, Korea
   - DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개→15개, 작업 유실 0건 (NIPA)
   - 에어갭 망연계에서 Debezium slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 의존 제거, 이벤트 유실 0건 (KARI)
   - 스키마 변경마다 7개 서비스를 동시 수정해야 했던 DB 직접 접근 구조를 Go API 1곳으로 중앙화 - 변경 영향 범위를 API 레이어로 축소 (국가보안기관)
+  - TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지 (KARI)
 
 ● 업무 자동화
   - 40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 수 분 내로 단축
@@ -147,7 +149,7 @@ BASE : 서울, Korea
 03. 기술 스택
 ────────────────────────────────────────
 언어·프레임워크 : Go · Python · FastAPI
-오케스트레이션 : Kubernetes · Docker · SaltStack
+오케스트레이션 : Kubernetes · Docker · SaltStack · Ansible
 네트워킹·보안 : Cilium · kube-vip · Nginx · Envoy Gateway · Keycloak · OpenBao · OpenVPN
 데이터·메시징 : PostgreSQL · MySQL · Redis · RabbitMQ · Kafka · CloudNativePG · GDAL
 관측성 : OpenTelemetry · Prometheus · Grafana · Zabbix
