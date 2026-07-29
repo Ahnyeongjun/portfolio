@@ -16,7 +16,7 @@ export interface Project {
   link?: string;
   status: "live" | "beta" | "development" | "deployed";
   type: "company" | "team" | "personal";
-  category: ("fullstack" | "backend" | "frontend" | "ai")[];
+  category: ("fullstack" | "backend" | "frontend" | "ai" | "infra")[];
   company?: string;
   period: string;
   role: string;
@@ -45,7 +45,7 @@ export const projects: Project[] = [
     imageUrl: "/nipa_logo.svg",
     status: "deployed",
     type: "company",
-    category: ["backend", "ai"],
+    category: ["backend", "ai", "infra"],
     company: "한컴인스페이스",
     period: "2025.07 ~ 진행중",
     role: "백엔드·인프라 엔지니어",
@@ -95,7 +95,7 @@ export const projects: Project[] = [
     imageUrl: "/kari_logo.svg",
     status: "deployed",
     type: "company",
-    category: ["backend", "ai"],
+    category: ["backend", "ai", "infra"],
     company: "한컴인스페이스",
     period: "2023.10 ~ 2025.07",
     role: "백엔드·인프라 엔지니어",
@@ -153,7 +153,7 @@ export const projects: Project[] = [
     imageUrl: "/hancominpsace_logo.png",
     status: "deployed",
     type: "company",
-    category: ["fullstack", "backend"],
+    category: ["fullstack", "backend", "infra"],
     company: "한컴인스페이스",
     period: "2022.05 ~ 진행중",
     role: "풀스택 개발 → 시스템 운영·인프라 구축",
@@ -204,7 +204,7 @@ export const projects: Project[] = [
     description: "FastMCP 기반 Gmail·캘린더·Git·HRWeb 통합 자동화 에이전트",
     descriptionEn: "FastMCP-based Gmail · Calendar · Git · HRWeb automation agent - actively used by a 10-person team",
     tags: ["Python", "FastMCP", "MCP", "Playwright", "Gmail API", "Google Calendar API"],
-    imageUrl: "/hancominpsace_logo.png",
+    imageUrl: "/mcp-agent_logo.svg",
     status: "deployed",
     type: "company",
     internal: true,
@@ -286,7 +286,7 @@ export const projects: Project[] = [
     description: "RealSense 카메라 기반 드론 객체탐지 시스템을 ROS1 Noetic에서 ROS2 Humble로 마이그레이션. ROS_DOMAIN_ID 기반 멀티 드론 격리 설계, GPU 파이프라인 런타임 오류 해결, 실장비 없는 회귀 검증까지 담당.",
     descriptionEn: "Migrated a RealSense-camera-based drone object detection system from ROS1 Noetic to ROS2 Humble - designed ROS_DOMAIN_ID-based multi-drone isolation, resolved GPU pipeline runtime errors, and built hardware-free regression tests.",
     tags: ["ROS2", "rclpy", "Python", "Docker", "PyTorch", "pytest"],
-    imageUrl: "/hancominpsace_logo.png",
+    imageUrl: "/drone-detection_thum.png",
     status: "deployed",
     type: "company",
     category: ["backend"],
@@ -377,6 +377,8 @@ export const projects: Project[] = [
       "[Batch Reliability] A mid-batch failure while ingesting bulk festival data required reprocessing everything from scratch → switched from a Tasklet to a Chunk-based batch - 10-record transactional chunks mean a failure only rolls back its own chunk, preserving completed chunks",
     ],
     resources: [
+      { label: "서비스 화면", url: "/chukjibeob_service.png", type: "image" },
+      { label: "아키텍처", url: "/chugjibup_arch.png", type: "image" },
       { label: "GitHub", url: "https://github.com/swyp10-9", type: "link" },
     ],
   },
@@ -413,38 +415,11 @@ export const projects: Project[] = [
       "[AI Infrastructure] Built a FastAPI dress-recommendation server and a DALL-E 2 + Paramiko-SSH try-on image generation/upload pipeline, set up CI/CD with Docker Compose + GitHub Actions, then migrated to a K8s + Jenkins-based MSA",
     ],
     resources: [
+      { label: "서비스 화면", url: "/wedding_service.png", type: "image" },
+      { label: "Figma 디자인 플로우", url: "/with-ing_design.png", type: "image" },
+      { label: "아키텍처", url: "/wedding_arch.png", type: "image" },
+      { label: "정보구조(IA)", url: "/with-ing_ia.html", type: "html" },
       { label: "GitHub", url: "https://github.com/swyp11", type: "link" },
-    ],
-  },
-  {
-    id: "mapin",
-    title: "Mapin",
-    description: "GPT로 콘텐츠의 관점을 분류하고 반대 관점 콘텐츠를 추천하는 다양성 큐레이션 서비스. SWYP 앱 4기 팀 프로젝트.",
-    descriptionEn: "A GPT-powered perspective-diversity service that classifies content viewpoints and recommends opposing-perspective news/videos. SWYP App 4th cohort team project.",
-    tags: ["Java 21", "Spring Boot", "PostgreSQL", "pgvector", "OpenAI API", "YouTube Data API"],
-    imageUrl: "/swyp-app4_thum.png",
-    status: "development",
-    type: "team",
-    category: ["backend", "ai"],
-    period: "2026.01 ~ 2026.03",
-    role: "백엔드",
-    roleEn: "Backend",
-    longDescription: "사용자가 제출한 유튜브 URL의 콘텐츠를 GPT로 분석해 카테고리·관점(사건/원인/구조)·이해관계자 시점을 분류하고, 반대 관점의 콘텐츠를 추천하는 서비스입니다. SWYP(스위프) 앱 4기 팀 프로젝트로 백엔드 API 및 추천 파이프라인 개발을 담당했습니다.",
-    longDescriptionEn: "A service that analyzes user-submitted YouTube content with GPT to classify its category, perspective (event/cause/structure), and stakeholder viewpoint, then recommends content with an opposing viewpoint. Led backend API and recommendation-pipeline development as part of SWYP App 4th cohort team project.",
-    details: [],
-    achievements: [
-      "[GPT 호출 비용] 동일 콘텐츠 재요청마다 GPT를 다시 호출해 비용이 선형 증가 → 콘텐츠 ID 기준 3단계 캐싱(분석 결과 캐시 → 분석 완료·추천만 재생성 → 키워드 풀 재활용)으로 재사용 가능한 단계부터 스킵 - 캐시 히트 시 GPT 호출 0회",
-      "[배치 스코어링] 반대관점 후보 10~20개마다 GPT를 개별 호출하면 후보 수만큼 API 호출 발생 → 후보 전체를 JSON 배열로 묶어 GPT 1회 호출로 스코어링, 파싱 실패 시 개별 호출로 폴백",
-      "[동시성] I/O 대기가 긴 GPT·외부 검색 호출에 고정 스레드 풀을 쓰면 동시 요청 증가 시 풀 고갈 → Java 21 Virtual Threads 도입, synchronized 대신 ReentrantLock으로 스레드 피닝 회피",
-      "[반대관점 검색] YouTube·Naver 검색 API 순차 호출 시 쿼리 수 × API 수만큼 직렬 대기 발생 → CompletableFuture 병렬 호출 + exceptionally()로 개별 API 실패를 빈 리스트 처리, allOf+30초 타임아웃으로 파이프라인 보호",
-      "[유사 관점 탐색] 키워드 텍스트 매칭만으로는 주제는 같지만 관점이 다른 콘텐츠를 찾기 어려움 → pgvector 코사인 유사도로 주제 유사 콘텐츠 50개를 1차 확보 후 viewpointScore 차이로 반대관점을 우선 정렬하는 2-Stage Retrieval 설계",
-    ],
-    achievementsEn: [
-      "[GPT Call Cost] Re-requesting the same content kept re-triggering a GPT call, scaling cost linearly → introduced 3-tier caching keyed on content ID (full analysis cache → analysis-done/recommend-only → keyword-pool reuse), skipping straight to the reusable stage - 0 GPT calls on a cache hit",
-      "[Batch Scoring] Scoring 10-20 opposing-viewpoint candidates meant one GPT call per candidate → batched the full candidate list into a single JSON-array prompt for one GPT call, with a per-candidate fallback on parse failure",
-      "[Concurrency] A fixed thread pool starved under concurrent load from long-I/O GPT/search calls → adopted Java 21 Virtual Threads, avoiding synchronized in favor of ReentrantLock to prevent thread pinning",
-      "[Opposing-Content Search] Sequential YouTube/Naver search calls serialized to queries × APIs → parallelized with CompletableFuture, using exceptionally() to treat a single API failure as an empty list, with allOf + a 30s timeout guarding the whole pipeline",
-      "[Similar-Viewpoint Retrieval] Keyword text matching alone couldn't surface same-topic-but-different-viewpoint content → designed a 2-stage retrieval: pgvector cosine similarity narrows to the 50 most topically-similar items, then viewpointScore difference ranks opposing viewpoints first",
     ],
   },
   {
@@ -493,6 +468,8 @@ export const projects: Project[] = [
       "Solved frequent context switching between scattered learning tools by integrating into a single-screen unified flow - Undo/Redo, quiz, memo, workflow, and PDF export in one learning stream",
     ],
     resources: [
+      { label: "서비스 화면", url: "/simvex_service.png", type: "image" },
+      { label: "아키텍처", url: "/simvex_arch.png", type: "image" },
       { label: "GitHub", url: "https://github.com/team-blaybus-runtime/team-blaybus-runtime_front", type: "link" },
       { label: "프로젝트 설명", url: "https://github.com/team-blaybus-runtime/team-blaybus-runtime_front/blob/main/README.md", type: "link" },
     ],
@@ -550,6 +527,9 @@ export const projects: Project[] = [
       "Scheduled collection of 3 external APIs (KMA weather, AirKorea, MFDS DUR) and combined environmental data into health alert triggers - context-aware alerts for scenarios like hypertension + sudden temperature drop",
       "Built AI Hub ResNet pill image classification inference pipeline - photo-to-drug-code inference with MFDS DUR API for contraindication warnings at registration time, with low-confidence fallback to manual search",
       "Sole owner of UI/UX design through implementation - designed 3-tier information hierarchy for healthcare domain and intuitive health risk visualization",
+    ],
+    resources: [
+      { label: "아키텍처", url: "/pillcare_arch.png", type: "image" },
     ],
   },
   {
@@ -616,6 +596,8 @@ export const projects: Project[] = [
       "Solved potential maxMembers overflow on concurrent applications with PESSIMISTIC_WRITE + Batch UPDATE - race-condition-free atomic increment/decrement",
     ],
     resources: [
+      { label: "서비스 화면", url: "/deadline-mate_service.png", type: "image" },
+      { label: "아키텍처", url: "/deadline-mate_arch.png", type: "image" },
       { label: "서비스", url: "https://completionisland.vercel.app/main", type: "link" },
       { label: "GitHub", url: "https://github.com/FESI13-3/FESI13-backend", type: "link" },
     ],
@@ -626,10 +608,10 @@ export const projects: Project[] = [
     titleEn: "Concurrency Control · Event-Driven Concert Reservation System",
     description: "항해99 백엔드코스 - 동시성·이벤트 드리븐·부하 테스트까지 백엔드 핵심 문제를 단계적으로 해결한 프로젝트",
     descriptionEn: "Hanghae99 Backend Course - project solving core backend challenges step by step: concurrency, event-driven architecture, and load testing",
-    tags: ["Spring Boot", "Java", "MySQL", "Redis", "Kafka", "k6", "InfluxDB", "Grafana", "JUnit5"],
+    tags: ["Spring Boot", "Java", "MySQL", "Redis", "Kafka", "k6", "InfluxDB", "Grafana", "JUnit5", "Kubernetes", "WireGuard", "Jenkins", "Nexus"],
     status: "deployed",
     type: "personal",
-    category: ["backend"],
+    category: ["backend", "infra"],
     hidden: true,
     period: "2025.07 ~ 2025.09",
     role: "백엔드 개발 (항해99 9기)",
@@ -660,20 +642,31 @@ export const projects: Project[] = [
           "Redis Sorted Set 기반 실시간 콘서트 랭킹 - 최근 1시간 예약 건수를 스케줄러로 집계, 조회 시 O(log N) 처리",
         ],
       },
+      {
+        role: "인프라·배포",
+        items: [
+          "WireGuard VPN으로 사내 서버와 WSL 워커를 연결해 물리적으로 분리된 두 머신을 하나의 온프레미스 K8s 클러스터로 구성",
+          "Jenkins·Nexus 기반 CI/CD 파이프라인 구축 - 멀티 아키텍처(amd64/arm64) 이미지 빌드 후 Nexus 레지스트리로 배포",
+          "API Gateway가 서비스별 경로(auth/user/booking 등)와 Swagger 문서를 각각 1:1로 라우팅 - 서비스가 늘어도 게이트웨이 설정만 추가하면 되는 구조",
+        ],
+      },
     ],
     achievements: [
       "항해99 백엔드코스 9기 상위 10% 수료 - TDD, 이벤트 드리븐 설계, k6 부하 테스트를 실전 프로젝트로 검증",
       "분산락 재시도 로직이 응답 지연의 원인임을 k6+Grafana 부하 테스트로 특정 - 낙관적 락 전환으로 병목 제거",
       "Redis 대기열을 Kafka로 마이그레이션하고 Choreography Saga + DLQ 패턴으로 분산 트랜잭션 일관성 확보",
       "EXPLAIN 기반 인덱스 설계, Redis 캐싱, 비관적·낙관적·분산락 비교 검증까지 백엔드 핵심 문제를 단계적으로 직접 해결",
+      "WireGuard로 서로 다른 물리 머신을 묶어 온프레미스 K8s 클러스터를 직접 구성하고 Jenkins·Nexus CI/CD까지 구축",
     ],
     achievementsEn: [
       "Top 10% graduation from Hanghae99 Backend Course 9th cohort - validated TDD, event-driven design, and k6 load testing in a real project",
       "Identified distributed lock retry logic as the root cause of response latency via k6+Grafana load testing - resolved bottleneck by switching to optimistic locking",
       "Migrated Redis queue to Kafka and ensured distributed transaction consistency using Choreography Saga + DLQ pattern",
       "Directly solved core backend challenges step by step - EXPLAIN-based index design, Redis caching, and hands-on comparison of pessimistic, optimistic, and distributed locks",
+      "Built an on-premise K8s cluster spanning two separate physical machines connected over WireGuard, along with a Jenkins + Nexus CI/CD pipeline",
     ],
     resources: [
+      { label: "아키텍처", url: "/concert-reservation_arch.png", type: "image" },
       { label: "GitHub", url: "https://github.com/hanghae99-backend/2-SERVICE", type: "link" },
     ],
   },
@@ -719,6 +712,8 @@ export const projects: Project[] = [
       "Solved unmaintainable mixing of external API/CSV pipeline with business logic by extracting external package - business code unaffected when external integrations change",
     ],
     resources: [
+      { label: "서비스 화면", url: "/booksight_service.png", type: "image" },
+      { label: "아키텍처", url: "/booksight_arch.png", type: "image" },
       { label: "GitHub", url: "https://github.com/HBD-BookSight", type: "link" },
     ],
   },

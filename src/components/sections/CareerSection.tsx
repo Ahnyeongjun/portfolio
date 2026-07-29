@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -11,6 +12,14 @@ interface CareerSectionProps {
   company: string;
   period: string;
 }
+
+type Track = 'all' | 'infra' | 'fullstack';
+
+const TRACK_LABEL: Record<Track, { ko: string; en: string }> = {
+  all: { ko: '전체', en: 'All' },
+  infra: { ko: '인프라', en: 'Infra' },
+  fullstack: { ko: '풀스택', en: 'Full-stack' },
+};
 
 
 function ArrowIcon() {
@@ -32,9 +41,12 @@ function SparkIcon() {
 export function CareerSection({ projects, company, period }: CareerSectionProps) {
   const t = useTranslations('career');
   const { lang } = useLang();
+  const [track, setTrack] = useState<Track>('all');
 
-  const regularProjects = projects.filter((p) => !p.internal);
-  const internalProjects = projects.filter((p) => p.internal);
+  const matchesTrack = (p: Project) => track === 'all' || p.category.includes(track);
+
+  const regularProjects = projects.filter((p) => !p.internal && matchesTrack(p));
+  const internalProjects = projects.filter((p) => p.internal && matchesTrack(p));
 
   function renderCard(proj: Project, i: number) {
     const maxTags = 5;
@@ -141,6 +153,21 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
             {t('tenureYears')}<br />
             <span style={{ color: 'var(--pf-text-mute)' }}>{t('tenureRole')}</span>
           </div>
+        </div>
+
+        <div className="pf-track-toggle reveal" role="tablist" aria-label={lang === 'en' ? 'Filter by track' : '트랙별 필터'}>
+          {(Object.keys(TRACK_LABEL) as Track[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={track === key}
+              className={`pf-track-btn${track === key ? ' active' : ''}`}
+              onClick={() => setTrack(key)}
+            >
+              {lang === 'en' ? TRACK_LABEL[key].en : TRACK_LABEL[key].ko}
+            </button>
+          ))}
         </div>
 
         <div className="pf-proj-grid">

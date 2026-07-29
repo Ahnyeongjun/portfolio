@@ -11,7 +11,6 @@ import { NipaSatelliteRetrospective } from "@/components/retrospectives/NipaSate
 import { MomentierRetrospective } from "@/components/retrospectives/MomentierRetrospective";
 import { ChukjibeobRetrospective } from "@/components/retrospectives/ChukjibeobRetrospective";
 import { WithingRetrospective } from "@/components/retrospectives/WithingRetrospective";
-import { MapinRetrospective } from "@/components/retrospectives/MapinRetrospective";
 import { SimvexRetrospective } from "@/components/retrospectives/SimvexRetrospective";
 import { TeamMcpAgentRetrospective } from "@/components/retrospectives/TeamMcpAgentRetrospective";
 import { DeadlineMateRetrospective } from "@/components/retrospectives/DeadlineMateRetrospective";
@@ -24,7 +23,7 @@ import type { Project } from "@/lib/projects";
 
 const RETROSPECTIVE_IDS = [
   "kari-satellite", "nipa-satellite", "team-mcp-agent",
-  "momentier", "chugjibup", "wedding", "mapin",
+  "momentier", "chugjibup", "wedding",
   "simvex", "deadline-mate", "booksight", "pillcare",
   "insops-satellite", "ml-experiment-orchestrator",
   "ros-detection",
@@ -191,7 +190,6 @@ export function ProjectDetailContent({ project }: Props) {
             {project.id === "momentier" && <MomentierRetrospective />}
             {project.id === "chugjibup" && <ChukjibeobRetrospective />}
             {project.id === "wedding" && <WithingRetrospective />}
-            {project.id === "mapin" && <MapinRetrospective />}
             {project.id === "simvex" && <SimvexRetrospective />}
             {project.id === "team-mcp-agent" && <TeamMcpAgentRetrospective description={longDescription} />}
             {project.id === "deadline-mate" && <DeadlineMateRetrospective />}

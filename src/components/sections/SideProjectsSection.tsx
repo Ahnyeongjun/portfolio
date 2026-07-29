@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -9,6 +10,14 @@ import type { Project } from '@/lib/projects';
 interface SideProjectsSectionProps {
   projects: Project[];
 }
+
+type Track = 'all' | 'infra' | 'fullstack';
+
+const TRACK_LABEL: Record<Track, { ko: string; en: string }> = {
+  all: { ko: '전체', en: 'All' },
+  infra: { ko: '인프라', en: 'Infra' },
+  fullstack: { ko: '풀스택', en: 'Full-stack' },
+};
 
 function ArrowIcon() {
   return (
@@ -33,6 +42,9 @@ function getWatermark(proj: Project) {
 export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
   const t = useTranslations('projects');
   const { lang } = useLang();
+  const [track, setTrack] = useState<Track>('all');
+  const filteredProjects = projects.filter((p) => track === 'all' || p.category.includes(track));
+
   return (
     <section id="projects" className="pf-section-pad">
       <div className="pf-wrap">
@@ -41,8 +53,23 @@ export function SideProjectsSection({ projects }: SideProjectsSectionProps) {
           <h2 className="pf-h-sec">{t('heading')}</h2>
         </div>
 
+        <div className="pf-track-toggle reveal" role="tablist" aria-label={lang === 'en' ? 'Filter by track' : '트랙별 필터'}>
+          {(Object.keys(TRACK_LABEL) as Track[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={track === key}
+              className={`pf-track-btn${track === key ? ' active' : ''}`}
+              onClick={() => setTrack(key)}
+            >
+              {lang === 'en' ? TRACK_LABEL[key].en : TRACK_LABEL[key].ko}
+            </button>
+          ))}
+        </div>
+
         <div className="pf-proj-grid" style={{ marginTop: 32 }}>
-          {projects.map((proj, i) => {
+          {filteredProjects.map((proj, i) => {
             const watermark = getWatermark(proj);
             const maxTags = 5;
             const shownTags = proj.tags.slice(0, maxTags);
