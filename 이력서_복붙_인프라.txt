@@ -36,7 +36,7 @@ BASE : 서울, Korea
 
 ● 관측성·장애 대응
   - MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합
-  - Zabbix를 통한 하드웨어 관측 시스템 도입 (컨테이너→마운트→디바이스→펌웨어로 추적해 NVMe 펌웨어 이관 로직 누락을 발견·복구)
+  - Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지
 
 ● 네트워킹·보안
   - 서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여
@@ -64,7 +64,7 @@ BASE : 서울, Korea
 ● NIPA 위성 변화탐지 플랫폼 - 클러스터·메시징 인프라 고도화
   기간 : 2025.07. ~ 진행 중
   역할 : 주도 (팀 5명)
-  기술스택 : Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · PyTorch · Cilium · kube-vip · OpenBao · CloudNativePG · ArgoCD · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
+  기술스택 : Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · Redis · PyTorch · Cilium · kube-vip · OpenBao · CloudNativePG · ArgoCD · Ansible · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
 
   DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를 메시지 큐 기반 비동기 아키텍처로 재설계하고, MSA 전환에 맞춰 클러스터 네트워킹·시크릿·배포·관측성까지 인프라 전 영역을 고도화했습니다.
 
@@ -82,7 +82,7 @@ BASE : 서울, Korea
 ● 항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축
   기간 : 2023.10. ~ 2025.07.
   역할 : 주도 (팀 3명)
-  기술스택 : Kubernetes · Go · Python · SaltStack · Aliyun GPUShare · PostgreSQL · Zabbix · Nginx · Rocky Linux · Jenkins · Nexus
+  기술스택 : Kubernetes · Go · Python · SaltStack · Ansible · Aliyun GPUShare · PostgreSQL · Redis · Zabbix · Nginx · Rocky Linux · Jenkins · Nexus
 
   회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.
 
@@ -115,7 +115,7 @@ BASE : 서울, Korea
 ● 국가보안기관 위성영상 AI 처리 플랫폼 운영·신규 구축
   기간 : 2024.07. ~ 진행 중
   역할 : 핵심 참여 (팀 6명)
-  기술스택 : Kubernetes · Docker · Rocky Linux · Go · PostgreSQL · GDAL · Zabbix · Shell · Jenkins · Nexus
+  기술스택 : Kubernetes · Docker · Rocky Linux · Go · PostgreSQL · Redis · GDAL · Zabbix · Shell · Jenkins · Nexus
 
   인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영하는 위성영상 AI 처리 플랫폼 운영을 맡았고(2024.07~), 이어서 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다(2025.06~2025.12).
 
