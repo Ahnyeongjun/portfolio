@@ -546,6 +546,7 @@ export const PROFILE_PLATFORM = {
           { text: "잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축 (KARI)" },
           { text: "서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여 (NIPA)" },
           { text: "MSA 분리로 서비스마다 흩어진 시크릿·DB 관리를 OpenBao+ESO 중앙화·CloudNativePG 운영으로 일원화 (NIPA)" },
+          { text: "사내 서버 간 통신을 OpenVPN으로 구성 - 물리적으로 분리된 서버를 안전한 터널로 연결" },
         ],
       },
       {
@@ -787,7 +788,7 @@ export const PROFILE_PLATFORM = {
   skills: [
     { category: "언어·프레임워크", items: ["Go", "Python", "FastAPI"] },
     { category: "오케스트레이션", items: ["Kubernetes", "Docker", "SaltStack"] },
-    { category: "네트워킹·보안", items: ["Cilium", "kube-vip", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao"] },
+    { category: "네트워킹·보안", items: ["Cilium", "kube-vip", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao", "OpenVPN"] },
     { category: "데이터·메시징", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "CloudNativePG", "GDAL"] },
     { category: "관측성", items: ["OpenTelemetry", "Prometheus", "Grafana", "Zabbix"] },
     { category: "CI/CD", items: ["ArgoCD", "Jenkins", "Nexus"] },
