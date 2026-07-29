@@ -56,7 +56,7 @@ const CSS = `
   .wanted-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .wanted-root .sheet-inner { padding:15mm 15mm; }
   @page { size:A4; margin:11mm 0; }
-  .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two, .wanted-root .w-shots, .wanted-root .w-hi, .wanted-root .w-cg { break-inside:avoid; }
+  .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two, .wanted-root .w-shots, .wanted-root .w-hi, .wanted-root .w-cg-items { break-inside:avoid; }
   .wanted-root .w-sec-title { break-after:avoid; }
   .wanted-root .pg-spacer, .wanted-root .pg-line { display:none; }
   .wanted-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:normal !important; }
@@ -247,7 +247,9 @@ export function PortfolioDocument({ initialTab }: { initialTab?: string | null }
     // skipped, and their inner blocks (contrib, shots) handle the crossing.
     // .w-shots: 아키텍처 도면이 커진 뒤로 intro 전체가 한 페이지에 안 들어갈 수 있어,
     // 그 경우 이미지 블록만이라도 통째로 다음 페이지로 넘긴다(도면이 잘리는 것 방지).
-    const KEEP = '.val, .w-cards, .contrib, .other-item, .w-two, .w-shots, .w-hi, .w-cg, .w-proj-intro, .w-sec-title';
+    // .w-cg-items(담당 업무 목록): 도면이 커진 뒤 .w-proj-intro 가 한 페이지를 넘길 수 있어,
+    // 그 경우 intro 는 통째 유지를 포기하고 도면(.w-shots)·담당 업무 단위로 넘긴다.
+    const KEEP = '.val, .w-cards, .contrib, .other-item, .w-two, .w-shots, .w-cg-items, .w-hi, .w-proj-intro, .w-sec-title';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -256,7 +258,7 @@ export function PortfolioDocument({ initialTab }: { initialTab?: string | null }
     // find the first block that follows the title in document order.
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const blocks = Array.from(
-        sheet.querySelectorAll('.w-proj-intro, .contrib, .other-item, .w-two, .w-cg')
+        sheet.querySelectorAll('.w-proj-intro, .contrib, .other-item, .w-two')
       ) as HTMLElement[];
       for (const b of blocks) {
         if (header.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) return b;
@@ -344,6 +346,26 @@ export function PortfolioDocument({ initialTab }: { initialTab?: string | null }
         raf = requestAnimationFrame(applyBreaks);
       });
     }
+    // 아키텍처 도면(.w-shot.arch)은 height:auto 라 로드가 끝나기 전에는 min-height(120px)
+    // 로만 측정된다. 로드 후 실제 높이(220~290px)로 늘어나므로, 그때 다시 계산하지 않으면
+    // 늘어난 만큼 뒤 내용이 페이지 경계에서 밀린다. ResizeObserver는 WIDTH만 보기 때문에
+    // (높이는 applyBreaks 자신이 바꾸므로 관찰 시 무한 루프) 이미지 로드를 직접 기다린다.
+    let imgRaf = 0;
+    const scheduleFromImage = () => {
+      if (imgRaf) cancelAnimationFrame(imgRaf);
+      imgRaf = requestAnimationFrame(applyBreaks);
+    };
+    const imgCleanups: Array<() => void> = [];
+    sheetRef.current?.querySelectorAll("img").forEach((im) => {
+      if (im.complete && im.naturalHeight > 0) return;
+      im.addEventListener("load", scheduleFromImage);
+      im.addEventListener("error", scheduleFromImage);
+      imgCleanups.push(() => {
+        im.removeEventListener("load", scheduleFromImage);
+        im.removeEventListener("error", scheduleFromImage);
+      });
+    });
+
     // Only recompute when the sheet's WIDTH changes (window resize / zoom).
     // applyBreaks mutates the sheet's HEIGHT (spacers + min-height); observing
     // that would feed back into an endless resize loop.
@@ -357,7 +379,9 @@ export function PortfolioDocument({ initialTab }: { initialTab?: string | null }
     if (sheetRef.current) ro.observe(sheetRef.current);
     return () => {
       ro.disconnect();
+      imgCleanups.forEach((fn) => fn());
       if (raf) cancelAnimationFrame(raf);
+      if (imgRaf) cancelAnimationFrame(imgRaf);
     };
   }, [applyBreaks, variant]);
 
