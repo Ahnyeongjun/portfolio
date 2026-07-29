@@ -176,7 +176,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↕</div>
         <div className="flex justify-center">
-          <FlowNode sub="PostgreSQL 클러스터 (오퍼레이터 자체 운영)">CloudNativePG</FlowNode>
+          <FlowNode sub="위성 메타 · 변화탐지 결과 저장">PostgreSQL + PostGIS</FlowNode>
         </div>
         {/* 변화탐지 AI 호출 흐름 */}
         <div className="pt-2">
@@ -295,10 +295,10 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
           </p>
         </AccordionSection>
 
-        {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao·CloudNativePG */}
+        {/* 클러스터 네트워킹·보안 - Cilium·kube-vip·OpenBao */}
         <AccordionSection
-          title="클러스터 네트워킹·보안 - Cilium · kube-vip · OpenBao · CloudNativePG"
-          hint="kube-proxy 대체, control-plane HA, 시크릿 중앙 관리, DB 자체 운영"
+          title="클러스터 네트워킹·보안 - Cilium · kube-vip · OpenBao"
+          hint="kube-proxy 대체, control-plane HA, 시크릿 중앙 관리"
           module="클러스터 인프라"
         >
           <p>
@@ -313,11 +313,6 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             <Highlight>External Secrets Operator</Highlight>가 이를 각 네임스페이스의 Kubernetes Secret으로
             동기화·주입합니다. 서비스 코드가 시크릿 저장소를 직접 호출하지 않아도 되고,
             시크릿 로테이션 시 배포 재시작만으로 반영됩니다.
-          </p>
-          <p>
-            데이터베이스는 <Highlight>CloudNativePG</Highlight> 오퍼레이터로 PostgreSQL 클러스터를
-            클러스터 내부에서 직접 운영합니다. 외부 관리형 DB 없이도 failover·백업을 오퍼레이터가
-            선언적으로 관리합니다.
           </p>
           <p>
             네트워킹·HA 영역은 서비스 증가에 따른 처리 오버헤드와 단일 장애점이라는 문제 자체는

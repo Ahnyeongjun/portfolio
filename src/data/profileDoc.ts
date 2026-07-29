@@ -12,9 +12,13 @@ export interface DocBlock {
   lines?: string[];  // 이력서용 다중 줄: [문제, 해결·선택근거, 결과]
   brief?: [string, string]; // 이력서용 2줄: [현상·원인, 해결·결과]
 }
+/** 포트폴리오(/portfolio-pdf)는 경력 칸을 따로 두지 않고 이 키로 항목을 프로젝트별로 나눠 싣는다.
+ *  이력서(/resume)는 기존처럼 경력 섹션에 그룹별로 렌더한다. 키가 없으면 프로젝트 무관(사내 공통). */
+export type ProjKey = "insops" | "kari" | "nipa" | "drone";
 export interface CareerItem {
   text: string;
   sub?: string[];
+  proj?: ProjKey;
 }
 export interface CareerGroup {
   title: string;
@@ -22,6 +26,8 @@ export interface CareerGroup {
   items: CareerItem[];
 }
 export interface DocProject {
+  /** CareerItem.proj 와 짝을 이루는 키 (포폴에서 경력 항목을 이 프로젝트 밑으로 모을 때 사용) */
+  pkey?: ProjKey;
   title: string;
   company: string;
   period: string;
@@ -94,59 +100,59 @@ export const PROFILE = {
       {
         title: "API·아키텍처 설계",
         items: [
-          { text: "핵심 도메인 서비스 개발·운영 - 판독보고서(웹 PPT) 생성·어드민·위성 ETL(수집·전처리·적재)·AI 분석 연동 (국가보안기관)" },
-          { text: "레거시 모듈 점진적 전환 주도 - 인증·다운로드 안정화 → 장애 전파 최소화 (국가보안기관)" },
-          { text: "공통 base 모듈·자동화 도구 개발 - 반복 개발 작업 제거 → 신규 테이블 온보딩 효율화 (국가보안기관)" },
-          { text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원 (KARI)" },
-          { text: "Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응 (NIPA)" },
-          { text: "MSA 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건 (NIPA)" },
+          { text: "핵심 도메인 서비스 개발·운영 - 판독보고서(웹 PPT) 생성·어드민·위성 ETL(수집·전처리·적재)·AI 분석 연동 (국가보안기관)", proj: "insops" },
+          { text: "레거시 모듈 점진적 전환 주도 - 인증·다운로드 안정화 → 장애 전파 최소화 (국가보안기관)", proj: "insops" },
+          { text: "공통 base 모듈·자동화 도구 개발 - 반복 개발 작업 제거 → 신규 테이블 온보딩 효율화 (국가보안기관)", proj: "insops" },
+          { text: "Go 영상 서빙 서비스 신규 개발 - WMS·MVT(MBTiles 기반) 지원 (KARI)", proj: "kari" },
+          { text: "Go 영상 서빙 서비스 확장 - WMTS 컴포지트·NDJSON 레이어 지원 → 지구/달지도 멀티 레이어 대응 (NIPA)", proj: "nipa" },
+          { text: "MSA 마이그레이션 주도 - 모놀리식 9개 서비스 분리 → 재배포 월10건→1건 (NIPA)", proj: "nipa" },
         ],
       },
       {
         title: "데이터·이벤트 파이프라인",
         items: [
-          { text: "운영 유연성 중심 무외래키 스키마 설계(정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능 (KARI)" },
-          { text: "에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건 (KARI)" },
-          { text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환 (KARI)" },
+          { text: "운영 유연성 중심 무외래키 스키마 설계(정합성은 애플리케이션 레벨 보장) - 입력·삭제·마이그레이션 단순화, 추후 샤딩 시 테이블 분리 저장 가능 (KARI)", proj: "kari" },
+          { text: "에어갭 망연계 개선 - 자체 Outbox 모듈 전환 → 이벤트 유실 0건 (KARI)", proj: "kari" },
+          { text: "SaltStack 동기 방식에서 RabbitMQ 비동기 파이프라인·단계별 큐 분리 구조로 전환 (KARI)", proj: "kari" },
         ],
       },
       {
         title: "보안·인증",
         items: [
-          { text: "보안 취약점 진단·대응 - 브루트포스 차단 구현, 47개 매퍼 SQL Injection 전량 해소 (국가보안기관)" },
-          { text: "보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검 (KARI)" },
-          { text: "Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여 (NIPA)" },
+          { text: "보안 취약점 진단·대응 - 브루트포스 차단 구현, 47개 매퍼 SQL Injection 전량 해소 (국가보안기관)", proj: "insops" },
+          { text: "보안 게이트웨이·정보 노출 점검 - 서비스 7개 HTTPS 종단을 Nginx 게이트웨이 1곳으로 통합, 정보 노출 여부 점검 (KARI)", proj: "kari" },
+          { text: "Envoy Gateway·Keycloak 게이트웨이 구축 - 인증 통합·인증서 자동화, 팀원과 함께 참여 (NIPA)", proj: "nipa" },
         ],
       },
       {
         title: "CI/CD·관측성",
         items: [
-          { text: "테스트 문화 정착 주도 - k6·유닛테스트 도입 → 배포 후 에러율 11%→0% (KARI)" },
-          { text: "에어갭 환경 장애 대응 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지 (국가보안기관)" },
-          { text: "CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps (NIPA)" },
-          { text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축 (NIPA)" },
+          { text: "테스트 문화 정착 주도 - k6·유닛테스트 도입 → 배포 후 에러율 11%→0% (KARI)", proj: "kari" },
+          { text: "에어갭 환경 장애 대응 체계 수립 - 오프라인 대응 판단 체계화 → 장애 사전 감지 (국가보안기관)", proj: "insops" },
+          { text: "CI/CD·GitOps 전환 참여 - Jenkins 명령형 배포 → ArgoCD GitOps (NIPA)", proj: "nipa" },
+          { text: "관측성 통합 - Prometheus·OpenSearch·Tempo를 OTel로 수집, 장애 원인분석 1~2시간 → 30분 이내로 단축 (NIPA)", proj: "nipa" },
         ],
       },
       {
         title: "인프라·클러스터 운영",
         items: [
-          { text: "K8s 워크로드 관리 고도화 - Aliyun GPUShare로 GPU 4장 70파드 병렬 추론, Job→Deployment 전환으로 자동 복구 (KARI)" },
-          { text: "클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보 (NIPA)" },
+          { text: "K8s 워크로드 관리 고도화 - Aliyun GPUShare로 GPU 4장 70파드 병렬 추론, Job→Deployment 전환으로 자동 복구 (KARI)", proj: "kari" },
+          { text: "클러스터 인프라 고도화 - Cilium(eBPF) CNI·kube-vip HA·OpenBao 시크릿 중앙화로 클러스터 안정성 확보 (NIPA)", proj: "nipa" },
         ],
       },
       {
         title: "AI·로보틱스",
         items: [
-          { text: "AI 모델 직접 학습·서빙 - YOLOv11 객체탐지(HBB mAP50 0.644)·UPerNet 세그멘테이션(mIoU 0.72) (KARI)" },
-          { text: "ROS1(catkin/rospy) → ROS2(colcon/rclpy) 전체 패키지 마이그레이션 설계·구현 (드론)" },
-          { text: "ROS_DOMAIN_ID 기반 멀티 드론 격리 재설계 - 순수 로직 모듈화 + 단위 테스트 검증 (드론)" },
-          { text: "실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과 (드론)" },
+          { text: "AI 모델 직접 학습·서빙 - YOLOv11 객체탐지(HBB mAP50 0.644)·UPerNet 세그멘테이션(mIoU 0.72) (KARI)", proj: "kari" },
+          { text: "ROS1(catkin/rospy) → ROS2(colcon/rclpy) 전체 패키지 마이그레이션 설계·구현 (드론)", proj: "drone" },
+          { text: "ROS_DOMAIN_ID 기반 멀티 드론 격리 재설계 - 순수 로직 모듈화 + 단위 테스트 검증 (드론)", proj: "drone" },
+          { text: "실장비 없는 회귀 검증 체계 구축 - pytest 단위·통합 테스트 17건 통과 (드론)", proj: "drone" },
         ],
       },
       {
         title: "프론트엔드",
         items: [
-          { text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포) (NIPA)" },
+          { text: "프론트 레거시 마이그레이션 주도 - jQuery·Thymeleaf 정리 → Next.js 15 FSD 기반 웹 뷰어 개발(지구/달지도 멀티 배포) (NIPA)", proj: "nipa" },
         ],
       },
       {
@@ -156,8 +162,8 @@ export const PROFILE = {
           { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
-          { text: "CDC·Outbox 아키텍처 팀 내 설명 - 신규 도입 배경·개념 전파 (KARI)" },
-          { text: "WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득 (NIPA)" },
+          { text: "CDC·Outbox 아키텍처 팀 내 설명 - 신규 도입 배경·개념 전파 (KARI)", proj: "kari" },
+          { text: "WMTS·MSA·Next.js 등 신규 기술 사내 세미나 발표 - 우수성 입증해 팀 도입 설득 (NIPA)", proj: "nipa" },
         ],
       },
     ] as CareerGroup[],
@@ -165,11 +171,12 @@ export const PROFILE = {
 
   projects: [
     {
+      pkey: "insops",
       title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
       company: "한컴인스페이스",
       period: "2022.05. ~ 진행 중",
       badge: "핵심 참여(팀 6명)",
-      stack: ["Spring Boot", "Java", "MyBatis", "PostGIS", "Redis", "Spring Session", "Go", "Kubernetes", "Zabbix", "Jenkins", "Nexus"],
+      stack: ["Spring Boot", "Java", "MyBatis", "jQuery", "JSP", "Tomcat", "PostGIS", "Redis", "Spring Session", "Go", "Kubernetes", "Zabbix", "Jenkins", "Nexus"],
       desc: "위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 환경 운영, 신규 플랫폼 구축까지 담당했습니다.",
       logo: "/hancominpsace_logo.png",
       archImage: "/insops-satellite_arch.svg",
@@ -237,6 +244,7 @@ export const PROFILE = {
       ],
     },
     {
+      pkey: "kari",
       title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
@@ -293,6 +301,7 @@ export const PROFILE = {
       ],
     },
     {
+      pkey: "nipa",
       title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
@@ -336,9 +345,24 @@ export const PROFILE = {
             "팀원과 함께 Prometheus·OpenSearch·Tempo·Grafana를 신규 도입해 OTel 기반 관측 스택을 새로 갖추고, Grafana 단일 대시보드에서 로그·트레이스 조회 및 서비스 간 요청 흐름 추적",
           ],
         },
+        {
+          label: "시크릿 중앙화 - 서비스별 분산 관리 → OpenBao+ESO 중앙 저장·자동 주입",
+          situation: "모놀리식을 9개 서비스로 분리하면서 DB 접속 정보·인증서·API 키 같은 시크릿이 서비스마다 K8s Secret으로 개별 분산 관리됐습니다. 시크릿을 하나 바꾸면 관련 서비스마다 수동으로 반영해야 했고, 어디에 어떤 시크릿이 있는지 중앙에서 한눈에 관리·감사할 수 없었습니다.",
+          cause: "각 서비스가 자기 네임스페이스에 Secret을 직접 들고 있는 구조라 로테이션·접근 정책을 한 곳에서 일원화할 수 없었고, 시크릿 변경·유출 시 영향 범위를 파악하기도 어려웠습니다.",
+          actions: [
+            "OpenBao(Vault 호환 오픈소스)를 시크릿 중앙 저장소로 도입해 모든 서비스의 시크릿을 한 곳에서 관리",
+            "External Secrets Operator로 OpenBao의 시크릿을 각 서비스의 K8s Secret으로 자동 동기화·주입 - 서비스 코드는 기존처럼 Secret만 참조하도록 유지해 마이그레이션 부담 최소화",
+          ],
+          result: "서비스별로 흩어져 있던 시크릿을 중앙 저장소 한 곳으로 통합, ESO 자동 주입으로 수동 반영·개별 관리 부담 해소",
+          brief: [
+            "9개 서비스로 분리되며 DB 접속 정보·인증서·API 키 같은 시크릿이 서비스마다 개별 K8s Secret으로 분산돼, 변경 시 수동 반영이 필요하고 중앙에서 관리·감사할 수 없었음",
+            "OpenBao를 시크릿 중앙 저장소로 두고 External Secrets Operator로 K8s Secret에 자동 주입·동기화해, 서비스 코드 변경 없이 시크릿을 중앙에서 일원 관리",
+          ],
+        },
       ],
     },
     {
+      pkey: "drone",
       title: "드론 객체탐지 시스템 - ROS1 → ROS2 마이그레이션",
       company: "한컴인스페이스",
       period: "2026.07.",
@@ -461,7 +485,7 @@ export const PROFILE = {
     { category: "언어", items: ["Java", "Kotlin", "Python", "Go"] },
     { category: "프레임워크", items: ["Spring Boot", "FastAPI", "MyBatis"] },
     { category: "데이터", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ"] },
-    { category: "인프라", items: ["Kubernetes", "Docker", "SaltStack", "Zabbix"] },
+    { category: "인프라", items: ["Kubernetes", "Docker", "Zabbix"] },
   ] as SkillGroup[],
 
   certs: [
@@ -517,50 +541,56 @@ export const PROFILE_PLATFORM = {
       {
         title: "클러스터 구축·운영",
         items: [
-          { text: "신규 노드 추가 시 pod 및 서비스 세팅을 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거 및 서버 구성시간 확보" },
-          { text: "에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영" },
-          { text: "K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거" },
+          { text: "신규 노드마다 OS·K8s 사전 준비(스왑 비활성화·커널 모듈·containerd)를 손으로 반복하던 작업을 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거, 노드 추가 시간 단축", proj: "kari" },
+          { text: "컨테이너 장애 시 작업이 유실되고 GPU가 유휴 상태였던 추론 환경을 kubeadm 베어메탈 클러스터+GPUShare fraction 분할로 재구성 - GPU 4장 70파드 병렬 추론", proj: "kari" },
+          { text: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영", proj: "insops" },
+          { text: "반입 도구가 제한된 환경에서 클러스터 프로비저닝 쉘 스크립트화 - 수동 구축 1~2일 → 2~3시간", proj: "insops" },
+          { text: "K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거", proj: "insops" },
+          { text: "로컬·개발·에어갭 3환경 매니페스트 분리 관리 - 환경별 오배포 방지", proj: "insops" },
         ],
       },
       {
         title: "CI/CD·배포",
         items: [
-          { text: "Jenkins, Argo Workflows/Events CI + ArgoCD GitOps 배포로 분리 - 배포 드리프트 추적성 확보" },
-          { text: "배포 후에만 드러나던 부하·트랜잭션 결함을 해결하기 위해 k6 부하테스트·유닛테스트 도입" },
+          { text: "실제 상태와 스크립트가 갈려 추적이 안 되던 Jenkins 명령형 배포를 Argo Workflows/Events CI + ArgoCD GitOps로 분리 - 배포 드리프트 추적성 확보", proj: "nipa" },
+          { text: "배포 후에만 드러나던 부하·트랜잭션 결함을 k6 부하테스트·유닛테스트의 CI 편입으로 배포 전 검출 - 에러율 11.22% → 0%", proj: "kari" },
         ],
       },
       {
         title: "관측성·장애 대응",
         items: [
-          { text: "MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합" },
-          { text: "Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지" },
+          { text: "MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합 - 장애 원인분석 1~2시간 → 30분 이내", proj: "nipa" },
+          { text: "에어갭이라 장애를 사용자 신고 후에야 인지하던 구조에 Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지 체계 확보", proj: "insops" },
+          { text: "표면 에러(디스크 부족)를 컨테이너→마운트→디바이스→펌웨어로 추적해 NVMe 펌웨어 이관 로직 누락을 발견·복구 - 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축", proj: "insops" },
         ],
       },
       {
         title: "네트워킹·보안",
         items: [
-          { text: "서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여" },
-          { text: "MSA 분리로 서비스마다 흩어진 시크릿·DB 관리를 OpenBao+ESO 중앙화·CloudNativePG 운영으로 일원화" },
-          { text: "서비스가 각자 노출돼 보안 정책이 분산되던 구조를 Nginx 게이트웨이로 통합 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더 1곳 관리, Wireshark 정보 노출 점검" },
-          { text: "잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축" },
-          { text: "사내 서버 간 통신을 OpenVPN으로 구성" },
+          { text: "서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여", proj: "nipa" },
+          { text: "서비스마다 개별 관리돼 로테이션 부담이 늘던 시크릿을 OpenBao+ESO 중앙 저장·자동 주입으로 일원화 - 로테이션이 배포 재시작만으로 반영", proj: "nipa" },
+          { text: "서비스가 각자 노출돼 보안 정책이 분산되던 구조를 Nginx 게이트웨이로 통합 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더 1곳 관리, Wireshark 정보 노출 점검", proj: "kari" },
+          { text: "잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축", proj: "kari" },
+          { text: "사내 서버 간 통신을 OpenVPN으로 구성 - 물리적으로 분리된 서버를 안전한 터널로 연결" },
         ],
       },
       {
         title: "메시징·데이터 파이프라인",
         items: [
-          { text: "DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환" },
-          { text: "Debezium를 통한 CDC - 에어갭 망연계에서 Debezium slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결" },
-          { text: "TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지" },
+          { text: "DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개 → 15개, 작업 유실 0건", proj: "nipa" },
+          { text: "에어갭 망연계에서 Debezium replication slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 인프라 의존 제거, 이벤트 유실 0건", proj: "kari" },
+          { text: "TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지", proj: "kari" },
+          { text: "스키마 변경마다 7개 서비스를 동시 수정해야 했던 DB 직접 접근 구조를 Go API 1곳으로 중앙화 - 변경 영향 범위를 API 레이어로 축소", proj: "insops" },
         ],
       },
       {
         title: "업무 자동화",
         items: [
           { text: "40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 몇 십초 내로 단축" },
-          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합, 구글 드라이브 자동 관리" },
+          { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합·구글 드라이브 자동 관리 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
+          { text: "Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득", proj: "nipa" },
         ],
       },
     ] as CareerGroup[],
@@ -568,12 +598,15 @@ export const PROFILE_PLATFORM = {
 
   projects: [
     {
+      pkey: "nipa",
       title: "NIPA 위성 변화탐지 플랫폼 - 클러스터·메시징 인프라 고도화",
       company: "한컴인스페이스",
       period: "2025.07. ~ 진행 중",
       badge: "주도(팀 5명)",
-      stack: ["Kubernetes", "RabbitMQ", "FastAPI", "Go", "PostgreSQL", "Redis", "PyTorch", "Cilium", "kube-vip", "OpenBao", "CloudNativePG", "ArgoCD", "Ansible", "Pulp", "OpenTelemetry", "Envoy Gateway", "Keycloak"],
+      stack: ["Kubernetes", "RabbitMQ", "FastAPI", "Go", "PostgreSQL", "Redis", "PyTorch", "Cilium", "kube-vip", "OpenBao", "ArgoCD", "Ansible", "Pulp", "OpenTelemetry", "Envoy Gateway", "Keycloak"],
       desc: "DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를 메시지 큐 기반 비동기 아키텍처로 재설계하고, MSA 전환에 맞춰 클러스터 네트워킹·시크릿·배포·관측성까지 인프라 전 영역을 고도화했습니다.",
+      logo: "/nipa_logo.svg",
+      archImage: "/nipa-satellite_arch.svg",
       blocks: [
         {
           label: "메시지 큐 기반 파이프라인 전환 - RabbitMQ 단계별 큐 분리 → 처리 워커 1개→15개",
@@ -596,25 +629,28 @@ export const PROFILE_PLATFORM = {
           actions: [
             "네트워킹 오버헤드 해결: kube-proxy를 Cilium(eBPF)로 대체해 서비스 처리를 커널 레벨에서 경량화하고 L3~L7 정책을 통합",
             "단일 장애점 제거: kube-vip로 3노드 control-plane HA 구성해 노드 장애 시에도 API 서버 무중단",
-            "시크릿 관리 부담 해소: OpenBao+ESO로 시크릿 중앙화, CloudNativePG로 PostgreSQL 운영 표준화",
+            "시크릿 관리 부담 해소: OpenBao+ESO로 시크릿을 중앙 저장하고 파드에 자동 주입, 서비스별 개별 관리·로테이션 부담 제거",
             "배포 추적성 확보: Jenkins 명령형 배포를 ArgoCD GitOps로 전환, Pulp로 패키지 저장소 통합",
             "관측 스택 신규 구축: Prometheus·OpenSearch·Tempo·Grafana를 새로 도입해 OTel로 수집 통합, 서비스 간 요청 흐름 추적 가능하게 구성",
           ],
           result: "클러스터 네트워킹·시크릿·배포를 팀 차원에서 표준화, 관측 스택을 신규로 갖춰 장애 원인분석 1~2시간 → 30분 이내로 단축",
           brief: [
             "MSA 전환으로 네트워킹·시크릿·배포·관측성 각 영역에서 감당하기 어려운 문제가 동시에 드러났습니다.",
-            "팀원과 영역을 나눠 Cilium·kube-vip로 네트워킹·HA를, OpenBao·CloudNativePG로 시크릿·DB를, ArgoCD·Pulp로 배포를, 신규 도입한 Prometheus·Grafana 등으로 관측성을 각각 해결했습니다.",
+            "팀원과 영역을 나눠 Cilium·kube-vip로 네트워킹·HA를, OpenBao+ESO로 시크릿을, ArgoCD·Pulp로 배포를, 신규 도입한 Prometheus·Grafana 등으로 관측성을 각각 해결했습니다.",
           ],
         },
       ],
     },
     {
+      pkey: "kari",
       title: "항공우주연구원(KARI) 위성영상 AI 처리 플랫폼 구축",
       company: "한컴인스페이스",
       period: "2023.10. ~ 2025.07.",
       badge: "주도(팀 3명)",
       stack: ["Kubernetes", "Go", "Python", "SaltStack", "Ansible", "Aliyun GPUShare", "PostgreSQL", "Redis", "Zabbix", "Nginx", "Rocky Linux", "Jenkins", "Nexus"],
       desc: "회사의 모든 K8s 기반 AI 처리 플랫폼의 출발점이 된 프로젝트입니다. 관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했습니다.",
+      logo: "/kari_logo.svg",
+      archImage: "/kari-satellite_arch.svg",
       blocks: [
         {
           label: "Kubernetes 클러스터 구축 - kubeadm 베어메탈 부트스트랩 + GPUShare 자원 공유",
@@ -689,12 +725,15 @@ export const PROFILE_PLATFORM = {
       ],
     },
     {
+      pkey: "insops",
       title: "국가보안기관 위성영상 AI 처리 플랫폼 운영·신규 구축",
       company: "한컴인스페이스",
       period: "2024.07. ~ 진행 중",
       badge: "핵심 참여(팀 6명)",
       stack: ["Kubernetes", "Docker", "Rocky Linux", "Go", "PostgreSQL", "Redis", "GDAL", "Zabbix", "Shell", "Jenkins", "Nexus"],
       desc: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영하는 위성영상 AI 처리 플랫폼 운영을 맡았고(2024.07~), 이어서 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다(2025.06~2025.12).",
+      logo: "/hancominpsace_logo.png",
+      archImage: "/insops-satellite_arch.svg",
       blocks: [
         {
           label: "가시화 전면 실패 장애 - 표면 에러를 따라가 만난 진짜 원인",
@@ -781,12 +820,29 @@ export const PROFILE_PLATFORM = {
   education: PROFILE.education,
   certs: PROFILE.certs,
 
+  /* 이력서가 아니라 포트폴리오이므로, 인프라 판단의 근거가 된 애플리케이션 레벨 경험도
+     한 섹션으로 압축해 싣는다. 수치는 모두 PROFILE(풀스택 문서)에서 그대로 가져온 것. */
+  backend: {
+    title: "백엔드 개발 경험",
+    desc: "인프라를 전담하기 전·후로 국가기관 납품 플랫폼의 백엔드를 직접 개발했습니다. 어디가 병목이고 무엇을 인프라로 풀어야 하는지 판단하는 근거가 된 경험입니다.",
+    items: [
+      "성능 - k6 부하테스트로 50VU 동시 요청 에러율 11.22%→0%, 처리량 392→1,177 req/s",
+      "쿼리 - 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 위성 메타 목록 조회 38초→159ms",
+      "이벤트 - 물리 망분리 환경에서 Debezium CDC replication slot이 반복 파손, Spring AOP + MyBatis 인터셉터로 Outbox 직접 구현 - 이벤트 유실 0건",
+      "인증·보안 - 인증은 Spring Security 필터, 인가는 어노테이션+AOP로 분리, 47개 매퍼 SQL Injection 전량 해소",
+      "동시성 - Go 타일 서버 GDAL 워핑에 CPU 코어 기반 세마포어·TTL 캐시 적용, DRM 파일 동시 다운로드 깨짐은 요청 직렬화로 해결",
+      "생산성 - 제네릭 base 모듈 + information_schema 기반 CRUD·mapper 자동 생성 도구로 신규 테이블 보일러플레이트 제거",
+    ],
+  },
+
   skills: [
-    { category: "언어·프레임워크", items: ["Go", "Python", "FastAPI"] },
-    { category: "오케스트레이션", items: ["Kubernetes", "Docker", "SaltStack", "Ansible"] },
+    { category: "언어·프레임워크", items: ["Go", "Python", "FastAPI", "Java", "Spring Boot"] },
+    { category: "오케스트레이션", items: ["Kubernetes", "Docker", "Docker Compose"] },
+    { category: "IaC·구성관리", items: ["Terraform", "Ansible"] },
     { category: "네트워킹·보안", items: ["Cilium", "kube-vip", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao", "OpenVPN"] },
-    { category: "데이터·메시징", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ", "Kafka", "CloudNativePG", "GDAL"] },
-    { category: "관측성", items: ["OpenTelemetry", "Prometheus", "Grafana", "Zabbix"] },
-    { category: "CI/CD", items: ["ArgoCD", "Jenkins", "Nexus"] },
+    { category: "데이터·메시징", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ"] },
+    { category: "관측성", items: ["OpenTelemetry", "Prometheus", "Grafana", "Loki", "Tempo", "Zabbix"] },
+    { category: "CI/CD", items: ["Jenkins", "ArgoCD"] },
+    { category: "아티팩트·패키지", items: ["Nexus", "Pulp"] },
   ] as SkillGroup[],
 };

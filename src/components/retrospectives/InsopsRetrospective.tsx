@@ -109,24 +109,24 @@ export function InsopsRetrospective() {
 
       {/* 아키텍처 */}
       <div className="p-5 rounded-xl border border-border bg-muted/20 space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 - 서버 분리</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">아키텍처 - 멀티모듈 다중 WAR (Tomcat)</p>
 
         <div className="grid grid-cols-2 gap-3">
-          <FlowNode highlight sub="콘텐츠 관리 FRONT-END">inops-cms</FlowNode>
-          <FlowNode highlight sub="데이터 분석 FRONT-END">inops-das</FlowNode>
+          <FlowNode highlight sub="자료·표적 등록 화면">콘텐츠 관리 웹</FlowNode>
+          <FlowNode highlight sub="CesiumJS 3D 판독 화면">판독·분석 웹</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓</div>
         <div className="flex justify-center">
-          <FlowNode highlight sub="REST API · MyBatis · PostGIS">inops-api-svr</FlowNode>
+          <FlowNode highlight sub="REST API · MyBatis · PostGIS">API 서버</FlowNode>
         </div>
         <div className="flex justify-center text-muted-foreground text-xs">↓ &nbsp; ↓</div>
         <div className="grid grid-cols-2 gap-3">
-          <FlowNode highlight sub="세션 인증 · Spring Session + Redis">ins-auth-svr</FlowNode>
-          <FlowNode highlight sub="INNORIX 연동 · 다운로드 컨트롤러">ins-file-svr</FlowNode>
+          <FlowNode highlight sub="세션 인증 · Spring Session + Redis">인증 서버</FlowNode>
+          <FlowNode highlight sub="대용량 다운로드 · 이어받기">파일 서버</FlowNode>
         </div>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="flex-1 border-t border-dashed border-border" />
-          <span className="shrink-0 px-2">CesiumJS 3D 뷰어 · Spring Boot · ins-core(공통)</span>
+          <span className="shrink-0 px-2">Spring Boot + jQuery/JSP · 공통 base 모듈 · Jenkins 멀티모듈 빌드 → WAR 배포</span>
           <div className="flex-1 border-t border-dashed border-border" />
         </div>
       </div>
@@ -139,8 +139,8 @@ export function InsopsRetrospective() {
         에어갭 환경 운영과 신규 플랫폼 구축까지 이어서 맡았습니다.
       </p>
       <p>
-        초기 2년(2022.05~2024.05)은 프론트엔드(inops-cms/inops-das)·API(inops-api-svr)·인증
-        서버(ins-auth-svr)·다운로드 컨트롤러(ins-file-svr)를 <Highlight>처음부터 끝까지</Highlight>{" "}
+        초기 2년(2022.05~2024.05)은 콘텐츠 관리·판독 분석 웹 프론트엔드부터 REST API·인증
+        서버·대용량 다운로드 서버까지 <Highlight>처음부터 끝까지</Highlight>{" "}
         개발하며 레거시 모듈을 점진적으로 전환했고, 이후 위성영상 AI 처리 플랫폼을 인터넷이
         완전히 차단된 에어갭 환경에서 수십 대 서버 규모로 롤링 방식 서비스 중단 없이 <Highlight>운영</Highlight>(2024.07~),
         별도의 다종위성 수집·처리 플랫폼을 베어메탈부터 전 과정 <Highlight>신규 구축</Highlight>했습니다
@@ -215,7 +215,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="인증·인가 체계 - Spring Session + Redis 세션 인증 · 선언적 인가"
           hint="Spring Session + Redis 세션 쿠키로 다중 WAR 공유(JWT 미사용) · 인가는 어노테이션+AOP · session:user 인덱스로 동시 로그인 통제"
-          module="inops-api-svr · inops-front-cmmn"
+          module="API 서버 · 프론트 공통"
         >
           <p className="font-medium text-foreground">1. 인증 - Spring Session + Redis 세션 (토큰·JWT 아님)</p>
           <p>
@@ -250,7 +250,7 @@ export function InsopsRetrospective() {
           </p>
           <p className="font-medium text-foreground">2. 프론트 서버의 인증 재구성 - /auth/session-check 위임</p>
           <p>
-            프론트 서버(inops-front-cmmn)는 자체적으로 Spring Security 컨텍스트를 들고 있지 않습니다.{" "}
+            프론트 서버는 자체적으로 Spring Security 컨텍스트를 들고 있지 않습니다.{" "}
             <code>SessionAuthenticationFilter</code>가 요청의 <code>SESSION</code> 쿠키로 API 서버의{" "}
             <code>/auth/session-check</code>를 호출해 인증을 재구성하는 방식으로, 세션 검증 책임을 API
             서버 한 곳으로 위임했습니다.
@@ -282,7 +282,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="파일 다운로드 안정화 - 엔드포인트 통합·이어받기 → 대용량 전송 안정화"
           hint="일반/INNORIX 엔드포인트 통합 · DRM 재암호화 동시성 버그 · 청크 스트리밍 이어받기"
-          module="ins-file-svr"
+          module="파일 서버"
         >
           <p className="font-medium text-foreground">1. 다운로드 엔드포인트 통합 - 일반 다운로드와 INNORIX 대용량 전송을 하나로</p>
           <p>
@@ -327,7 +327,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="보안 취약점 진단·대응 - 외부 보안 진단 지적사항 전량 해소"
           hint="Burp 브루트포스 → 5회 초과 차단 · 위험도별 Rate Limiting · 동적 CSP·47개 매퍼 SQLi 해소"
-          module="ins-auth-svr · inops-api-svr"
+          module="인증 서버 · API 서버"
         >
           <p className="font-medium text-foreground">1. 무차별 대입(브루트포스) 방어 - 발견부터 실증까지</p>
           <p>
@@ -383,7 +383,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="공통 base 모듈·자동화 도구 개발 - 반복 개발 제거 → 신규 테이블 온보딩 효율화"
           hint="information_schema 기반 Entity·mapper 자동 생성 · 제네릭 CRUD base 모듈 · AOP 공통 로깅"
-          module="inops-api-svr"
+          module="API 서버"
         >
           <p>
             DB 엔지니어가 설계해둔 스키마를 그대로 Entity·MyBatis XML mapper로 옮겨 적어야 했는데,
@@ -423,7 +423,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="표적 데이터 관리 · 집계 쿼리 최적화 - SQL 레벨 정합성·성능 개선"
           hint="윈도우 함수 순번 재정렬 · CUD 감사로그·계단식 무결성 · 집계 UNION ALL → CTE(스캔 5→1)"
-          module="inops-api-svr"
+          module="API 서버"
         >
           <p className="font-medium text-foreground">1. 즐겨찾기·관심표적 우선순위 재정렬</p>
           <p>
@@ -471,7 +471,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="배포 환경별 Spring Profile 분리 - 개발·에어갭 실배포·로컬 설정 분리 관리"
           hint="로컬·개발·에어갭 실배포를 Spring Profile로 분리 · 환경 혼선·재빌드 제거"
-          module="ins-auth-svr"
+          module="인증 서버"
         >
           <p>
             환경마다 context-path·외부 API host·로그 경로·내부 호출 방식 등이 달랐는데, 이 설정들이 한
@@ -531,7 +531,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="판독보고서 - CesiumJS 3D globe 기반 보고서 저작 도구"
           hint="별도 도구 없이 분석·주석·보고서 작성을 한 화면에서 원스톱 처리 - 분석관 호평"
-          module="inops-das"
+          module="판독·분석 웹"
         >
           <p>
             판독보고서는 분석관이 CesiumJS 3D globe 위에서 위성영상을 직접 보며 표적에 화살표·도형·텍스트·이미지로
@@ -589,7 +589,7 @@ export function InsopsRetrospective() {
         <AccordionSection
           title="공통 컴포넌트 매니저 - 팝업·iframe·인페이지 통신 통합"
           hint="팝업·iframe·인페이지 함수를 execute() 하나로 통일 · 창 경계 넘는 호출 추상화"
-          module="inops-das"
+          module="판독·분석 웹"
         >
           <p>
             분석 화면은 같은 페이지 안의 패널, 별도 팝업 윈도우, iframe 등 컴포넌트가 실행되는 위치가

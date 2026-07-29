@@ -1,13 +1,35 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { PROFILE } from "@/data/profileDoc";
+import { usePathname, useRouter } from "next/navigation";
+import { PROFILE, PROFILE_PLATFORM, type DocProject, type CareerGroup, type CareerItem } from "@/data/profileDoc";
+
+/** 인프라/풀스택 두 버전. /resume 과 동일한 탭 구조 (기본 = 인프라). */
+const VARIANTS = {
+  platform: { label: "인프라", roleEn: "Infrastructure Engineer", data: PROFILE_PLATFORM },
+  backend: { label: "풀스택", roleEn: "Full-Stack Engineer", data: PROFILE },
+} as const;
+type Variant = keyof typeof VARIANTS;
+
+const TAB_PARAM: Record<Variant, string> = { backend: "fullstack", platform: "infra" };
+
+function variantFromTab(tab: string | null | undefined): Variant {
+  if (tab === "fullstack") return "backend";
+  if (tab === "infra") return "platform";
+  return "platform"; // 파라미터 없음/미인식 값 - 기본 탭(인프라) 유지
+}
+
+type DocActivity = { title: string; org: string; year: string; desc: string; notes: string[] };
+type DocSummaryBlock = { head: string; body: string };
+type DocBackend = { title: string; desc: string; items: string[] };
+type DocHighlight = { v: string; l: string };
+type DocCareer = { company: string; position: string; period: string; overview: string; groups: CareerGroup[] };
 
 /* Wanted-style portfolio document. CSS ported verbatim from wanted-doc.css. */
 const CSS = `
 .wanted-root { --ink:#1a1a1e; --ink-2:#4a4f57; --ink-3:#8b9099; --line:#e9ebee; --line-2:#f2f3f5; --bg-soft:#f6f7f9; --accent:#3366ff; --accent-soft:#eaf0ff; --tobe:#3366ff; --tobe-soft:#eaf0ff; --asis:#9298a2; --asis-soft:#f1f3f5; --font-sans:"Pretendard",-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo",sans-serif; --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace; }
-.wanted-root { background:#dde1e6; color:var(--ink); font-family:var(--font-sans); line-height:1.66; letter-spacing:-0.012em; word-break:keep-all; -webkit-font-smoothing:antialiased; min-height:100vh; padding:1px 0; }
+.wanted-root { background:#dde1e6; color:var(--ink); font-family:var(--font-sans); line-height:1.56; letter-spacing:-0.012em; word-break:keep-all; -webkit-font-smoothing:antialiased; min-height:100vh; padding:1px 0; }
 .wanted-root * { box-sizing:border-box; margin:0; padding:0; }
 .wanted-root a { color:inherit; text-decoration:none; }
 .wanted-root mark { background:#eef1f6; color:var(--ink); font-weight:700; padding:1px 5px; border-radius:4px; box-shadow:inset 0 -2px 0 rgba(51,102,255,0.35); }
@@ -17,6 +39,12 @@ const CSS = `
 .wanted-root .pg-line { position:absolute; left:0; right:0; height:28px; background:#dde1e6; z-index:10; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .wanted-root .pg-line-label { font-family:var(--font-mono); font-size:9px; color:var(--ink-3); letter-spacing:0.06em; }
 .wanted-toolbar { position:fixed; top:16px; right:16px; z-index:100; display:flex; gap:8px; align-items:center; }
+.wanted-variant { position:fixed; top:16px; left:16px; z-index:100; display:flex; gap:2px; padding:4px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid var(--line); border-radius:999px; box-shadow:0 4px 16px rgba(20,22,28,0.1); }
+.wanted-variant-btn { border:none; background:transparent; font-family:var(--font-sans); font-size:12.5px; font-weight:700; color:var(--ink-2); padding:8px 16px; border-radius:999px; cursor:pointer; transition:background .15s, color .15s; }
+.wanted-variant-btn.active { background:var(--ink); color:#fff; }
+.wanted-variant-btn:not(.active):hover { background:var(--bg-soft); color:var(--ink); }
+@media print { .wanted-variant { display:none !important; } }
+@media (max-width:760px) { .wanted-variant { left:8px; top:8px; } }
 .wanted-iconbtn { display:inline-flex; align-items:center; justify-content:center; width:42px; height:42px; background:rgba(255,255,255,0.88); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); color:var(--ink-2); border:1px solid var(--line); border-radius:50%; box-shadow:0 4px 16px rgba(20,22,28,0.1); cursor:pointer; transition:transform .15s, box-shadow .2s, color .15s, background .15s; }
 .wanted-iconbtn:hover { box-shadow:0 8px 22px rgba(20,22,28,0.16); background:#fff; color:var(--ink); }
 .wanted-iconbtn svg { transition:transform .15s; }
@@ -28,7 +56,7 @@ const CSS = `
   .wanted-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .wanted-root .sheet-inner { padding:15mm 15mm; }
   @page { size:A4; margin:11mm 0; }
-  .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two { break-inside:avoid; }
+  .wanted-root .w-proj-intro, .wanted-root .contrib, .wanted-root .val, .wanted-root .other-item, .wanted-root .w-cards, .wanted-root .w-two, .wanted-root .w-shots, .wanted-root .w-hi, .wanted-root .w-cg { break-inside:avoid; }
   .wanted-root .w-sec-title { break-after:avoid; }
   .wanted-root .pg-spacer, .wanted-root .pg-line { display:none; }
   .wanted-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:normal !important; }
@@ -37,34 +65,56 @@ const CSS = `
 .wanted-root .w-role { font-size:44px; font-weight:800; letter-spacing:-0.045em; line-height:1.04; margin-top:14px; }
 .wanted-root .w-role .dot { color:var(--accent); }
 .wanted-root .w-sub { font-size:16px; color:var(--ink-2); font-weight:600; margin-top:14px; max-width:150mm; line-height:1.5; }
-.wanted-root .w-vals { margin-top:30px; display:flex; flex-direction:column; gap:18px; }
+.wanted-root .w-vals { margin-top:24px; display:flex; flex-direction:column; gap:14px; }
 .wanted-root .val-h { font-size:16px; font-weight:800; letter-spacing:-0.025em; display:flex; align-items:flex-start; gap:10px; }
 .wanted-root .val-h::before { content:""; flex-shrink:0; width:4px; height:19px; background:var(--accent); border-radius:2px; margin-top:1px; }
-.wanted-root .val-p { font-size:12.5px; color:var(--ink-2); line-height:1.78; margin-top:8px; padding-left:14px; }
+.wanted-root .val-p { font-size:12.5px; color:var(--ink-2); line-height:1.66; margin-top:7px; padding-left:14px; }
 .wanted-root .w-close { font-size:12.5px; color:var(--ink-2); line-height:1.78; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); }
-.wanted-root .w-cards { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:28px; }
+.wanted-root .w-cards { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; }
 .wanted-root .w-card { background:var(--bg-soft); border-radius:14px; padding:18px 20px; }
 .wanted-root .w-card-h { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); margin-bottom:13px; }
 .wanted-root .w-about-row { display:flex; gap:10px; font-size:12px; padding:4px 0; }
 .wanted-root .w-about-row .k { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); min-width:54px; padding-top:1px; }
 .wanted-root .w-about-row .v { color:var(--ink); font-weight:600; }
-.wanted-root .w-skill-line { font-size:12px; color:var(--ink); line-height:1.9; }
+.wanted-root .w-skill-line { font-size:12px; color:var(--ink); line-height:1.72; }
 .wanted-root .w-skill-line b { font-weight:700; }
-.wanted-root .w-proj { margin-top:34px; }
+.wanted-root .w-proj { margin-top:28px; }
 .wanted-root .w-proj:first-of-type { margin-top:0; }
 .wanted-root .w-proj-head { padding-bottom:14px; border-bottom:2px solid var(--ink); }
 .wanted-root .w-proj-top { display:flex; align-items:baseline; justify-content:space-between; gap:16px; }
 .wanted-root .w-proj-name { font-size:22px; font-weight:800; letter-spacing:-0.03em; }
 .wanted-root .w-proj-period { font-family:var(--font-mono); font-size:11.5px; color:var(--accent); font-weight:600; margin-top:7px; }
-.wanted-root .w-shots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
-.wanted-root .w-shot { display:grid; place-items:center; width:100%; height:150px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg-soft); font-family:var(--font-mono); font-size:11px; color:var(--ink-3); letter-spacing:0.06em; }
+/* 아키텍처는 세부 라벨이 읽혀야 하므로 항상 가로 전체 폭 한 장으로 크게 싣는다.
+   실사용 화면은 그 위에 밴드로 얹어 세로로 쌓는다(2단 배치는 도면이 작아져 못 읽힘). */
+.wanted-root .w-shots { display:grid; grid-template-columns:1fr; gap:10px; margin-top:14px; }
+.wanted-root .w-shot { display:grid; place-items:center; width:100%; height:168px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg-soft); font-family:var(--font-mono); font-size:11px; color:var(--ink-3); letter-spacing:0.06em; }
 .wanted-root .w-shot img { width:100%; height:100%; object-fit:cover; }
-.wanted-root .w-shot.arch img { object-fit:contain; background:#fff; padding:6px; }
+.wanted-root .w-shot.arch { height:auto; min-height:120px; }
+.wanted-root .w-shot.arch img { height:auto; max-height:320px; object-fit:contain; background:#fff; padding:10px; }
 .wanted-root .w-proj-titlewrap { display:flex; align-items:center; gap:10px; }
 .wanted-root .w-proj-logo { width:30px; height:30px; border-radius:7px; object-fit:contain; background:#fff; border:1px solid var(--line); padding:3px; flex-shrink:0; }
-.wanted-root .w-sub-h { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 8px; }
-.wanted-root .w-overview { font-size:12.5px; color:var(--ink-2); line-height:1.72; }
+.wanted-root .w-sub-h { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3); margin:13px 0 7px; }
+.wanted-root .w-overview { font-size:12.5px; color:var(--ink-2); line-height:1.62; }
 .wanted-root .w-role-list { display:flex; flex-direction:column; gap:5px; }
+.wanted-root .w-be-list { margin-top:11px; gap:6px; }
+/* 대표 수치 스트립 - 첫 화면에서 성과 규모가 먼저 읽히게 */
+.wanted-root .w-hi { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:20px; }
+.wanted-root .w-hi-item { padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--bg-soft); }
+.wanted-root .w-hi-v { font-family:var(--font-mono); font-size:14px; font-weight:800; letter-spacing:-0.03em; color:var(--accent); line-height:1.3; }
+.wanted-root .w-hi-l { font-size:11px; color:var(--ink-2); margin-top:6px; line-height:1.45; }
+/* 경력 - 이력서(career.groups)와 동일한 항목을 포폴에도 싣는다 */
+.wanted-root .w-career-meta { font-size:12px; color:var(--ink-2); margin-top:-4px; }
+.wanted-root .w-career-overview { font-size:12.5px; color:var(--ink-2); line-height:1.62; margin-top:8px; }
+.wanted-root .w-cg { margin-top:17px; }
+.wanted-root .w-cg-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:7px; border-bottom:1px solid var(--line); }
+.wanted-root .w-cg-title { font-size:13.5px; font-weight:800; letter-spacing:-0.02em; }
+.wanted-root .w-cg-period { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); flex-shrink:0; }
+.wanted-root .w-cg-items { display:flex; flex-direction:column; gap:6px; margin-top:9px; }
+.wanted-root .w-cg-item { font-size:12px; color:var(--ink); line-height:1.55; padding-left:13px; position:relative; }
+.wanted-root .w-cg-item::before { content:""; position:absolute; left:0; top:7px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
+.wanted-root .w-cg-sub { display:flex; flex-direction:column; gap:3px; margin-top:4px; }
+.wanted-root .w-cg-subitem { font-size:11px; color:var(--ink-2); line-height:1.5; padding-left:11px; position:relative; }
+.wanted-root .w-cg-subitem::before { content:"-"; position:absolute; left:0; color:var(--ink-3); }
 .wanted-root .w-role-item { font-size:12.5px; color:var(--ink); line-height:1.55; padding-left:14px; position:relative; }
 .wanted-root .w-role-item::before { content:""; position:absolute; left:0; top:8px; width:5px; height:5px; border-radius:50%; background:var(--accent); }
 .wanted-root .w-stack { display:flex; flex-wrap:wrap; gap:6px; }
@@ -102,7 +152,7 @@ const CSS = `
 .wanted-root .cert-name { font-size:13px; font-weight:700; }
 .wanted-root .cert-date { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
 .wanted-root .cert-issuer { font-size:11px; color:var(--ink-2); margin-top:2px; }
-.wanted-root .w-sec-title { font-size:19px; font-weight:800; letter-spacing:-0.03em; margin:34px 0 16px; padding-bottom:9px; border-bottom:2px solid var(--ink); }
+.wanted-root .w-sec-title { font-size:19px; font-weight:800; letter-spacing:-0.03em; margin:28px 0 13px; padding-bottom:9px; border-bottom:2px solid var(--ink); }
 .wanted-root .foot { margin-top:26px; padding-top:12px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:0.03em; }
 /* Sheet stays fixed A4 width at every viewport - small screens scroll horizontally,
    content never reflows (deterministic pagination). */
@@ -143,9 +193,38 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
   return er.top - sr.top;
 }
 
-export function PortfolioDocument() {
-  const P = PROFILE;
-  const VALUES = P.summary.map((s) => ({ h: s.head, p: s.body }));
+export function PortfolioDocument({ initialTab }: { initialTab?: string | null }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [variant, setVariant] = useState<Variant>(() => variantFromTab(initialTab));
+  const { data: P, roleEn } = VARIANTS[variant];
+  const VALUES = (P.summary as DocSummaryBlock[]).map((s) => ({ h: s.head, p: s.body }));
+  const summaryClose = "summaryClose" in P ? (P.summaryClose as string) : "";
+  const projects = P.projects as DocProject[];
+  const activities = P.activities as DocActivity[];
+  // 인프라 문서에만 있는 백엔드 요약 섹션 (풀스택 문서는 프로젝트 본문에 이미 포함)
+  const backend = "backend" in P ? (P.backend as DocBackend) : null;
+  const career = P.career as DocCareer;
+  // 포폴은 경력 칸을 따로 두지 않는다. 경력 항목을 proj 키로 프로젝트별로 나눠 각 프로젝트
+  // 안에 '담당 업무'로 싣고, 프로젝트에 안 붙는 항목(사내 자동화 등)만 뒤에 따로 모은다.
+  // '프로젝트 개요' 그룹은 프로젝트 제목·기간·역할과 중복이라 제외.
+  const careerItems = career.groups
+    .filter((g) => g.title !== "프로젝트 개요")
+    .flatMap((g) => g.items as CareerItem[]);
+  const dutiesOf = (key?: string) =>
+    key ? careerItems.filter((it) => it.proj === key) : [];
+  // 프로젝트 밑에 넣으면 꼬리표 "(NIPA)"는 중복이므로 렌더 시 떼어낸다.
+  const stripTag = (t: string) => t.replace(/\s*\((?:국가보안기관|KARI|NIPA|드론)\)$/, "");
+  const commonItems = careerItems.filter((it) => !it.proj);
+  // 스트립은 대표 수치 4개까지만 (풀스택 문서는 6개를 갖고 있어 한 줄에 안 들어감)
+  const highlights = (P.highlights as DocHighlight[]).slice(0, 4);
+
+  const handleVariantChange = useCallback((key: Variant) => {
+    setVariant(key);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", TAB_PARAM[key]);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router]);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const applyBreaks = useCallback(() => {
@@ -166,7 +245,9 @@ export function PortfolioDocument() {
     // portfolio is flat (no section wrappers), so each unit is kept whole and
     // sections simply flow. Units too tall to fit a page (a whole project) are
     // skipped, and their inner blocks (contrib, shots) handle the crossing.
-    const KEEP = '.val, .w-cards, .contrib, .other-item, .w-two, .w-proj-intro, .w-sec-title';
+    // .w-shots: 아키텍처 도면이 커진 뒤로 intro 전체가 한 페이지에 안 들어갈 수 있어,
+    // 그 경우 이미지 블록만이라도 통째로 다음 페이지로 넘긴다(도면이 잘리는 것 방지).
+    const KEEP = '.val, .w-cards, .contrib, .other-item, .w-two, .w-shots, .w-hi, .w-cg, .w-proj-intro, .w-sec-title';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -175,7 +256,7 @@ export function PortfolioDocument() {
     // find the first block that follows the title in document order.
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const blocks = Array.from(
-        sheet.querySelectorAll('.w-proj-intro, .contrib, .other-item, .w-two')
+        sheet.querySelectorAll('.w-proj-intro, .contrib, .other-item, .w-two, .w-cg')
       ) as HTMLElement[];
       for (const b of blocks) {
         if (header.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) return b;
@@ -278,11 +359,22 @@ export function PortfolioDocument() {
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [applyBreaks]);
+  }, [applyBreaks, variant]);
 
   return (
     <div className="wanted-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="wanted-variant">
+        {(Object.keys(VARIANTS) as Variant[]).map((key) => (
+          <button
+            key={key}
+            className={`wanted-variant-btn${variant === key ? " active" : ""}`}
+            onClick={() => handleVariantChange(key)}
+          >
+            {VARIANTS[key].label}
+          </button>
+        ))}
+      </div>
       <div className="wanted-toolbar">
         <Link href="/" className="wanted-iconbtn wanted-back" aria-label="포트폴리오로 돌아가기" title="포트폴리오로 돌아가기">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
@@ -294,8 +386,17 @@ export function PortfolioDocument() {
 
       <div className="sheet" ref={sheetRef}><div className="sheet-inner">
         <div className="w-brand">Portfolio</div>
-        <div className="w-role">Infrastructure Engineer<span className="dot">.</span></div>
+        <div className="w-role">{roleEn}<span className="dot">.</span></div>
         <div className="w-sub">{P.tagline}</div>
+
+        <div className="w-hi">
+          {highlights.map((h, i) => (
+            <div key={i} className="w-hi-item">
+              <div className="w-hi-v">{h.v}</div>
+              <div className="w-hi-l">{h.l}</div>
+            </div>
+          ))}
+        </div>
 
         <div className="w-vals">
           {VALUES.map((v, i) => (
@@ -304,7 +405,7 @@ export function PortfolioDocument() {
               <div className="val-p">{hl(v.p)}</div>
             </div>
           ))}
-          {P.summaryClose && <div className="w-close">{hl(P.summaryClose)}</div>}
+          {summaryClose && <div className="w-close">{hl(summaryClose)}</div>}
         </div>
 
         <div className="w-cards">
@@ -325,7 +426,7 @@ export function PortfolioDocument() {
         </div>
 
         <div className="w-sec-title">Projects</div>
-        {P.projects.map((pr, idx) => (
+        {projects.map((pr, idx) => (
           <div key={idx} className="w-proj">
             <div className="w-proj-intro">
               <div className="w-proj-head">
@@ -337,22 +438,37 @@ export function PortfolioDocument() {
                 </div>
                 <div className="w-proj-period">{pr.company} · {pr.period}</div>
               </div>
-              <div className="w-shots">
-                {pr.screenshot ? (
-                  <div className="w-shot"><img src={pr.screenshot} alt="실사용 화면" /></div>
-                ) : (
-                  <div className="w-shot">스크린샷 준비 중</div>
-                )}
-                {pr.archImage ? (
-                  <div className="w-shot arch"><img src={pr.archImage} alt="아키텍처" /></div>
-                ) : (
-                  <div className="w-shot">아키텍처 준비 중</div>
-                )}
-              </div>
+              {(pr.screenshot || pr.archImage) && (
+                <div className="w-shots">
+                  {pr.screenshot && (
+                    <div className="w-shot"><img src={pr.screenshot} alt="실사용 화면" /></div>
+                  )}
+                  {pr.archImage && (
+                    <div className="w-shot arch"><img src={pr.archImage} alt="아키텍처" /></div>
+                  )}
+                </div>
+              )}
               <div className="w-sub-h">개요</div>
               <div className="w-overview">{pr.desc}</div>
-              <div className="w-sub-h">역할</div>
-              <div className="w-role-list">{pr.blocks.map((b, j) => <div key={j} className="w-role-item">{b.label}</div>)}</div>
+              {/* '역할' 목록은 블록 label을 나열하는데, 바로 아래 각 contrib 헤더가 같은
+                  텍스트를 다시 출력해 완전 중복이었다 - 라인 수만 늘어 제거. */}
+              {dutiesOf(pr.pkey).length > 0 && (
+                <>
+                  <div className="w-sub-h">담당 업무</div>
+                  <div className="w-cg-items">
+                    {dutiesOf(pr.pkey).map((it, j) => (
+                      <div key={j} className="w-cg-item">
+                        {hl(stripTag(it.text))}
+                        {it.sub && it.sub.length > 0 && (
+                          <div className="w-cg-sub">
+                            {it.sub.map((s, k) => <div key={k} className="w-cg-subitem">{hl(s)}</div>)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
               <div className="w-sub-h">Skills</div>
               <div className="w-stack">{pr.stack.map((s) => <span key={s} className="tag">{s}</span>)}</div>
             </div>
@@ -376,8 +492,40 @@ export function PortfolioDocument() {
           </div>
         ))}
 
+        {commonItems.length > 0 && (
+          <>
+            <div className="w-sec-title">사내 공통 · 업무 자동화</div>
+            <div className="other-item">
+              <div className="w-cg-items">
+                {commonItems.map((it, j) => (
+                  <div key={j} className="w-cg-item">
+                    {hl(it.text)}
+                    {it.sub && it.sub.length > 0 && (
+                      <div className="w-cg-sub">
+                        {it.sub.map((s, k) => <div key={k} className="w-cg-subitem">{hl(s)}</div>)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {backend && (
+          <>
+            <div className="w-sec-title">{backend.title}</div>
+            <div className="other-item">
+              <div className="w-overview">{backend.desc}</div>
+              <div className="w-role-list w-be-list">
+                {backend.items.map((it, i) => <div key={i} className="w-role-item">{hl(it)}</div>)}
+              </div>
+            </div>
+          </>
+        )}
+
         <div className="w-sec-title">대외활동 · 학습</div>
-        {P.activities.map((a, i) => (
+        {activities.map((a, i) => (
           <div key={i} className="other-item">
             <div className="other-top"><span className="other-name">{a.title}</span><span className="other-meta">{a.org} · {a.year}</span></div>
             <div className="other-desc">{a.desc}</div>
@@ -406,7 +554,7 @@ export function PortfolioDocument() {
           </div>
         </div>
 
-        <div className="foot"><span>{P.name} · Infrastructure Engineer</span><span>{P.email}</span></div>
+        <div className="foot"><span>{P.name} · {roleEn}</span><span>{P.email}</span></div>
       </div></div>
     </div>
   );

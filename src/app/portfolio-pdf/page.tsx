@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PortfolioPDFPage() {
-  return <PortfolioDocument />;
+export default async function PortfolioPDFPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  return <PortfolioDocument initialTab={tab ?? null} />;
 }
