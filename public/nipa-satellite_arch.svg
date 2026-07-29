@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" font-family="Pretendard, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a4f57"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="340" fill="#ffffff"/>
+
+  <!-- Main pipeline -->
+  <g font-size="13" fill="#1a1a1e">
+    <rect x="20" y="50" width="110" height="56" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="75" y="83" text-anchor="middle">Client</text>
+
+    <line x1="130" y1="78" x2="168" y2="78" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="170" y="42" width="150" height="72" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="245" y="72" text-anchor="middle" font-weight="700" fill="#3366ff">Envoy Gateway</text>
+    <text x="245" y="90" text-anchor="middle" font-size="11" fill="#4a4f57">Keycloak OIDC</text>
+
+    <line x1="320" y1="78" x2="358" y2="78" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="360" y="30" width="230" height="96" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="475" y="55" text-anchor="middle" font-weight="700">FastAPI × 9 Services</text>
+    <text x="475" y="75" text-anchor="middle" font-size="11" fill="#4a4f57">domain-split microservices</text>
+    <text x="475" y="93" text-anchor="middle" font-size="11" fill="#4a4f57">(모놀리식 → MSA 전환)</text>
+    <text x="475" y="111" text-anchor="middle" font-size="10.5" fill="#8b9099">재배포 월 10건 → 1건</text>
+
+    <line x1="590" y1="78" x2="628" y2="78" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="630" y="30" width="170" height="96" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="715" y="55" text-anchor="middle" font-weight="700">RabbitMQ</text>
+    <text x="715" y="75" text-anchor="middle" font-size="11" fill="#4a4f57">수집·전처리·추론·후처리</text>
+    <text x="715" y="93" text-anchor="middle" font-size="11" fill="#4a4f57">단계별 큐, ack/nack + DLQ</text>
+    <text x="715" y="111" text-anchor="middle" font-size="10.5" fill="#8b9099">작업 유실 0건</text>
+
+    <line x1="800" y1="78" x2="838" y2="78" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="840" y="42" width="140" height="72" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="910" y="70" text-anchor="middle" font-weight="700">Workers</text>
+    <text x="910" y="90" text-anchor="middle" font-size="11" fill="#4a4f57">1개 → 15개 수평 확장</text>
+
+    <!-- down to DB -->
+    <line x1="910" y1="114" x2="910" y2="150" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="810" y="152" width="170" height="56" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="895" y="176" text-anchor="middle" font-weight="700">PostgreSQL</text>
+    <text x="895" y="194" text-anchor="middle" font-size="11" fill="#4a4f57">CloudNativePG</text>
+  </g>
+
+  <!-- Infra layer strip -->
+  <g font-size="12" fill="#1a1a1e">
+    <text x="20" y="245" font-size="11" font-weight="700" fill="#8b9099" letter-spacing="0.06em">CLUSTER INFRA</text>
+
+    <rect x="20" y="256" width="230" height="60" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
+    <text x="135" y="280" text-anchor="middle" font-weight="700">Cilium (eBPF) + kube-vip</text>
+    <text x="135" y="298" text-anchor="middle" font-size="10.5" fill="#4a4f57">CNI 전환 · 3노드 control-plane HA</text>
+
+    <rect x="265" y="256" width="230" height="60" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
+    <text x="380" y="280" text-anchor="middle" font-weight="700">ArgoCD GitOps</text>
+    <text x="380" y="298" text-anchor="middle" font-size="10.5" fill="#4a4f57">Argo Events·Workflows, Pulp 저장소</text>
+
+    <rect x="510" y="256" width="230" height="60" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
+    <text x="625" y="280" text-anchor="middle" font-weight="700">OpenBao + ESO</text>
+    <text x="625" y="298" text-anchor="middle" font-size="10.5" fill="#4a4f57">시크릿 중앙화 자동 주입</text>
+
+    <rect x="755" y="256" width="225" height="60" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
+    <text x="867" y="280" text-anchor="middle" font-weight="700">OTel → Grafana</text>
+    <text x="867" y="298" text-anchor="middle" font-size="10.5" fill="#4a4f57">Prometheus·OpenSearch·Tempo 통합</text>
+  </g>
+</svg>

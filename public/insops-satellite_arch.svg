@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" font-family="Pretendard, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a4f57"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="340" fill="#ffffff"/>
+
+  <!-- air-gap boundary -->
+  <rect x="10" y="20" width="980" height="180" rx="14" fill="none" stroke="#c7cbd1" stroke-dasharray="6 5"/>
+  <text x="30" y="14" font-size="11" font-weight="700" fill="#8b9099" letter-spacing="0.06em">에어갭(인터넷 완전 차단) 환경</text>
+
+  <g font-size="13" fill="#1a1a1e">
+    <rect x="30" y="44" width="140" height="72" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="100" y="74" text-anchor="middle" font-weight="700">물리 서버</text>
+    <text x="100" y="92" text-anchor="middle" font-size="11" fill="#4a4f57">베어메탈 신규 구축</text>
+
+    <line x1="170" y1="80" x2="208" y2="80" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <rect x="210" y="32" width="190" height="96" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="305" y="60" text-anchor="middle" font-weight="700" fill="#3366ff">K8s 클러스터</text>
+    <text x="305" y="80" text-anchor="middle" font-size="11" fill="#4a4f57">수십 대 서버 규모</text>
+    <text x="305" y="98" text-anchor="middle" font-size="10.5" fill="#8b9099">롤링 방식 무중단 운영</text>
+
+    <line x1="400" y1="80" x2="438" y2="80" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <rect x="440" y="32" width="180" height="96" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="530" y="58" text-anchor="middle" font-weight="700">다종 수집기 통합</text>
+    <text x="530" y="78" text-anchor="middle" font-size="11" fill="#4a4f57">중복 체크 · 포맷 변환</text>
+    <text x="530" y="96" text-anchor="middle" font-size="10.5" fill="#8b9099">zst/tar.gz 자동화</text>
+
+    <line x1="620" y1="80" x2="658" y2="80" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <rect x="660" y="32" width="160" height="96" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="740" y="60" text-anchor="middle" font-weight="700">Go API</text>
+    <text x="740" y="80" text-anchor="middle" font-size="11" fill="#4a4f57">DB 접근 중앙화</text>
+    <text x="740" y="98" text-anchor="middle" font-size="10.5" fill="#8b9099">스키마 변경 영향 1곳</text>
+
+    <line x1="820" y1="80" x2="858" y2="80" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <rect x="860" y="44" width="110" height="72" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
+    <text x="915" y="74" text-anchor="middle" font-weight="700">PostgreSQL</text>
+    <text x="915" y="92" text-anchor="middle" font-size="10.5" fill="#4a4f57">GDAL 기반</text>
+  </g>
+
+  <!-- monitoring -->
+  <g font-size="12" fill="#1a1a1e">
+    <line x1="305" y1="128" x2="305" y2="150" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+    <rect x="210" y="152" width="190" height="40" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
+    <text x="305" y="177" text-anchor="middle" font-weight="700" font-size="11.5">Zabbix 커스텀 대시보드</text>
+  </g>
+
+  <!-- outside airgap: viewer -->
+  <g font-size="12" fill="#1a1a1e">
+    <line x1="740" y1="128" x2="740" y2="230" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+    <rect x="630" y="232" width="220" height="60" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="740" y="256" text-anchor="middle" font-weight="700" fill="#3366ff">CesiumJS 3D 판독 화면</text>
+    <text x="740" y="276" text-anchor="middle" font-size="10.5" fill="#4a4f57">정부 표준 문서(HWP) 산출</text>
+  </g>
+
+  <g font-size="11" fill="#8b9099">
+    <text x="30" y="320">Spring Session + Redis 세션 외부화 · 인증(Filter) + 인가(AOP) 분리 · 47개 매퍼 SQL Injection 해소</text>
+  </g>
+</svg>

@@ -58,6 +58,10 @@ const CSS = `
 .wanted-root .w-proj-period { font-family:var(--font-mono); font-size:11.5px; color:var(--accent); font-weight:600; margin-top:7px; }
 .wanted-root .w-shots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
 .wanted-root .w-shot { display:grid; place-items:center; width:100%; height:150px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg-soft); font-family:var(--font-mono); font-size:11px; color:var(--ink-3); letter-spacing:0.06em; }
+.wanted-root .w-shot img { width:100%; height:100%; object-fit:cover; }
+.wanted-root .w-shot.arch img { object-fit:contain; background:#fff; padding:6px; }
+.wanted-root .w-proj-titlewrap { display:flex; align-items:center; gap:10px; }
+.wanted-root .w-proj-logo { width:30px; height:30px; border-radius:7px; object-fit:contain; background:#fff; border:1px solid var(--line); padding:3px; flex-shrink:0; }
 .wanted-root .w-sub-h { font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-3); margin:16px 0 8px; }
 .wanted-root .w-overview { font-size:12.5px; color:var(--ink-2); line-height:1.72; }
 .wanted-root .w-role-list { display:flex; flex-direction:column; gap:5px; }
@@ -325,12 +329,25 @@ export function PortfolioDocument() {
           <div key={idx} className="w-proj">
             <div className="w-proj-intro">
               <div className="w-proj-head">
-                <div className="w-proj-top"><span className="w-proj-name">{pr.title}</span></div>
+                <div className="w-proj-top">
+                  <span className="w-proj-titlewrap">
+                    {pr.logo && <img src={pr.logo} alt="" className="w-proj-logo" />}
+                    <span className="w-proj-name">{pr.title}</span>
+                  </span>
+                </div>
                 <div className="w-proj-period">{pr.company} · {pr.period}</div>
               </div>
               <div className="w-shots">
-                <div className="w-shot">스크린샷 / 데모 이미지</div>
-                <div className="w-shot">아키텍처 / 화면</div>
+                {pr.screenshot ? (
+                  <div className="w-shot"><img src={pr.screenshot} alt="실사용 화면" /></div>
+                ) : (
+                  <div className="w-shot">스크린샷 준비 중</div>
+                )}
+                {pr.archImage ? (
+                  <div className="w-shot arch"><img src={pr.archImage} alt="아키텍처" /></div>
+                ) : (
+                  <div className="w-shot">아키텍처 준비 중</div>
+                )}
               </div>
               <div className="w-sub-h">개요</div>
               <div className="w-overview">{pr.desc}</div>

@@ -29,6 +29,9 @@ export interface DocProject {
   desc: string;
   blocks: DocBlock[];
   badge?: string; // 예: "사내 개인", "납품"
+  logo?: string;
+  screenshot?: string;
+  archImage?: string;
 }
 export interface SkillGroup {
   category: string;
@@ -168,6 +171,8 @@ export const PROFILE = {
       badge: "핵심 참여(팀 6명)",
       stack: ["Spring Boot", "Java", "MyBatis", "PostGIS", "Redis", "Spring Session", "Go", "Kubernetes", "Zabbix", "Jenkins", "Nexus"],
       desc: "위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 환경 운영, 신규 플랫폼 구축까지 담당했습니다.",
+      logo: "/hancominpsace_logo.png",
+      archImage: "/insops-satellite_arch.svg",
       blocks: [
         {
           label: "다중 WAR 세션 공유 - Spring Session + Redis 세션 외부화 → 서버 간 재로그인 제거",
@@ -238,6 +243,9 @@ export const PROFILE = {
       badge: "주도(팀 3명)",
       stack: ["Spring Boot", "Go", "PyTorch", "FastAPI", "ONNX Runtime", "Kubernetes", "Aliyun GPUShare", "MyBatis", "Redis", "Salt-Stack", "Jenkins", "Nexus"],
       desc: "다누리·Sentinel·Landsat 등 10개 이상 위성 소스를 수집·처리해 객체탐지·세그멘테이션·초해상도 AI 추론 결과를 CesiumJS 뷰어로 가시화하는 플랫폼입니다. 한국항공우주연구원(KARI)에 납품했으며, Outbox 패턴 라이브러리·Aliyun GPUShare·자체 워크플로우 엔진을 이 프로젝트에서 설계·구현했습니다.",
+      logo: "/kari_logo.svg",
+      screenshot: "/kari_web.png",
+      archImage: "/kari-satellite_arch.svg",
       blocks: [
         {
           label: "k6·유닛테스트 도입 - 동시 부하 문제 사전 검출 → 에러율 11%→0%",
@@ -291,6 +299,9 @@ export const PROFILE = {
       badge: "주도(팀 5명)",
       stack: ["RabbitMQ", "Next.js 15", "TypeScript", "CesiumJS", "FastAPI", "Go", "ONNX Runtime", "Kubernetes", "Envoy Gateway", "Keycloak", "Cilium", "ArgoCD", "Pulp", "OpenTelemetry", "OpenBao"],
       desc: "두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계했습니다.",
+      logo: "/nipa_logo.svg",
+      screenshot: "/gis-platform_thum.png",
+      archImage: "/nipa-satellite_arch.svg",
       blocks: [
         {
           label: "모놀리식 → 9개 서비스 MSA 분리 - 중복 구현 제거 → 재배포 월10건→1건",
