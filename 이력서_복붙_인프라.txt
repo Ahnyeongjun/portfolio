@@ -26,35 +26,41 @@ BASE : 서울, Korea
 2021.07. ~ 재직 중 (5년)
 
 ● 클러스터 구축·운영
-  - 신규 노드 추가 시 pod 및 서비스 세팅을 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거 및 서버 구성시간 확보
-  - 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영
+  - 신규 노드마다 OS·K8s 사전 준비(스왑 비활성화·커널 모듈·containerd)를 손으로 반복하던 작업을 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거, 노드 추가 시간 단축
+  - 컨테이너 장애 시 작업이 유실되고 GPU가 유휴 상태였던 추론 환경을 kubeadm 베어메탈 클러스터+GPUShare fraction 분할로 재구성 - GPU 4장 70파드 병렬 추론
+  - 인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영
+  - 반입 도구가 제한된 환경에서 클러스터 프로비저닝 쉘 스크립트화 - 수동 구축 1~2일 → 2~3시간
   - K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거
+  - 로컬·개발·에어갭 3환경 매니페스트 분리 관리 - 환경별 오배포 방지
 
 ● CI/CD·배포
-  - Jenkins, Argo Workflows/Events CI + ArgoCD GitOps 배포로 분리 - 배포 드리프트 추적성 확보
-  - 배포 후에만 드러나던 부하·트랜잭션 결함을 해결하기 위해 k6 부하테스트·유닛테스트 도입
+  - 실제 상태와 스크립트가 갈려 추적이 안 되던 Jenkins 명령형 배포를 Argo Workflows/Events CI + ArgoCD GitOps로 분리 - 배포 드리프트 추적성 확보
+  - 배포 후에만 드러나던 부하·트랜잭션 결함을 k6 부하테스트·유닛테스트의 CI 편입으로 배포 전 검출 - 에러율 11.22% → 0%
 
 ● 관측성·장애 대응
-  - MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합
-  - Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지
+  - MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합 - 장애 원인분석 1~2시간 → 30분 이내
+  - 에어갭이라 장애를 사용자 신고 후에야 인지하던 구조에 Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지 체계 확보
+  - 표면 에러(디스크 부족)를 컨테이너→마운트→디바이스→펌웨어로 추적해 NVMe 펌웨어 이관 로직 누락을 발견·복구 - 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축
 
 ● 네트워킹·보안
   - 서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여
-  - MSA 분리로 서비스마다 흩어진 시크릿·DB 관리를 OpenBao+ESO 중앙화·CloudNativePG 운영으로 일원화
+  - 서비스마다 개별 관리돼 로테이션 부담이 늘던 시크릿을 OpenBao+ESO 중앙 저장·자동 주입으로 일원화 - 로테이션이 배포 재시작만으로 반영
   - 서비스가 각자 노출돼 보안 정책이 분산되던 구조를 Nginx 게이트웨이로 통합 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더 1곳 관리, Wireshark 정보 노출 점검
   - 잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축
-  - 사내 서버 간 통신을 OpenVPN으로 구성
+  - 사내 서버 간 통신을 OpenVPN으로 구성 - 물리적으로 분리된 서버를 안전한 터널로 연결
 
 ● 메시징·데이터 파이프라인
-  - DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환
-  - Debezium를 통한 CDC - 에어갭 망연계에서 Debezium slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결
+  - DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개 → 15개, 작업 유실 0건
+  - 에어갭 망연계에서 Debezium replication slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 인프라 의존 제거, 이벤트 유실 0건
   - TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지
+  - 스키마 변경마다 7개 서비스를 동시 수정해야 했던 DB 직접 접근 구조를 Go API 1곳으로 중앙화 - 변경 영향 범위를 API 레이어로 축소
 
 ● 업무 자동화
   - 40여 개 테이블 CRUD 계층 자동 생성 - 테이블당 30분~1시간 걸리던 보일러플레이트 작성을 몇 십초 내로 단축
-  - FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합, 구글 드라이브 자동 관리
+  - FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합·구글 드라이브 자동 관리 → 주 30~60분 수작업 제거
   - Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화
   - Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착
+  - Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득
 
 
 ────────────────────────────────────────
@@ -64,7 +70,7 @@ BASE : 서울, Korea
 ● NIPA 위성 변화탐지 플랫폼 - 클러스터·메시징 인프라 고도화
   기간 : 2025.07. ~ 진행 중
   역할 : 주도 (팀 5명)
-  기술스택 : Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · Redis · PyTorch · Cilium · kube-vip · OpenBao · CloudNativePG · ArgoCD · Ansible · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
+  기술스택 : Kubernetes · RabbitMQ · FastAPI · Go · PostgreSQL · Redis · PyTorch · Cilium · kube-vip · OpenBao · ArgoCD · Ansible · Pulp · OpenTelemetry · Envoy Gateway · Keycloak
 
   DB 폴링 방식이라 수평 확장이 막혀 있던 처리 구조를 메시지 큐 기반 비동기 아키텍처로 재설계하고, MSA 전환에 맞춰 클러스터 네트워킹·시크릿·배포·관측성까지 인프라 전 영역을 고도화했습니다.
 
@@ -74,8 +80,8 @@ BASE : 서울, Korea
      결과  단계별 독립 확장 가능한 구조 확보, 처리 워커 컨테이너 1개→15개 수평 확장, 작업 유실 0건
 
   2) 클러스터 인프라 고도화 - Cilium·kube-vip·ArgoCD·OTel, 팀원과 설계
-     문제  MSA 전환으로 트래픽이 급증했는데 네트워킹·시크릿·배포·관측성 각 영역에서 감당하기 어려운 문제가 동시에 드러났습니다.
-     해결  팀원과 영역을 나눠 Cilium·kube-vip로 네트워킹·HA를, OpenBao·CloudNativePG로 시크릿·DB를, ArgoCD·Pulp로 배포를, 신규 도입한 Prometheus·Grafana 등으로 관측성을 각각 해결했습니다.
+     문제  MSA 전환으로 네트워킹·시크릿·배포·관측성 각 영역에서 감당하기 어려운 문제가 동시에 드러났습니다.
+     해결  팀원과 영역을 나눠 Cilium·kube-vip로 네트워킹·HA를, OpenBao+ESO로 시크릿을, ArgoCD·Pulp로 배포를, 신규 도입한 Prometheus·Grafana 등으로 관측성을 각각 해결했습니다.
      결과  클러스터 네트워킹·시크릿·배포를 팀 차원에서 표준화, 관측 스택을 신규로 갖춰 장애 원인분석 1~2시간 → 30분 이내로 단축
 
 
@@ -138,12 +144,14 @@ BASE : 서울, Korea
 ────────────────────────────────────────
 03. 기술 스택
 ────────────────────────────────────────
-언어·프레임워크 : Go · Python · FastAPI
-오케스트레이션 : Kubernetes · Docker · SaltStack · Ansible
+언어·프레임워크 : Go · Python · FastAPI · Java · Spring Boot
+오케스트레이션 : Kubernetes · Docker · Docker Compose
+IaC·구성관리 : Terraform · Ansible
 네트워킹·보안 : Cilium · kube-vip · Nginx · Envoy Gateway · Keycloak · OpenBao · OpenVPN
-데이터·메시징 : PostgreSQL · MySQL · Redis · RabbitMQ · Kafka · CloudNativePG · GDAL
-관측성 : OpenTelemetry · Prometheus · Grafana · Zabbix
-CI/CD : ArgoCD · Jenkins · Nexus
+데이터·메시징 : PostgreSQL · MySQL · Redis · RabbitMQ
+관측성 : OpenTelemetry · Prometheus · Grafana · Loki · Tempo · Zabbix
+CI/CD : Jenkins · ArgoCD
+아티팩트·패키지 : Nexus · Pulp
 
 
 ────────────────────────────────────────
