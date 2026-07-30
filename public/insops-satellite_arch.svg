@@ -1,127 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450" font-family="Pretendard, -apple-system, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 350" font-family="Pretendard, -apple-system, sans-serif">
   <defs>
     <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#4a4f57"/>
     </marker>
   </defs>
-  <rect width="1000" height="450" fill="#ffffff"/>
-
-  <!-- air-gap boundary -->
-  <rect x="10" y="34" width="980" height="352" rx="14" fill="none" stroke="#c7cbd1" stroke-dasharray="6 5"/>
-  <text x="30" y="26" font-size="12" font-weight="700" fill="#8b9099" letter-spacing="0.06em">에어갭(인터넷 완전 차단) 환경</text>
-
-  <!-- ============ Lane 1: 판독·운영 시스템 ============ -->
-  <text x="30" y="56" font-size="13" font-weight="700" fill="#3366ff" letter-spacing="0.02em">판독·운영 시스템 (2022.05~) · Spring Boot + jQuery/JSP 멀티모듈</text>
+  <rect width="640" height="350" fill="#ffffff"/>
 
   <g fill="#1a1a1e">
-    <!-- 빌드·배포 -->
-    <rect x="30" y="80" width="170" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="115" y="106" text-anchor="middle" font-weight="700" font-size="14">Jenkins 빌드·배포</text>
-    <text x="115" y="126" text-anchor="middle" font-size="11.5" fill="#4a4f57">멀티모듈 빌드 → WAR 배포</text>
-    <text x="115" y="144" text-anchor="middle" font-size="11.5" fill="#8b9099">Nexus 사내 저장소</text>
+    <rect x="20" y="20" width="290" height="80" rx="12" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="165" y="55" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3366ff">콘텐츠 관리 웹</text>
+    <text x="165" y="76" text-anchor="middle" font-size="11.5" fill="#4a4f57">자료·표적 등록 화면</text>
 
-    <line x1="200" y1="118" x2="222" y2="118" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <!-- Tomcat (multi-WAR) -->
-    <rect x="226" y="62" width="470" height="112" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
-    <text x="242" y="84" font-size="13" font-weight="700" fill="#3366ff">Tomcat · 다중 WAR (멀티모듈 구조)</text>
-
-    <rect x="236" y="92" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="309" y="108" text-anchor="middle" font-weight="700" font-size="12.5">콘텐츠 관리 웹</text>
-    <text x="309" y="122" text-anchor="middle" font-size="11" fill="#8b9099">자료·표적 등록</text>
-
-    <rect x="392" y="92" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="465" y="108" text-anchor="middle" font-weight="700" font-size="12.5">판독·분석 웹</text>
-    <text x="465" y="122" text-anchor="middle" font-size="11" fill="#8b9099">CesiumJS 3D 판독</text>
-
-    <rect x="548" y="92" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="621" y="108" text-anchor="middle" font-weight="700" font-size="12.5">REST API 서버</text>
-    <text x="621" y="122" text-anchor="middle" font-size="11" fill="#8b9099">MyBatis · PostGIS</text>
-
-    <rect x="236" y="132" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="309" y="148" text-anchor="middle" font-weight="700" font-size="12.5">인증 서버</text>
-    <text x="309" y="162" text-anchor="middle" font-size="11" fill="#8b9099">세션 인증·인가</text>
-
-    <rect x="392" y="132" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="465" y="148" text-anchor="middle" font-weight="700" font-size="12.5">파일 서버</text>
-    <text x="465" y="162" text-anchor="middle" font-size="11" fill="#8b9099">대용량 다운로드·재개</text>
-
-    <rect x="548" y="132" width="146" height="36" rx="7" fill="#ffffff" stroke="#c7cbd1"/>
-    <text x="621" y="148" text-anchor="middle" font-weight="700" font-size="12.5">공통 base 모듈</text>
-    <text x="621" y="162" text-anchor="middle" font-size="11" fill="#8b9099">CRUD 계층 추상화</text>
-
-    <line x1="696" y1="118" x2="718" y2="118" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <!-- Redis -->
-    <rect x="720" y="80" width="114" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="777" y="106" text-anchor="middle" font-weight="700" font-size="14">Redis</text>
-    <text x="777" y="126" text-anchor="middle" font-size="11.5" fill="#4a4f57">Spring Session</text>
-    <text x="777" y="144" text-anchor="middle" font-size="10.5" fill="#8b9099">WAR 간 세션 공유</text>
-
-    <line x1="834" y1="118" x2="854" y2="118" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <!-- PostgreSQL / PostGIS -->
-    <rect x="856" y="80" width="114" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="913" y="103" text-anchor="middle" font-weight="700" font-size="13">PostgreSQL</text>
-    <text x="913" y="122" text-anchor="middle" font-size="11.5" fill="#4a4f57">PostGIS</text>
-    <text x="913" y="140" text-anchor="middle" font-size="10.5" fill="#8b9099">위성 메타·표적</text>
+    <rect x="330" y="20" width="290" height="80" rx="12" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="475" y="55" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3366ff">판독·분석 웹</text>
+    <text x="475" y="76" text-anchor="middle" font-size="11.5" fill="#4a4f57">CesiumJS 3D 판독 화면</text>
   </g>
 
-  <!-- viewer + monitoring -->
-  <g fill="#1a1a1e">
-    <line x1="461" y1="174" x2="461" y2="194" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-    <rect x="226" y="196" width="470" height="48" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="461" y="216" text-anchor="middle" font-weight="700" font-size="13">분석관 판독 화면 · jQuery/JSP + CesiumJS 3D</text>
-    <text x="461" y="234" text-anchor="middle" font-size="11.5" fill="#4a4f57">표적 판독 → 정부 표준 문서(HWP) 보고서 산출</text>
-
-    <line x1="846" y1="156" x2="846" y2="194" stroke="#4a4f57" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrow3)"/>
-    <rect x="722" y="196" width="248" height="48" rx="10" fill="#f6f7f9" stroke="#e0e2e6"/>
-    <text x="846" y="216" text-anchor="middle" font-weight="700" font-size="12.5">Zabbix 커스텀 대시보드</text>
-    <text x="846" y="234" text-anchor="middle" font-size="11" fill="#8b9099">호스트·서비스 모니터링 · 장애 사전 감지</text>
-  </g>
-
-  <line x1="30" y1="264" x2="970" y2="264" stroke="#e0e2e6" stroke-dasharray="3 4"/>
-
-  <!-- ============ Lane 2: 신규 구축 플랫폼 ============ -->
-  <text x="30" y="288" font-size="13" font-weight="700" fill="#3366ff" letter-spacing="0.02em">다종위성 수집·처리 플랫폼 신규 구축 (2025.06~12) · 베어메탈부터 전 과정</text>
+  <line x1="165" y1="100" x2="320" y2="128" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+  <line x1="475" y1="100" x2="320" y2="128" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
 
   <g fill="#1a1a1e">
-    <rect x="30" y="302" width="132" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="96" y="328" text-anchor="middle" font-weight="700" font-size="13">물리 서버</text>
-    <text x="96" y="348" text-anchor="middle" font-size="11.5" fill="#4a4f57">베어메탈 설치</text>
-    <text x="96" y="366" text-anchor="middle" font-size="11" fill="#8b9099">OS·네트워크 구성</text>
-
-    <line x1="162" y1="340" x2="184" y2="340" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <rect x="186" y="302" width="146" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="259" y="328" text-anchor="middle" font-weight="700" font-size="13">K8s 클러스터</text>
-    <text x="259" y="348" text-anchor="middle" font-size="11.5" fill="#4a4f57">kubeadm 직접 구성</text>
-    <text x="259" y="366" text-anchor="middle" font-size="11" fill="#8b9099">롤링 무중단 배포</text>
-
-    <line x1="332" y1="340" x2="354" y2="340" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <rect x="356" y="302" width="176" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="444" y="328" text-anchor="middle" font-weight="700" font-size="13">다종 수집기 통합</text>
-    <text x="444" y="348" text-anchor="middle" font-size="11.5" fill="#4a4f57">DB 기반 중복 체크</text>
-    <text x="444" y="366" text-anchor="middle" font-size="11" fill="#8b9099">zst/tar.gz 변환 자동화</text>
-
-    <line x1="532" y1="340" x2="554" y2="340" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <rect x="556" y="296" width="230" height="88" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
-    <text x="671" y="318" text-anchor="middle" font-weight="700" font-size="13" fill="#3366ff">Go 서비스 계층</text>
-    <text x="671" y="338" text-anchor="middle" font-size="11" fill="#4a4f57">DB 접근 중앙화 API - 스키마 변경 1곳</text>
-    <text x="671" y="355" text-anchor="middle" font-size="11" fill="#4a4f57">타일 서버 - GDAL 워핑 동시성 제어</text>
-    <text x="671" y="372" text-anchor="middle" font-size="10.5" fill="#8b9099">CPU 코어 기반 세마포어 · TTL 캐시</text>
-
-    <line x1="786" y1="340" x2="808" y2="340" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
-
-    <rect x="810" y="302" width="160" height="76" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="890" y="328" text-anchor="middle" font-weight="700" font-size="13">PostgreSQL</text>
-    <text x="890" y="348" text-anchor="middle" font-size="11.5" fill="#4a4f57">GDAL 기반 영상 메타</text>
-    <text x="890" y="366" text-anchor="middle" font-size="10.5" fill="#8b9099">서비스는 HTTP로만 접근</text>
+    <rect x="175" y="130" width="290" height="80" rx="12" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="320" y="165" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3366ff">API 서버</text>
+    <text x="320" y="186" text-anchor="middle" font-size="11.5" fill="#4a4f57">REST API · MyBatis · PostGIS</text>
   </g>
 
-  <g font-size="11.5" fill="#8b9099">
-    <text x="30" y="418">Spring Session + Redis 세션 외부화 · 인증(Filter) + 인가(AOP) 분리 · 47개 매퍼 SQL Injection 해소 · Zabbix 장애 사전 감지</text>
+  <line x1="270" y1="210" x2="165" y2="238" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+  <line x1="370" y1="210" x2="475" y2="238" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+  <g fill="#1a1a1e">
+    <rect x="20" y="240" width="290" height="80" rx="12" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="165" y="272" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3366ff">인증 서버</text>
+    <text x="165" y="293" text-anchor="middle" font-size="11" fill="#4a4f57">세션 인증 · Spring Session + Redis</text>
+
+    <rect x="330" y="240" width="290" height="80" rx="12" fill="#eaf0ff" stroke="#3366ff"/>
+    <text x="475" y="272" text-anchor="middle" font-size="14.5" font-weight="700" fill="#3366ff">파일 서버</text>
+    <text x="475" y="293" text-anchor="middle" font-size="11.5" fill="#4a4f57">대용량 다운로드 · 이어받기</text>
   </g>
+
+  <line x1="20" y1="330" x2="220" y2="330" stroke="#c7cbd1"/>
+  <text x="320" y="335" text-anchor="middle" font-size="10.5" fill="#8b9099">Spring Boot + jQuery/JSP · Nexus → Jenkins 멀티모듈 빌드 → WAR 배포</text>
+  <line x1="420" y1="330" x2="620" y2="330" stroke="#c7cbd1"/>
 </svg>
