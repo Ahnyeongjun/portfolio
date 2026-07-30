@@ -512,22 +512,26 @@ export const PROFILE_PLATFORM = {
   location: PROFILE.location,
   military: PROFILE.military,
 
-  tagline: "5년차 인프라 엔지니어입니다. 서버 한 대에 직접 배포하던 시스템을, 에어갭과 온프레미스라는 제약 속에서 자동화를 쌓아가며 K8s 클러스터 기반으로 직접 키워왔습니다.",
+  tagline: "5년차 인프라 엔지니어입니다. 서버 한 대에 직접 배포하던 시스템을, 에어갭·온프레미스 환경에서 자동화를 쌓아가며 K8s 클러스터 기반으로 직접 키워왔습니다.",
   summary: [
     {
       head: "서비스가 커지는 만큼 인프라도 함께 만들어온 경험",
-      body: "서버 한 대에 직접 배포하던 시스템을, 배포 자동화와 컨테이너 표준화를 거쳐 어디서든 동일하게 실행되도록 만들었습니다. 서버가 늘어 수동 관리가 한계에 닿자 쿠버네티스를 도입했고, 손으로 반복하던 구축 절차는 쉘 스크립트로, 다시 Ansible로 옮기며 버전 관리되는 코드로 만들었습니다. 덕분에 KARI·국가보안기관·NIPA처럼 제약이 다른 기관마다 처음부터 만드는 대신, 검증된 구조를 조정해 배포할 수 있었습니다. 서비스가 여러 개로 쪼개진 뒤에는 서비스 사이에서 유실되던 데이터를 큐로, 흩어진 시크릿을 중앙화로 정리했습니다.",
+      body: "수동 배포를 자동화하고 컨테이너로 표준화해 어디서든 동일하게 실행되도록 만들었습니다. 서버가 늘어 수동 관리가 한계에 닿자 쿠버네티스를 도입했고, 손으로 반복하던 구축 절차는 쉘 스크립트로, 다시 Ansible로 옮기며 버전 관리되는 코드로 만들었습니다. 덕분에 KARI·국가보안기관·NIPA처럼 제약이 다른 기관마다 처음부터 만드는 대신, 검증된 구조를 조정해 배포할 수 있었습니다. 서비스가 여러 개로 쪼개진 뒤에는 서비스 사이에서 유실되던 데이터를 큐로, 흩어진 시크릿을 중앙화로 정리했습니다.",
     },
     {
       head: "반복되는 작업은 자동화로 걷어냅니다",
       body: "CRUD 보일러플레이트를 자동 생성 도구로, 작업 이력 정리·업무 보고를 팀 전체가 쓰는 에이전트로 없앴고, ML 실험에서는 GPU 상태와 학습 결과를 시각화하고 데이터셋 정리를 LLM으로 자동화하는 도구를 만들었습니다. 최근에는 CLAUDE.md와 Jira·Bitbucket을 연동해 개발 워크플로우 전체를 자동화했습니다. 백엔드·프론트엔드·AI를 직접 개발해본 경험이, 각 자리에서 무엇이 반복되는지 알아보는 눈이 됐습니다.",
     },
+    {
+      head: "장애의 근본 원인을 끝까지 추적해 해결합니다",
+      body: "에어갭 환경이라 장애가 사용자 신고 후에야 드러나던 구조에 Zabbix 관측을 직접 도입해 사전 감지 체계를 갖췄습니다. 디스크 부족 표면 에러를 컨테이너→마운트→디바이스→펌웨어까지 추적해 NVMe 펌웨어 이관 로직 누락을 찾아냈고, Debezium replication slot이 반복 파손되는 근본 원인(상태 판정 우선순위 오류)까지 추적해 Outbox 아키텍처로 근본 전환했습니다. 표면 증상에서 멈추지 않고 원인을 끝까지 따라가는 편입니다.",
+    },
   ],
 
   highlights: [
-    { v: "kubeadm", l: "베어메탈 K8s 직접 부트스트랩" },
+    { v: "1~2일 → 2~3시간", l: "클러스터 프로비저닝 자동화" },
     { v: "GPU 4장 → 70파드", l: "Aliyun GPUShare 병렬 추론" },
-    { v: "1개 → 15개", l: "처리 워커 수평 확장" },
+    { v: "1~2시간 → 30분", l: "OTel 관측 스택 - 장애 원인분석 단축" },
     { v: "이벤트 유실 0건", l: "Outbox 라이브러리 직접 개발" },
   ],
 
@@ -541,12 +545,9 @@ export const PROFILE_PLATFORM = {
       {
         title: "클러스터 구축·운영",
         items: [
-          { text: "신규 노드마다 OS·K8s 사전 준비(스왑 비활성화·커널 모듈·containerd)를 손으로 반복하던 작업을 Ansible 플레이북으로 자동화 - 수동 설정 편차 제거, 노드 추가 시간 단축", proj: "kari" },
-          { text: "컨테이너 장애 시 작업이 유실되고 GPU가 유휴 상태였던 추론 환경을 kubeadm 베어메탈 클러스터+GPUShare fraction 분할로 재구성 - GPU 4장 70파드 병렬 추론", proj: "kari" },
+          { text: "클러스터 프로비저닝 쉘 스크립트화(수동 구축 1~2일 → 2~3시간) 후 Ansible 플레이북으로 전환 - 신규 노드 추가 시 pod·서비스 세팅 자동화, 수동 설정 편차 제거", proj: "insops" },
           { text: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영", proj: "insops" },
-          { text: "반입 도구가 제한된 환경에서 클러스터 프로비저닝 쉘 스크립트화 - 수동 구축 1~2일 → 2~3시간", proj: "insops" },
           { text: "K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거", proj: "insops" },
-          { text: "로컬·개발·에어갭 3환경 매니페스트 분리 관리 - 환경별 오배포 방지", proj: "insops" },
         ],
       },
       {
@@ -580,7 +581,6 @@ export const PROFILE_PLATFORM = {
           { text: "DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개 → 15개, 작업 유실 0건", proj: "nipa" },
           { text: "에어갭 망연계에서 Debezium replication slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 인프라 의존 제거, 이벤트 유실 0건", proj: "kari" },
           { text: "TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지", proj: "kari" },
-          { text: "스키마 변경마다 7개 서비스를 동시 수정해야 했던 DB 직접 접근 구조를 Go API 1곳으로 중앙화 - 변경 영향 범위를 API 레이어로 축소", proj: "insops" },
         ],
       },
       {
@@ -590,7 +590,6 @@ export const PROFILE_PLATFORM = {
           { text: "FastMCP 사내 에이전트 개발 - Git·캘린더·HRWeb 통합·구글 드라이브 자동 관리 → 주 30~60분 수작업 제거" },
           { text: "Claude 스킬·훅 기반 에이전트 개발 - 작업 계획·평가 자동화" },
           { text: "Jira·Bitbucket 연동 자동화 - 자동 브랜치 생성 → PR 문화 정착" },
-          { text: "Cilium·kube-vip·ArgoCD·OTel 등 신규 인프라 스택 사내 세미나 발표 - 우수성 입증해 도입 설득", proj: "nipa" },
         ],
       },
     ] as CareerGroup[],
@@ -840,7 +839,7 @@ export const PROFILE_PLATFORM = {
     { category: "오케스트레이션", items: ["Kubernetes", "Docker", "Docker Compose"] },
     { category: "IaC·구성관리", items: ["Terraform", "Ansible"] },
     { category: "네트워킹·보안", items: ["Cilium", "kube-vip", "Nginx", "Envoy Gateway", "Keycloak", "OpenBao", "OpenVPN"] },
-    { category: "데이터·메시징", items: ["PostgreSQL", "MySQL", "Redis", "RabbitMQ"] },
+    { category: "데이터·메시징", items: ["PostgreSQL", "Redis", "RabbitMQ"] },
     { category: "관측성", items: ["OpenTelemetry", "Prometheus", "Grafana", "Loki", "Tempo", "Zabbix"] },
     { category: "CI/CD", items: ["Jenkins", "ArgoCD"] },
     { category: "아티팩트·패키지", items: ["Nexus", "Pulp"] },

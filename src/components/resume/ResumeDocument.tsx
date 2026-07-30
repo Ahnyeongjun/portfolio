@@ -4,12 +4,18 @@ import Link from "next/link";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PROFILE, PROFILE_PLATFORM } from "@/data/profileDoc";
+import { ACTIVE_COMPANY, COMPANY_OVERRIDES } from "@/data/resumeOverrides";
 
 const VARIANTS = {
   backend: { label: "풀스택", data: PROFILE },
   platform: { label: "인프라", data: PROFILE_PLATFORM },
 } as const;
 type Variant = keyof typeof VARIANTS;
+
+// Company-specific override, read from a locally-edited (skip-worktree) file -
+// see src/data/resumeOverrides.ts. The public build always sees ACTIVE_COMPANY
+// = null, so this is always undefined in a deployed build.
+const ACTIVE_OVERRIDE = ACTIVE_COMPANY ? COMPANY_OVERRIDES[ACTIVE_COMPANY] : undefined;
 
 const CSS = `
 .rallit-root { --ink:#17181c; --ink-2:#484c54; --ink-3:#9298a2; --line:#e8eaed; --line-2:#f1f3f5; --bg-soft:#f7f8fa; --accent:#16c47f; --accent-soft:#e7f8f0; --font-sans:"Pretendard",-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo",sans-serif; --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace; }
@@ -39,7 +45,7 @@ const CSS = `
   .rallit-root .sheet { width:auto; margin:0; box-shadow:none; min-height:0 !important; }
   .rallit-root .sheet-inner { padding:12mm 12mm; }
   @page { size:A4; margin:11mm 0; }
-  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skill-group { break-inside:avoid; }
+  .rallit-root .proj-head, .rallit-root .proj-ach-row, .rallit-root .cg-item, .rallit-root .act-item, .rallit-root .edu-item, .rallit-root .cert-item, .rallit-root .skill-row { break-inside:avoid; }
   .rallit-root .sec-h, .rallit-root .cg-top { break-after:avoid; }
   .rallit-root .pg-spacer, .rallit-root .pg-line { display:none; }
   .rallit-root * { -webkit-print-color-adjust:exact; print-color-adjust:exact; letter-spacing:normal !important; }
@@ -126,11 +132,12 @@ const CSS = `
 .rallit-root .cert-name { font-size:14px; font-weight:700; }
 .rallit-root .cert-date { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); }
 .rallit-root .cert-issuer { font-size:12px; color:var(--ink-2); margin-top:2px; }
-.rallit-root .skill-group { margin-bottom:11px; }
-.rallit-root .skill-group:last-child { margin-bottom:0; }
-.rallit-root .skill-cat { font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--ink-3); letter-spacing:0.03em; margin-bottom:6px; }
-.rallit-root .skills { display:flex; flex-wrap:wrap; gap:7px; }
-.rallit-root .skill { font-size:13.5px; font-weight:600; color:var(--ink); background:var(--bg-soft); border-radius:999px; padding:7px 15px; }
+.rallit-root .skill-row { padding:7px 0; border-bottom:1px solid var(--line-2); display:flex; align-items:baseline; gap:10px; }
+.rallit-root .skill-row:first-child { padding-top:0; }
+.rallit-root .skill-row:last-child { border-bottom:none; padding-bottom:0; }
+.rallit-root .skill-cat { font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--ink-3); letter-spacing:0.03em; flex-shrink:0; white-space:nowrap; width:80px; }
+.rallit-root .skills { display:flex; flex-wrap:wrap; gap:5px; }
+.rallit-root .skill { font-size:12px; font-weight:600; color:var(--ink); background:var(--bg-soft); border-radius:999px; padding:4px 10px; }
 .rallit-root .foot { margin-top:18px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; color:var(--ink-3); letter-spacing:0.03em; }
 /* Sheet stays fixed A4 width at every viewport - small screens scroll horizontally,
    content never reflows (deterministic pagination). */
@@ -194,7 +201,7 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
     // whole 경력 section (title included) to the next page, leaving a gap. Instead we
     // keep each .cg-item whole and let a group flow across the page boundary; the
     // group title (.cg-top) stays with its first item (handled below).
-    const KEEP = '.cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skill-group, .proj-head, .proj-ach-row, .sec-h';
+    const KEEP = '.cg-top, .cg-item, .act-item, .edu-item, .cert-item, .skill-row, .proj-head, .proj-ach-row, .sec-h';
     const PAGE_PAD = pxPerMm * 16;       // top inset kept at the start of every continued page
     const usable = pageH - PAGE_PAD * 2 - GAP; // a unit taller than this can't be kept whole
 
@@ -203,7 +210,7 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
     // projects this is the first achievement row (the head alone isn't enough).
     const firstBlockOf = (header: HTMLElement): HTMLElement | null => {
       const scope = header.parentElement; // same column/section body as the header
-      return scope ? (scope.querySelector('.proj-ach-row, .cg-top, .act-item, .edu-item, .cert-item, .skill-group') as HTMLElement | null) : null;
+      return scope ? (scope.querySelector('.proj-ach-row, .cg-top, .act-item, .edu-item, .cert-item, .skill-row') as HTMLElement | null) : null;
     };
 
     // push an element to the top of the next page so that its visible content
@@ -222,6 +229,18 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
       spacer.style.height = `${Math.max(0, boundary - top + GAP + PAGE_PAD - ownInset)}px`;
       el.parentNode?.insertBefore(spacer, el);
     };
+
+    // manual override (e.g. a local per-company resume variant forcing 경력 to
+    // start on a fresh page) - applied once, before the auto-overflow loop, so
+    // everything below naturally re-flows from the pushed position.
+    for (const el of Array.from(sheet.querySelectorAll('.force-break')) as HTMLElement[]) {
+      const top = topInSheet(el, sheet);
+      const pageIdx = Math.floor(top / pageH);
+      const prevBoundary = pageIdx * pageH;
+      if (top - prevBoundary > PAGE_PAD + 1) { // already at a page top - nothing to do
+        pushBefore(el, top, prevBoundary + pageH);
+      }
+    }
 
     for (let iter = 0; iter < 60; iter++) {
       let fixed = false;
@@ -364,8 +383,15 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
             ))}
           </div>
 
+          {variant === "platform" && ACTIVE_OVERRIDE?.motivation && (
+            <div className="sec">
+              <div className="sec-h"><span className="no">00</span><span className="t">지원 동기</span></div>
+              <p className="sm-body">{ACTIVE_OVERRIDE.motivation}</p>
+            </div>
+          )}
+
           <div className="sec">
-            <div className="sec-h"><span className="no">01</span><span className="t">경력</span></div>
+            <div className={variant === "platform" && ACTIVE_OVERRIDE?.pageBreakBeforeCareer ? "sec-h force-break" : "sec-h"}><span className="no">01</span><span className="t">경력</span></div>
             <div className="career-head">
               <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
               <div className="career-period">{P.career.period}</div>
@@ -431,12 +457,14 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
 
           <div className="sec">
             <div className="sec-h"><span className="no">03</span><span className="t">기술 스택</span></div>
-            {P.skills.map((g) => (
-              <div key={g.category} className="skill-group">
-                <div className="skill-cat">{g.category}</div>
-                <div className="skills">{g.items.map((s) => <span key={s} className="skill">{s}</span>)}</div>
-              </div>
-            ))}
+            <div>
+              {P.skills.map((g) => (
+                <div key={g.category} className="skill-row">
+                  <span className="skill-cat">{g.category}</span>
+                  <div className="skills">{g.items.map((s) => <span key={s} className="skill">{s}</span>)}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="sec">
