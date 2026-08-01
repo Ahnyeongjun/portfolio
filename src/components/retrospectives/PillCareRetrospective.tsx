@@ -1,4 +1,4 @@
-import { Zap, Layers, Brain, Database, BookOpen } from "lucide-react";
+import { Zap, Layers, Brain, Database, BookOpen, Search, Bell } from "lucide-react";
 
 function Section({
   icon: Icon,
@@ -154,6 +154,45 @@ async def recognize_pill(image: UploadFile):
           </p>
         </Section>
 
+        <Section icon={Search} title="복약 검색 - 등록된 약 + 미등록 약 DB 검색 통합">
+          <p>
+            복약 편집 화면에서 약을 추가할 때, 이미 등록된 약만 검색되면 사용자가
+            새로 먹기 시작한 약은 매번 이름을 처음부터 다시 입력해야 하는 문제가 있었습니다.
+            등록된 약 매칭과 <Highlight>서버 DB 검색</Highlight>을 한 검색창에서 함께 보여주도록 개선했습니다.
+          </p>
+          <CodeBlock>{`// 300ms 디바운스로 미등록 약 DB 검색
+useEffect(() => {
+  if (!medSearch.trim()) { setApiSearchResults([]); return; }
+  const t = setTimeout(async () => {
+    const res = await fetch(\`/api/drugs/search?q=\${encodeURIComponent(medSearch)}\`);
+    setApiSearchResults((await res.json()).results ?? []);
+  }, 300);
+  return () => clearTimeout(t);
+}, [medSearch]);`}</CodeBlock>
+          <p>
+            등록된 약 목록에서 먼저 매칭을 시도하고, 없으면 DB 검색 결과를 이어서 보여주는
+            순서로 배치했습니다. DB에서 찾은 신규 약은 바로 추가하지 않고
+            <Highlight>복용 시간(아침/점심/저녁/자기전)을 먼저 선택</Highlight>하도록 확인 단계를 하나 더 둬서,
+            복용 시간 없이 등록되는 데이터를 막았습니다.
+          </p>
+        </Section>
+
+        <Section icon={Bell} title="알림 정합성 - localStorage 이중 소스 제거">
+          <p>
+            알림 벨의 빨간 점(안읽음 표시)이 하드코딩된 값으로 표시되고 있었고,
+            알림 설정 값도 localStorage와 백엔드에 각각 저장되어 두 값이 어긋나는
+            경우가 있었습니다. 상태를 <Highlight>백엔드 단일 소스</Highlight>로 좁히는 방향으로 정리했습니다.
+          </p>
+          <CodeBlock>{`// hooks/useUnreadCount.ts - 실제 미읽은 알림 수 기반 벨 표시
+GET /events?unread_only=true
+
+// 알림 설정: localStorage 캐시 제거, 백엔드 응답만 신뢰`}</CodeBlock>
+          <p>
+            홈·분석·프로필 3개 페이지에서 벨 아이콘을 같은 훅으로 조건부 렌더링하도록
+            통일해, 페이지마다 안읽음 상태가 다르게 보이는 문제도 함께 없앴습니다.
+          </p>
+        </Section>
+
         <Section icon={BookOpen} title="성장과 배움">
           <div>
             <p className="font-medium text-foreground mb-3">이 프로젝트를 통해 얻은 것:</p>
@@ -163,6 +202,7 @@ async def recognize_pill(image: UploadFile):
                 "FastAPI AsyncPG - Python 비동기 ORM으로 I/O 집약적 외부 API 호출 처리",
                 "AI Hub 추론 파이프라인 - confidence score 기반 폴백으로 낮은 신뢰도 처리, 식약처 DUR 연동으로 병용 금기 등록 시점 표시",
                 "헬스케어 UI 설계 원칙 - 인지 부하 최소화를 위한 정보 계층 구조와 위험도 시각화",
+                "상태 단일 소스 원칙 - localStorage·하드코딩 값과 백엔드가 이중 소스가 되면서 생긴 정합성 버그를 겪고, 이후 백엔드를 유일한 소스로 두는 패턴을 습관화",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5 shrink-0" />
