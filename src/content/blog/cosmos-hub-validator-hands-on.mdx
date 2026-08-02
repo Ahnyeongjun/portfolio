@@ -1,0 +1,232 @@
+---
+title: "Cosmos Hub 테스트넷에 밸리데이터를 직접 띄워본 기록 - 동기화·슬래싱·키관리·업그레이드"
+description: "블록체인 도메인 경험을 채우기 위해 Cosmos Hub 공개 테스트넷(provider 체인)에 실제로 밸리데이터를 등록하고 블록 서명까지 확인한 과정. State sync 실측치, sentry 구성, 키 관리, cosmovisor 업그레이드 리허설까지 - 성공한 것과 세 번 실패한 것 모두 실제 로그 그대로 기록한다."
+date: "2026-08-02"
+category: "Blockchain"
+tags: ["Cosmos Hub", "CometBFT", "Validator", "State Sync", "Slashing", "Cosmovisor", "tmkms"]
+---
+
+## 왜 이 글을 쓰는가
+
+인프라 경험은 위성영상 플랫폼 3개, k8s 클러스터, MSA 전환으로 충분히 증명되지만 블록체인 도메인 경험은 전무했다. 이론으로 "밸리데이터는 이렇게 운영합니다"를 나열하는 대신, Cosmos Hub의 실제 공개 테스트넷에 진짜 밸리데이터를 등록하고 블록에 서명하는 것까지 직접 해본 뒤에만 쓰기로 했다. 이 글의 모든 수치·로그·에러 메시지는 지어낸 것이 아니라 이 작업을 하면서 실제로 나온 것들이다. 잘 된 것만 골라 담지 않았고, 세 번 실패한 것도 그대로 남긴다.
+
+**대상 체인**: Cosmos Hub의 `provider` 체인 (Interchain Security 프로바이더 체인, `theta-testnet` 계열의 공개 테스트넷). 2023년 2월 제네시스로 시작해 지금까지 계속 돌고 있는 체인이라 "방금 만든 로컬 체인"이 아니라 실제 동기화 지연·업그레이드 이력이 있는 환경이라는 점이 중요했다.
+
+**환경**: Windows + Docker Desktop, 공식 이미지 `ghcr.io/cosmos/gaia:v27.6.0`.
+
+## 1. 동기화 지연
+
+### 풀노드 vs 아카이브 노드 - 풀노드를 선택한 이유
+
+이 체인은 2026-08 기준 블록 높이가 1,840만을 넘는다. 아카이브 노드는 제네시스부터의 전체 상태·트랜잭션을 전부 보존해야 해서 인덱서·익스플로러용이고, 실제로 서명에 참여하는 밸리데이터는 최근 상태만 유지하는 풀노드(기본 pruning)로 충분하다 - 애초에 이번 목적이 "밸리데이터로 참여"이지 "전체 이력 조회"가 아니었으므로 풀노드로 결정했다.
+
+### 초기 동기화 - state sync 실측
+
+18M+ 블록을 genesis부터 블록 단위로 replay하는 건 비현실적이라 state sync를 썼다. RPC에서 신뢰 높이·해시를 받아 `config.toml`에 넣었다:
+
+```toml
+[statesync]
+enable = true
+rpc_servers = "https://rpc.provider-state-sync-01.hub-testnet.polypore.xyz:443,https://rpc.provider-state-sync-02.hub-testnet.polypore.xyz:443"
+trust_height = 18415501
+trust_hash = "E5E5064F11B192B4D00D31A55F1F7808BBEBC4379B7E0BD3771720D7C89609A4"
+```
+
+seed 3개 중 하나(itrocket)는 `dial tcp 65.109.30.26:21656: i/o timeout`으로 즉시 탈락 - 공개 seed도 항상 살아있다고 가정하면 안 된다는 걸 첫 5분 만에 확인했다.
+
+**실측 결과**: 컨테이너 기동 04:08 UTC → `catching_up: false` 04:22 UTC, **총 약 14분**. 45개 스냅샷 청크(높이 18,417,500 기준)를 받아 IAVL 트리로 복원하는 데 걸린 시간이다.
+
+병목은 네트워크가 아니었다. `docker stats`로 잡은 값:
+
+| 구간 | CPU | 메모리 | 네트워크 |
+|---|---|---|---|
+| 청크 적용 중 | 248.72% (2.5코어) | 1.81GiB | 234MB in |
+| 복원 완료 직후 | 129.49% | 6.855GiB | 1.12GB in |
+
+18M 블록짜리 체인의 전체 상태 스냅샷을 네트워크로 받는 건 1GB 남짓이면 끝나지만, 그걸 IAVL 트리로 다시 검증·적재하는 CPU 연산이 훨씬 오래 걸린다 - "동기화 지연의 병목은 대역폭이 아니라 CPU"라는 걸 숫자로 확인했다.
+
+모니터링은 `/status`의 `sync_info.catching_up` 불리언 하나로 충분했다. `true`인 동안은 컨센서스에 참여하지 않는다.
+
+### 동기화 지연이 서명 참여에 미치는 리스크 - 직접 겪은 사례
+
+이론이 아니라 실제로 겪은 두 가지 사례가 있다.
+
+**사례 1 - sentry 전환 직후 순간 정지.** 뒤에서 다룰 sentry 구성으로 전환하며 밸리데이터 노드를 재시작했더니, sentry 노드가 아직 뜨기 전이라 밸리데이터가 피어 0개 상태로 남았다:
+
+```
+INF Adding persistent peers addrs=["e5498c0af0e800fa3d69b502c515c3250528c7c3@gaia-sentry-node:26656"]
+ERR Error in peer's address err="lookup gaia-sentry-node: no such host"
+INF Reactor module=consensus waitSync=true
+```
+
+피어가 0개인 순간 컨센서스 참여(`waitSync=true`)가 완전히 멈춘다. sentry를 몇 초 뒤 띄우자 정상화됐지만, 이 몇 초가 곧 slashing 윈도우를 갉아먹는 시간이라는 걸 체감했다.
+
+**사례 2 - sentry 자체의 state sync가 세 번 stall.** sentry 노드에 state sync를 붙였는데, 45개 청크 중 43개까지 받고 7분 넘게 진행이 멈췄다. 재시작해도 같은 지점 근처에서 다시 멈췄다(3회 반복). 원인을 완전히 특정하진 못했지만(같은 머신에서 여러 컨테이너를 동시에 돌린 리소스 경합일 가능성이 높다), state sync가 "한 번 설정하면 항상 성공하는" 기능이 아니라는 걸 반복 재현으로 확인했다 - 운영 중이라면 스냅샷 다운로드 방식으로 폴백하거나 여러 state-sync RPC를 더 넉넉히 등록해야 한다는 실전 교훈.
+
+## 2. 슬래싱 리스크
+
+### 이 체인의 실제 슬래싱 파라미터
+
+genesis.json에서 직접 확인한 값이다 (지어낸 숫자가 아니다):
+
+```json
+"slashing": {
+  "params": {
+    "signed_blocks_window": "100",
+    "min_signed_per_window": "0.500000000000000000",
+    "downtime_jail_duration": "600s",
+    "slash_fraction_double_sign": "0.050000000000000000",
+    "slash_fraction_downtime": "0.010000000000000000"
+  }
+}
+```
+
+최근 100블록 중 50블록 이상 서명하지 못하면 10분간 jail + 1% 슬래시. 이중서명은 5% 슬래시 + tombstone(영구 퇴출, 복구 불가).
+
+이 숫자를 보면 위 "사례 1"이 왜 위험한지 바로 계산된다 - 블록 타임이 대략 5~6초라면, 100블록 윈도우는 약 8~10분. sentry가 죽은 채로 방치되면 그 안에 절반을 놓치는 건 순식간이다.
+
+### 이중서명 - 실제로 재현하지 않은 이유
+
+재시작 시 이전 프로세스가 완전히 죽지 않은 채 새 프로세스가 같은 `priv_validator_key.json`으로 서명을 시작하면 즉시 이중서명이다. 이건 실제 네트워크에 등록된 내 밸리데이터로 절대 테스트하지 않았다 - tombstone은 그 체인에서 영구적이라 되돌릴 수 없기 때문이다. 대신 매 재시작마다 `docker stop`으로 이전 컨테이너가 완전히 종료된 걸 확인한 뒤에만 다음 컨테이너를 띄우는 식으로, "같은 키로 두 프로세스가 동시에 뜰 수 없다"는 원칙만 순서를 지켜 실천했다.
+
+### 방어 장치 - sentry 아키텍처 실제 구성
+
+밸리데이터가 공개 네트워크에 직접 노출되지 않도록 sentry 노드 하나를 앞에 뒀다. 실제 적용한 `config.toml` 값:
+
+```toml
+# 밸리데이터 쪽
+pex = false
+seeds = ""
+persistent_peers = "e5498c0af0e800fa3d69b502c515c3250528c7c3@gaia-sentry-node:26656"
+unconditional_peer_ids = "e5498c0af0e800fa3d69b502c515c3250528c7c3"
+addr_book_strict = false
+
+# sentry 쪽
+pex = true
+persistent_peers = "e2a1cfb4921ba02f3b1bcf2b0861422ed59f3856@gaia-provider-node:26656"
+private_peer_ids = "e2a1cfb4921ba02f3b1bcf2b0861422ed59f3856"  # 밸리데이터 주소는 절대 gossip하지 않음
+unconditional_peer_ids = "e2a1cfb4921ba02f3b1bcf2b0861422ed59f3856"
+```
+
+`/net_info`로 실제 확인한 결과, 밸리데이터는 딱 1개(sentry) 피어만 물고 있었다:
+
+```json
+{ "n_peers": 1, "peers": [{ "node_info": { "moniker": "ahnyoungjun-sentry" }, "remote_ip": "172.21.0.3" }] }
+```
+
+sentry는 공개 seed와 밸리데이터 양쪽에 연결돼 중계 역할만 한다. 이 구성 자체는 정상 동작을 확인했지만, sentry의 state sync가 위에서 언급한 대로 반복 stall되면서 "sentry 아키텍처는 sentry 자체가 먼저 안정적으로 동기화돼 있어야 의미가 있다"는 전제 조건을 몸으로 배웠다.
+
+### 모니터링·알림
+
+`/status`의 `validator_info.voting_power`와 `/validators?per_page=200`으로 활성 셋 진입 여부를 확인했다. 실제로 5 ATOM 셀프delegation만으로도 활성 밸리데이터 97석(정원 100석 중 미달 상태) 안에 들어갔다:
+
+```json
+{ "address": "7D0CE134...", "voting_power": "5" }
+```
+
+블록 `last_commit.signatures`에서 내 주소의 `block_id_flag: 2`(실서명)를 직접 여러 차례 확인했다 - `1`이면 부재, `2`면 서명, `3`이면 nil이라 이 필드 하나가 곧 실시간 서명 모니터링 포인트다.
+
+## 3. 키 관리
+
+### validator key와 지갑 key는 완전히 다른 물건
+
+- **Consensus key** (`priv_validator_key.json`, ed25519) - 블록 서명 전용. `gaiad init`이 자동 생성한다. 이 키가 이중서명·슬래싱의 대상.
+- **지갑(account) key** (secp256k1, `gaiad keys add`) - 트랜잭션 서명·자금 관리용. `create-validator` 트랜잭션을 보낼 때 쓴다.
+
+실제로 만든 값 (지갑 니모닉은 당연히 여기 남기지 않는다):
+
+```
+consensus pubkey: 0OJ8fdkUemRExLNQ3jdHeeed3Q14oPXIFR7SS2RRIjg=  (ed25519)
+wallet address:   cosmos1mjn0y5hnwdatp99cxn5m248a8fxuy8rnvtx4wa  (secp256k1)
+validator addr:   cosmosvaloper1mjn0y5hnwdatp99cxn5m248a8fxuy8rnfljqzw
+```
+
+### 콜드/핫 분리, 실제 사용한 저장 방식
+
+이번 랩에서는 `--keyring-backend test`(암호화 없는 파일 저장)를 썼다 - 이건 명백히 실습용이지 프로덕션용이 아니다. 실제 운영에서는:
+
+- 지갑 키: `file` 백엔드(암호 걸린 로컬 파일) 이상, 대량 자금이면 `os`(OS 키체인) 또는 하드웨어 지갑
+- Consensus key: **tmkms**(Tendermint KMS) 같은 외부 서명기로 분리해 `priv_validator_laddr`을 통해 원격 서명하는 게 표준. gaiad 프로세스 자체에는 평문 키 파일을 두지 않는다.
+
+### tmkms 연동 시도 - 실패한 것도 기록
+
+tmkms를 실제로 붙여보려 했는데, GitHub에 미리 빌드된 릴리즈 바이너리가 없어(소스 빌드 전용) 직접 빌드해야 했다. 세 번 시도하고 모두 MSRV(최소 지원 Rust 버전) 문제로 막혔다:
+
+1. `rust:1.82` → `tmkms 0.15.0`가 rustc 1.85 요구
+2. `rust:1.85` → 전이 의존성(`icu_collections`, `idna_adapter`, `time` 등)이 rustc 1.86~1.88 요구
+3. `--version 0.14.0 --locked`로 구버전 고정 시도 → lockfile 해석 과정에서도 결국 0.15.0으로 귀결, 동일하게 실패
+
+이 지점에서 멈췄다. 원격 서명기 자체의 개념(priv_validator_laddr로 소켓 연결, gaiad는 키를 들고 있지 않음)은 코드와 문서로 확인했지만, 직접 붙여서 서명까지 검증하는 건 이번엔 실패로 남긴다 - 다음에 시간을 내서 Rust 툴체인을 제대로 맞추거나, 미리 빌드된 배포판(예: 특정 리눅스 배포판 패키지)을 찾아 다시 시도할 계획이다.
+
+### 백업·로테이션, 유출·손실 대응
+
+- **백업**: `priv_validator_key.json` 자체를 암호화해서 별도 보관 - 단, 백업본을 절대 "동시에 살아있는 두 번째 서명 프로세스"로 만들면 안 된다(그 순간 이중서명).
+- **로테이션**: Cosmos SDK는 `MsgRotateConsPubKey`로 consensus key만 교체하고 밸리데이터 정체성(위임된 지분)은 유지할 수 있다 - 예전처럼 unbonding을 거칠 필요가 없어졌다.
+- **유출**: 즉시 로테이션(또는 unbond 후 새 키로 재등록), 유출된 키의 서명 권한을 최대한 빨리 무력화.
+- **손실**: consensus key를 잃으면 그 밸리데이터 정체성으로는 다시 서명할 수 없다 - 백업이 없으면 영구 손실. 지갑 key는 니모닉만 있으면 복구 가능해 상대적으로 덜 치명적이다.
+
+## 4. 업그레이드 - Cosmovisor 리허설
+
+### 실제 체인의 업그레이드 이력 추적
+
+`cosmos/testnets` 저장소의 `provider/SCHEDULE.md`, `UPGRADE_GUIDE.md`에 실제 과거~예정 업그레이드가 날짜·버전과 함께 공개돼 있다. 이 체인은 2023년 launch(v9.0.0) 이후 v27 계열까지, 2026년 하반기 일정까지 미리 문서화돼 있었다 - 공지를 어떻게 추적하느냐는 결국 "체인 운영 저장소의 SCHEDULE 파일을 구독한다"로 귀결된다.
+
+### 리허설은 로컬 devnet에서 - 그리고 세 번 실패
+
+실제 공개 테스트넷에서 거버넌스 업그레이드가 통과되길 기다리는 건 통제할 수 없는 일이라, 완전히 분리된 1-밸리데이터 로컬 devnet(`localtest-1`)을 만들어 실제 두 가지 다른 gaiad 바이너리(v27.5.0 → v27.6.0)로 cosmovisor 자동 전환을 리허설했다. 여기서 벌어진 세 번의 실패가 이 섹션에서 가장 배운 게 많았던 부분이다.
+
+**1차 시도 - 존재하지 않는 업그레이드 이름.** 임의로 지은 이름(`rehearsal-v27-6`)으로 업그레이드 플랜을 짰다. 예상대로 구 바이너리가 높이 20에서 정확히 멈췄고:
+
+```
+ERR UPGRADE "rehearsal-v27-6" NEEDED at height: 20
+INF upgrade detected, relaunching  module=cosmovisor  path=.../upgrades/rehearsal-v27-6/bin/gaiad
+```
+
+cosmovisor가 바이너리 교체까지는 정확히 해냈다. 문제는 그다음 - 새 바이너리도 **똑같은 패닉을 그대로 반복**했다:
+
+```
+Error: error during handshake: error on replay: UPGRADE "rehearsal-v27-6" NEEDED at height: 20
+```
+
+원인은 단순했다. cosmovisor의 역할은 "바이너리를 바꿔치기"까지이고, 그 업그레이드 이름에 대응하는 실제 마이그레이션 핸들러가 앱 코드(`app/upgrades/`)에 등록돼 있어야 진짜로 넘어간다. 내가 지어낸 이름은 어느 바이너리에도 등록돼 있지 않았으니 새 바이너리도 "나도 이 업그레이드 몰라"라고 똑같이 멈춘 것이다.
+
+**2차 시도 - cosmovisor 상태와 체인 상태의 불일치.** 실제 등록된 이름(`v27.6.0`, gaia 소스의 `app/upgrades/v27_6_0/constants.go`에서 확인)으로 바꾸고 `unsafe-reset-all`로 체인 데이터만 리셋한 뒤 재시도했다. 그런데 `unsafe-reset-all`은 블록체인 데이터만 지울 뿐 cosmovisor 자신의 `current` 심볼릭 링크는 그대로 남는다는 걸 몰랐다 - 1차 시도에서 이미 새 바이너리로 전환된 상태가 남아있었던 것:
+
+```
+ERR BINARY UPDATED BEFORE TRIGGER! UPGRADE "v27.6.0" - in binary but not executed on chain. Downgrade your binary
+```
+
+x/upgrade 모듈이 "지금 실행 중인 바이너리가 이 업그레이드보다 이미 앞서 있다"는 걸 스스로 감지해 안전하게 멈춘 것 - cosmovisor의 상태(심볼릭 링크)와 체인 상태(블록 높이)는 서로 별개로 관리된다는 걸 실패로 배웠다.
+
+**3차 시도 - 성공.** `cosmovisor/current` 심볼릭 링크를 지우고 `genesis`로 재초기화, 실제 등록된 이름과 충분한 여유 높이로 다시 제출:
+
+```
+ERR UPGRADE "v27.6.0" NEEDED at height: 30                     (구 바이너리, 05:00:02.937Z 블록)
+INF upgrade detected, relaunching  path=.../upgrades/v27.6.0/bin/gaiad
+INF starting the batch watcher loop  module=cosmovisor          (신 바이너리 기동)
+... 높이 31 커밋 (05:00:08.258Z)
+```
+
+### 실측 다운타임
+
+블록 30(구 바이너리 마지막) → 블록 31(신 바이너리 첫 블록) 타임스탬프 차이:
+
+```
+05:00:02.937885101Z → 05:00:08.258904409Z
+= 5.32초
+```
+
+이 devnet의 평상시 블록 타임 자체가 약 5초였으니, cosmovisor가 추가로 물고 간 시간은 사실상 0에 가깝다 - 자동 전환 메커니즘 자체는 "필연적인 한 블록 정지" 이상의 비용을 거의 요구하지 않는다는 걸 숫자로 확인했다.
+
+### 롤백 계획
+
+cosmovisor는 `genesis/bin`과 `upgrades/<name>/bin`에 옛 바이너리를 지우지 않고 그대로 남겨두므로, 문제가 생기면 `current` 심볼릭 링크를 옛 버전으로 되돌리고 `--unsafe-skip-upgrades <height>`로 해당 업그레이드를 건너뛰며 재기동하는 게 수동 롤백 경로다. 다만 이건 상태(state)가 실제로 바뀌지 않는 무해한 업그레이드에만 안전하고, 마이그레이션이 상태를 변형하는 업그레이드라면 진짜 롤백은 업그레이드 직전 스냅샷/백업이 있어야 한다 - 이번 랩은 속도를 위해 `UNSAFE_SKIP_BACKUP=true`로 백업을 꺼두고 진행했는데, 이름 그대로 실제 운영에서는 절대 하면 안 되는 설정이라는 걸 이 글에도 명시해둔다.
+
+## 정리
+
+| 주제 | 실제로 확인한 것 |
+|---|---|
+| 동기화 지연 | State sync 14분(청크 45개), 병목은 네트워크가 아니라 CPU(250%대), seed 장애·sentry 미준비로 인한 순간 정지 2건 실제 관찰 |
+| 슬래싱 리스크 | 실제 genesis 파라미터(signed_blocks_window 100, min_signed 50%) 확인, sentry 구성 후 `/net_info`로 격리 검증, 이중서명은 재현하지 않고 원칙만 준수 |
+| 키 관리 | consensus/wallet key 실제 생성·구분, tmkms 빌드는 MSRV 문제로 3연속 실패 - 실패까지 정직하게 기록 |
+| 업그레이드 | 로컬 devnet에서 cosmovisor 자동전환 3번째 시도에 성공, 실측 다운타임 5.32초, 실패 2건(이름 미등록·심볼릭 링크 불일치)에서 얻은 교훈이 핵심 |
