@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { CompareTable } from './CompareTable';
 
 function CodeBlock({ children }: { children: string }) {
   return (
@@ -14,50 +15,6 @@ function Highlight({ children }: { children: React.ReactNode }) {
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
       {children}
     </span>
-  );
-}
-
-function CompareTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: { cells: (string | React.ReactNode)[]; highlight?: boolean; muted?: boolean }[];
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-muted/40 border-b border-border">
-            {headers.map((h, i) => (
-              <th key={i} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground/70 tracking-wide whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={
-                row.highlight
-                  ? "bg-primary/5"
-                  : row.muted
-                  ? "opacity-50"
-                  : "hover:bg-muted/20 transition-colors"
-              }
-            >
-              {row.cells.map((cell, j) => (
-                <td key={j} className={`px-3 py-2 ${row.highlight ? "text-foreground" : "text-muted-foreground"}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -275,6 +232,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             클러스터에 반영되기 전에 차단합니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["구분", "이전 (Jenkins·Nexus)", "이후 (Argo·Pulp)"]}
             rows={[
               { cells: ["빌드·배포 트리거", "Jenkins 스케줄/수동 트리거", "Bitbucket 웹훅 → Argo Events"], highlight: true },
@@ -360,6 +318,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             큐가 버퍼 역할을 해서 앞뒤 단계가 영향을 받지 않습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["", "단일 큐", "단계별 큐 분리"]}
             rows={[
               { cells: ["확장 단위", "전체 워커 일괄 확장", "병목 단계 워커만 선택 확장"], highlight: true },
@@ -399,6 +358,7 @@ export function NipaSatelliteRetrospective({ description }: { description?: stri
             백엔드 서비스는 토큰 검증 코드 없이 헤더의 사용자 정보만 사용합니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["구분", "이전 (서비스 내 JWT)", "이후 (게이트웨이 OIDC)"]}
             rows={[
               { cells: ["인증 위치", "각 FastAPI 서비스", "Envoy Gateway SecurityPolicy"], highlight: true },
@@ -520,6 +480,7 @@ def callback(ch, method, properties, body):
             없어 대량 결과를 한 번에 반환했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["항목", "이전", "이후"]}
             rows={[
               { cells: ["조회 방식", "ORM 풀 엔티티 하이드레이션·재직렬화", "필요한 컬럼만 select하는 컬럼 프로젝션"], highlight: true },

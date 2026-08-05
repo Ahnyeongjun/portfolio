@@ -1,54 +1,11 @@
 import React from 'react';
+import { CompareTable } from './CompareTable';
 
 function Highlight({ children }: { children: React.ReactNode }) {
   return (
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
       {children}
     </span>
-  );
-}
-
-function CompareTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: { cells: (string | React.ReactNode)[]; highlight?: boolean; muted?: boolean }[];
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-muted/40 border-b border-border">
-            {headers.map((h, i) => (
-              <th key={i} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground/70 tracking-wide whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={
-                row.highlight
-                  ? "bg-primary/5"
-                  : row.muted
-                    ? "opacity-50"
-                    : "hover:bg-muted/20 transition-colors"
-              }
-            >
-              {row.cells.map((cell, j) => (
-                <td key={j} className={`px-3 py-2 ${row.highlight ? "text-foreground" : "text-muted-foreground"}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -142,7 +99,7 @@ export function InsopsRetrospective() {
         초기 2년(2022.05~2024.05)은 콘텐츠 관리·판독 분석 웹 프론트엔드부터 REST API·인증
         서버·대용량 다운로드 서버까지 <Highlight>처음부터 끝까지</Highlight>{" "}
         개발하며 레거시 모듈을 점진적으로 전환했고, 이후 위성영상 AI 처리 플랫폼을 인터넷이
-        완전히 차단된 에어갭 환경에서 수십 대 서버 규모로 롤링 방식 서비스 중단 없이 <Highlight>운영</Highlight>(2024.07~),
+        완전히 차단된 에어갭 환경에서 5대 서버 규모로 롤링 방식 서비스 중단 없이 <Highlight>운영</Highlight>(2024.07~),
         별도의 다종위성 수집·처리 플랫폼을 베어메탈부터 전 과정 <Highlight>신규 구축</Highlight>했습니다
         (2025.06~2025.12).
       </p>
@@ -369,6 +326,7 @@ export function InsopsRetrospective() {
             쓰이는 나머지 34개는 컬럼명을 허용된 목록과 대조하는 화이트리스트 검증으로 각각 전환했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["항목", "이전", "이후"]}
             rows={[
               { cells: ["CSP", "인라인/eval 허용 - 사실상 무방비", "API origin 기반 런타임 동적 생성"], highlight: true },
@@ -459,6 +417,7 @@ export function InsopsRetrospective() {
             <Highlight>5회에서 1회로</Highlight> 줄였습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["항목", "이전", "이후"]}
             rows={[
               { cells: ["집계 방식", "5개 기준마다 동일 조인·필터 반복 (UNION ALL)", "공통 결과를 CTE로 1회 계산 후 참조"], highlight: true },
@@ -603,6 +562,7 @@ export function InsopsRetrospective() {
             실행시킵니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["대상", "매니저 없이", "execute(compId, fnName, args)로"]}
             rows={[
               { cells: ["같은 페이지 객체", "직접 호출", "동일하게 직접 호출"] },

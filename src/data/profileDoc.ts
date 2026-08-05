@@ -11,6 +11,8 @@ export interface DocBlock {
   oneliner?: string; // 이력서용 한 줄 요약 (단순한 항목)
   lines?: string[];  // 이력서용 다중 줄: [문제, 해결·선택근거, 결과]
   brief?: [string, string]; // 이력서용 2줄: [현상·원인, 해결·결과]
+  /** 포폴(/portfolio-pdf) 전용 - 이 블록이 다루는 처리를 요청 흐름 등 번호 시퀀스로 보여줄 때. */
+  flow?: { step: string; desc: string }[];
 }
 /** 포트폴리오(/portfolio-pdf)는 경력 칸을 따로 두지 않고 이 키로 항목을 프로젝트별로 나눠 싣는다.
  *  이력서(/resume)는 기존처럼 경력 섹션에 그룹별로 렌더한다. 키가 없으면 프로젝트 무관(사내 공통). */
@@ -19,6 +21,8 @@ export interface CareerItem {
   text: string;
   sub?: string[];
   proj?: ProjKey;
+  /** 포폴(/portfolio-pdf)의 해당 프로젝트 blocks[]에서 이미 다루는 내용이라 담당 업무 목록에서 뺀다. 이력서(/resume)는 영향 없음. */
+  coveredByBlock?: boolean;
 }
 export interface CareerGroup {
   title: string;
@@ -545,7 +549,7 @@ export const PROFILE_PLATFORM = {
       {
         title: "클러스터 구축·운영",
         items: [
-          { text: "클러스터 프로비저닝 쉘 스크립트화(수동 구축 1~2일 → 2~3시간) 후 Ansible 플레이북으로 전환 - 신규 노드 추가 시 pod·서비스 세팅 자동화, 수동 설정 편차 제거", proj: "insops" },
+          { text: "클러스터 프로비저닝 쉘 스크립트화(수동 구축 1~2일 → 2~3시간) 후 Ansible 플레이북으로 전환 - 신규 노드 추가 시 pod·서비스 세팅 자동화, 수동 설정 편차 제거", proj: "insops", coveredByBlock: true },
           { text: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영", proj: "insops" },
           { text: "K8s 인증서 만료 대응 자동화 - 연 1회 현장 방문 작업 제거", proj: "insops" },
         ],
@@ -553,33 +557,33 @@ export const PROFILE_PLATFORM = {
       {
         title: "CI/CD·배포",
         items: [
-          { text: "실제 상태와 스크립트가 갈려 추적이 안 되던 Jenkins 명령형 배포를 Argo Workflows/Events CI + ArgoCD GitOps로 분리 - 배포 드리프트 추적성 확보", proj: "nipa" },
-          { text: "배포 후에만 드러나던 부하·트랜잭션 결함을 k6 부하테스트·유닛테스트의 CI 편입으로 배포 전 검출 - 에러율 11.22% → 0%", proj: "kari" },
+          { text: "실제 상태와 스크립트가 갈려 추적이 안 되던 Jenkins 명령형 배포를 Argo Workflows/Events CI + ArgoCD GitOps로 분리 - 배포 드리프트 추적성 확보", proj: "nipa", coveredByBlock: true },
+          { text: "배포 후에만 드러나던 부하·트랜잭션 결함을 k6 부하테스트·유닛테스트의 CI 편입으로 배포 전 검출 - 에러율 11.22% → 0%", proj: "kari", coveredByBlock: true },
         ],
       },
       {
         title: "관측성·장애 대응",
         items: [
-          { text: "MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합 - 장애 원인분석 1~2시간 → 30분 이내", proj: "nipa" },
+          { text: "MSA 전환으로 서비스별로 흩어진 로그·트레이스를 OTel 기반 관측 스택(Prometheus·Tempo·Grafana) 신규 구축으로 통합 - 장애 원인분석 1~2시간 → 30분 이내", proj: "nipa", coveredByBlock: true },
           { text: "에어갭이라 장애를 사용자 신고 후에야 인지하던 구조에 Zabbix 하드웨어·서비스 관측 도입 - 장애 사전 감지 체계 확보", proj: "insops" },
-          { text: "표면 에러(디스크 부족)를 컨테이너→마운트→디바이스→펌웨어로 추적해 NVMe 펌웨어 이관 로직 누락을 발견·복구 - 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축", proj: "insops" },
+          { text: "표면 에러(디스크 부족)를 컨테이너→마운트→디바이스→펌웨어로 추적해 NVMe 펌웨어 이관 로직 누락을 발견·복구 - 하루 이상 걸리던 원인 파악·수정을 수 시간 이내로 단축", proj: "insops", coveredByBlock: true },
         ],
       },
       {
         title: "네트워킹·보안",
         items: [
-          { text: "서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여", proj: "nipa" },
-          { text: "서비스마다 개별 관리돼 로테이션 부담이 늘던 시크릿을 OpenBao+ESO 중앙 저장·자동 주입으로 일원화 - 로테이션이 배포 재시작만으로 반영", proj: "nipa" },
-          { text: "서비스가 각자 노출돼 보안 정책이 분산되던 구조를 Nginx 게이트웨이로 통합 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더 1곳 관리, Wireshark 정보 노출 점검", proj: "kari" },
-          { text: "잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축", proj: "kari" },
+          { text: "서비스 증가로 드러난 처리 오버헤드·단일 장애점(SPOF)을 Cilium(eBPF)·kube-vip 전환으로 해결 - 팀원과 설계 방향 협의하며 참여", proj: "nipa", coveredByBlock: true },
+          { text: "서비스마다 개별 관리돼 로테이션 부담이 늘던 시크릿을 OpenBao+ESO 중앙 저장·자동 주입으로 일원화 - 로테이션이 배포 재시작만으로 반영", proj: "nipa", coveredByBlock: true },
+          { text: "서비스가 각자 노출돼 보안 정책이 분산되던 구조를 Nginx 게이트웨이로 통합 - 서비스 7개의 HTTPS 종단·인증서·보안 헤더 1곳 관리, Wireshark 정보 노출 점검", proj: "kari", coveredByBlock: true },
+          { text: "잘고 빈번한 타일 요청마다 반복되던 TCP 핸드셰이크 지연을 Nginx Ingress keepalive 튜닝으로 제거 - 커넥션 재사용으로 응답 지연 단축", proj: "kari", coveredByBlock: true },
           { text: "사내 서버 간 통신을 OpenVPN으로 구성 - 물리적으로 분리된 서버를 안전한 터널로 연결" },
         ],
       },
       {
         title: "메시징·데이터 파이프라인",
         items: [
-          { text: "DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개 → 15개, 작업 유실 0건", proj: "nipa" },
-          { text: "에어갭 망연계에서 Debezium replication slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 인프라 의존 제거, 이벤트 유실 0건", proj: "kari" },
+          { text: "DB 폴링 락 경합으로 워커를 늘려도 확장되지 않던 처리 구조를 RabbitMQ 단계별 큐(ack/nack+DLQ)로 전환 - 처리 워커 1개 → 15개, 작업 유실 0건", proj: "nipa", coveredByBlock: true },
+          { text: "에어갭 망연계에서 Debezium replication slot이 반복 파손되던 문제를 AOP+MyBatis Outbox 라이브러리 직접 개발로 해결 - CDC 인프라 의존 제거, 이벤트 유실 0건", proj: "kari", coveredByBlock: true },
           { text: "TTL이 필요한 휘발성 데이터·API/쿼리 응답 캐싱을 위해 Redis를 Helm으로 K8s에 배포·운영 - RDB 스냅샷으로 재시작 시에도 데이터 유지", proj: "kari" },
         ],
       },
@@ -616,6 +620,14 @@ export const PROFILE_PLATFORM = {
             "단일 큐가 아니라 수집→전처리→추론→후처리 단계별로 큐를 분리",
           ],
           result: "단계별 독립 확장 가능한 구조 확보, 처리 워커 컨테이너 1개→15개 수평 확장, 작업 유실 0건",
+          flow: [
+            { step: "웹 뷰어", desc: "전·후 영상 선택 · 신청" },
+            { step: "API 서버", desc: "작업 생성 · 큐 발행" },
+            { step: "RabbitMQ", desc: "ack/nack · DLQ" },
+            { step: "변화탐지 AI", desc: "ONNX 추론 (consumer)" },
+            { step: "후처리", desc: "결과 저장 · 타일화" },
+            { step: "웹 뷰어", desc: "지도 위 변화 가시화" },
+          ],
           brief: [
             "DB 폴링 방식은 워커를 늘려도 같은 DB에 폴링 쿼리가 몰려 락 경합으로 수평 확장 효과가 거의 없었고, 완료 콜백 유실 시 작업이 고착되는 문제도 있었습니다.",
             "RabbitMQ ack/nack+DLQ 기반으로 전환하고 파이프라인 단계별로 큐를 분리해, 처리 워커를 1개에서 15개로 수평 확장했습니다.",
@@ -725,12 +737,12 @@ export const PROFILE_PLATFORM = {
     },
     {
       pkey: "insops",
-      title: "국가보안기관 위성영상 AI 처리 플랫폼 운영·신규 구축",
+      title: "국가보안기관 위성영상 시스템 — 개발·에어갭 운영·신규 구축",
       company: "한컴인스페이스",
-      period: "2024.07. ~ 진행 중",
-      badge: "핵심 참여(팀 6명)",
+      period: "2022.05. ~ 진행 중",
+      badge: "핵심 참여(인프라 1·풀스택 4·DB 1)",
       stack: ["Kubernetes", "Docker", "Rocky Linux", "Go", "PostgreSQL", "Redis", "GDAL", "Zabbix", "Shell", "Jenkins", "Nexus"],
-      desc: "인터넷이 완전히 차단된 에어갭 환경에서 수십 대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영하는 위성영상 AI 처리 플랫폼 운영을 맡았고(2024.07~), 이어서 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다(2025.06~2025.12).",
+      desc: "위성영상을 수집·판독해 정부 표준 문서로 산출하는 시스템입니다. API·프론트 개발로 시작해 2024.07부터 에어갭 환경에서 5대 서버 규모 클러스터를 롤링 방식으로 서비스 중단 없이 운영했고, 2025.06~2025.12에는 다종위성 수집·처리 플랫폼을 물리 베어메탈 서버 설치부터 K8s 클러스터 구성, DB 설계, 파이프라인 구현까지 전 과정 신규 구축했습니다.",
       logo: "/hancominpsace_logo.png",
       archImage: "/insops-satellite_arch.svg",
       blocks: [
@@ -819,20 +831,18 @@ export const PROFILE_PLATFORM = {
   education: PROFILE.education,
   certs: PROFILE.certs,
 
-  /* 이력서가 아니라 포트폴리오이므로, 인프라 판단의 근거가 된 애플리케이션 레벨 경험도
-     한 섹션으로 압축해 싣는다. 수치는 모두 PROFILE(풀스택 문서)에서 그대로 가져온 것. */
-  backend: {
-    title: "백엔드 개발 경험",
-    desc: "인프라를 전담하기 전·후로 국가기관 납품 플랫폼의 백엔드를 직접 개발했습니다. 어디가 병목이고 무엇을 인프라로 풀어야 하는지 판단하는 근거가 된 경험입니다.",
-    items: [
-      "성능 - k6 부하테스트로 50VU 동시 요청 에러율 11.22%→0%, 처리량 392→1,177 req/s",
-      "쿼리 - 조건부 PostGIS 실행·페이지네이션·BLOB 분리·Redis 캐싱으로 위성 메타 목록 조회 38초→159ms",
-      "이벤트 - 물리 망분리 환경에서 Debezium CDC replication slot이 반복 파손, Spring AOP + MyBatis 인터셉터로 Outbox 직접 구현 - 이벤트 유실 0건",
-      "인증·보안 - 인증은 Spring Security 필터, 인가는 어노테이션+AOP로 분리, 47개 매퍼 SQL Injection 전량 해소",
-      "동시성 - Go 타일 서버 GDAL 워핑에 CPU 코어 기반 세마포어·TTL 캐시 적용, DRM 파일 동시 다운로드 깨짐은 요청 직렬화로 해결",
-      "생산성 - 제네릭 base 모듈 + information_schema 기반 CRUD·mapper 자동 생성 도구로 신규 테이블 보일러플레이트 제거",
-    ],
-  },
+  /* 이력서가 아니라 포트폴리오이므로, 인프라 판단의 근거가 된 애플리케이션 레벨(백엔드·
+     프론트엔드) 경험도 함께 싣는다. 단, 별도 섹션이 아니라 각 프로젝트 blocks[] 밑에 붙는
+     간단한 한 줄로 - 그래서 proj로 태그해 프로젝트별로 나눠 싣는다. blocks[]와 겹치는 항목
+     (KARI 에러율 11.22%→0%·Outbox)은 이미 다뤄서 뺐다. 수치는 PROFILE(풀스택 문서)에서 그대로.*/
+  devNotes: [
+    { text: "백엔드 - 위성 메타 목록 조회 38초→159ms", proj: "kari" },
+    { text: "백엔드 - Go 타일 서버 GDAL 워핑에 세마포어 제어로 동시성 확보", proj: "kari" },
+    { text: "백엔드 - 47개 매퍼 SQL Injection 전량 해소", proj: "insops" },
+    { text: "백엔드 - CRUD·mapper 자동 생성 도구 개발로 보일러플레이트 제거", proj: "insops" },
+    { text: "프론트엔드 - CesiumJS 3D globe 기반 판독·가시화 화면 개발", proj: "insops" },
+    { text: "프론트엔드 - jQuery·Thymeleaf 레거시를 Next.js 15 FSD로 전환, 웹 뷰어 신규 개발", proj: "nipa" },
+  ] as CareerItem[],
 
   skills: [
     { category: "언어·프레임워크", items: ["Go", "Python", "FastAPI", "Java", "Spring Boot"] },

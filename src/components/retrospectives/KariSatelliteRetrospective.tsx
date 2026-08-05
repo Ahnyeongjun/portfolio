@@ -1,4 +1,5 @@
 import React from 'react';
+import { CompareTable } from './CompareTable';
 
 function CodeBlock({ children }: { children: string }) {
   return (
@@ -13,50 +14,6 @@ function Highlight({ children }: { children: React.ReactNode }) {
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
       {children}
     </span>
-  );
-}
-
-function CompareTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: { cells: (string | React.ReactNode)[]; highlight?: boolean; muted?: boolean }[];
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-muted/40 border-b border-border">
-            {headers.map((h, i) => (
-              <th key={i} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground/70 tracking-wide whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={
-                row.highlight
-                  ? "bg-primary/5"
-                  : row.muted
-                  ? "opacity-50"
-                  : "hover:bg-muted/20 transition-colors"
-              }
-            >
-              {row.cells.map((cell, j) => (
-                <td key={j} className={`px-3 py-2 ${row.highlight ? "text-foreground" : "text-muted-foreground"}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -271,6 +228,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
             노드 상태 점검·배치 판단을 직접 구현해야 했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["", "K8s 기본 스케줄러", "SaltStack 자원 인지형 배치"]}
             rows={[
               { cells: ["배치 기준", "리소스 요청·한도 값", "노드별 실시간 메모리 사용률"], highlight: true },
@@ -341,6 +299,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
             Referrer-Policy</Highlight> 등을 Nginx 한 곳에서 통합 관리했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["항목", "Tomcat 단독", "Nginx 리버스 프록시"]}
             rows={[
               { cells: ["TLS 인증서 관리", "서비스마다 개별 적용", "Nginx 한 곳에서 와일드카드 인증서 통합 관리"], highlight: true },
@@ -398,6 +357,7 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
             요청 시 생성 없이 미리 만들어진 타일을 바로 서빙하므로 체감 속도가 완전히 달라졌습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["구분", "GeoJSON 동적 생성", "MVT 사전 생성"]}
             rows={[
               { cells: ["응답 시간", "~5분 (탐지 결과 규모에 따라)", "1초 이내"], highlight: true },
@@ -720,6 +680,7 @@ public void beforeCommit(boolean readOnly) {
             검증으로 교체했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["", "전", "후"]}
             rows={[
               { cells: ["위성 메타 목록", "38초", "159ms (239배)"], highlight: true },

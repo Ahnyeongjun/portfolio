@@ -1,4 +1,5 @@
 import React from 'react';
+import { CompareTable } from './CompareTable';
 
 function CodeBlock({ children }: { children: string }) {
   return (
@@ -13,50 +14,6 @@ function Highlight({ children }: { children: React.ReactNode }) {
     <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded text-sm font-medium">
       {children}
     </span>
-  );
-}
-
-function CompareTable({
-  headers,
-  rows,
-}: {
-  headers: string[];
-  rows: { cells: (string | React.ReactNode)[]; highlight?: boolean; muted?: boolean }[];
-}) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-muted/40 border-b border-border">
-            {headers.map((h, i) => (
-              <th key={i} className="px-3 py-2 text-left text-xs font-medium text-muted-foreground/70 tracking-wide whitespace-nowrap">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((row, i) => (
-            <tr
-              key={i}
-              className={
-                row.highlight
-                  ? "bg-primary/5"
-                  : row.muted
-                    ? "opacity-50"
-                    : "hover:bg-muted/20 transition-colors"
-              }
-            >
-              {row.cells.map((cell, j) => (
-                <td key={j} className={`px-3 py-2 ${row.highlight ? "text-foreground" : "text-muted-foreground"}`}>
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -192,6 +149,7 @@ export function RosDetectionRetrospective() {
     span = DOMAIN_ID_MAX - DOMAIN_ID_MIN + 1
     return DOMAIN_ID_MIN + (last % span)  # 1~101 범위로 결정론적 파생`}</CodeBlock>
           <CompareTable
+            variant="beforeAfter"
             headers={["", "ROS1", "ROS2"]}
             rows={[
               { cells: ["격리 단위", "프로세스당 ROS_MASTER_URI", "프로세스당 ROS_DOMAIN_ID"], highlight: true },
@@ -216,6 +174,7 @@ export function RosDetectionRetrospective() {
             재작성했습니다.
           </p>
           <CompareTable
+            variant="beforeAfter"
             headers={["항목", "ROS1", "ROS2"]}
             rows={[
               { cells: ["초기화", "rospy.init_node()", "rclpy.init() + Node(name)"], highlight: true },
