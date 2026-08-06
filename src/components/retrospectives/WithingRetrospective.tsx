@@ -1,4 +1,5 @@
 import { Layers, Server, Database, BookOpen } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -117,6 +118,14 @@ db.execute("INSERT INTO dress_cache (cache_key, result) VALUES (%s, %s)",
             서비스 초기에 미리 540가지 조합을 모두 채워두면 이후 요청은 전부 캐시 히트됩니다.
             GPT-4 반복 호출 비용을 줄이면서도 응답 속도를 개선할 수 있었습니다.
           </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["항목", "캐시 없음", "SHA256 해시 캐싱"]}
+            rows={[
+              { cells: ["동일 조합 재요청", "매번 GPT-4 호출 - 비용·응답 지연 발생", "DB에서 즉시 반환 (캐시 히트)"], highlight: true },
+              { cells: ["신규 조합", "GPT-4 호출", "GPT-4 호출 후 결과 저장 - 다음부터 캐시 히트"] },
+            ]}
+          />
         </Section>
 
         <Section icon={Layers} title="웨딩홀 추천 - SQL 동적 쿼리와 조건 완화 폴백">

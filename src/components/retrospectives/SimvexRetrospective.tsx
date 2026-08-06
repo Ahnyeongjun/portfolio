@@ -1,4 +1,5 @@
 import { GitBranch, Server, BookOpen } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -76,6 +77,14 @@ outerGroupRef.current.position.lerp(explodeTarget, 0.1);
             <code>useEditStore.subscribe</code>로 히스토리 변화를 감지해
             innerGroup을 직접 복원합니다.
           </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["항목", "단일 그룹", "이중 그룹(Outer/Inner)"]}
+            rows={[
+              { cells: ["변환 적용", "분해 애니메이션·Transform 편집이 같은 오브젝트에 적용 - 서로 덮어씀", "Outer(분해)·Inner(Transform) 분리 - 독립 적용, 충돌 없음"], highlight: true },
+              { cells: ["Undo/Redo", "-", "innerGroup의 position/rotation만 히스토리에 저장·복원"] },
+            ]}
+          />
         </Section>
 
         <Section icon={Server} title="SSE 스트리밍 AI 응답 - 타이핑 애니메이션">

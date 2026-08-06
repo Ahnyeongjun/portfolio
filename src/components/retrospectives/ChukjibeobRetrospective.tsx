@@ -1,4 +1,5 @@
 import { GitBranch, Layers, Server, BookOpen } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -136,6 +137,14 @@ StepBuilder.chunk(10, transactionManager)
             Tasklet은 파일 삭제, 플래그 업데이트처럼 단순하고 작은 작업에 적합하며,
             Spring Batch 자체가 Chunk 모델을 위해 설계된 프레임워크입니다.
           </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["항목", "Tasklet", "Chunk"]}
+            rows={[
+              { cells: ["중간 실패 시", "전체 트랜잭션 롤백 - 처음부터 재처리", "실패한 청크(10건)만 롤백, 완료된 청크는 보존"], highlight: true },
+              { cells: ["적합한 작업", "파일 삭제·플래그 업데이트 등 단순 작업", "축제 데이터 수집 같은 대량 데이터 배치"] },
+            ]}
+          />
         </Section>
 
         <Section icon={BookOpen} title="성장과 배움">

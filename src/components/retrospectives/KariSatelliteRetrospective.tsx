@@ -252,6 +252,52 @@ export function KariSatelliteRetrospective({ description }: { description?: stri
           </p>
         </AccordionSection>
 
+        {/* SaltStack job 폴링 → RabbitMQ ack/nack·DLQ */}
+        <AccordionSection
+          title="SaltStack job 폴링 → RabbitMQ ack/nack·DLQ 이벤트 전환"
+          hint="완료 콜백 유실 시 작업 RUNNING 고착 → 워커 1개→15개 수평 확장(영상 300장 처리 30분→3분)"
+          module="처리 파이프라인"
+        >
+          <p>
+            영상 ETL 작업은 일 5,000건 이상(파생 작업 포함 약 6배) 규모라, 부하의 대부분은
+            사용자 트래픽이 아니라 파이프라인 처리량에서 발생했습니다. 초기에는{" "}
+            <Highlight>SaltStack job 폴링</Highlight>(00 대기·01 진행·02 완료·03 실패)
+            구조로 작업 상태를 관리했는데, 처리 프로세스가 죽으면 완료 콜백이 호출되지
+            않아 job이 01(진행) 상태에 무한히 머물렀고, 고정 주기(1분) 폴링으로 대기
+            낭비도 있었습니다.
+          </p>
+          <p>
+            job 상태 전이를 처리 프로세스 본인이 책임지는 구조라 죽으면 복구가 불가능했습니다.
+            타임아웃으로 땜질하기보다 폴링 구조 자체를 바꾸기로 판단했고, 병렬 처리도 job을
+            다건 등록하는 방식보다 <Highlight>이벤트 발행-구독</Highlight> 방식이 구조적으로
+            더 효율적이라고 봤습니다. 메시지 큐 후보로는 <Highlight>Kafka</Highlight>와{" "}
+            <Highlight>RabbitMQ</Highlight>를 검토했는데, 이 파이프라인 규모엔 Kafka의
+            파티션 기반 고처리량 설계가 과했고, ack/nack·DLQ 기반의 정교한 전달 보장이
+            위성 영상 처리 특성에 더 맞아 RabbitMQ를 선택했습니다.
+          </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["", "SaltStack job 폴링", "RabbitMQ 이벤트"]}
+            rows={[
+              { cells: ["장애 복구", "완료 콜백 유실 시 RUNNING 고착", "ack/nack - 컨슈머 장애 시 자동 재투입"], highlight: true },
+              { cells: ["대기 방식", "고정 주기(1분) 폴링 - 대기 낭비", "이벤트 발행 즉시 소비"], highlight: true },
+              { cells: ["확장 단위", "job 다건 등록 (워커 일괄)", "수집·전처리·추론·후처리 단계별 큐 분리"], highlight: true },
+            ]}
+          />
+          <p>
+            RabbitMQ 기반 이벤트 발행-구독으로 전환하면서 수집 → 전처리 → 추론 → 후처리
+            단계별로 큐를 분리해, 병목 단계만 골라 워커를 늘릴 수 있게 됐습니다. ack/nack와{" "}
+            <Highlight>DLQ</Highlight>를 함께 구성해 컨슈머가 죽으면 메시지가 큐로 돌아오고,
+            반복 실패한 메시지는 DLQ로 격리해 나머지 파이프라인이 멈추지 않게 했습니다.
+          </p>
+          <p>
+            job 무한 진행 문제를 근본적으로 해결하고 폴링 대기 낭비를 제거했습니다. 처리
+            워커를 <Highlight>1개에서 15개까지 수평 확장</Highlight>해 영상 300장 처리
+            시간을 30분에서 3분으로 줄였고, Aliyun GPUShare로 GPU 4장을 활용해 최대
+            70개 파드에서 병렬 추론을 처리했습니다.
+          </p>
+        </AccordionSection>
+
         {/* GPU 자원 공유 */}
         <AccordionSection
           title="GPU 자원 공유 - Aliyun GPUShare (Fractional GPU)"

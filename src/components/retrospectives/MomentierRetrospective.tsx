@@ -1,4 +1,5 @@
 import { Lightbulb, Server, Layout, Shield, Bot, BookOpen } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -57,6 +58,14 @@ export function MomentierRetrospective() {
             점차 <Highlight>Store에서 데이터를 가공</Highlight>하도록 리팩토링하여 책임 분리를 명확히 했습니다.
             API 호출 역시 별도 lib으로 분리하면서 응집도 있는 구조로 개선할 수 있었습니다.
           </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["항목", "초기", "리팩토링 후"]}
+            rows={[
+              { cells: ["데이터 가공", "페이지·컴포넌트 내부에서 직접 가공", "Store에서 가공 - 책임 분리"], highlight: true },
+              { cells: ["API 호출", "컴포넌트 곳곳에 흩어짐", "별도 lib으로 분리 - 응집도 있는 구조"] },
+            ]}
+          />
           <p>
             외부 이미지 연동에서는 Next.js의 Route Handler를 활용한 프록시 방식을 적용했습니다.
             보안과 이미지 최적화, 접근 제어 측면에서 유의미한 선택이었습니다.

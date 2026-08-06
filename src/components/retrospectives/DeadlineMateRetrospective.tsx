@@ -1,4 +1,5 @@
 import { Search, Bell, Lock, Layers, GitBranch, KeyRound, BookOpen } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -75,6 +76,15 @@ BooleanExpression categoryFilter = JPAExpressions
             카테고리·태그·모임 상태 조건을 <Highlight>BooleanBuilder</Highlight>로 조합해도
             쿼리가 단순하게 유지됐습니다.
           </p>
+          <CompareTable
+            variant="beforeAfter"
+            headers={["항목", "IN", "EXISTS"]}
+            rows={[
+              { cells: ["다대다 조인", "카테고리·태그 조인 필요 - 중복 행 발생", "조인 없이 존재 여부만 확인"], highlight: true },
+              { cells: ["중복 처리", "DISTINCT 필요", "중복 행 자체가 발생하지 않음"] },
+              { cells: ["조건 조합", "조건 늘수록 조인·중복 제거 로직 복잡", "BooleanBuilder로 조합해도 쿼리 단순 유지"] },
+            ]}
+          />
         </Section>
 
         <Section icon={Bell} title="@TransactionalEventListener(AFTER_COMMIT) - 커밋 후에만 알림을">

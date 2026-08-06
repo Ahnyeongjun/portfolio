@@ -1,4 +1,5 @@
 import { Database, Layers, GitBranch, BookOpen, Package } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -67,6 +68,14 @@ export function BooksightRetrospective() {
             안정적이고 예측 가능한 성능을 얻을 수 있었습니다.
             "편한 것"보다 "제어 가능한 것"이 더 나은 선택일 때가 있다는 것을 배웠습니다.
           </p>
+          <CompareTable
+            headers={["시도", "결과"]}
+            rows={[
+              { cells: ["코루틴", "Spring 트랜잭션 컨텍스트가 전파되지 않아 원자성 보장 불가 - 포기"], muted: true },
+              { cells: ["JPA saveAll", "멀티 프로세스 엔티티 충돌 + 대량 INSERT 성능 기대 이하"], muted: true },
+              { cells: ["JdbcTemplate.batchUpdate()", "PreparedStatement 직접 제어, 100건 배치 INSERT - 안정적·예측 가능한 성능"], highlight: true },
+            ]}
+          />
           <CodeBlock>{`// 코루틴 (실패) → JPA saveAll (실패) → JdbcTemplate 채택
 jdbcTemplate.batchUpdate(sql, object : BatchPreparedStatementSetter {
     override fun setValues(ps: PreparedStatement, i: Int) {

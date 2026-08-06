@@ -1,4 +1,5 @@
 import { Zap, Layers, Brain, Database, BookOpen, Search, Bell } from "lucide-react";
+import { CompareTable } from "./CompareTable";
 
 function Section({
   icon: Icon,
@@ -65,6 +66,16 @@ health_index = (
             전체 사용자의 지수를 재계산합니다. 가중치는 만성질환 예방 관리
             지침의 복약 순응도 중요도를 참고해 설정했습니다.
           </p>
+          <CompareTable
+            headers={["도메인", "가중치", "산출 근거"]}
+            rows={[
+              { cells: ["복약 순응도", "25%", "medication_adherence_score"], highlight: true },
+              { cells: ["질환 추이", "25%", "disease_trend_score"], highlight: true },
+              { cells: ["식약처 DUR 안전성", "20%", "dur_safety_score"] },
+              { cells: ["증상 추이", "15%", "symptom_trend_score"] },
+              { cells: ["환경지수 (날씨·미세먼지)", "15%", "environment_index"] },
+            ]}
+          />
           <p>
             단일 점수로 내리는 것에 대한 고민이 있었는데, 점수를 내릴 때
             <Highlight>어떤 도메인이 낮은지</Highlight>를 함께 표시하는 방식으로
