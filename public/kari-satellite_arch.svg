@@ -55,9 +55,10 @@
   <text x="20" y="292" font-size="10.5" font-weight="700" fill="#8b9099" letter-spacing="0.05em">ETL · AI 추론</text>
   <g fill="#1a1a1e">
     <rect x="20" y="300" width="290" height="88" rx="10" fill="#f6f7f9" stroke="#c7cbd1"/>
-    <text x="165" y="332" text-anchor="middle" font-size="13" font-weight="700">수집 · ETL</text>
-    <text x="165" y="352" text-anchor="middle" font-size="10.5" fill="#4a4f57">SaltStack·Python · 10+ 소스</text>
-    <text x="165" y="370" text-anchor="middle" font-size="10" fill="#8b9099">GDAL COG</text>
+    <text x="165" y="325" text-anchor="middle" font-size="13" font-weight="700">수집 · ETL</text>
+    <text x="165" y="343" text-anchor="middle" font-size="9.5" fill="#8b9099">SaltStack 폴링 → RabbitMQ 이벤트</text>
+    <text x="165" y="359" text-anchor="middle" font-size="10.5" fill="#4a4f57">단계별 큐(ack/nack+DLQ) · 10+ 소스</text>
+    <text x="165" y="375" text-anchor="middle" font-size="10" fill="#8b9099">Python · GDAL COG</text>
 
     <rect x="330" y="300" width="290" height="88" rx="10" fill="#eaf0ff" stroke="#3366ff"/>
     <text x="475" y="332" text-anchor="middle" font-size="13" font-weight="700" fill="#3366ff">AI 추론</text>
