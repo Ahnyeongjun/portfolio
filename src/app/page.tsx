@@ -32,8 +32,8 @@ const jsonLd = {
   "@type": "Person",
   name: "안영준",
   url: "https://www.ahnyoungjun.site",
-  jobTitle: "Infrastructure Engineer",
-  description: "관리형 서비스 없이 베어메탈 K8s 클러스터를 직접 구축·운영하며 수치로 증명해온 인프라 엔지니어",
+  jobTitle: "Software & Infrastructure Engineer",
+  description: "반복되는 문제를 찾아 시스템으로 바꾸고, 모든 변화를 수치로 증명해 온 엔지니어",
   sameAs: ["https://github.com/Ahnyeongjun"],
   knowsAbout: ["Kubernetes", "Docker", "Cilium", "ArgoCD", "Go", "Python", "Spring Boot"],
 };
