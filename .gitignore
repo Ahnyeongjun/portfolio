@@ -47,3 +47,8 @@ next-env.d.ts
 
 # temp (non-essential local files)
 /temp
+# 비공개 메모 (resume-local에서 관리)
+/이력서_*.txt
+/자기소개서_*.txt
+/WORK_LOG.md
+/portfolio_plan.md
