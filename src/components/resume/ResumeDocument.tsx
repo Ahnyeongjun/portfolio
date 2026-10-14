@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { SHOW_VARIANT_TABS } from "@/lib/docVariants";
 import { PROFILE, PROFILE_PLATFORM } from "@/data/profileDoc";
 import { ACTIVE_COMPANY, COMPANY_OVERRIDES } from "@/data/resumeOverrides";
 
@@ -154,6 +155,7 @@ function topInSheet(el: HTMLElement, sheet: HTMLElement): number {
 const TAB_PARAM: Record<Variant, string> = { backend: "fullstack", platform: "infra" };
 
 function variantFromTab(tab: string | null | undefined): Variant {
+  if (!SHOW_VARIANT_TABS) return "platform"; // 공개본은 인프라 한 가지
   if (tab === "fullstack") return "backend";
   if (tab === "infra") return "platform";
   return "platform"; // 파라미터 없음/미인식 값 - 기본 탭(인프라) 유지
@@ -337,17 +339,19 @@ export function ResumeDocument({ initialTab }: { initialTab?: string | null }) {
   return (
     <div className="rallit-root">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <div className="rallit-variant">
-        {(Object.keys(VARIANTS) as Variant[]).map((key) => (
-          <button
-            key={key}
-            className={`rallit-variant-btn${variant === key ? " active" : ""}`}
-            onClick={() => handleVariantChange(key)}
-          >
-            {VARIANTS[key].label}
-          </button>
-        ))}
-      </div>
+      {SHOW_VARIANT_TABS && (
+        <div className="rallit-variant">
+          {(Object.keys(VARIANTS) as Variant[]).map((key) => (
+            <button
+              key={key}
+              className={`rallit-variant-btn${variant === key ? " active" : ""}`}
+              onClick={() => handleVariantChange(key)}
+            >
+              {VARIANTS[key].label}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="rallit-toolbar">
         <Link href="/" className="rallit-iconbtn rallit-back" aria-label="포트폴리오로 돌아가기" title="포트폴리오로 돌아가기">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>

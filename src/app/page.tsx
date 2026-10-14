@@ -10,7 +10,7 @@ import { BackgroundSection } from "@/components/sections/BackgroundSection";
 import { ContactSection } from "@/components/sections/ContactSection";
 import { SectionNav } from "@/components/SectionNav";
 import { BlogPreviewSection } from "@/components/sections/BlogPreviewSection";
-import { projects } from "@/lib/projects";
+import { projects, type Project } from "@/lib/projects";
 import { profile } from "@/data/profile";
 import { getAllPosts } from "@/lib/blog";
 
@@ -19,13 +19,18 @@ function parsePeriodStart(period: string): number {
   return m ? parseInt(m[1]) * 100 + parseInt(m[2]) : 0;
 }
 
+// 인프라 프로젝트를 앞에, 그 안에서는 최신순
+const isInfra = (p: Project) => (p.category.includes("infra") ? 1 : 0);
+const byInfraThenRecent = (a: Project, b: Project) =>
+  isInfra(b) - isInfra(a) || parsePeriodStart(b.period) - parsePeriodStart(a.period);
+
 const companyProjects = projects
   .filter((p) => p.type === "company" && !p.hidden)
-  .sort((a, b) => parsePeriodStart(b.period) - parsePeriodStart(a.period));
+  .sort(byInfraThenRecent);
 
 const sideProjects = projects
   .filter((p) => (p.type === "team" || p.type === "personal") && !p.hidden)
-  .sort((a, b) => parsePeriodStart(b.period) - parsePeriodStart(a.period));
+  .sort(byInfraThenRecent);
 
 const jsonLd = {
   "@context": "https://schema.org",
@@ -39,9 +44,7 @@ const jsonLd = {
 };
 
 export default function Home() {
-  const recentPosts = getAllPosts()
-    .filter((p) => !p.slug.startsWith('interview-'))
-    .slice(0, 4);
+  const recentPosts = getAllPosts().slice(0, 4);
   return (
     <div id="portfolio-page">
       <script
