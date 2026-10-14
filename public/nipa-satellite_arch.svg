@@ -82,7 +82,7 @@
 
     <rect x="294" y="420" width="132" height="46" rx="23" fill="#eaf0ff" stroke="#3366ff"/>
     <text x="360" y="439" text-anchor="middle" font-size="10" font-weight="700" fill="#3366ff">③ Argo Workflows</text>
-    <text x="360" y="454" text-anchor="middle" font-size="8" fill="#4a4f57">빌드·테스트·OPA 게이트</text>
+    <text x="360" y="454" text-anchor="middle" font-size="8" fill="#4a4f57">빌드·테스트</text>
 
     <line x1="426" y1="443" x2="438" y2="443" stroke="#4a4f57" stroke-width="1.5" marker-end="url(#arrowc)"/>
 

@@ -67,7 +67,7 @@
   </g>
 
   <line x1="20" y1="404" x2="220" y2="404" stroke="#c7cbd1"/>
-  <text x="320" y="409" text-anchor="middle" font-size="10.5" fill="#8b9099">Nexus → Jenkins 파이프라인 - 빌드·k6 부하테스트·배포</text>
+  <text x="320" y="409" text-anchor="middle" font-size="10.5" fill="#8b9099">Jenkins → Nexus(패키지 캐시·아티팩트 저장소) 파이프라인 - 빌드·k6 부하테스트·배포</text>
   <line x1="420" y1="404" x2="620" y2="404" stroke="#c7cbd1"/>
 
   <text x="20" y="440" font-size="11.5" font-weight="700" fill="#8b9099" letter-spacing="0.04em">변화탐지 AI 호출 흐름</text>

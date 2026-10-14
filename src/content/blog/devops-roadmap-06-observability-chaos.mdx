@@ -1,16 +1,16 @@
 ---
-title: "Prometheus·Loki 관측 스택 구축과 장애 주입 실험 설계 절차"
-description: "관측성(메트릭/로그/트레이스) 개념부터 kube-prometheus-stack 설치, Discord 알림 라우팅, Loki 로그 보존 정책, 노드 다운·OOMKill·디스크풀 장애 주입 실험의 실제 결과, 선택 확장인 OpenTelemetry 분산 트레이싱까지 - ServiceMonitor 셀렉터 함정, null 리시버 사고, Grafana 크래시루프 등 실전에서 겪은 버그 포함."
+title: "Prometheus·Loki·OpenTelemetry로 세운 관측 스택 - 메트릭·로그·트레이스를 하나로"
+description: "관측성(메트릭/로그/트레이스) 개념부터 kube-prometheus-stack 설치, Discord 알림 라우팅, Loki 로그 보존 정책, OpenTelemetry 분산 트레이싱까지 - ServiceMonitor 셀렉터 함정, null 리시버 사고, Grafana 크래시루프 등 구축 과정에서 실전에서 겪은 버그 포함."
 date: "2026-07-18"
-category: "DevOps"
-tags: ["Prometheus", "Grafana", "Alertmanager", "Loki", "장애 주입", "OpenTelemetry"]
+category: "Observability"
+tags: ["Prometheus", "Grafana", "Alertmanager", "Loki", "OpenTelemetry", "관측성"]
 series: "DevOps 학습 로드맵"
 seriesOrder: 7
 ---
 
 ## 목표
 
-메트릭(Prometheus)·시각화(Grafana)·알림(Alertmanager)·로그(Loki)를 클러스터에 설치하고, 의도적으로 장애를 주입해 "알림이 실제로 오는지, 얼마나 걸리는지"를 검증한다. (선택 확장으로 분산 트레이싱까지 붙인다.)
+메트릭(Prometheus)·시각화(Grafana)·알림(Alertmanager)·로그(Loki)를 클러스터에 설치해서 "지금 시스템에 무슨 일이 있는지"를 신호 종류별로 외부에서 알 수 있게 만든다. (선택 확장으로 분산 트레이싱까지 붙인다.) 이렇게 세운 스택이 실제로 장애를 잡아내는지는 [별도 편](/blog/devops-roadmap-06b-chaos-engineering)에서 장애를 직접 주입해 검증한다.
 
 ## 개념: 관측성(Observability)이란 무엇인가
 
@@ -127,95 +127,6 @@ compactor:
 
 ![Grafana Explore의 Loki 쿼리 - jobs 네임스페이스 로그, RabbitMQ AMQP 연결·헬스체크 요청이 실시간으로 보인다](/grafana_dashboard_loki.png)
 
-### 4. 장애 주입 실험 설계 (3종 이상 택)
-
-**카오스 엔지니어링이란**: 장애가 언젠가 난다는 걸 전제로, 실제로 터지기 전에 통제된 환경에서 미리 장애를 일으켜보고 시스템과 사람(알림·대응 절차)이 제대로 반응하는지 검증하는 방법론이다. 목적은 "장애를 일으키는 것"이 아니라 **"장애가 났을 때 탐지까지 얼마나 걸리는지를 미리 재보는 것"**이다 - 이 시리즈의 모든 실험은 그 시간을 재는 게 진짜 목적이다.
-
-각 실험은 **주입 → 관측 → 기록**의 순서로 진행하고, 시작 시각을 먼저 기록해야 나중에 "알림까지 걸린 시간"을 정확히 잴 수 있다.
-
-**노드 다운**
-
-```bash
-# 실험 대상 워커 노드에서
-sudo systemctl stop kubelet
-# 또는 VM 자체를 강제 종료
-
-# 관측할 것
-# - kubectl get nodes 에서 NotReady로 바뀌는 시점
-# - 해당 노드의 파드가 다른 노드로 재스케줄되기까지 걸리는 시간 (기본 pod-eviction-timeout 5분)
-# - Alertmanager 알림이 Discord에 도착하는 시점
-```
-
-**OOMKill**
-
-리눅스 커널은 메모리가 부족해지면 임의로 프로세스를 골라 강제 종료해서 시스템 전체가 멎는 걸 막는다 - 이 메커니즘을 OOM(Out Of Memory) Killer라 부른다. 컨테이너에 메모리 `limits`를 걸어두면, 그 컨테이너가 한도를 넘었을 때 커널이 호스트 전체 대신 그 컨테이너만 골라 종료한다(OOMKilled).
-
-```yaml
-# 의도적으로 낮은 메모리 제한을 건 테스트 파드
-resources:
-  limits: {memory: "64Mi"}
-```
-```bash
-kubectl run oom-test --image=polinux/stress --limits=memory=64Mi -- \
-  stress --vm 1 --vm-bytes 256M
-# kubectl describe pod oom-test 에서 OOMKilled 상태 확인
-# Prometheus의 container_oom_events_total 메트릭에 반영되는 시점 확인
-```
-
-**디스크 풀**
-
-```bash
-# 워커 노드에서 디스크를 의도적으로 채움
-fallocate -l 10G /tmp/fillfile
-# kubelet의 disk pressure 감지 → 노드가 파드 축출(evict)을 시작하는지 확인
-# node-exporter의 node_filesystem_avail_bytes 알림이 임계치를 넘는 시점 확인
-```
-
-**RabbitMQ 장애**
-
-```bash
-kubectl delete pod rabbitmq-0 --grace-period=0 --force
-# 시리즈 2에서 만든 ack/nack 파이프라인이 이 상황에서 실제로 메시지를 보존하는지 재검증
-```
-
-### 실제로 실행한 결과
-
-| # | 실험 | 탐지 시간 | 비고 |
-|---|------|-----------|------|
-| 1 | RabbitMQ 파드 강제삭제 | 알림 없음 (46초 내 자기치유) | worker 재연결 로직이 임계치 도달 전에 정상 동작 - 이것도 유효한 결과다 |
-| 2 | OOMKill | kubectl 기준 9초, **메트릭 알림은 못 잡음** | `container_oom_events_total`이 재시작 없이 죽는 파드는 못 잡는다는 한계 발견 → `kube_pod_container_status_last_terminated_reason` 기반 규칙으로 교체 |
-| 3 | 노드 다운(kubelet 중지) | 약 2분(NotReady) | IP 착각으로 의도와 다른 노드에 주입했지만, 조기 발견 후 3분 만에 복구(축출 타임아웃 전이라 서비스 영향 없음) |
-| 4 | 디스크 풀 | 13초(DiskPressure) | kubelet의 자동 image GC가 축출 전에 스스로 ~5GB를 회수하는 것까지 실측 확인 |
-
-4개 전부 디스코드로 알림이 도착했다(1번은 애초에 임계치를 안 넘어서 알림이 없는 게 맞는 동작이다). 2번에서 **알림 규칙이 실제 장애 유형을 못 잡는 걸 발견하고 교체**한 게 이 실험의 핵심 소득이다 - "장애를 일으켜봤다"가 아니라 "탐지 공백을 찾아 메꿨다"가 진짜 목적이라는 걸 보여주는 사례다.
-
-### 5. 포스트모템 문서 템플릿
-
-실험마다 아래 형식으로 기록한다.
-
-```markdown
-# 포스트모템: <실험명> (YYYY-MM-DD)
-
-## 타임라인
-- 00:00 장애 주입 (구체적 명령/조작)
-- 00:XX 첫 이상 신호 감지 (메트릭/로그상 변화)
-- 00:XX 알림 도착 (Discord 등)
-- 00:XX 자동/수동 복구 완료
-
-## 원인
-(장애가 실제로 무엇 때문에 발생했는지)
-
-## 탐지 공백
-(장애 발생부터 알림 도착까지 얼마나 걸렸는지, 왜 그만큼 걸렸는지)
-
-## 재발 방지
-(알림 규칙 조정, 임계치 변경, 자동 복구 추가 등 - 실행한 조치)
-```
-
-## 검증 방법
-
-각 실험에서 반드시 남겨야 하는 숫자 3가지: **장애 발생 시각**, **첫 메트릭/로그 이상 시각**, **알림 도착 시각**. 이 세 시각의 차이가 곧 "탐지 공백"이고, 다음 단계(알림 규칙 튜닝)의 기준값이 된다.
-
 ## (선택 확장) OpenTelemetry로 분산 트레이싱 붙이기
 
 **분산 트레이싱이란**: 요청 하나가 `api-server → RabbitMQ → inference-worker → PostgreSQL`을 거치는 이 프로젝트에서, 메트릭과 로그만으로는 "이 요청이 정확히 어느 구간에서 느려졌는지"를 알기 어렵다 - 각 서비스의 로그를 시간으로 짐작해서 이어 붙여야 한다. **트레이스는 요청 하나에 고유 ID(trace ID)를 붙여서, 그 요청이 거친 모든 서비스의 처리 구간(span)을 하나로 이어 보여준다.**
@@ -312,6 +223,6 @@ kubeadm 기본 설정이 이 세 컴포넌트의 메트릭 엔드포인트를 `1
 - [ ] Alertmanager 알림 라우팅 (Discord/Slack 등), 기본 `"null"` 리시버 유지
 - [ ] kube-proxy를 안 쓰는 클러스터(Cilium 등)라면 관련 스크랩·알림 규칙 비활성화
 - [ ] Loki 로그 수집 + 보존 기간 정책 설정, Grafana 데이터소스 중복 생성(sidecar) 여부 확인
-- [ ] 장애 주입 실험 3종 이상 실행 (노드 다운/OOMKill/디스크풀/RabbitMQ 중 택3)
-- [ ] 실험마다 포스트모템 문서 작성, 알림 규칙이 실제로 그 장애 유형을 잡는지 검증
-- [ ] (선택 확장) OpenTelemetry + Tempo로 분산 트레이싱 연결, 장애 실험 때 활용도 비교
+- [ ] (선택 확장) OpenTelemetry + Tempo로 분산 트레이싱 연결
+
+이 스택이 실제로 장애를 잡아내는지는 여기서 끝나지 않는다 - 관측 체계를 세우는 것과 그게 실제로 작동하는지 검증하는 건 다른 문제라서, 노드 다운·OOMKill·디스크풀 같은 장애를 직접 주입해 탐지 시간을 재는 실험은 [별도 편](/blog/devops-roadmap-06b-chaos-engineering)에서 다룬다.

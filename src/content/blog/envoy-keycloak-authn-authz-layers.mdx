@@ -1,0 +1,171 @@
+---
+title: "인증/인가는 어디서 처리해야 하는가 - 인프라 레이어와 애플리케이션 레이어의 경계"
+description: "Envoy Gateway와 Keycloak을 붙이고 나서 다시 떠오른 질문 - '인증됐다'와 '권한이 있다'는 같은 말이 아니다. 이 둘이 왜 서로 다른 레이어에서 처리돼야 하는지, 그 경계가 실제로 어디서 흐려지는지를 정리한다."
+date: "2026-09-17"
+category: "SecOps"
+tags: ["Keycloak", "Envoy Gateway", "OIDC", "인증", "인가", "아키텍처"]
+series: "위성 변화탐지 플랫폼 회고"
+seriesOrder: 10
+---
+
+## 질문: "인증됐다"와 "권한이 있다"는 같은 말인가
+
+[게이트웨이 레벨 인증](/blog/keycloak-envoy-gateway-auth)을 붙이고 나서, 서비스 코드 리뷰 중에 이런 코드가 계속 눈에 띄었다.
+
+```python
+@app.put("/posts/{post_id}")
+def update_post(post_id: str, body: PostUpdate, user=Depends(get_current_user)):
+    post = db.get_post(post_id)
+    if post.owner_id != user.sub:          # ← 이건 누가 책임지는 검사인가?
+        raise HTTPException(403)
+    ...
+```
+
+게이트웨이가 이미 `SecurityPolicy(OIDC)`로 인증을 통과시켰는데, 서비스는 왜 여전히 403을 던지는 코드를 갖고 있어야 하나. "인증을 게이트웨이로 끌어올렸다"는 말과 이 코드가 모순되는 것처럼 보였다.
+
+결론부터 말하면 모순이 아니다. **인증(Authentication)과 인가(Authorization)는 같은 문제가 아니고, 이 둘은 애초에 다른 레이어에서 풀어야 하는 문제**다. 이 글은 그 경계선이 왜 거기에 그어지는지, 그리고 실제로는 어디서 흐려지는지를 정리한다.
+
+---
+
+## 개념: 인증과 인가는 질문 자체가 다르다
+
+| | 인증 (Authentication) | 인가 (Authorization) |
+|--|------------------------|------------------------|
+| 질문 | 이 요청을 보낸 게 **누구인가** | 이 **누군가**가 이 리소스에 **이 행동**을 할 **권한**이 있는가 |
+| 판단 근거 | 신원 증명 (서명된 토큰, 비밀번호, 인증서) | 신원 + **리소스의 현재 상태** + **비즈니스 규칙** |
+| 필요한 데이터 | 토큰 자체 (자기완결적) | 토큰 + **도메인 데이터** (소유권, 상태, 조직 관계) |
+| 변경 빈도 | 낮음 (누가 로그인했는지는 서비스 종류와 무관) | 높음 (권한 규칙은 도메인마다, 기능마다 다르다) |
+
+표에서 가장 중요한 줄은 "필요한 데이터"다. 인증은 **토큰 하나만 있으면 끝나는 계산**이다. 서명이 유효하고, 만료되지 않았고, 발급자가 신뢰하는 곳이면 "이 사람은 user-42다"라는 결론이 나온다. 여기엔 그 요청이 지금 무엇을 하려는지, 대상 리소스가 어떤 상태인지가 전혀 필요 없다.
+
+반면 위 코드의 인가 판단(`post.owner_id != user.sub`)은 `post_id`가 가리키는 **실제 로우를 DB에서 읽어야만** 나오는 결론이다. 토큰만 봐서는 절대 알 수 없다.
+
+**이 데이터 의존성의 차이가 레이어를 가르는 기준이다.** 자기완결적으로 끝나는 계산은 요청 경로의 공통 지점(게이트웨이)으로 끌어올릴 수 있다. 도메인 데이터가 있어야 끝나는 계산은, 그 데이터를 들고 있는 서비스 밖으로 뺄 수가 없다.
+
+---
+
+## 인프라 레이어: Envoy Gateway가 할 수 있는 것과 할 수 없는 것
+
+```
+[ 클라이언트 ]
+     │  Authorization: Bearer <JWT>
+     ▼
+[ Envoy Gateway ]
+     │  SecurityPolicy(OIDC) → Keycloak 검증
+     │
+     ├── 할 수 있는 것 ────────────────────────
+     │   "서명이 유효한가"           ✅ 토큰만으로 판단
+     │   "만료되지 않았는가"          ✅ 토큰만으로 판단
+     │   "이 경로는 admin role만"     ✅ 토큰 클레임 + 라우팅 규칙만으로 판단
+     │
+     └── 할 수 없는 것 ────────────────────────
+         "이 유저가 이 글의 소유자인가"  ❌ DB 조회 필요
+         "이 결제가 한도를 넘지 않는가"   ❌ 잔액 조회 필요
+         "이 리소스가 지금 편집 가능한
+          상태인가(draft/published)"    ❌ 상태 조회 필요
+```
+
+`SecurityPolicy`의 `oidc` 블록이 하는 일을 다시 보면, 전부 **토큰의 유효성**과 **라우팅 규칙**만으로 끝나는 판단이다.
+
+```yaml
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: change-detection-oidc
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: change-detection-route
+  oidc:
+    provider:
+      issuer: "https://auth.example.com/realms/nipa"
+    clientID: "change-detection"
+    clientSecret:
+      name: keycloak-change-detection-secret
+    forwardAccessToken: true
+```
+
+여기서 Envoy가 실제로 내리는 결정은 딱 하나다 - **"이 요청에 유효한 토큰이 있는가, 없으면 로그인으로 보낸다."** 이건 인증이지 인가가 아니다.
+
+조금 더 나아가 Envoy Gateway는 `JWTProvider`의 `claimToHeaders`나 라우팅 규칙으로 "이 경로는 `role: admin` 클레임이 있어야 한다" 같은 **coarse-grained(굵은 단위) 인가**까지는 할 수 있다. 이것도 여전히 토큰 클레임과 정적 라우팅 규칙만 보면 끝나는 계산이라서 가능한 것이다.
+
+```yaml
+# 라우팅 레벨의 coarse 인가 - "이 경로 전체는 admin만"
+# 토큰 클레임만으로 끝나는 판단이라 게이트웨이가 감당 가능
+```
+
+여기서 한 단계만 더 들어가면 - "이 admin이 **자기 조직 소속** 리소스만 편집 가능"이 되는 순간 - 이건 더 이상 게이트웨이가 못 한다. "이 리소스가 어느 조직 소속인가"는 DB에 있는 정보이고, 게이트웨이는 DB를 모른다.
+
+> Envoy에 `ext_authz` 필터를 붙여 외부 인가 서버에 매 요청마다 물어보게 만들 수도 있다. 이 방식은 "인가 로직을 인프라 레이어로 옮긴 것"처럼 보이지만, 실제로는 **그 외부 인가 서버가 도메인 데이터를 들고 있는 또 하나의 애플리케이션**일 뿐이다. 레이어가 사라진 게 아니라 이름이 바뀐 것이다. 그리고 요청마다 왕복이 하나 더 늘어나는 지연 비용을 감수해야 한다.
+
+---
+
+## 애플리케이션 레이어: 서비스가 반드시 쥐고 있어야 하는 것
+
+게이트웨이를 통과한 요청이 서비스에 도달하면, 서비스가 받는 건 "인증된 사용자"라는 사실과 그 사용자에 대한 클레임뿐이다.
+
+```
+Envoy Gateway (인증 완료, forwardAccessToken: true)
+   │  Authorization: Bearer <access_token>
+   │  클레임: { sub: "user-42", roles: ["editor"], org: "org-7" }
+   ▼
+서비스
+   - "누구인지"는 이미 안다 (토큰 검증 X, 클레임만 신뢰)
+   - "이 사람이 이 리소스에 이 행동을 해도 되는지"는 지금부터 판단
+```
+
+```python
+def update_post(post_id: str, body: PostUpdate, claims=Depends(get_claims_from_header)):
+    post = db.get_post(post_id)                     # 도메인 데이터 조회
+    if post.org_id != claims["org"]:                 # 조직 경계
+        raise HTTPException(403, "wrong organization")
+    if post.owner_id != claims["sub"] and "editor" not in claims["roles"]:
+        raise HTTPException(403, "not owner or editor")
+    if post.status == "archived":                    # 리소스 상태
+        raise HTTPException(409, "archived post is read-only")
+    ...
+```
+
+이 함수가 하는 세 가지 검사 - 조직 경계, 소유권/역할, 리소스 상태 - 는 전부 `db.get_post(post_id)`라는 **도메인 조회 이후**에만 판단 가능하다. 이 조회를 게이트웨이가 대신 해줄 방법은 없다. 게이트웨이는 라우팅 계층이지 도메인 모델을 알지 못한다.
+
+즉 서비스가 여전히 쥐고 있어야 하는 것은 "**토큰이 진짜인지**"가 아니라 "**이 토큰의 주인이 지금 이 리소스에 이 행동을 해도 되는지**"다. 전자는 게이트웨이로 옮겼고, 후자는 애초에 옮길 수 있는 종류의 계산이 아니었다.
+
+---
+
+## 두 레이어가 공유하는 재료: Keycloak의 역할
+
+Keycloak이 두 레이어 사이에서 하는 일은 "판단"이 아니라 **재료 공급**이다. Realm에 등록된 역할(role)·그룹·속성을 토큰 클레임에 실어 보내면, 그 클레임을 인프라 레이어는 굵게, 애플리케이션 레이어는 가늘게 쓴다.
+
+```
+Keycloak Realm
+  └─ Client: change-detection
+       └─ Role Mapping: user-42 → ["editor"], org attribute → "org-7"
+                │
+                ▼ (로그인 시 Access Token에 클레임으로 인코딩)
+     { "sub": "user-42", "roles": ["editor"], "org": "org-7" }
+                │
+       ┌────────┴────────┐
+       ▼                 ▼
+Envoy Gateway        서비스 (애플리케이션)
+"roles에 editor가    "org가 리소스의 org와
+ 있으면 이 경로       같고, owner_id나
+ 접근 허용"           roles가 맞아야 수정 허용"
+(coarse, 정적 규칙)   (fine, 도메인 데이터 결합)
+```
+
+같은 클레임 한 벌을 두 레이어가 각자의 판단 기준에 맞게 재사용한다는 게 핵심이다. Keycloak을 "인가 서버"라고 부르긴 하지만, 실제로 세밀한 인가를 대신 수행해주는 게 아니라 **인가에 필요한 신원 재료를 표준화해서 공급하는 것**뿐이다. 최종 판단은 그 재료를 누가, 어떤 문맥에서 쓰느냐에 따라 인프라와 애플리케이션으로 갈라진다.
+
+---
+
+## 정리
+
+| 구분 | 인프라 레이어 (Envoy Gateway) | 애플리케이션 레이어 (서비스) |
+|------|-------------------------------|------------------------------|
+| 담당 | 인증 + coarse-grained 인가 | fine-grained 인가 |
+| 판단 근거 | 토큰 유효성, 정적 라우팅 규칙 | 토큰 클레임 + 도메인 데이터(DB 상태) |
+| 예시 | "유효한 토큰인가", "이 경로는 admin만" | "이 소유자가 맞는가", "이 리소스가 지금 수정 가능한 상태인가" |
+| 변경 단위 | `SecurityPolicy` 1개 | 서비스 코드 (도메인 규칙이 바뀔 때마다) |
+| Keycloak의 역할 | OIDC 검증 위임 대상 | 클레임(신원 재료) 발급처 |
+
+"인증을 게이트웨이로 끌어올렸다"는 것과 "서비스에 여전히 권한 검사 코드가 있다"는 건 모순이 아니라, 애초에 **서로 다른 데이터 의존성을 가진 서로 다른 문제**였다. 경계는 "누가 이 일을 하기 편한가"가 아니라 "이 판단이 도메인 데이터 없이 끝나는가"로 그어진다. 그 경계를 데이터 의존성 기준으로 명확히 하고 나니, 서비스 코드에 남아있는 권한 검사가 "게이트웨이가 못 옮긴 인증의 잔재"가 아니라 "애초에 게이트웨이 것이 아니었던 인가"라는 게 분명해졌다.

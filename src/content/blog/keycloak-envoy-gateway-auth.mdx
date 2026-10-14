@@ -2,7 +2,7 @@
 title: "게이트웨이 레벨 인증 - Keycloak OIDC와 Envoy Gateway"
 description: "MSA에서 서비스마다 반복되던 JWT 검증을 게이트웨이로 끌어올린 과정. OIDC 개념부터 Envoy Gateway SecurityPolicy, forwardAccessToken, SealedSecret까지 실전 구성을 정리한다."
 date: "2026-07-07"
-category: "Architecture"
+category: "SecOps"
 tags: ["Keycloak", "Envoy Gateway", "OIDC", "MSA", "인증", "Kubernetes"]
 series: "위성 변화탐지 플랫폼 회고"
 seriesOrder: 1
@@ -36,7 +36,7 @@ MSA로 서비스를 쪼개면 인증에서 곧바로 중복이 생긴다.
 
 ### OIDC는 무엇인가
 
-OIDC(OpenID Connect)는 OAuth 2.0 위에 **"사용자가 누구인지"**를 표준화한 인증 계층이다. OAuth 2.0이 "이 요청에 권한이 있는가(인가)"를 다룬다면, OIDC는 그 위에 ID Token을 얹어 "이 요청의 주체가 누구인가(인증)"를 다룬다.
+OIDC(OpenID Connect)는 OAuth 2.0 위에 **"사용자가 누구인지"**를 표준화한 인증 계층이다. OAuth 2.0이 원래 풀던 문제는 "이 앱이 내 데이터에 접근해도 되는가(인가)"였다 - 제3자 앱에게 내 계정 전체 비밀번호를 주지 않고도 제한된 권한만 위임하기 위한 표준이다. 그런데 OAuth 2.0에는 원래 "로그인한 사람이 누구인지"를 표준화한 부분이 없었다 - Access Token은 "이 권한 범위(scope)로 접근 가능하다"만 보장할 뿐, 그 토큰 뒤에 있는 사람이 누구인지는 각 서비스가 제멋대로 해석해야 했다. OIDC는 여기에 **ID Token**이라는 표준 JWT를 얹어서, "이 요청의 주체가 누구인가(인증)"까지 표준 방식으로 답한다.
 
 핵심 등장인물은 셋이다.
 
@@ -47,6 +47,31 @@ OIDC(OpenID Connect)는 OAuth 2.0 위에 **"사용자가 누구인지"**를 표�
 | Resource Server | 보호되는 실제 API | 백엔드 서비스들 |
 
 Keycloak은 오픈소스 IdP다. Realm(사용자·클라이언트를 담는 격리 단위) 안에 클라이언트를 등록해두면, 표준 OIDC 엔드포인트(`.well-known/openid-configuration`)로 발급·검증·키(JWKS)를 모두 노출한다.
+
+### 왜 `issuer` 한 줄로 충분한가 - Discovery와 JWKS
+
+아래 SecurityPolicy 예시를 먼저 보면 `issuer` 딱 한 줄만 주는데, 이걸로 로그인 페이지 리다이렉트·코드 교환·서명 검증까지 전부 자동으로 동작한다는 게 이상하게 느껴질 수 있다. 실제로 뒤에서 벌어지는 일은 이렇다.
+
+```
+Envoy Gateway가 시작 시 딱 한 번:
+
+GET https://auth.example.com/realms/nipa/.well-known/openid-configuration
+     │
+     ▼
+{
+  "authorization_endpoint": "https://.../protocol/openid-connect/auth",
+  "token_endpoint": "https://.../protocol/openid-connect/token",
+  "jwks_uri": "https://.../protocol/openid-connect/certs",
+  "issuer": "https://auth.example.com/realms/nipa",
+  ...
+}
+```
+
+`.well-known/openid-configuration`은 OIDC 표준이 강제하는 고정 경로다. 이 문서 하나로 로그인 화면 주소, 토큰 교환 주소, 공개키(JWKS) 주소가 전부 드러나기 때문에, `issuer`만 알면 나머지는 표준을 따라 자동으로 찾아갈 수 있다 - "간단해 보이는데 실제로 이 정도 일을 하는 게 맞나"라는 의문의 답은, **표준화 덕분에 나머지 정보를 다 주지 않아도 되게 만든 것**이다.
+
+서명 검증도 마찬가지다. Keycloak은 개인키로 ID Token/Access Token에 서명하고, `jwks_uri`에 그 짝이 되는 **공개키 목록(JWKS, JSON Web Key Set)**을 올려둔다. Envoy Gateway는 이 공개키를 캐싱해두고, 들어오는 토큰의 서명을 그 공개키로 검증한다 - Keycloak에 매번 "이 토큰 진짜냐"고 물어보는 게 아니라, 공개키만 있으면 로컬에서 서명 검증이 끝난다(그래서 JWT 기반 인증이 "stateless"라고 불린다). 키가 로테이션되면 `jwks_uri`의 목록이 바뀌고, Envoy는 캐시 만료 후 자동으로 새 키를 받아온다 - 수동 키 배포 절차가 없다.
+
+즉 SecurityPolicy 다섯 줄이 실제로 대체하고 있는 건: 로그인 리다이렉트 URL 구성, Authorization Code ↔ Token 교환 HTTP 호출, JWT 서명 검증, 공개키 캐싱·로테이션 대응, 세션 쿠키 발급까지다. 각 조각을 직접 구현하면 [devops-roadmap-10편](/blog/devops-roadmap-10-jwt-to-keycloak)에서 실제로 겪은 것처럼 alg:none 위조, 키 로테이션 시 검증 실패 같은 함정이 그대로 나타난다 - `issuer` 한 줄이 그 함정들을 표준 프로토콜 뒤로 숨겨준 것이지, 일이 실제로 줄어든 건 아니다.
 
 ### Authorization Code Flow
 
@@ -80,6 +105,22 @@ Gateway ──(7) 세션 확립 후 요청 통과──▶ 백엔드
      ├─→ Service B
      └─→ Service C   ← 검증 로직 0벌
 ```
+
+### Envoy란 무엇인가
+
+"Envoy Gateway"를 다루기 전에 **Envoy 자체가 뭔지**부터 짚을 필요가 있다. Envoy는 Lyft가 만든 오픈소스 **L7(애플리케이션 레벨) 프록시**다 - 요청을 받아 어디로 보낼지 판단하고 전달하는, 네트워크 트래픽의 중간자 역할을 하는 별도 프로세스다. nginx나 HAProxy와 같은 카테고리지만, 처음부터 "모든 설정을 API로 동적으로 바꿀 수 있어야 한다"는 전제로 설계됐다는 점이 다르다 - 설정 파일을 고쳐서 리로드하는 대신, xDS라는 gRPC API로 라우팅 규칙·인증 정책을 실시간으로 밀어넣을 수 있다.
+
+```
+[ 클라이언트 ] ──▶ [ Envoy 프로세스 ] ──▶ [ 실제 서비스 ]
+                        │
+                        ├─ Listener   : 어느 포트로 요청을 받을지
+                        ├─ Filter Chain: HTTP 파싱 → 인증 → 라우팅 등 요청이 통과하는 처리 단계
+                        └─ Cluster    : 실제로 전달할 백엔드 목록(엔드포인트)
+```
+
+Envoy가 요청을 처리하는 단위를 **필터(Filter)**라고 부르는데, 인증(OIDC), 재시도, 서킷 브레이커, 레이트리밋 같은 기능이 전부 이 필터 체인에 꽂히는 조각들이다. 즉 지금 이 글에서 쓰는 `SecurityPolicy`의 OIDC 인증도 실제로는 "Envoy 필터 체인에 OIDC 인증 필터를 하나 끼워 넣는 것"이고, Envoy Gateway는 그 필터 설정을 YAML 리소스로 다루기 쉽게 감싼 것이다.
+
+Envoy 자체는 Kubernetes와 무관하게도 쓸 수 있는 범용 프록시다(사이드카로 붙여 서비스 메시를 구성하는 Istio의 데이터 플레인도 Envoy다). 이 프로젝트에서 쓰는 **Envoy Gateway**는 그중에서도 "Kubernetes Gateway API 리소스를 받아 Envoy 설정으로 변환해주는 컨트롤러 + Envoy 프록시" 조합이다 - Envoy를 매번 직접 설정하는 대신, Kubernetes 리소스(`Gateway`, `HTTPRoute`, `SecurityPolicy`)를 선언하면 컨트롤러가 이를 실제 Envoy 설정(xDS)으로 바꿔 프록시에 밀어넣는다.
 
 ### Envoy Gateway와 Gateway API
 
@@ -159,6 +200,60 @@ Keycloak Realm 안에서 서비스마다 **별도 클라이언트**를 둔다. �
 ```
 
 암호화된 `SealedSecret`만 저장소에 올라가고, 복호화는 클러스터 안의 컨트롤러만 할 수 있다. 시크릿을 Git에서 관리하면서도 평문은 절대 노출되지 않는다.
+
+### "클러스터 안의 controller"는 정확히 뭐고, 어떻게 찾아서 복호화하나
+
+이 controller는 **Sealed Secrets Controller**라는, 클러스터에 떠 있는 별도의 Deployment다(Bitnami Sealed Secrets 프로젝트). 최초 구동 시 스스로 공개키/개인키 쌍을 생성하고, 개인키는 클러스터 안의 일반 `Secret`으로만 보관한다(밖으로 나간 적 없음). `kubeseal` CLI는 이 컨트롤러의 **공개키**를 가져와 로컬에서 암호화만 한다.
+
+"찾는다"는 표현이 붙지만 실제로는 폴링/스캔이 아니라, Kubernetes의 표준 **watch(list+watch) 메커니즘**이다 - 다른 컨트롤러(Deployment 컨트롤러 등)가 자기 담당 리소스 타입의 변화를 API 서버로부터 이벤트로 통지받는 것과 완전히 같은 패턴이다.
+
+```
+1. 컨트롤러가 API 서버에 "SealedSecret 타입에 변화 생기면 알려줘" watch 등록
+2. ArgoCD가 SealedSecret 매니페스트를 클러스터에 적용
+3. API 서버가 watch 중인 컨트롤러에 이벤트 push
+4. 컨트롤러가 개인키로 복호화 시도
+5. 성공하면 같은 namespace/name으로 진짜 Secret 리소스를 새로 생성
+```
+
+5번이 핵심이다 - `SealedSecret`과 `Secret`은 **kind가 다른, 완전히 별개의 두 리소스**다. `SealedSecret`은 Git에만 의미 있는 "포장 상태"고, 컨트롤러가 그걸 뜯어서 안에 든 진짜 `Secret`을 이름·네임스페이스까지 똑같이 맞춰서 클러스터에 꺼내놓는다 - 앞의 `SecurityPolicy` YAML에서 `clientSecret.name: keycloak-change-detection-secret`이 가리키는 게 바로 이 결과물이다. Envoy Gateway는 `SealedSecret`이 뭔지 전혀 모르고, 그 이름의 평범한 `Secret`만 조회한다.
+
+암호문은 기본적으로 **원래 지정된 namespace+name에 묶여서** 암호화되므로, 누가 SealedSecret YAML을 복사해 다른 자리에 붙여넣어도 복호화가 실패한다 - "이 암호문은 이 자리에서만 풀린다"는 게 암호화 시점에 이미 고정된다.
+
+### Git 상태와 클러스터 상태, 이번에도 "다른 두 상태를 동기화"하는 문제다
+
+이 구조는 앞서 본 ArgoCD의 "Git 선언 상태 ↔ 클러스터 실제 상태" 동기화와 같은 패턴이 시크릿 하나 단위로 좁혀진 것이다.
+
+```
+Git에 있는 상태(desired)        클러스터에 있는 상태(actual)
+─────────────────────          ─────────────────────
+SealedSecret (암호문)     ──▶   Secret (평문)
+```
+
+값이 바뀌면 `kubeseal`로 재암호화 → Git 커밋 → ArgoCD가 SealedSecret을 갱신 → 컨트롤러가 변화를 감지해 Secret을 새 값으로 다시 만든다. 다만 ArgoCD와 다른 지점이 하나 있다 - **ArgoCD는 자기가 배포한 모든 리소스의 "결과물"까지 계속 diff해서 드리프트를 되돌리지만, Sealed Secrets Controller는 `SealedSecret`에만 watch를 걸어놨지 자기가 만든 `Secret`에는 watch를 걸지 않는다.** 그래서 누가 클러스터에서 그 `Secret`을 직접 고쳐도, `SealedSecret` 쪽에 변화가 없으면 컨트롤러가 반응할 이벤트 자체가 없다 - "뭘 watch하도록 등록했느냐"가 감지 가능 범위를 그대로 결정하는 것이다. ArgoCD는 애초에 "배포한 모든 것의 드리프트 감지"가 존재 이유라 범용적으로 넓게 watch하고, Sealed Secrets Controller는 "암호문 → 평문 변환"이라는 좁은 목적만 수행하도록 설계됐기 때문에 이런 차이가 생긴다.
+
+### 이 설정은 실제로 어떻게 배포되는가 - ArgoCD와 OPA
+
+`SecurityPolicy`, `HTTPRoute`, `SealedSecret` 매니페스트를 만들었다고 바로 클러스터에 반영되는 게 아니다. 이 프로젝트는 [Jenkins에서 GitOps로 넘어간 파이프라인](/blog/nipa-cicd-argo-gitops)을 쓰기 때문에, 인증 설정도 그 파이프라인을 그대로 통과한다.
+
+```
+Git에 SecurityPolicy/SealedSecret 매니페스트 커밋
+     │
+     ▼
+Argo Workflows 빌드 단계에서 OPA 정책 게이트 통과 확인
+     │  (금지된 설정 - 예: 필수 라벨 누락, 허용 안 된 이미지 등 - 여부 검사)
+     ▼
+ArgoCD가 Git 상태와 클러스터 상태를 비교
+     │  다르면 클러스터를 Git 선언 상태로 동기화
+     ▼
+클러스터에 SecurityPolicy/SealedSecret 반영
+```
+
+여기서 두 가지가 겹친다.
+
+- **"배포됐다"의 기준이 ArgoCD의 동기화 여부**라는 것. 인증 정책을 바꾸고 싶으면 매니페스트를 고쳐 Git에 커밋하면 되고, 클러스터에 누가 수동으로 다른 값을 넣어놔도 ArgoCD가 drift로 감지해 되돌린다 - 인증 정책이 "선언한 대로 유지된다"는 보장이 여기서 나온다.
+- **OPA 정책 게이트가 배포 전에 한 번 더 검사한다는 것.** 이건 인증 자체(누가 요청했는가)와는 다른 층위의 검사다 - "이 매니페스트가 조직의 정책을 지키는가"(예: 특정 라벨이 있어야 한다, 특정 베이스 이미지만 허용한다)를 배포되기 전에 자동으로 걸러낸다. 즉 Keycloak/Envoy가 처리하는 게 **런타임 인증·인가**라면, OPA 게이트는 **배포 시점의 정책 준수 검사**로 완전히 다른 지점에서 동작하는 별개의 보안 통제다.
+
+이 둘을 헷갈리기 쉬운 이유는 둘 다 "보안"이라는 말로 뭉뚱그려지기 때문이다 - 하지만 하나는 "지금 이 요청을 누가 보냈는가"를 확인하는 것이고, 다른 하나는 "이 배포 산출물이 규칙을 지켰는가"를 확인하는 것으로, 질문 자체가 다르다.
 
 ---
 
