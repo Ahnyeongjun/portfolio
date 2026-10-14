@@ -8,7 +8,7 @@
 | 레포 | 역할 | 공개 |
 |---|---|---|
 | **portfolio-next** (`master`, 이 레포) | 공개될 내 정보: 프로필·경력·프로젝트·이력서/포트폴리오 PDF, **블로그 원본** | 공개 |
-| portfolio-next-resume-local (`resume-local` → private remote) | 내 삶의 계획·기록: 일정, 이직/해외 계획, 학습 기록, 회사별 지원 자료 | 비공개 |
+| portfolio-next-resume-local (`resume-local` → private remote) | 개인 기록: 일정, 학습 기록, 작업 메모 | 비공개 |
 
 **판단 기준: "처음 보는 채용 담당자가 읽어도 되는가?"** 아니면 이 레포에 넣지 않는다.
 
@@ -19,8 +19,7 @@
 - 공유 파일(`src/app/page.tsx`, `layout.tsx`, `next.config.ts`, 공용 컴포넌트)은 이 레포에서 고친다
 
 ### 여기에 넣지 않는 것
-- 지원 회사명, JD, 회사별 지원동기·맞춤 이력서, 면접 Q&A 원본 → resume-local
-- 이직·퇴사·해외 이주 계획, 연봉, 일정, 학습 진도 → resume-local `life/`, `study/`
+- 회사별 맞춤 문서, 개인 계획·일정·학습 진도, 연봉 등 사적인 내용 → resume-local
 - 작업 메모·핸드오프 노트, 이력서 복붙용 txt → resume-local (`.gitignore`에 등록됨)
 - 사내 IP·호스트명·SSH 정보, 납품 데이터(위성영상 등), 고객사 내부 수치 원본
 - 연락처 외 개인정보 (주소, 생년월일 등). 이메일/GitHub/LinkedIn만 공개
@@ -53,8 +52,8 @@ public/           이미지 (프로젝트 썸네일·아키텍처 등)
 - 경력·프로젝트 날짜를 바꾸면 `profile.ts`와 `profileDoc.ts` 양쪽을 같이 고친다
 - 블로그 글에는 실제 스크린샷을 우선 사용
 - PDF 페이지 나눔 문제는 `resume-pdf-pagination` 스킬 참고
-- 블로그 글을 쓸 때: 위 "넣지 않는 것"을 점검한다 (지원 회사명, 사내 IP·호스트명, 고객 내부 수치)
-- resume-local에서 기능/콘텐츠를 가져올 때도 같은 점검 후 cherry-pick (`companies/`, `interview`, IP 패턴)
+- 블로그 글을 쓸 때: 위 "넣지 않는 것"을 점검한다 (회사명, 사내 IP·호스트명, 고객 내부 수치)
+- resume-local에서 기능/콘텐츠를 가져올 때도 같은 점검 후 cherry-pick (회사명, IP 패턴)
 
 ## 확인
 ```bash
