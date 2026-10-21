@@ -660,6 +660,7 @@ export const PROFILE = {
   ] as SkillGroup[],
 
   certs: [
+    { name: "SW개발 L5 (일학습병행자격 · 기사급)", issuer: "한국산업인력공단", date: "2026.10.", status: "합격" },
     { name: "SQL개발자(SQLD)", issuer: "한국데이터산업진흥원", date: "2025.12.", status: "합격" },
     { name: "정보처리기사", issuer: "한국산업인력공단", date: "2025.06.", status: "합격" },
     { name: "정보기기운용기능사", issuer: "한국산업인력공단", date: "2021.12.", status: "합격" },

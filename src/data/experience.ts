@@ -57,6 +57,7 @@ export const education: EducationItem[] = [
 ];
 
 export const certifications: CertificationItem[] = [
+  { year: '2026', title: 'SW개발 L5 (일학습병행자격 · 기사급)' },
   { year: '2025', title: 'SQL개발자(SQLD)' },
   { year: '2025', title: '정보처리기사' },
   { year: '2021', title: '정보기기운용기능사' },
