@@ -100,13 +100,55 @@ receivers:
 
 `group_wait`/`group_interval`이 "장애 알림이 늦게 오는" 원인이 되는 경우가 많다 - 값이 크면 초기 알림이 그만큼 지연된다. 실험 단계에서 이 값을 조정하며 지연 시간을 직접 재본다.
 
+**라우팅 트리를 계층화하기**: 지금처럼 리시버가 하나(discord)뿐이면 `severity`만 봐도 충분하지만, 팀이 나뉘거나 서비스가 늘어나면 라우팅 트리를 severity → team → service 순으로 계층화해야 어떤 알람이 누구에게 가는지 관리할 수 있다. `route.routes`는 자식 라우트를 가질 수 있고, `continue: true`를 명시하지 않으면 매칭된 첫 라우트에서 멈춘다(형제 라우트로 새어나가지 않는다).
+
+```yaml
+route:
+  receiver: "null"
+  group_by: ["alertname", "namespace"]
+  routes:
+    - receiver: discord-critical
+      matchers: [severity = "critical"]
+      routes:                                   # team별로 더 세분화
+        - receiver: discord-infra
+          matchers: [team = "infra"]
+        - receiver: discord-backend
+          matchers: [team = "backend"]
+    - receiver: discord-warning
+      matchers: [severity = "warning"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+inhibit_rules:
+  - source_matchers: [alertname = "KubeNodeNotReady"]
+    target_matchers: [alertname =~ "KubePodNotReady|PodOOMKilled|KubePodCrashLooping"]
+    equal: ["node"]
+```
+
+`inhibit_rules`는 "상위 알람(source)이 이미 발화 중이면 하위 알람(target)은 억제한다"는 규칙이다. 위 예시는 특정 노드가 `NotReady`가 되면(source) 그 노드 위에 있던 파드들이 한꺼번에 `NotReady`/`OOMKilled`/`CrashLooping`으로 개별 알람을 쏟아내는 걸(target) 막는다 - `equal: ["node"]`가 있어서 같은 노드에 속한 알람끼리만 억제되고, 다른 노드의 정상적인 파드 알람은 그대로 울린다. 이 규칙이 없으면 노드 하나가 죽었을 때 그 위에서 돌던 파드 수만큼 알림이 개별로 쏟아질 수 있다 - 아래 장애 주입 실험의 노드 다운 케이스(3번)에서는 재스케줄된 파드가 소수라 크게 체감되지 않았지만, 파드 수가 많은 노드였다면 채널이 개별 파드 알림으로 도배됐을 것이다. 원인(노드 다운) 하나가 결과(파드 알람 N개)에 묻히지 않게 하는 게 inhibit_rule의 역할이다.
+
 이렇게 붙이면 실제로 디스코드 채널에 FIRING/RESOLVED 알림이 그대로 온다 - 아래는 실제 수신 화면이다(`KubePodNotReady`, `PodOOMKilled` 등 실제 발화 건 포함).
 
 ![Discord 채널에 도착한 Alertmanager 알림 - FIRING/RESOLVED 쌍으로 오며, KubePodNotReady·PodOOMKilled(tempo-0) 등 실제 발화 건이 보인다](/alertmanger_discord.png)
 
 ### 3. Loki - 로그 수집 + 보존 정책
 
-**Loki는 로그를 왜 다르게 저장하나**: Elasticsearch 같은 전통적인 로그 시스템은 로그 본문 전체를 색인(풀텍스트 인덱스)해서 빠르게 검색하는 대신, 그 인덱스 자체가 로그량에 비례해 커진다. Loki는 반대로 **로그 본문은 색인하지 않고, `namespace`/`pod`/`app` 같은 라벨만 인덱싱**한다 - 실제 검색은 라벨로 좁힌 스트림 안에서 grep하듯 순차적으로 훑는다. 인덱스가 훨씬 작아지는 대신, 라벨 종류를 신중하게 골라야 한다(요청 ID처럼 값이 무한히 다양한 걸 라벨로 쓰면 스트림 수가 폭발한다 - Prometheus의 카디널리티 문제와 같은 함정). Promtail이 각 노드의 로그를 라벨과 함께 Loki로 밀어 넣고(push - Prometheus의 pull과 반대 방향이다), Grafana가 LogQL로 조회하는 구조다.
+**Loki는 로그를 왜 다르게 저장하나**: Elasticsearch 같은 전통적인 로그 시스템은 로그 본문 전체를 색인(풀텍스트 인덱스)해서 빠르게 검색하는 대신, 그 인덱스 자체가 로그량에 비례해 커진다. Loki는 반대로 **로그 본문은 색인하지 않고, `namespace`/`pod`/`app` 같은 라벨만 인덱싱**한다 - 실제 검색은 라벨로 좁힌 스트림 안에서 grep하듯 순차적으로 훑는다. Promtail이 각 노드의 로그를 라벨과 함께 Loki로 밀어 넣고(push - Prometheus의 pull과 반대 방향이다), Grafana가 LogQL로 조회하는 구조다.
+
+**라벨 카디널리티 함정**: Loki에서 라벨 조합 하나(`{namespace="jobs", pod="api-server-7d9f...", app="api-server"}`)가 곧 하나의 **스트림**이고, 인덱스는 로그 내용이 아니라 이 스트림 목록만 저장한다. 그런데 `request_id`나 `user_id`처럼 매 요청마다 값이 달라지는 필드를 라벨로 넣으면 요청 수만큼 스트림이 새로 생겨난다 - Prometheus에서 라벨에 요청 ID를 넣으면 시계열이 폭증하는 것과 정확히 같은 실패 패턴이다. 스트림이 폭증하면 인덱스가 로그량에 비례해 커지고, Loki가 라벨로 대상 스트림을 찾는 단계 자체가 무거워져 조회가 느려진다. 그래서 이 프로젝트에서는 `namespace`/`pod`/`app`/`container`처럼 값의 종류가 유한한 필드만 라벨로 남기고, `request_id`·`user_id`·에러 메시지 본문처럼 값이 무한히 다양한 건 라벨이 아니라 로그 줄 안에 그대로 남겨서 LogQL 필터로 찾게 했다.
+
+이 구분이 곧 **라벨 검색과 로그 본문 검색을 나눠 쓰는 이유**다.
+
+```logql
+# 1) 라벨 검색 - 대상 스트림을 정한다 (인덱스만 보고 즉시 끝난다)
+{namespace="jobs", app="api-server"}
+
+# 2) 로그 본문 검색 - 좁혀진 스트림 안에서 텍스트를 순차 스캔 (라인 필터/파서)
+{namespace="jobs", app="api-server"} |= "job_id=42" | logfmt | status="failed"
+```
+
+`{}` 안의 라벨 매처는 검색할 스트림 자체를 정하는 단계라 인덱스만 보고 즉시 끝나지만, `|=`(포함)·`|~`(정규식)·`| logfmt`(파싱) 같은 파이프는 그 스트림에 속한 로그를 실제로 한 줄씩 훑는 단계라 스트림이 넓거나 기간이 길수록 느려진다. 그래서 항상 **라벨로 최대한 좁힌 다음, 그 안에서만 본문 필터를 쓰는** 순서를 지켜야 한다 - `request_id`로 로그를 찾고 싶어도 라벨이 아니라 `|= "request_id=abc123"`으로 찾는 이유가 여기 있다.
 
 ```bash
 helm repo add grafana https://grafana.github.io/helm-charts
@@ -221,8 +263,8 @@ kubeadm 기본 설정이 이 세 컴포넌트의 메트릭 엔드포인트를 `1
 - [ ] kube-prometheus-stack 설치, 서비스 메트릭 수집 (ServiceMonitor는 `metadata.labels` 매칭 확인)
 - [ ] 컨트롤플레인(etcd/controller-manager/scheduler) 스크랩 바인딩 확인 (`--bind-address=0.0.0.0`)
 - [ ] Alertmanager 알림 라우팅 (Discord/Slack 등), 기본 `"null"` 리시버 유지
+- [ ] 라우팅 트리 계층화(severity/team/service), 상위 알람이 하위 알람을 덮지 않게 inhibit_rule 검토
 - [ ] kube-proxy를 안 쓰는 클러스터(Cilium 등)라면 관련 스크랩·알림 규칙 비활성화
-- [ ] Loki 로그 수집 + 보존 기간 정책 설정, Grafana 데이터소스 중복 생성(sidecar) 여부 확인
-- [ ] (선택 확장) OpenTelemetry + Tempo로 분산 트레이싱 연결
-
-이 스택이 실제로 장애를 잡아내는지는 여기서 끝나지 않는다 - 관측 체계를 세우는 것과 그게 실제로 작동하는지 검증하는 건 다른 문제라서, 노드 다운·OOMKill·디스크풀 같은 장애를 직접 주입해 탐지 시간을 재는 실험은 [별도 편](/blog/devops-roadmap-06b-chaos-engineering)에서 다룬다.
+- [ ] Loki 로그 수집 + 보존 기간 정책 설정, 라벨은 카디널리티 낮은 필드로 제한(고카디널리티는 본문 필터로)
+- [ ] Grafana 데이터소스 중복 생성(sidecar) 여부 확인
+- [ ] (선택 확장) OpenTelemetry + Tempo로 분산 트레이싱 연결도 비교

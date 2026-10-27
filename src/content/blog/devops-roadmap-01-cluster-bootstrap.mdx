@@ -3,7 +3,7 @@ title: "kubeadm으로 온프레미스 Kubernetes 클러스터를 처음부터 �
 description: "Kubernetes가 왜 필요한지부터, VM 2~3대 준비, kubeadm init, CNI(Calico), MetalLB, 스토리지, 그리고 선택 확장인 kube-vip HA·Cilium 마이그레이션까지 - 개념과 실제 절차·명령어 정리."
 date: "2026-07-15"
 category: "Kubernetes/Cluster"
-tags: ["Kubernetes", "kubeadm", "Calico", "MetalLB", "온프레미스", "Cilium", "AWS"]
+tags: ["Kubernetes", "kubeadm", "Calico", "MetalLB", "온프레미스", "Cilium", "AWS", "etcd"]
 series: "DevOps 학습 로드맵"
 seriesOrder: 2
 ---
@@ -127,6 +127,15 @@ sudo kubeadm init \
 - `--control-plane-endpoint`: 지금 당장은 컨트롤플레인 1대의 IP를 쓰되, 이후 kube-vip로 이중화할 계획이면 처음부터 VIP를 넣어두는 게 낫다 - 나중에 바꾸면 인증서를 재발급해야 한다.
 - 완료 후 출력되는 `kubeadm join` 명령어(토큰 포함)를 워커 노드용으로 저장해둔다. 토큰은 24시간 후 만료되므로, 나중에 필요하면 `kubeadm token create --print-join-command`로 재생성한다.
 
+**kubeadm init이 실패하는 가장 흔한 두 가지 원인**은 이미 사전 준비 단계에서 갈린다. preflight 체크는 통과했는데도 API 서버가 안 뜨거나 kubelet이 계속 재시작을 반복한다면 대개 아래 둘 중 하나다.
+
+| 실패 유형 | 증상 | 원인 | 확인/조치 |
+|---|---|---|---|
+| cgroup driver 불일치 | kubelet이 `Ready`로 못 올라오고 `journalctl -u kubelet`에 cgroup driver 관련 에러가 반복 | containerd 기본값은 `cgroupfs`인데 kubelet·systemd는 `systemd`를 기대 | `/etc/containerd/config.toml`의 `SystemdCgroup = true` 재확인 → `crictl info \| grep -i cgroup`으로 실제 적용값 확인 |
+| containerd 소켓/설정 누락 | `kubeadm init`이 `container runtime is not running` 류의 CRI preflight 에러로 중단 | containerd 설치 직후 설정을 기본값 그대로 두거나 소켓 경로가 kubelet 기대값과 다름 | `systemctl status containerd`로 기동 확인 → `crictl --runtime-endpoint unix:///run/containerd/containerd.sock ps`로 소켓 응답 확인 |
+
+두 경우 모두 겉으로는 "API 서버가 안 뜬다"로 똑같이 보이기 때문에, 실무에서는 `kubeadm init` 실패 시 바로 `kubectl`을 의심하지 않고 먼저 `journalctl -u kubelet -f`와 `crictl info`로 컨테이너 런타임 레이어부터 확인하는 순서로 접근한다. 재시도하기 전에는 `kubeadm reset`으로 이전 시도의 잔여 인증서·매니페스트·iptables 규칙을 반드시 정리한다 - 정리 없이 재시도하면 이전 실패의 흔적이 새 시도에 섞여 원인 파악이 더 어려워진다.
+
 ```bash
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -159,6 +168,18 @@ kubectl get nodes    # 모든 노드가 Ready로 바뀌는지 확인
 kubectl get pods -n calico-system
 ```
 
+<Accordion title="Calico의 BGP 모드 vs VXLAN(IPIP) 모드 - 온프레미스에서 뭘 골라야 하는가">
+
+Calico는 노드 간 파드 트래픽을 캡슐화 없이 그냥 라우팅으로 보낼지(BGP), 캡슐화해서 오버레이로 보낼지(VXLAN/IPIP) 선택할 수 있다. `custom-resources.yaml`의 `spec.calicoNetwork.ipPools[0].encapsulation` 값이 이 선택을 결정한다.
+
+**BGP 모드(`encapsulation: None`)**: 각 노드가 자신이 담당하는 파드 CIDR 블록을 BGP로 서로 광고한다. 패킷은 캡슐화 없이 그대로 나가고, 목적지 노드까지는 일반 IP 라우팅 테이블로 찾아간다 - 캡슐화 오버헤드가 없어 순수 처리량은 오버레이 방식보다 낫다. 다만 전제 조건이 있다: 노드들이 **같은 L2 네트워크에 있거나, 상위 네트워크 장비(ToR 스위치/라우터)가 BGP를 이해하고 그 경로를 받아줘야 한다.** 학습용 VM 3대가 같은 서브넷에 있는 정도라면 별도 스위치 설정 없이 노드 간 BGP(node-to-node mesh)만으로 동작한다.
+
+**VXLAN/IPIP 모드(`encapsulation: VXLAN` 또는 `IPIP`)**: 원본 패킷을 통째로 감싸서 노드 간에는 그냥 "이 노드로 보내는 패킷 한 개"처럼 보이게 만든다. 하위 네트워크가 파드 CIDR을 전혀 몰라도 노드끼리 IP 통신만 가능하면 동작한다 - 그만큼 하위 네트워크에 대한 요구사항이 낮다. 대가는 패킷마다 캡슐화/역캡슐화 오버헤드와 MTU 감소(VXLAN 헤더 50바이트)다.
+
+**온프레미스에서의 실무 판단**: 노드가 전부 같은 스위치/서브넷에 있고 네트워크팀이 따로 없는 학습·소규모 환경이면 BGP 모드가 낫다 - 오버헤드가 없고, 문제가 생겼을 때 `calicoctl node status`로 BGP 피어링 상태를 직접 보고 원인을 좁힐 수 있어 디버깅도 더 명확하다. 반대로 노드가 여러 서브넷/랙에 걸쳐 있고 중간 네트워크 장비를 건드릴 권한이 없다면(랙 간 라우팅을 네트워크팀이 관리하는 경우 등) VXLAN으로 캡슐화해서 하위 네트워크에 의존하지 않는 쪽을 택한다. 클라우드 위에 온프레미스를 흉내낼 때(이 랩의 AWS 재현처럼)도 VPC 라우팅 테이블을 직접 조작할 권한이 제한적이라 VXLAN이 기본값인 이유가 여기 있다.
+
+</Accordion>
+
 ### 5. MetalLB - 온프레미스에서 LoadBalancer 타입 서비스 쓰기
 
 클라우드에서 `type: LoadBalancer` 서비스를 만들면, 클라우드 사업자가 그 뒤에서 실제 로드밸런서 장비를 붙이고 외부 IP를 배정해준다. 온프레미스에는 그 역할을 해줄 사업자가 없다 - **MetalLB가 그 역할을 소프트웨어로 흉내낸다.**
@@ -189,7 +210,16 @@ spec:
     - default-pool
 ```
 
-L2 모드는 클러스터 노드 중 하나가 ARP로 "이 IP는 나한테 있다"고 응답하는 방식이다 - 별도 라우터 설정 없이 가장 단순하게 시작할 수 있지만, 그 노드가 죽으면 잠깐의 전환 시간이 생긴다는 트레이드오프가 있다.
+L2 모드는 IP 풀에 속한 서비스 IP마다 클러스터 노드 중 하나를 "리더"로 선출하고, 그 리더 노드가 ARP(같은 서브넷이면)나 NDP(IPv6)로 "이 IP는 나한테 있다"고 응답하는 방식이다. 별도 라우터 설정 없이 가장 단순하게 시작할 수 있지만, 방식 자체의 한계는 실제 장애 상황에서 체감하게 된다.
+
+| 항목 | L2 모드 | BGP 모드 |
+|---|---|---|
+| 동작 방식 | 서비스 IP당 리더 노드 1대가 ARP로 응답 | 모든 노드가 BGP로 라우터에 각자 경로를 광고, 라우터가 ECMP로 분산 |
+| 트래픽 분산 | 안 됨 - 모든 트래픽이 리더 노드 한 대로 집중 | 됨 - 여러 노드로 실제 분산(멀티패스) |
+| 요구 사항 | 없음(같은 L2 브로드캐스트 도메인이면 충분) | 상위 라우터가 BGP 피어링을 지원해야 함 |
+| 장애 시 동작 | 리더 노드가 죽으면 다른 노드가 새 리더가 되어 ARP를 다시 광고 - 주변 장비의 ARP 캐시가 갱신될 때까지 **수 초 단위 끊김** 발생 | 라우터가 BGP 세션 타임아웃(기본 hold time은 수십 초 단위지만 BFD를 함께 쓰면 서브초 단위로 단축 가능)을 감지하면 해당 경로를 즉시 제외 - 나머지 경로로 끊김 없이 지속 |
+
+이 프로젝트에서 L2 모드로 강제 노드 종료를 실험해보면, 서비스 자체는 몇 초 내로 복구되지만 그 몇 초 동안은 명확히 트래픽이 끊긴다 - ARP가 원래 "누가 이 IP를 가졌는지"를 브로드캐스트로 다시 물어보고 캐시를 갱신하는 데 시간이 걸리는 프로토콜이라는 걸 감안하면 당연한 결과다. 온프레미스에서 라우터가 BGP를 지원하고 네트워크팀이 피어링 설정을 열어줄 수 있는 환경이라면 BGP 모드가 가용성과 트래픽 분산 양쪽에서 우월하다 - 이 랩은 라우터 설정 권한이 없는 학습 환경이라는 전제로 L2를 택했지만, 실무 판단 기준은 "L2는 어디서나 되는 최소 옵션, BGP는 네트워크 장비 협조가 가능할 때의 정답"이라는 걸 이해하고 고른 선택이다.
 
 <Accordion title="이 랩을 AWS EC2 위에서 그대로 돌려보면 MetalLB가 왜 안 먹히는가">
 
@@ -247,11 +277,116 @@ kubectl delete svc test-lb
 
 스토리지는 `PersistentVolumeClaim`을 하나 만들어 `Bound` 상태로 전환되는지 확인한다.
 
+## 흔한 실패와 트러블슈팅
+
+클러스터를 몇 번 부수고 다시 세워보면(체크리스트의 "파괴 후 재구축") 실제로 반복해서 만나는 실패는 크게 두 갈래다. 관리형 K8s만 다뤄봤다면 이 중 어느 것도 겪을 일이 없다 - 이 부분이 "직접 겪어본 사람"과 "안 겪어본 사람"을 가르는 지점이다.
+
+### 워커 노드가 NotReady에서 안 넘어갈 때 - 세 가지 다른 원인
+
+`kubectl get nodes`에서 NotReady 하나만 보고는 원인을 알 수 없다. `kubectl describe node <노드>`의 `Conditions` 항목까지 봐야 구분된다.
+
+| 증상 | 원인 | 확인 방법 |
+|---|---|---|
+| `KubeletNotReady: network plugin is not ready: cni config uninitialized` | CNI 매니페스트를 아예 적용하지 않음 | `ls /etc/cni/net.d/` - 파일이 없으면 이 케이스 |
+| `Ready` 조건은 True인데 파드가 계속 `Pending`/`ContainerCreating`에 머무름 | CNI 파드(calico-node 등) 자체가 CrashLoopBackOff | `kubectl get pods -n calico-system`으로 CNI 파드 상태 확인 - "설치는 됐지만 정상 기동은 못한" 상태 |
+| CNI 파드는 Running인데 파드 간 통신만 안 됨(같은 노드 안에서는 되는데 노드를 넘어가면 안 됨) | `--pod-network-cidr`과 CNI 쪽 IP 풀 CIDR 불일치 | `kubectl get ippools -o yaml`(Calico) 값과 kubeadm init에 넣은 CIDR을 나란히 비교 |
+
+세 번째가 가장 잘 안 걸린다 - 노드는 Ready로 뜨고 CNI 파드도 Running이라 겉으로는 "정상"처럼 보이기 때문이다. "같은 노드 안 파드끼리는 되는데 노드를 넘어가면 안 된다"는 증상이 CIDR 불일치의 특징적인 신호다.
+
+### etcd 쿼럼이 깨졌을 때
+
+컨트롤플레인을 3대로 구성했을 때(뒤의 kube-vip HA 절), etcd 멤버 3개 중 **2개 이상**이 살아있어야 과반수 투표가 성립해서 클러스터가 쓰기 요청(파드 생성, 스케줄링 등)을 처리할 수 있다. 3개 중 2개가 죽으면 남은 1개로는 과반수를 만들 수 없어 클러스터 전체가 사실상 정지한다.
+
+**증상**: `kubectl` 명령이 전부 `context deadline exceeded` 또는 `etcdserver: request timed out` 에러로 멈춘다. 읽기 전용 조회(`kubectl get`)는 캐시된 응답이 남아있는 짧은 시간 동안은 되는 것처럼 보일 수 있지만, 쓰기 요청은 즉시 실패한다.
+
+```bash
+# 각 컨트롤플레인 노드에서 etcd 멤버 상태 확인
+sudo ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  endpoint health --cluster
+```
+
+**복구 절차**: 죽은 멤버가 되살릴 수 있는 노드라면(재부팅 등) 그 노드를 복구해서 기존 데이터 디렉터리로 다시 합류시키는 게 가장 빠르다. 노드 자체가 완전히 사라졌다면(디스크 손실 등) 살아있는 멤버 쪽에서 그 멤버를 쿼럼에서 명시적으로 제거해야 한다 - 죽은 멤버를 방치하면 남은 멤버 수 기준으로 과반수 계산이 계속 잘못된 채로 남는다.
+
+```bash
+# 살아있는 멤버 목록에서 죽은 멤버의 ID 확인 후 제거
+sudo etcdctl member list
+sudo etcdctl member remove <죽은 멤버 ID>
+```
+
+그 다음 새 컨트롤플레인 노드를 `kubeadm join --control-plane`으로 추가해서 멤버 수를 다시 홀수로 맞춘다. 이 흐름 전체는 뒤의 "컨트롤플레인 노드 교체 절차"와 동일하다.
+
+## etcd 백업/복구
+
+etcd는 클러스터의 유일한 상태 저장소다 - Deployment, Secret, ConfigMap, RBAC 정책까지 전부 여기 있다. etcd가 완전히 사라지면 클러스터를 "복구"하는 게 아니라 "처음부터 다시 만드는" 것과 다름없어진다. 그래서 정기 백업은 선택이 아니라 컨트롤플레인 운영의 기본이다.
+
+### 왜 항상 홀수 개로 구성하는가
+
+etcd는 Raft 합의 알고리즘으로 동작하고, 쓰기가 성립하려면 전체 멤버 중 **과반수(majority)**의 동의가 필요하다. 멤버 수와 "몇 대까지 죽어도 버틸 수 있는가"의 관계를 보면 홀수가 왜 유리한지 바로 보인다.
+
+| 멤버 수 | 과반수 | 허용 가능한 장애 대수 |
+|---|---|---|
+| 2 | 2 | 0 (1대만 죽어도 과반수 불성립) |
+| 3 | 2 | 1 |
+| 4 | 3 | 1 (3대와 동일 - 자원만 더 씀) |
+| 5 | 3 | 2 |
+
+4대는 3대보다 노드를 하나 더 쓰면서도 허용 장애 대수는 3대와 똑같다 - 짝수는 "한 대 더 버틸 것 같지만 실제로는 아무 이득이 없는" 구성이다. 그래서 실무에서는 짝수를 선택지에 넣지 않고 3대(소규모) 또는 5대(대규모)로만 구성한다.
+
+### 정기 백업 - `etcdctl snapshot save`
+
+```bash
+sudo ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot save /backup/etcd-snapshot-$(date +%Y%m%d-%H%M).db
+
+# 스냅샷 자체가 정상인지는 반드시 확인 - 손상된 백업은 없는 것보다 위험하다(복구 시점에야 발견됨)
+sudo ETCDCTL_API=3 etcdctl --write-out=table snapshot status /backup/etcd-snapshot-*.db
+```
+
+실무에서는 이 명령을 cron/systemd timer로 매일(또는 변경 빈도에 맞춰 더 자주) 돌리고, 스냅샷 파일을 etcd가 도는 노드 로컬이 아니라 별도 저장소(S3, NFS 등)로 즉시 옮긴다 - 로컬에만 두면 그 노드가 통째로 사라지는 장애에서는 백업도 같이 사라진다.
+
+### 복구 절차
+
+```bash
+# 1. kube-apiserver, etcd 등 static pod를 잠시 내린다 (매니페스트를 다른 경로로 옮기면 kubelet이 자동으로 내림)
+sudo mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak
+
+# 2. 스냅샷으로부터 새 데이터 디렉터리를 복원
+sudo ETCDCTL_API=3 etcdctl snapshot restore /backup/etcd-snapshot-20260810-0200.db \
+  --data-dir /var/lib/etcd-restored
+
+# 3. etcd static pod 매니페스트의 데이터 디렉터리 경로를 restored 경로로 수정한 뒤 다시 배치
+sudo mv /etc/kubernetes/manifests.bak /etc/kubernetes/manifests
+```
+
+복구는 "그 시점 이후의 모든 변경을 잃는다"는 걸 전제로 한다 - 스냅샷 이후 생성된 리소스, 변경된 Secret 등은 되돌아오지 않는다. 그래서 백업 주기가 곧 "장애 시 최대 몇 시간의 작업을 잃을 수 있는가"를 결정한다.
+
+### 컨트롤플레인 노드 교체 절차
+
+노드 하나가 완전히 죽어서 교체해야 할 때는 새 노드를 무작정 join시키기 전에 죽은 멤버를 etcd 쿼럼에서 먼저 빼야 한다 - 안 그러면 쿼럼 계산에 죽은 멤버가 계속 끼어서 과반수 산정이 왜곡된다.
+
+1. 살아있는 멤버에서 `etcdctl member list`로 죽은 노드의 멤버 ID 확인
+2. `etcdctl member remove <ID>`로 쿼럼에서 제거
+3. 죽은 노드가 `kubectl get nodes` 목록에도 남아있으면 `kubectl delete node <노드명>`으로 정리
+4. 새 노드를 `kubeadm join --control-plane`으로 추가 (1단계에서 저장해둔 `--certificate-key` 재사용, 만료됐으면 컨트롤플레인 노드에서 `kubeadm init phase upload-certs --upload-certs`로 재발급)
+5. `etcdctl member list`로 새 멤버가 정상 합류했는지, 멤버 수가 다시 홀수인지 확인
+
+이 절차를 안 지키고 그냥 새 노드를 join시키면, 옛 멤버가 쿼럼에 남은 채로 새 멤버가 추가되어 오히려 과반수 성립 조건이 더 어려워지는 경우가 실제로 생긴다.
+
 ## (선택 확장) kube-vip로 컨트롤플레인 3노드 HA
 
 **개념**: 컨트롤플레인이 1대뿐이면, 그 노드가 죽는 순간 클러스터 전체를 조작할 방법이 사라진다 - `kubectl`도 안 되고, 새 파드 스케줄링도 멈춘다. 컨트롤플레인을 3대로 늘리면 etcd가 과반수(3개 중 2개) 투표로 정상 여부를 판단하기 때문에 1대가 죽어도 나머지 둘로 유지된다. 문제는 "3대 중 지금 어디로 접속해야 하는가"다 - 특정 노드의 IP를 그대로 쓰면 그 노드가 죽었을 때 접속 주소 자체가 사라진다.
 
 kube-vip는 3대 앞에 **고정된 가상 IP(VIP)**를 두고, 살아있는 노드 중 하나가 리더 선출(leader election)로 그 VIP를 응답하도록 자동으로 넘겨준다. 클라이언트(`kubectl`, 워커의 kubelet 등)는 항상 같은 VIP로만 접속하면 된다.
+
+아래 매니페스트의 `vip_arp: true`가 바로 이 리더 선출 결과를 실제 네트워크에 반영하는 방식이다 - 새로 리더가 된 노드가 ARP로 "이 VIP는 나한테 있다"고 광고한다. MetalLB의 L2 모드와 원리가 완전히 같고, 한계도 같다: **VIP를 응답하는 노드와 그 VIP에 접속하는 클라이언트가 같은 L2 브로드캐스트 도메인에 있어야 한다.** 컨트롤플레인 3대가 서로 다른 서브넷/랙에 걸쳐 있으면 ARP 기반 VIP 자체가 성립하지 않는다.
 
 ```yaml
 # /etc/kubernetes/manifests/kube-vip.yaml (각 컨트롤플레인 노드에 동일하게 배치 - static pod)
@@ -288,6 +423,20 @@ sudo kubeadm join <VIP>:6443 \
   --discovery-token-ca-cert-hash sha256:<해시> \
   --control-plane --certificate-key <upload-certs 키>
 ```
+
+### ARP 방식의 한계와 대안 - BGP 모드, 외부 로드밸런서
+
+kube-vip는 ARP 모드 대신 **BGP 모드**(`bgp_enable: true`)도 지원한다 - 각 컨트롤플레인 노드가 상위 라우터에 VIP 경로를 직접 광고하고, 리더가 바뀌면 광고를 갱신한다. L2 제약이 없어져서 노드가 서로 다른 서브넷에 있어도 되고, 장애 전환도 ARP 캐시 갱신을 기다리는 것보다 보통 더 예측 가능하다. 다만 온프레미스 라우터가 BGP를 지원하고 피어링 설정 권한이 있어야 한다는 전제는 MetalLB BGP 모드와 동일하다.
+
+**또 다른 대안은 kube-vip를 아예 안 쓰고, API 서버 앞에 별도의 로드밸런서(HAProxy, 또는 사내에 이미 있는 L4 LB 장비)를 두는 것**이다. HAProxy를 별도 VM(컨트롤플레인 노드와 무관한 독립 노드)에 띄우고, 백엔드로 컨트롤플레인 3대의 `:6443`을 등록해서 헬스체크로 살아있는 노드로만 라우팅한다.
+
+| 방식 | 장점 | 단점 |
+|---|---|---|
+| kube-vip (ARP) | 추가 인프라 없음, 컨트롤플레인 노드 자체가 LB 역할 겸용 | 같은 L2에 있어야 함, 전환 시 수 초 끊김 |
+| kube-vip (BGP) | L2 제약 없음, 컨트롤플레인 노드가 LB 역할 겸용 | 라우터 BGP 지원·피어링 권한 필요 |
+| 외부 LB (HAProxy 등) | L2/BGP 제약 전혀 없음, LB 자체를 이중화하면 더 견고 | LB용 별도 인프라(및 그 자체의 이중화)가 추가로 필요 - "누가 LB를 감시하는가" 문제가 한 겹 더 생김 |
+
+이 프로젝트에서는 컨트롤플레인 노드 자체를 LB로 겸용해 추가 인프라를 늘리지 않는 kube-vip ARP 모드를 택했다 - VM 3대가 이미 같은 서브넷에 있어 L2 제약이 걸림돌이 안 됐기 때문이다. 노드가 여러 네트워크에 걸치는 환경이었다면 외부 LB나 kube-vip BGP 모드로 갔을 것이다.
 
 **검증 실험 - 컨트롤플레인 1대 강제 종료**:
 
@@ -350,12 +499,24 @@ Elastic IP(고정 공인 IP)도 일부러 안 붙였다 - 붙이면 인스턴스
 
 </Accordion>
 
+## 왜 이 경험이 다른가
+
+"Kubernetes 써봤다"는 이력서 문장은 대부분 "EKS/GKE에 `kubectl apply`를 해봤다"는 뜻이다 - 컨트롤플레인은 이미 떠 있고, 죽지 않고, etcd라는 단어를 몰라도 몇 년을 운영할 수 있다. 이 프로젝트에서 실제로 시간이 들어간 부분은 정확히 그 반대쪽이다.
+
+- **"etcd 쿼럼이 깨지면 무슨 일이 일어나는가"를 실제로 만들어봤다.** 컨트롤플레인을 강제로 죽여서 `kubectl`이 `context deadline exceeded`로 멈추는 걸 직접 보고, 남은 멤버 수로 과반수를 계산하는 절차를 손으로 따라가봤다 - 관리형 K8s에서는 이 화면 자체를 볼 기회가 없다.
+- **CNI가 "네트워크 표준 인터페이스"라는 사실을 코드가 아니라 장애로 이해했다.** 워커가 NotReady로 멈춰있는 이유, CIDR 불일치로 노드를 넘어가는 통신만 골라서 실패하는 증상처럼 관리형 환경에서는 마주칠 일이 없는 실패 모드를 직접 진단했다.
+- **온프레미스에서 당연한 선택(MetalLB L2, kube-vip ARP)이 클라우드로 그대로 옮겨지지 않는다는 걸 실제로 부딪혀서 배웠다.** AWS EC2 위에 같은 랩을 재현하면서 L2/ARP가 VPC에서 통하지 않는 이유, AWS Load Balancer Controller·ExternalDNS로 역할이 나뉘는 이유를 문서가 아니라 실패 로그로 확인했다.
+- **네트워크 계층의 트레이드오프(BGP vs VXLAN, L2 vs BGP LB, iptables vs eBPF)를 "왜 이걸 골랐는가"까지 설명할 수 있다.** 각 선택이 온프레미스 인프라의 제약(같은 서브넷인가, 라우터에 BGP 피어링 권한이 있는가)에서 나온 결정이라는 근거를 댈 수 있다.
+
+누가 "이 프로젝트 얘기해보세요"라고 물으면, 이 중 어느 걸 물어도 "명령어를 실행해봤다"가 아니라 "왜 실패했고, 왜 이 방식을 골랐는지"로 답할 수 있다는 게 관리형 K8s 경험만 있는 엔지니어와의 실질적인 차이다.
+
 ## 체크리스트
 
 - [ ] VM 2~3대에 kubeadm으로 클러스터 구축
 - [ ] CNI 설치 (Calico)
 - [ ] MetalLB, 스토리지(NFS 또는 Longhorn) 구성
 - [ ] 클러스터 파괴 후 재구축 1회 (`kubeadm reset` → 위 절차 반복)
+- [ ] `etcdctl snapshot save`로 백업 후 `snapshot restore`로 복구 1회 실습
 - [ ] (선택) 클라우드 K8s와 하이브리드 연동
 - [ ] (선택 확장) kube-vip로 컨트롤플레인 3노드 HA + 강제 종료 실험
 - [ ] (선택 확장) Calico → Cilium 마이그레이션 + `cilium connectivity test` 통과

@@ -3,7 +3,7 @@ title: "FastAPI 서비스 골격, RabbitMQ DLQ, Harbor+Trivy, Jenkins→ArgoCD �
 description: "메시지 큐·CI/CD 개념부터, 헬스체크/메트릭을 표준화한 api-server·inference-worker 골격, RabbitMQ ack/nack+DLQ, Harbor 사설 레지스트리+Trivy 스캔, Jenkins 빌드와 ArgoCD GitOps 배포, 선택 확장인 CloudNativePG까지."
 date: "2026-07-16"
 category: "CI/CD"
-tags: ["FastAPI", "RabbitMQ", "Jenkins", "ArgoCD", "GitOps", "Harbor", "Argo Workflows"]
+tags: ["FastAPI", "RabbitMQ", "Jenkins", "ArgoCD", "GitOps", "Harbor", "Argo Workflows", "Trivy"]
 series: "DevOps 학습 로드맵"
 seriesOrder: 3
 ---
@@ -43,6 +43,16 @@ def get_job(job_id: str):
 
 `/healthz`는 프로세스 생존만 확인하고, DB·큐 연결까지 확인하는 `/readyz`를 별도로 두는 편이 낫다 - `/healthz`가 무거우면 kubelet의 liveness probe가 불필요하게 서비스를 재시작시킬 수 있다.
 
+```python
+@app.get("/readyz")
+def readyz():
+    if not rabbitmq_connection.is_open:
+        raise HTTPException(status_code=503, detail="rabbitmq not connected")
+    return {"status": "ready"}
+```
+
+이걸 "귀찮으니 생략" 하면 실제로 생기는 실패 시나리오가 있다. RabbitMQ 파드가 롤링 재시작되는 동안 `api-server`의 readiness가 여전히 200을 반환하면, Service는 이 파드가 정상이라고 믿고 계속 트래픽을 라우팅한다 - 사용자는 `/jobs` 호출이 500으로 튕기는 걸 그대로 겪는다. readiness가 RabbitMQ 연결 상태까지 반영하면 그 순간 해당 파드가 Endpoints에서 빠지고, 살아있는 다른 파드로만 요청이 몰린다 - 사용자 입장에선 에러가 아니라 약간의 지연으로만 보인다. 반대로 이 DB·큐 체크를 `/healthz`(liveness) 쪽에 넣으면 더 위험하다 - RabbitMQ가 잠깐 다운된 것뿐인데 kubelet이 "죽었다"고 판단해 모든 `api-server` 파드를 동시에 재시작시키는 사태가 벌어질 수 있다. liveness는 "이 프로세스를 재시작해야 하는가"를, readiness는 "지금 이 파드로 트래픽을 보내도 되는가"를 답하는 서로 다른 질문이라는 걸 엔드포인트를 나누면서 체감하게 된다.
+
 ### 2. RabbitMQ 배포 - StatefulSet + ack/nack + DLQ
 
 **메시지 큐란 무엇이고 왜 쓰는가**: `api-server`가 이미지 업로드 요청을 받자마자 AI 추론까지 끝내고 응답하면 사용자는 몇 분을 기다려야 한다. 대신 "작업 접수"만 즉시 응답하고, 실제 처리는 별도 워커가 나중에 하도록 미루는 게 비동기 처리다. 이때 `api-server`와 `inference-worker`가 서로를 직접 호출하면, 워커가 잠깐이라도 다운된 순간의 요청은 그냥 사라진다. **메시지 큐는 그 사이에서 "작업이 접수됐다"는 사실 자체를 저장해두는 중간 저장소**다 - 워커가 나중에 다시 살아나도 큐에 쌓인 작업을 그대로 이어받을 수 있다.
@@ -76,22 +86,76 @@ def declare_queues(channel):
     )
 ```
 
+`nack(requeue=True)`만으로 재시도를 구현하면 문제가 하나 생긴다 - 메시지가 큐 맨 뒤로 갔다가 바로 다시 워커에게 전달되기 때문에, 실패 원인이 "다운스트림이 잠깐 응답 안 함" 같은 일시적 장애일 때는 즉시 재시도가 오히려 그 다운스트림에 부하를 더 얹는다. RabbitMQ 자체에는 "N초 뒤에 재시도"라는 지연 재시도 기능이 없어서, TTL이 걸린 큐를 계단식으로 만들어 우회한다 - 메시지가 `jobs.retry.1`(TTL 5초)에 들어가 있다가 TTL이 만료되면 dead-letter로 원래 큐(`jobs.upload`)에 돌아오고, 그래도 또 실패하면 `jobs.retry.2`(TTL 30초), 그다음 `jobs.retry.3`(TTL 2분)로 넘어간다. 실패할 때마다 대기 시간이 늘어나는 지수 백오프를 큐 설정만으로 구현하는 방법이다.
+
+```python
+# inference-worker/app/queue_setup.py (재시도 큐 계단 추가)
+RETRY_LADDER_MS = [5_000, 30_000, 120_000]  # 5s → 30s → 2m
+
+def declare_retry_queues(channel):
+    for i, ttl_ms in enumerate(RETRY_LADDER_MS, start=1):
+        channel.queue_declare(
+            f"jobs.retry.{i}",
+            durable=True,
+            arguments={
+                "x-message-ttl": ttl_ms,
+                "x-dead-letter-exchange": "",                 # 기본 익스체인지
+                "x-dead-letter-routing-key": "jobs.upload",    # TTL 만료 후 원래 큐로 복귀
+            },
+        )
+```
+
 ```python
 # inference-worker/app/consumer.py
 def on_message(channel, method, properties, body):
     headers = properties.headers or {}
     death_count = _retry_count(headers)  # x-death 배열 길이로 계산
+    job_id = headers.get("job_id")
     try:
-        run_inference(body)
+        run_inference(body, idempotency_key=job_id)
         channel.basic_ack(delivery_tag=method.delivery_tag)
-    except Exception:
-        if death_count >= 3:
-            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # DLQ로
+    except TransientError:
+        # 일시적 장애(타임아웃, 커넥션 끊김 등) - 백오프 후 재시도
+        if death_count >= len(RETRY_LADDER_MS):
+            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)  # DLQ로 최종 격리
         else:
-            channel.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+            channel.basic_publish(
+                exchange="", routing_key=f"jobs.retry.{death_count + 1}",
+                body=body, properties=properties,
+            )
+            channel.basic_ack(delivery_tag=method.delivery_tag)  # 원본은 ack, 재시도 큐가 이어받음
+    except PermanentError:
+        # 입력 자체가 잘못됨(깨진 이미지, 파싱 불가 등) - 재시도해도 결과가 바뀌지 않으므로 즉시 DLQ
+        channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 ```
 
+`TransientError`와 `PermanentError`를 구분하는 게 핵심이다 - `death_count`만 보고 "3번 실패하면 DLQ"로 처리하면, 애초에 재시도해도 절대 성공할 수 없는 메시지(예: 손상된 이미지 파일)까지 재시도 큐를 세 바퀴 돌며 최대 2분 넘게 자원을 낭비하게 된다. 원인을 구분할 수 있다면 poison message는 첫 실패에서 곧바로 DLQ로 보내는 게 맞다.
+
 `inference-worker`는 처음엔 실제 ONNX 모델 대신 `time.sleep(180)`으로 "오래 걸리는 작업"만 흉내 낸다 - 파이프라인 자체(큐 소비, ack/nack, 상태 갱신)가 먼저 제대로 도는지 검증하는 게 우선이다.
+
+### DLQ 재처리 전략 - 격리 후 처리와 중복 실행 방지
+
+DLQ는 "버리는 곳"이 아니라 "사람이 확인할 대기실"이다. 메시지가 DLQ에 들어갔다는 건 재시도 큐 계단을 다 거치고도(혹은 poison message라서 곧바로) 실패했다는 뜻이고, 이걸 그냥 방치하면 사용자는 자기 작업이 왜 끝나지 않는지 영원히 알 수 없다. 실무에서는 보통 세 갈래로 처리한다.
+
+- **일시적 장애였던 것으로 판단되면** - 원인(다운스트림 장애, 리소스 부족 등)을 고친 뒤 DLQ 컨슈머나 운영자가 수동으로 `jobs.upload`에 재투입한다. 자동 재투입은 하지 않는다 - 원인을 안 고치고 재투입하면 다시 DLQ로 돌아올 뿐이다.
+- **입력 자체가 잘못된 것으로 판단되면** - job 상태를 `FAILED`로 갱신해 사용자에게 알리고, 메시지는 DLQ에서 제거한다. 재시도할 이유가 없다.
+- **원인이 바로 안 보이면** - 메시지 본문을 S3 등 별도 저장소에 덤프해두고 DLQ에서는 빼서, 나중에 배치로 분석한다. DLQ에 메시지가 무한정 쌓이게 두면 다음 장애 때 진짜 원인 파악이 더 어려워진다.
+
+이 처리가 사람 손을 거치므로, RabbitMQ Management API로 `jobs.dlq`의 메시지 개수에 알람을 걸어둔다 - DLQ에 뭔가 쌓이기 시작했다는 사실 자체가 모니터링 대상이다.
+
+**멱등성(idempotency) 보장**: 재시도 구조를 넣는 순간 반드시 따라오는 문제가 있다 - 워커가 `run_inference`는 끝냈는데 결과를 DB에 쓰기 전에 죽으면 ack를 못 보내고, 메시지는 재전달된다. 즉 같은 작업이 두 번 실행될 수 있다는 뜻이다. 추론 자체는 두 번 돌아도 크게 문제 없어 보일 수 있지만, "완료 알림을 두 번 보낸다"거나 "결과를 집계 테이블에 두 번 더한다"처럼 부수효과가 있는 작업이면 데이터가 틀어진다. 그래서 `job_id`를 멱등키로 써서 재실행 자체를 막는다.
+
+```python
+def run_inference(body, idempotency_key):
+    existing = get_job_result(idempotency_key)
+    if existing and existing["status"] == "DONE":
+        return existing  # 이미 처리된 job_id - 재실행하지 않고 기존 결과 반환
+    result = model.predict(body["image_url"])
+    save_job_result(idempotency_key, result, status="DONE")  # job_id에 UNIQUE 제약
+    return result
+```
+
+`job_id` 컬럼에 DB 레벨 `UNIQUE` 제약을 걸어두면, 두 워커가 (아주 드물게) 같은 메시지를 동시에 받아 처리하더라도 `INSERT ... ON CONFLICT DO NOTHING` 패턴으로 결과가 중복 저장되는 걸 애플리케이션 로직이 아니라 DB가 막아준다 - "메시지가 최소 한 번은 처리된다(at-least-once)"는 큐의 보장과 "몇 번 처리되든 결과는 한 번만 반영된다"는 멱등성을 합쳐야 실제로 안전한 재시도가 된다.
 
 ### 3. 검증 실험 설계 - 워커 강제 종료
 
@@ -132,6 +196,20 @@ curl -X PUT "https://harbor.local/api/v2.0/projects/app/scanner" \
 ```
 
 이 정책이 바로 ISMS-P 2.10(시스템·서비스 보안관리)에서 요구하는 "취약한 이미지의 배포를 막는 절차"에 대한 증적이 된다.
+
+**차단 기준(severity)을 어디에 둘지**는 그냥 "제일 엄격한 값"을 고르는 문제가 아니다. `critical`만 막으면 걸리는 이미지가 거의 없어서 정책이 있는지 없는지 체감이 안 되고, 반대로 `medium`까지 막으면 흔한 베이스 이미지 대부분이 걸려서 배포가 사실상 멈춘다. 기준을 잡을 때 본 건 "이 파드가 외부 트래픽을 직접 받는가"였다 - `api-server`처럼 인그레스로 노출되는 서비스는 `high` 이상에서 차단하고, 클러스터 내부에서만 통신하는 배치성 워커는 `critical`만 막는 식으로 프로젝트(Harbor의 project 단위)마다 기준을 다르게 걸 수 있다. 외부 공격 표면이 큰 쪽일수록 기준을 더 낮게(더 엄격하게) 잡는 방향이다.
+
+**False Positive를 실무에서 다루는 방법**: Trivy가 잡는 CVE 중 상당수는 "이론적으로 해당 라이브러리에 취약점이 있다"는 것뿐이지, 실제 컨테이너에서 그 취약한 함수를 호출하지도 않는 경우가 많다. 이런 걸 전부 차단 대상으로 두면 정상적인 배포까지 막혀서 팀이 정책을 우회하려는 유인이 생긴다 - 그래서 무시할 CVE는 `.trivyignore`에 명시적으로 등록한다.
+
+```text
+# .trivyignore
+# CVE-2023-XXXX: base image의 libssl 취약점.
+# TLS termination은 ingress에서 처리하고 컨테이너 내부에서 해당 함수를 호출하지 않음
+# 승인: 보안 담당자 (2026-06-01) / 재검토 예정: 2026-12-01
+CVE-2023-XXXX
+```
+
+핵심은 CVE ID만 덜렁 적어두는 게 아니라 **왜 무시하는지, 누가 승인했는지, 언제 재검토할지**를 주석으로 같이 남기는 것이다. `.trivyignore` 변경은 개발자 단독 판단으로 머지되지 않도록 `CODEOWNERS`로 해당 파일에 보안 담당 리뷰어를 지정해둔다 - "이 취약점은 무시하기로 했다"는 결정도 나중에 감사(audit)할 수 있어야 예외 처리가 통제 불능으로 늘어나는 걸 막을 수 있다.
 
 ![Harbor의 api-server 아티팩트 목록 - 빌드(ci-5~ci-13)마다 Trivy가 취약점 개수를 자동 집계한다](/harbor_app.png)
 
@@ -242,6 +320,16 @@ spec:
 
 ![ArgoCD Applications 대시보드 - inference-app이 Healthy·Synced 상태](/ARGOCD_DASHBOARD.png)
 
+### 파이프라인의 신뢰 경계 - push CI와 pull GitOps를 나눈 이유
+
+Jenkinsfile을 다시 보면 마지막 스테이지가 `kubectl apply`가 아니라 "매니페스트 리포에 이미지 태그를 커밋"하는 걸로 끝난다. 이걸 그냥 스타일 차이로 넘기기 쉬운데, 실제로는 **신뢰 경계(trust boundary)를 어디에 그을지**에 대한 결정이다.
+
+Jenkins가 필요로 하는 자격증명은 딱 두 가지뿐이다 - Harbor에 이미지를 푸시할 권한, 매니페스트 Git 리포에 커밋을 푸시할 권한. 클러스터 API 서버에 접근할 kubeconfig나 ServiceAccount 토큰은 전혀 필요 없다. 반면 ArgoCD는 클러스터 안에서 도는 컨트롤러라서, "클러스터에 반영할 권한"을 클러스터 밖으로 내보낼 필요가 애초에 없다 - Git 저장소를 읽어와서 스스로 반영(pull)하기 때문이다.
+
+이 분리가 왜 중요한지는 "Jenkins가 뚫렸을 때"를 가정해보면 드러난다. Jenkins는 서드파티 플러그인, 외부에서 온 빌드 스크립트, PR로 들어온 테스트 코드 등 신뢰도가 제각각인 코드를 실행하는 시스템이라 공격 표면이 넓다. 만약 Jenkins가 push 배포 방식으로 클러스터 자격증명을 쥐고 있었다면, Jenkins 침해 = 클러스터 전체에 대한 `kubectl apply` 권한 탈취로 곧장 이어진다. pull 방식에서는 Jenkins가 뚫려도 공격자가 할 수 있는 최대치가 "매니페스트 리포에 잘못된 내용을 커밋하는 것"으로 제한된다 - 그마저도 브랜치 보호 규칙이나 리뷰 절차로 한 겹 더 걸러낼 수 있다.
+
+물론 이 구조는 신뢰 경계를 없애는 게 아니라 **옮기는** 것이다 - 이제는 매니페스트 Git 리포 자체가 "그 리포에 머지 권한이 있으면 곧 배포 권한이 있다"는 새로운 경계가 된다. 그래서 Jenkins가 자동으로 올리는 커밋을 포함해 이 리포에는 반드시 브랜치 보호와 리뷰 절차를 걸어야 한다 - 경계를 옮겼을 뿐이지, 경계 자체를 없앤 게 아니라는 걸 놓치면 GitOps가 그냥 "권한을 아무 데나 둔 배포"로 되돌아간다.
+
 ## 검증 방법
 
 ```bash
@@ -295,10 +383,12 @@ kubectl cnpg status app-postgres          # 다른 인스턴스가 프라이머�
 ## 체크리스트
 
 - [ ] api-server, inference-worker 최소 구현 (`/healthz`, `/metrics` 표준화)
-- [ ] RabbitMQ StatefulSet 배포, ack/nack + DLQ(재시도 3회) 구현
+- [ ] RabbitMQ StatefulSet 배포, ack/nack + DLQ(재시도 3회, 지수 백오프) 구현
 - [ ] 워커 파드 강제 종료 → 메시지 재투입 검증, DLQ 격리 검증
+- [ ] 멱등키(`job_id`) 기반 중복 처리 방지, DLQ 메시지 개수 알람 설정
 - [ ] Harbor 사설 레지스트리 구축 + Trivy 스캔 + 취약점 발견 시 배포 차단 정책
+- [ ] 파드 노출 범위 기준으로 severity 차단 기준 설정, `.trivyignore` 예외 승인 절차(CODEOWNERS) 수립
 - [ ] Jenkins 파이프라인: 빌드 → 테스트 → Harbor 푸시 → Trivy 스캔 대기
-- [ ] ArgoCD 도입, GitOps 전환
+- [ ] ArgoCD 도입, GitOps 전환 - Jenkins가 클러스터 자격증명 없이 매니페스트 커밋까지만 담당하는지 확인
 - [ ] 배포 소요 시간 before/after 측정
 - [ ] (선택 확장) CloudNativePG로 PostgreSQL 운영 + failover 검증
