@@ -39,13 +39,13 @@ export const profile = {
   headingLine1En: 'I find recurring problems',
   headingHighlightEn: 'and turn them into systems',
   introduction: [
-    '안녕하세요. 한컴인스페이스에서 5년간 국가기관 대상 위성영상 AI 플랫폼의 인프라를 설계·구축·운영해 온 엔지니어입니다. 한국항공우주연구원(KARI)·국가보안기관·정보통신산업진흥원(NIPA) 등 인터넷 접근성부터 규모까지 서로 다른 기관을 대상으로 인프라를 매번 새로 설계해왔습니다.',
-    '관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했고, Aliyun GPUShare로 GPU 한 장을 fraction 단위로 나눠 여러 컨테이너가 동시에 추론하도록 구성했습니다. 이후 MSA 전환에 맞춰 Cilium(eBPF) 네트워킹·kube-vip HA·ArgoCD GitOps·OpenTelemetry 관측성까지, 클러스터 인프라를 팀원과 함께 계속 확장하고 있습니다.',
+    '안녕하세요. 지금은 텐(TEN)에서 GPU 클러스터용 AI 플랫폼의 에어갭 설치기(Kubernetes·Helm·Ansible)를 개선하는 인프라 엔지니어입니다. 그 전 5년간은 한컴인스페이스에서 한국항공우주연구원(KARI)·국가보안기관·정보통신산업진흥원(NIPA) 등 인터넷 접근성부터 규모까지 서로 다른 기관을 대상으로 위성영상 AI 플랫폼의 인프라를 매번 새로 설계·구축·운영했습니다.',
+    '관리형 K8s가 없는 온프레미스 환경이라 kubeadm으로 클러스터를 직접 부트스트랩했고, Aliyun GPUShare로 GPU 한 장을 fraction 단위로 나눠 여러 컨테이너가 동시에 추론하도록 구성했습니다. MSA 전환에 맞춰 Cilium(eBPF) 네트워킹·kube-vip HA·ArgoCD GitOps·OpenTelemetry 관측성까지 팀원과 함께 클러스터 인프라를 확장했고, 지금은 그 경험을 설치 과정 자체를 빠르고 안전하게 만드는 데 쓰고 있습니다 - Helm 차트를 의존 관계에 따라 병렬로 설치하고, 패키징 단계에서 빠진 이미지를 미리 잡아내는 식입니다.',
     '반복되는 작업은 자동화로 걷어내는 편입니다. information_schema 기반 CRUD 자동 생성 도구, Git·캘린더·HR을 넘나드는 사내 에이전트(FastMCP)까지 직접 만들어 썼습니다. 관리형 서비스 뒤에 숨지 않고 클러스터를 바닥부터 이해하고 다루는 일이 제가 가장 잘하고 좋아하는 일입니다.',
   ],
   introductionEn: [
-    "Hi - I'm an engineer who has spent five years designing, building, and operating infrastructure for satellite-imagery AI platforms serving national institutions at Hancom InSpace. I've designed infrastructure from scratch for organizations ranging from the Korea Aerospace Research Institute (KARI) to a national security agency to NIPA - each with wildly different internet access and scale constraints.",
-    "With no managed K8s available on-premises, I bootstrapped clusters directly with kubeadm, and used Aliyun GPUShare to split a single GPU into fractions so multiple containers could run inference concurrently. As we moved to MSA, I've kept extending the cluster - Cilium (eBPF) networking, kube-vip HA, ArgoCD GitOps, OpenTelemetry observability - together with my team.",
+    "Hi - I'm an infrastructure engineer at TEN, improving the air-gapped installer (Kubernetes, Helm, Ansible) of an AI platform for GPU clusters. Before that, I spent five years at Hancom InSpace designing, building, and operating infrastructure for satellite-imagery AI platforms serving national institutions - from the Korea Aerospace Research Institute (KARI) to a national security agency to NIPA, each with wildly different internet access and scale constraints.",
+    "With no managed K8s available on-premises, I bootstrapped clusters directly with kubeadm, and used Aliyun GPUShare to split a single GPU into fractions so multiple containers could run inference concurrently. As we moved to MSA, I extended the cluster with my team - Cilium (eBPF) networking, kube-vip HA, ArgoCD GitOps, OpenTelemetry observability. Now I put that experience into making the install itself fast and safe - installing Helm charts in parallel by dependency, and catching missing images at packaging time.",
     "I tend to automate away repetitive work: an information_schema-based CRUD generator, an in-house agent (FastMCP) spanning Git, calendars, and HR systems - I built these myself. Understanding and operating a cluster from the ground up, instead of hiding behind managed services, is what I do best and enjoy most.",
   ],
 } as const;
