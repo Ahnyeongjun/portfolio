@@ -70,8 +70,8 @@
   },
   "contact": {
     "kicker": "Contact",
-    "heading": "I'm open to\nnew opportunities",
-    "sub": "Project proposals and job inquiries are welcome."
+    "heading": "Always happy to\ntalk infrastructure",
+    "sub": "Kubernetes and infra chats, feedback on my posts, and collaboration ideas are all welcome."
   },
   "project": {
     "visitBtn": "Visit Project",

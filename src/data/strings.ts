@@ -9,7 +9,7 @@ export const strings = {
     contact:    { ko: '연락하기',   en: 'Contact' },
   },
   hero: {
-    status:   { ko: '채용 가능', en: 'Open to work' },
+    status:   { ko: '텐(TEN) 재직 중', en: 'Currently at TEN' },
     role:     { ko: '인프라 엔지니어', en: 'Infrastructure Engineer' },
     headline: { ko: '운영 중인 서비스의\n구조적 한계를\n직접 개선합니다', en: 'I identify and fix\narchitectural limits\nin production systems' },
     sub:      { ko: '5년간 위성 영상 AI 플랫폼을 MSA로 전환하며\n수치로 증명한 인프라 엔지니어', en: '5 years building satellite imagery AI platforms,\nproven by metrics, not words' },
@@ -37,8 +37,8 @@ export const strings = {
     detailBtn: { ko: '자세히 보기', en: 'View Details' },
   },
   contact: {
-    title:  { ko: '함께 만들 기회를\n기다리고 있습니다', en: "I'm open to\nnew opportunities" },
-    sub:    { ko: '프로젝트 제안, 채용 문의 모두 환영합니다.', en: 'Project proposals and job inquiries are welcome.' },
+    title:  { ko: '인프라 이야기라면\n언제든 반갑습니다', en: 'Always happy to\ntalk infrastructure' },
+    sub:    { ko: '쿠버네티스·인프라 이야기, 글에 대한 의견, 협업 제안 모두 환영합니다.', en: 'Kubernetes and infra chats, feedback on my posts, and collaboration ideas are all welcome.' },
   },
 } as const;
 
