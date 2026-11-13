@@ -10,7 +10,7 @@
     "contact": "Contact"
   },
   "hero": {
-    "status": "Open to work",
+    "status": "Currently at TEN",
     "ctaContact": "Resume / Contact",
     "coreSkill1": "Infra design across institutions",
     "coreSkill2": "Bare-metal cluster bootstrapping",
@@ -37,7 +37,7 @@
     "factRole": "Role",
     "factBase": "Base",
     "roleSub": "Infra-focused · Kubernetes · Automation",
-    "periodSub": "Jul 2021 ~ present · 5 yrs"
+    "periodSub": "Nov 2026 ~ present · 5 yrs total"
   },
   "skills": {
     "kicker": "Tech Stack",
@@ -45,9 +45,9 @@
   },
   "career": {
     "kicker": "Career",
-    "heading": "Hancom InSpace · Researcher",
-    "sub": "Designed and built a satellite imagery analysis platform from scratch, then migrated to MSA",
-    "tenureYears": "5 yrs",
+    "heading": "TEN · Hancom InSpace",
+    "sub": "Now improving the installer of an AI platform for GPU clusters; previously designed and built a satellite imagery analysis platform from scratch, then migrated it to MSA",
+    "tenureYears": "5 yrs 4 mos",
     "tenureRole": "Researcher",
     "detailBtn": "View Details"
   },

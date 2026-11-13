@@ -583,7 +583,7 @@ export function ResumeDocument({
               </div>
               <div className="hd-contact">
                 {hideCareerSection && (
-                  <div className="row"><span className="ck">CAREER</span><span className="v">{P.career.company} · {P.career.period}</span></div>
+                  <div className="row"><span className="ck">CAREER</span><span className="v">{P.currentCareer.company} · {P.currentCareer.period} (전 {P.career.company} · {P.career.period})</span></div>
                 )}
                 <div className="row"><span className="ck">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="row"><span className="ck">GITHUB</span><a className="v" href={P.githubUrl} target="_blank" rel="noopener noreferrer">{P.github}</a></div>
@@ -666,6 +666,15 @@ export function ResumeDocument({
             <div className="sec">
               <div className={forcePageBreak ? "sec-h force-break" : "sec-h"}><span className="no">{noCareer}</span><span className="t">경력</span></div>
               <div className="career-head">
+                <div><div className="career-co">{P.currentCareer.company}</div><div className="career-pos">{P.currentCareer.position}</div></div>
+                <div className="career-period">{P.currentCareer.period}</div>
+              </div>
+              <div className="career-groups">
+                <ul className="cg-items">
+                  {P.currentCareer.items.map((t, i) => <li key={i} className="cg-item">{t}</li>)}
+                </ul>
+              </div>
+              <div className="career-head" style={{ marginTop: 18 }}>
                 <div><div className="career-co">{P.career.company}</div><div className="career-pos">{P.career.position}</div></div>
                 <div className="career-period">{P.career.period}</div>
               </div>

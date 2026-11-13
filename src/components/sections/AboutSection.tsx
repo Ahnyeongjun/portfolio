@@ -9,7 +9,7 @@ export function AboutSection() {
   const t = useTranslations('about');
 
   const facts = [
-    { key: t('factNow'),  val: profile.company,  sub: lang === 'ko' ? `${profile.period} · ${profile.duration}` : `Jul 2021 ~ present · ${profile.durationEn}` },
+    { key: t('factNow'),  val: profile.company,  sub: lang === 'ko' ? `${profile.period} · ${profile.duration}` : `${profile.periodEn} · ${profile.durationEn}` },
     { key: t('factRole'), val: profile.roleFull, sub: t('roleSub') },
     { key: t('factBase'), val: profile.location, sub: null },
   ];

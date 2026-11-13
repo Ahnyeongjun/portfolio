@@ -10,7 +10,7 @@
     "contact": "연락하기"
   },
   "hero": {
-    "status": "이직 준비 중",
+    "status": "텐(TEN) 재직 중",
     "ctaContact": "이력서 / 연락하기",
     "coreSkill1": "다양한 기관 인프라 설계",
     "coreSkill2": "베어메탈 클러스터 부트스트랩",
@@ -37,7 +37,7 @@
     "factRole": "Role",
     "factBase": "Base",
     "roleSub": "인프라 중심 · 쿠버네티스 · 자동화",
-    "periodSub": "2021.07 ~ 현재 · 5년차"
+    "periodSub": "2026.11 ~ 현재 · 총 경력 5년차"
   },
   "skills": {
     "kicker": "기술 스택",
@@ -45,9 +45,9 @@
   },
   "career": {
     "kicker": "경력",
-    "heading": "한컴인스페이스 · 연구원",
-    "sub": "위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환",
-    "tenureYears": "5년차",
+    "heading": "텐(TEN) · 한컴인스페이스",
+    "sub": "지금은 GPU 클러스터 AI 플랫폼의 설치기를 개선하고, 이전에는 위성 영상 분석 플랫폼을 처음부터 설계·구현하고 MSA로 전환",
+    "tenureYears": "5년 4개월",
     "tenureRole": "연구원",
     "detailBtn": "자세히 보기"
   },

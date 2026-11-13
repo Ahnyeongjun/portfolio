@@ -60,6 +60,19 @@ export interface SkillGroup {
   items: string[];
 }
 
+/** 현재 회사 - 이력서·포폴 PDF 공통. 공개 가능한 수준으로만 (사내 IP·저장소·고객 정보 없이) */
+export const TEN_CAREER = {
+  company: "텐(TEN)",
+  position: "인프라 엔지니어",
+  period: "2026.11. ~ 재직 중",
+  items: [
+    "GPU 클러스터용 AI 플랫폼의 에어갭 설치기(Kubernetes·Helm·Ansible) 개선 담당",
+    "Helm 차트 순차 설치를 의존 관계 기반 병렬 설치(DAG)로 구현·검증 - 테스트 클러스터에서 해당 단계 336~358초 → 137~150초",
+    "설치 패키지에 필요한 컨테이너 이미지 목록을 정의하고, 패키징 단계에서 누락을 검사하도록 개선해 팀 저장소에 반영",
+    "설치 TUI가 새 설치 모듈의 설정 스키마를 읽어 입력 화면을 만들도록 확장 (진행 중)",
+  ],
+};
+
 export const PROFILE = {
   name: "안영준",
   role: "풀스택 개발자 (인프라 메인)",
@@ -99,10 +112,12 @@ export const PROFILE = {
     { v: "1개 → 5개", l: "1인 담당 서비스" },
   ],
 
+  currentCareer: TEN_CAREER,
+
   career: {
     company: "한컴인스페이스",
-    position: "연구원 · 소프트웨어플랫폼 · 재직 중",
-    period: "2021.07. ~ 재직 중 (5년)",
+    position: "연구원 · 소프트웨어플랫폼",
+    period: "2021.07. ~ 2026.10. (5년 4개월)",
     overview: "입사 후 약 2년간 개발환경을 구축하고 사내 서버를 관리했으며, 이후 한국항공우주연구원(KARI)·국가보안기관·정보통신산업진흥원(NIPA) 등 국가기관을 대상으로 위성영상 처리 플랫폼의 백엔드를 설계·개발하고 Kubernetes 기반 서버 배포와 운영을 담당했습니다.",
     metrics: ["재배포 월 10건→1건", "신규 구축 6개월→1개월", "메타데이터 API 38초→159ms", "GPU 4장 70파드 병렬 추론", "이벤트 유실 0건"],
     groups: [
@@ -192,7 +207,7 @@ export const PROFILE = {
       pkey: "insops",
       title: "국가보안기관 위성영상 시스템 - 개발·운영·신규 구축",
       company: "한컴인스페이스",
-      period: "2022.07. ~ 진행 중",
+      period: "2022.07. ~ 2026.10.",
       badge: "핵심적으로 참여(풀스택 4·DB 1·인프라 1)",
       stack: ["Spring Boot", "Java", "PostGIS", "Redis", "Go", "Kubernetes", "Zabbix"],
       desc: "위성영상을 수집·판독해 정부 표준 문서(HWP) 보고서로 산출하는 시스템입니다. API·프론트 개발부터 에어갭 환경 운영, 신규 플랫폼 구축까지 담당했습니다.",
@@ -419,7 +434,7 @@ export const PROFILE = {
       pkey: "nipa",
       title: "NIPA 위성 변화탐지 플랫폼 - MSA 설계",
       company: "한컴인스페이스",
-      period: "2025.07. ~ 진행 중",
+      period: "2025.07. ~ 2026.10.",
       badge: "주도(풀스택 2·인프라 2·AI 1)",
       stack: ["Next.js", "CesiumJS", "FastAPI", "RabbitMQ", "Kubernetes", "Envoy Gateway", "ArgoCD"],
       desc: "두 시점의 위성영상을 비교해 지표 변화를 AI로 탐지하는 플랫폼입니다. NIPA(정보통신산업진흥원) 지원 사업으로, MSA + FastAPI 기반으로 재설계했습니다.",
@@ -708,10 +723,12 @@ export const PROFILE_PLATFORM = {
     { v: "이벤트 유실 0건", l: "Outbox 라이브러리 직접 개발 · KARI" },
   ],
 
+  currentCareer: TEN_CAREER,
+
   career: {
     company: "한컴인스페이스",
-    position: "연구원 · 인프라 엔지니어링 · 재직 중",
-    period: "2021.07. ~ 재직 중 (5년)",
+    position: "연구원 · 인프라 엔지니어링",
+    period: "2021.07. ~ 2026.10. (5년 4개월)",
     overview: "국가기관 대상 위성영상 AI 처리 플랫폼의 인프라 설계·구축·운영을 전담해왔습니다. 관리형 K8s가 없는 온프레미스 환경에서 kubeadm 클러스터 부트스트랩부터 노드 자원 분배·GPU 공유·비동기 파이프라인·모니터링까지 인프라 전 영역을 직접 설계·구축·운영했고, 최근에는 MSA 전환에 맞춰 팀원과 함께 Cilium 기반 네트워킹·control-plane HA·ArgoCD GitOps로 인프라 영역을 계속 확장하고 있습니다.",
     metrics: ["kubeadm 베어메탈 클러스터 구축", "GPU 4장 70파드 병렬 추론", "control-plane HA로 SPOF 제거", "에어갭 환경 롤링 배포 운영", "이벤트 유실 0건"],
     groups: [
@@ -773,7 +790,7 @@ export const PROFILE_PLATFORM = {
       pkey: "nipa",
       title: "NIPA 위성 변화탐지 플랫폼 - 클러스터·메시징 인프라 고도화",
       company: "한컴인스페이스",
-      period: "2025.07. ~ 진행 중",
+      period: "2025.07. ~ 2026.10.",
       badge: "주도(인프라 2·풀스택 2·AI 1)",
       stack: ["Kubernetes", "ArgoCD", "RabbitMQ", "PostgreSQL", "FastAPI", "OpenTelemetry", "Cilium"],
       desc: "MSA 전환으로 늘어난 클러스터·네트워킹·시크릿 복잡도를 표준화하고, 게이트웨이 인증을 일원화했습니다.",
@@ -1026,7 +1043,7 @@ export const PROFILE_PLATFORM = {
       pkey: "insops",
       title: "국가보안기관 위성영상 시스템 — 개발·에어갭 운영·신규 구축",
       company: "한컴인스페이스",
-      period: "2022.07. ~ 진행 중",
+      period: "2022.07. ~ 2026.10.",
       badge: "핵심 참여(인프라 1·풀스택 4·DB 1)",
       stack: ["Kubernetes", "Docker", "Rocky Linux", "Shell", "Zabbix", "GDAL", "PostgreSQL"],
       desc: "위성영상을 수집·판독해 정부 표준 문서로 산출하는 시스템입니다. 망분리를 넘어 외부 인터넷과 매체 반입까지 차단된 에어갭 환경입니다. API·프론트 개발부터 시작해 2024.07부터 에어갭 환경 운영을 담당했고, 2025.06부터는 다종위성 수집·처리 플랫폼을 베어메탈부터 신규 구축하고 있습니다.",

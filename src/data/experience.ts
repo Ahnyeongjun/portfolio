@@ -1,10 +1,19 @@
 import type { CareerInfo, ActivityItem, EducationItem, CertificationItem } from '@/components/sections/ExperienceSection';
 
 export const career: CareerInfo = {
+  company: '텐(TEN)',
+  position: '인프라 엔지니어',
+  period: '2026.11 ~ 현재',
+  duration: '총 경력 5년차',
+  description: 'GPU 클러스터용 AI 플랫폼의 에어갭 설치기 개선 - Helm 병렬 설치(DAG) 구현·검증, 설치 패키지 이미지 누락 검사',
+};
+
+/** 이전 경력 */
+export const prevCareer: CareerInfo = {
   company: '한컴인스페이스',
   position: '연구원',
-  period: '2021.07 ~ 현재',
-  duration: '5년차',
+  period: '2021.07 ~ 2026.10',
+  duration: '5년 4개월',
   description: 'MSA 전환으로 재배포 월 10건→1건, ML 추론 서비스 3종 독립 배포 · GPU 70파드 병렬 운영, Outbox 패턴 라이브러리로 이벤트 유실 0건',
 };
 

@@ -1494,7 +1494,7 @@ export function PortfolioDocument({
                 <div className="w-about-row"><span className="k">EMAIL</span><span className="v">{P.email}</span></div>
                 <div className="w-about-row"><span className="k">GITHUB</span><a className="v" href={P.githubUrl} target="_blank" rel="noopener noreferrer">{P.github}</a></div>
                 <div className="w-about-row"><span className="k">PORTFOLIO</span><a className="v" href={P.portfolioUrl} target="_blank" rel="noopener noreferrer">{P.portfolio}</a></div>
-                <div className="w-about-row"><span className="k">CAREER</span><span className="v">{P.career.company} · 5년</span></div>
+                <div className="w-about-row"><span className="k">CAREER</span><span className="v">{P.currentCareer.company} 재직 · 총 5년 (전 {P.career.company})</span></div>
               </div>
             </div>
           </>

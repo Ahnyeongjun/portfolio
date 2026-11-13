@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useLang } from '@/context/lang';
 import type { Project } from '@/lib/projects';
+import { profile } from '@/data/profile';
 
 interface CareerSectionProps {
   projects: Project[];
@@ -126,6 +127,22 @@ export function CareerSection({ projects, company, period }: CareerSectionProps)
           <span className="pf-kicker">{t('kicker')}</span>
           <h2 className="pf-h-sec">{t('heading')}</h2>
           <p className="pf-p-sec">{t('sub')}</p>
+        </div>
+
+        {/* 현재 회사 - 프로젝트 카드 없이 요약만 */}
+        <div className="pf-career-head reveal" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <span className="pf-career-logo" style={{ fontWeight: 800, fontSize: 17, color: '#0f172a' }}>TEN</span>
+          <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+            <div className="pf-career-co">{profile.company}</div>
+            <div className="pf-career-period">{lang === 'en' ? profile.periodEn : profile.period}</div>
+            <ul style={{ margin: '12px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14.5, color: 'var(--pf-text-dim)', listStyle: 'disc' }}>
+              {(lang === 'en' ? profile.currentWorkEn : profile.currentWork).map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+          <div className="pf-career-tenure">
+            {lang === 'en' ? 'Current' : '재직 중'}<br />
+            <span style={{ color: 'var(--pf-text-mute)' }}>{lang === 'en' ? profile.positionEn : profile.position}</span>
+          </div>
         </div>
 
         <div className="pf-career-head reveal">

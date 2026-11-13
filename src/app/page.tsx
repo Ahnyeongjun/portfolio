@@ -58,7 +58,7 @@ export default function Home() {
         <HeroSection />
         <AboutSection />
         <TechStackSection />
-        <CareerSection projects={companyProjects} company={profile.company} period={profile.period} />
+        <CareerSection projects={companyProjects} company={profile.prevCompany} period={profile.prevPeriod} />
         <SideProjectsSection projects={sideProjects} />
         <BackgroundSection />
         <BlogPreviewSection posts={recentPosts} />
